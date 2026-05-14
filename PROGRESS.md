@@ -4,7 +4,7 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-05-15（M1 部分完成，走 public JSON path 暫代 OAuth）
+**Last updated:** 2026-05-15（M2 主幹完成，端到端 smoke 已 ingest 76 筆真實 candidate）
 
 ---
 
@@ -25,7 +25,7 @@
 | 里程碑 | 主題 | 狀態 | 備註 |
 |--------|------|------|------|
 | M1 | Reddit API 可行性驗證 | 🟡 | OAuth 申請已送、審核中；public JSON path 已跑通連通性 / 預算驗證 |
-| M2 | 探索層 + DB 重構 | ❌ | Reddit schema、subreddit + keyword 雙 source、60 分鐘輪詢 |
+| M2 | 探索層 + DB 重構 | 🟢 | 12 表 schema / alembic migration、雙 source discovery、scheduler 雙 job、5/5 tests 過、端到端 smoke 76 筆 |
 | M3 | 評分層接 Reddit | ❌ | 硬規則 / Haiku 五軸 / 加權；30 篇人工標記驗證 |
 | M4 | 候選排程 + 推送層 | ❌ | 每日 09:00 Top 5、inline button、即時破例 |
 | M5 | 收藏追蹤層 | ❌ | 升格邏輯、分級輪詢、四類後續事件偵測（含 crosspost）|
@@ -68,8 +68,8 @@
 
 ## 下一步（單一優先）
 
-**M2.1–2.4**：開始 schema 設計與 alembic migration。M1 OAuth 還在審，但已有 `PublicJSONScraper`
-跑得通的 fallback，M2/M3/M4 的開發不阻塞；OAuth 過了之後切 `REDDIT_SCRAPER=praw` 一行的事。
+**M3.1–3.2**：硬規則篩選 + Haiku 五軸評分 prompt。DB 內已有 76 筆真實 candidate（M2 smoke 跑出來）
+可以直接開始 scoring service 開發；累積到 ≥ 200 筆之後做 M3.7 人工標記準確率驗證。
 
 完整任務清單見 `SCHEDULE.md`。
 
@@ -85,26 +85,47 @@
 - ⏳ **M1.11 GO/NO-GO**：public JSON 條件下 **GO**（足以推進 M2–M4 開發）；
   OAuth 通過後升級為完整 GO
 
-### 已知坑（M1 階段踩到的）
+### M2 現況（2026-05-15）
+
+- ✅ **M2.1 ER 圖**：`docs/v4_schema.md`，12 張表 mermaid + 索引設計
+- ✅ **M2.2 models.py**：12 張 SQLAlchemy 2.0 declarative model，含 v3 兩個 gotcha 應對
+- ✅ **M2.3 alembic init + 第一支 migration**（`alembic/versions/c0d4993bb6f1_initial_schema_12_tables.py`）
+- ✅ **M2.4 upgrade head**：SQLite 上跑通，13 張表（含 alembic_version）
+- ✅ **M2.5–2.7 scraper 抽象**（M1 已完成）+ **M2.6 FakeScraper**（50 筆 fixture，中英混合 + 邊界）
+- ✅ **M2.8 seeds loader**：冪等 upsert，不覆寫 enabled / 統計欄位
+- ✅ **M2.9 / 2.10 discovery**：subreddit /new + keyword search 雙路徑，dedup + 統計回寫
+- ✅ **M2.11 scheduler**：APScheduler `BlockingScheduler`，60min sub + 6h keyword 雙 job，啟動跑一輪
+- ✅ **M2.12 tests**：5/5 PASS（dedup × 2、disabled skip、deleted skip、keyword dedup）
+- 🟡 **M2.13 連續 24h**：尚未跑；端到端 smoke 已驗證 wiring 正確（76 candidate ingested）
+
+### 已知坑（M1+M2 階段踩到的）
 
 - Reddit 對 unauthenticated 請求做 TLS / header 指紋偵測：
   - **缺 `Accept-Language` header → 403 Blocked**（即使 UA 完全合法）
   - **httpx 的 TLS 指紋不穩**（同一 client r/Taiwan 200、r/tifu 403）；改用 `requests` 後穩定
   - User-Agent 必須含具識別性的字串（含 username 或 project name），否則 403
-- `PublicJSONScraper.fetch_duplicates()` 在 public path 下回傳常為空集合
-  （endpoint 可呼叫但 Reddit 不返完整 crosspost 圖）→ M5 收藏追蹤強依賴 OAuth
+- `PublicJSONScraper.fetch_duplicates()` 在 public path 下回傳常為空集合 → M5 強依賴 OAuth
+- SQLite + `DateTime(timezone=True)` 不會強制 timezone，但 SQLAlchemy 會做 conversion；
+  testing 用 in-memory SQLite 沒問題
 
 ---
 
 ## 環境檢查（新 repo 初始化用）
 
 ```bash
-# 1. 建新 repo
-mkdir reddit_tracker && cd reddit_tracker
-git init
-uv init --python 3.11
+# 1. 安裝 / 同步依賴
+uv sync
 
-# 2. 加核心依賴
+# 2. 建 DB schema
+uv run alembic upgrade head
+
+# 3. 一次性 smoke（載 seeds + 跑一輪 discovery）
+uv run python scripts/m2_smoke.py
+
+# 4. 持續運轉（兩個 discovery job）
+uv run python -m reddit_tracker.scheduler
+
+# 5. （原始）核心依賴清單，僅供參考
 uv add praw python-telegram-bot anthropic apscheduler fastapi sqlalchemy alembic
 uv add --dev pytest pytest-asyncio
 

@@ -1,11 +1,14 @@
 [project]
 name = "reddit-tracker"
 version = "0.1.0"
-description = "Add your description here"
+description = "Reddit 素人爆文發現 / 追蹤 / 問答系統 — 學術專題 v4"
 requires-python = ">=3.11"
 dependencies = [
+    "alembic>=1.18.4",
+    "apscheduler>=3.11.2",
     "praw>=7.8.1",
     "pydantic>=2.13.4",
+    "pydantic-settings>=2.14.1",
     "python-dotenv>=1.2.2",
     "sqlalchemy>=2.0.49",
 ]
@@ -16,3 +19,8 @@ dev = [
     "pytest-asyncio>=1.3.0",
     "ruff>=0.15.13",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-ra"

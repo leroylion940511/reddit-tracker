@@ -48,6 +48,8 @@ def build_scraper(kind: str | None = None) -> RedditScraper:
         )
 
     if kind == "fake":
-        raise NotImplementedError("FakeScraper 在 M2.6 才實作")
+        from .fake import FakeScraper
+
+        return FakeScraper()
 
     raise ValueError(f"unknown REDDIT_SCRAPER={kind!r}")
