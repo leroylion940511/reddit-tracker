@@ -4,7 +4,7 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-05-14（專案剛 bootstrap，所有里程碑未啟動）
+**Last updated:** 2026-05-15（M1 部分完成，走 public JSON path 暫代 OAuth）
 
 ---
 
@@ -24,7 +24,7 @@
 
 | 里程碑 | 主題 | 狀態 | 備註 |
 |--------|------|------|------|
-| M1 | Reddit API 可行性驗證 | ❌ | 申請 OAuth app、PRAW hello world、確認 100 QPM 額度 |
+| M1 | Reddit API 可行性驗證 | 🟡 | OAuth 申請已送、審核中；public JSON path 已跑通連通性 / 預算驗證 |
 | M2 | 探索層 + DB 重構 | ❌ | Reddit schema、subreddit + keyword 雙 source、60 分鐘輪詢 |
 | M3 | 評分層接 Reddit | ❌ | 硬規則 / Haiku 五軸 / 加權；30 篇人工標記驗證 |
 | M4 | 候選排程 + 推送層 | ❌ | 每日 09:00 Top 5、inline button、即時破例 |
@@ -68,9 +68,31 @@
 
 ## 下一步（單一優先）
 
-**M1.1**：到 https://www.reddit.com/prefs/apps 註冊「personal use script」類型 app，取 `client_id` / `client_secret`，寫進新 repo 的 `.env`。
+**M2.1–2.4**：開始 schema 設計與 alembic migration。M1 OAuth 還在審，但已有 `PublicJSONScraper`
+跑得通的 fallback，M2/M3/M4 的開發不阻塞；OAuth 過了之後切 `REDDIT_SCRAPER=praw` 一行的事。
 
-完整 M1 任務清單見 `SCHEDULE.md`。
+完整任務清單見 `SCHEDULE.md`。
+
+### M1 現況（2026-05-15）
+
+- ✅ **M1.1 已送申請**（leroylion940511，academic / single-user / non-commercial 框架），等審
+- ✅ **M1.2–1.7 等價驗證已過** — 透過 `scripts/m1_hello.py` + `PublicJSONScraper` 跑通：
+  fetch_new / search / fetch_post / fetch_duplicates / fetch_user_submissions
+- ✅ **M1.8 預算試算**：subreddit 16×24 + keyword 20×4 + tracked 30×8 = **704 calls/day ≈ 0.49 QPM**
+  — PRAW 100 QPM 上限的 ~205× 餘裕、public JSON ~10 QPM 上限的 ~20× 餘裕，都遠超目標
+- ✅ **M1.9 / 1.10 seeds 完成**：`reddit_tracker/seeds/subreddit_list.py`（15 sub，5 中 + 10 英）、
+  `keyword_seeds.py`（20 詞，10 中 + 10 英）
+- ⏳ **M1.11 GO/NO-GO**：public JSON 條件下 **GO**（足以推進 M2–M4 開發）；
+  OAuth 通過後升級為完整 GO
+
+### 已知坑（M1 階段踩到的）
+
+- Reddit 對 unauthenticated 請求做 TLS / header 指紋偵測：
+  - **缺 `Accept-Language` header → 403 Blocked**（即使 UA 完全合法）
+  - **httpx 的 TLS 指紋不穩**（同一 client r/Taiwan 200、r/tifu 403）；改用 `requests` 後穩定
+  - User-Agent 必須含具識別性的字串（含 username 或 project name），否則 403
+- `PublicJSONScraper.fetch_duplicates()` 在 public path 下回傳常為空集合
+  （endpoint 可呼叫但 Reddit 不返完整 crosspost 圖）→ M5 收藏追蹤強依賴 OAuth
 
 ---
 
