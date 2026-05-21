@@ -20,8 +20,10 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 from .config import get_settings
 from .db import session_scope
+from .llm.factory import build_scorer
 from .scrapers.factory import build_scraper
 from .services.discovery import discover_from_keywords, discover_from_subreddits
+from .services.scoring import ScoringService, score_batch
 
 logger = logging.getLogger("scheduler")
 
@@ -64,6 +66,21 @@ def _close_scraper(scraper) -> None:
         close()
 
 
+def _run_scoring() -> None:
+    settings = get_settings()
+    service = ScoringService(scorer=build_scorer())
+    with session_scope() as session:
+        outcomes = score_batch(session, service, limit=settings.scoring_batch_limit)
+    total = len(outcomes)
+    passed_rules = sum(1 for o in outcomes if o.rules_passed)
+    tracked = sum(1 for o in outcomes if o.haiku_verdict == "track")
+    errors = sum(1 for o in outcomes if o.error)
+    logger.info(
+        "scoring done: scored=%d rules_passed=%d haiku_track=%d errors=%d",
+        total, passed_rules, tracked, errors,
+    )
+
+
 def build_scheduler() -> BlockingScheduler:
     settings = get_settings()
     sched = BlockingScheduler(timezone="UTC")
@@ -82,6 +99,15 @@ def build_scheduler() -> BlockingScheduler:
         trigger=IntervalTrigger(hours=settings.poll_keyword_hours),
         id="keyword_discovery",
         name="discover_from_keywords",
+        next_run_time=None,
+        max_instances=1,
+        coalesce=True,
+    )
+    sched.add_job(
+        _run_scoring,
+        trigger=IntervalTrigger(minutes=settings.scoring_minutes),
+        id="scoring",
+        name="score_unscored_candidates",
         next_run_time=None,
         max_instances=1,
         coalesce=True,
@@ -107,15 +133,17 @@ def main() -> int:
     signal.signal(signal.SIGTERM, _shutdown)
 
     logger.info(
-        "scheduler starting | subreddit every %d min | keyword every %d h | scraper=%s",
+        "scheduler starting | subreddit every %d min | keyword every %d h | scoring every %d min | scraper=%s",
         settings.poll_subreddit_minutes,
         settings.poll_keyword_hours,
+        settings.scoring_minutes,
         settings.reddit_scraper,
     )
     # 啟動時各跑一次 — 不然要等 60 分鐘才看到第一批資料
     logger.info("running initial pass...")
     _run_subreddit_discovery()
     _run_keyword_discovery()
+    _run_scoring()
 
     sched.start()
     return 0

@@ -1,0 +1,17 @@
+{
+  "n": 30,
+  "accuracy": 0.7333,
+  "precision_track": 0.5,
+  "recall_track": 0.875,
+  "f1_track": 0.6364,
+  "confusion": {
+    "tp": 7,
+    "tn": 15,
+    "fp": 7,
+    "fn": 1
+  },
+  "zh_n": 16,
+  "zh_acc": 0.6875,
+  "en_n": 14,
+  "en_acc": 0.7857
+}

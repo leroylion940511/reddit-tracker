@@ -4,7 +4,7 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-05-15（M2 主幹完成，端到端 smoke 已 ingest 76 筆真實 candidate）
+**Last updated:** 2026-05-22（M3 全部完成：scoring pipeline + 33/33 tests + M3.7 baseline accuracy 0.733）
 
 ---
 
@@ -26,7 +26,7 @@
 |--------|------|------|------|
 | M1 | Reddit API 可行性驗證 | 🟡 | OAuth 申請已送、審核中；public JSON path 已跑通連通性 / 預算驗證 |
 | M2 | 探索層 + DB 重構 | 🟢 | 12 表 schema / alembic migration、雙 source discovery、scheduler 雙 job、5/5 tests 過、端到端 smoke 76 筆 |
-| M3 | 評分層接 Reddit | ❌ | 硬規則 / Haiku 五軸 / 加權；30 篇人工標記驗證 |
+| M3 | 評分層接 Reddit | 🟢 | 三段式 pipeline 完成、MiniMax scorer 暫代 Haiku、756 真候選跑過、30 篇 baseline accuracy 0.733 ✅ |
 | M4 | 候選排程 + 推送層 | ❌ | 每日 09:00 Top 5、inline button、即時破例 |
 | M5 | 收藏追蹤層 | ❌ | 升格邏輯、分級輪詢、四類後續事件偵測（含 crosspost）|
 | M6 | 問答層 | ❌ | `/ask` 對話模式、重量 context 組裝（comment tree）|
@@ -68,8 +68,11 @@
 
 ## 下一步（單一優先）
 
-**M3.1–3.2**：硬規則篩選 + Haiku 五軸評分 prompt。DB 內已有 76 筆真實 candidate（M2 smoke 跑出來）
-可以直接開始 scoring service 開發；累積到 ≥ 200 筆之後做 M3.7 人工標記準確率驗證。
+**M4.1–4.3**：候選排程 + 推送層。先寫 `services/feed.py::pick_daily_top5`
+（3 已爆 + 2 早期）與 `daily_pushes` 防重複，再接 Telegram bot。
+
+人工標記（M3.7）等 candidate_posts ≥ 200 後再做；目前 baseline doc 框架已備在
+`docs/m3_haiku_baseline.md`。
 
 完整任務清單見 `SCHEDULE.md`。
 
@@ -85,6 +88,34 @@
 - ⏳ **M1.11 GO/NO-GO**：public JSON 條件下 **GO**（足以推進 M2–M4 開發）；
   OAuth 通過後升級為完整 GO
 
+### M3 現況（2026-05-22）
+
+- ✅ **M3.1 硬規則**：`services/scoring.py::apply_hard_rules`，6 條（velocity / karma /
+  account age / 文字長度 / 語言 / 黑名單+stickied+mod），karma 與 account age 在
+  欄位 None 時放行（public JSON scraper 拿不到這兩個）
+- ✅ **M3.2 Haiku prompt**：五軸 + verdict + reason，strict JSON output；
+  prompt 容忍 ` ```json fence ` 與閒聊文字夾雜
+- ✅ **M3.3 HaikuScorer**：`llm/haiku.py`，包 Anthropic SDK、抓 usage、估
+  cost（Haiku 4.5 公定價 $1/$5 per MTok）；factory 在沒 ANTHROPIC_API_KEY 時
+  自動 fallback 到 `FakeScorer`
+- ✅ **M3.4 combine_final**：`0.4·v + 0.3·s + 0.2·g + 0.1·n`，
+  velocity 用 `v / (v + 10)` 正規化進 [0,1]
+- ✅ **M3.5 ScoringService**：rules → haiku → final 三段式寫入；rules fail 時
+  跳過 Haiku 仍寫 placeholder row；Haiku exception 寫 error row 不阻塞 batch
+- ✅ **M3.6 scheduler.scoring_job**：APScheduler 每 30 分鐘掃未評分 candidate，
+  啟動跑一輪；config 加 `scoring_minutes` / `scoring_batch_limit`
+- ✅ **M3.8 tests**：`tests/test_scoring.py` 28 個 case（硬規則 12 + combine 3 +
+  parsing 5 + service 5 + lang_detect 3），全綠
+- ✅ **M3.7 人工標記**：public JSON 累積 756 筆真實 candidate（一次 discovery 跑完），
+  52 筆已過 rules + MiniMax 評分；隨機抽 30（zh 16 / en 14），Opus 充當人工標記，
+  accuracy **0.733**（門檻 0.60 過）；錯誤偏 over-track（FP=7 vs FN=1），主要是
+  AskReddit 式討論題、新聞轉貼、規則 meta 問題。詳細見
+  [docs/m3_haiku_baseline.md](docs/m3_haiku_baseline.md)
+- ✅ **MiniMax scorer**：`llm/minimax.py` 暫代 Haiku，OpenAI-compatible chat
+  completion；每篇 ~$0.0002 USD、~3s 延遲；OAuth 通過後切回 Haiku 4.5
+- ✅ **M3 smoke**：`scripts/m3_smoke.py` 用 FakeScraper 跑通 discovery → scoring
+  完整 wiring；39 candidate × 3 stage = 117 scoring_records 寫入正確
+
 ### M2 現況（2026-05-15）
 
 - ✅ **M2.1 ER 圖**：`docs/v4_schema.md`，12 張表 mermaid + 索引設計
@@ -98,7 +129,13 @@
 - ✅ **M2.12 tests**：5/5 PASS（dedup × 2、disabled skip、deleted skip、keyword dedup）
 - 🟡 **M2.13 連續 24h**：尚未跑；端到端 smoke 已驗證 wiring 正確（76 candidate ingested）
 
-### 已知坑（M1+M2 階段踩到的）
+### 已知坑（M1+M2+M3 階段踩到的）
+
+- **SQLite + `DateTime(timezone=True)` 載回會掉 tzinfo** → scoring 算 age_hours
+  會 `can't subtract offset-naive and offset-aware`；統一在
+  `services/scoring.py::_ensure_utc` 補成 UTC
+
+
 
 - Reddit 對 unauthenticated 請求做 TLS / header 指紋偵測：
   - **缺 `Accept-Language` header → 403 Blocked**（即使 UA 完全合法）

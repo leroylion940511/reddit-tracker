@@ -29,8 +29,12 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./reddit_tracker.db"
 
     # --- LLM (M3+) ---
-    llm_provider: str = "anthropic"
+    llm_provider: str = "anthropic"             # anthropic / minimax / fake
     anthropic_api_key: str | None = None
+
+    minimax_api_key: str | None = None
+    minimax_base_url: str = "https://api.minimaxi.chat/v1"
+    minimax_model: str = "MiniMax-Text-01"
 
     # --- Telegram (M4+) ---
     telegram_bot_token: str | None = None
@@ -41,6 +45,10 @@ class Settings(BaseSettings):
     poll_keyword_hours: int = 6
     discovery_per_sub_limit: int = 50         # /new 每 sub 抓多少
     discovery_per_keyword_limit: int = 50     # search 每詞抓多少
+
+    # --- Scoring 排程（M3）---
+    scoring_minutes: int = 30                 # 每 30 分鐘掃未評分 candidate
+    scoring_batch_limit: int = 50             # 單批最多評幾篇
 
     # --- Misc ---
     log_level: str = "INFO"

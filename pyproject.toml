@@ -5,6 +5,7 @@ description = "Reddit 素人爆文發現 / 追蹤 / 問答系統 — 學術專�
 requires-python = ">=3.11"
 dependencies = [
     "alembic>=1.18.4",
+    "anthropic>=0.103.1",
     "apscheduler>=3.11.2",
     "praw>=7.8.1",
     "pydantic>=2.13.4",
