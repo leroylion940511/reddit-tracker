@@ -4,7 +4,7 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-05-22（no-reddit-api 分支 P1–P4：public endpoint probe + comment_tree / enrichment 補齊 + 48/48 tests）
+**Last updated:** 2026-05-23（M4 完成 — scheduler + 真實 Telegram 端到端跑通，99/99 tests 全綠）
 
 > **本分支策略**：不申請 OAuth、不用 PRAW，全程走 public JSON endpoint。M1 probe
 > 實測 4 個 M5/M6 用得到的 endpoint（user_about / user_submitted / duplicates /
@@ -32,7 +32,7 @@
 | M1 | Reddit API 可行性驗證 | 🟢 | no-reddit-api 分支：public JSON path 跑通連通性、預算、4 endpoint probe；OAuth 不申請 |
 | M2 | 探索層 + DB 重構 | 🟢 | 12 表 schema / alembic migration、雙 source discovery、scheduler 雙 job、5/5 tests 過、端到端 smoke 76 筆 |
 | M3 | 評分層接 Reddit | 🟢 | 三段式 pipeline 完成、MiniMax scorer 暫代 Haiku、756 真候選跑過、30 篇 baseline accuracy 0.733 ✅ |
-| M4 | 候選排程 + 推送層 | ❌ | 每日 09:00 Top 5、inline button、即時破例 |
+| M4 | 候選排程 + 推送層 | 🟢 | feed.py + bot 全部接通 + scheduler 雙 job + 真 Telegram 端到端 (cand=241 收到推送、按 ❤️ 寫 feedback id=1) + 99 tests |
 | M5 | 收藏追蹤層 | ❌ | 升格邏輯、分級輪詢、四類後續事件偵測（含 crosspost）|
 | M6 | 問答層 | ❌ | `/ask` 對話模式、重量 context 組裝（comment tree）|
 | M7 | 評估與調優 | ❌ | 收藏率、後續命中率、中英 subreddit 對照 |
@@ -73,10 +73,9 @@
 
 ## 下一步（單一優先）
 
-**M4.1–4.3**：候選排程 + 推送層。先寫 `services/feed.py::pick_daily_top5`
-（3 已爆 + 2 早期）與 `daily_pushes` 防重複，再接 Telegram bot。
-
-完整任務清單見 `SCHEDULE.md`。
+**M5.1–5.2**：收藏追蹤層。`feedback.action='collect'` 升格 → 建 `tracked_posts`
+row、`polling_tier='hot'`；改寫 `services/polling.py` 用分級輪詢（0–24h: 15min /
+1–7d: 1h / 7–30d: 6h）抓 post snapshot。完整任務清單見 `SCHEDULE.md`。
 
 ### M1 現況（2026-05-22，no-reddit-api 分支結算）
 
@@ -94,6 +93,61 @@
   `keyword_seeds.py`（20 詞，10 中 + 10 英）
 - ✅ **M1.11 GO**：public JSON 條件下足以完整推進 M2–M6（含 crosspost、author profile、
   comment tree、重量問答 context），不需 OAuth
+
+### M4 現況（2026-05-23）
+
+- ✅ **M4.7 scheduler.py 雙 job**：`daily_push_job` CronTrigger 01:00 UTC (=09:00 Asia/Taipei)
+  + `breaking_check_job` IntervalTrigger 10 分鐘；兩者共用 `_deliver_picks_sync`
+  做 sync→async 橋接（`asyncio.run` + `telegram.Bot(token)` lazy import）；缺
+  TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID 自動 graceful skip 不阻塞 dev
+- ✅ **M4.8 真 Telegram 端到端**：`scripts/m4_smoke.py` 跑 cand=241
+  (r/ChineseLanguage, 520 那則) → pick_daily_top5 picked 1 → record_pushes
+  inserted 1 → deliver_picks sent 1 → DailyPush.pushed_at 寫入；接著啟動 bot
+  polling，使用者按 ❤️ → feedback.id=1 寫入 (user=8555056364, cand=241, action=collect)；
+  edit_message_text 把按鈕清掉並附「已收藏」尾註成功
+- ✅ **`scripts/m4_capture_chat_id.py`**：跑短時 long polling 抓 chat_id，
+  解掉「沒有 chat_id 就無法啟動 push」的雞先蛋先問題
+- 🐛 **Markdown→HTML 轉換**：第一次發送遇到 `Can't parse entities` (title 含特殊
+  字)；切到 HTML parse mode 後穩定（escape 集合 `< > &` 比 Markdown 小、更可控）
+- ✅ **新指令骨架** (`bot/app.py`)：/start /help 上線；/feed /saved /ask /exit
+  /digest /timeline /settings 為 deferred stub；CallbackQueryHandler(pattern='^fb:')
+  捕捉所有三按鈕
+
+### M4 現況（2026-05-23，bot 骨架）
+
+- ✅ **M4.4 bot/formatter.py**：純函式 `format_push_message(pick) → (markdown, InlineKeyboardMarkup)`；
+  header 依 push_type 變化（🔥 已爆貼 / ⚡ 早期下注 / 🚨 即時破例）；callback_data 編
+  `fb:<c|d|m>:<candidate_id>`，靠單字節 action 留 64-byte buffer
+- ✅ **M4.5 bot/handlers.feedback_callback**：解析 callback_data → `asyncio.to_thread`
+  橋接到 sync `services/feedback.record_feedback`（在 sqlite 上跑）→ 回 query.answer
+  + edit_message_text 把按鈕清掉。冪等：同 (user, candidate, action) 三元組只寫一筆，
+  第二次觸發回 duplicate=True 在 reply 文字加「先前已收到」尾註
+- ✅ **bot/sender.py deliver_picks**：每送出一篇就把對應 DailyPush.pushed_at 補
+  UTC now；失敗單篇不阻塞 batch
+- ✅ **bot/app.py**：build_application 註冊 /start /help + 7 個 deferred stub 指令
+  + CallbackQueryHandler(pattern='^fb:')；缺 TELEGRAM_BOT_TOKEN 才會 raise
+- ✅ **29 tests**：`tests/test_bot_formatter.py` 17 個（encode/decode 邊界、各 push_type
+  header、可選欄位缺漏、Markdown 逃逸）+ `tests/test_bot_handlers.py` 12 個
+  （5 個 sync record_feedback + 7 個 async callback，AsyncMock + patch）
+
+### M4 現況（2026-05-23, 早）
+
+- ✅ **M4.1 pick_daily_top5**：`services/feed.py`，過去 24h 內 final.passed=True
+  的候選池分桶 — already_hot（age ≥ 6h，velocity 大→小取 3）+ early_bet
+  （age < 3h，semantic = (story+emotional)/2 大→小取 2）；中間 3–6h 的灰帶刻意
+  落空；缺額不補（兩桶各 1 篇就回傳 2 筆，不會湊滿 5）
+- ✅ **M4.2 check_breaking**：age < 1h + velocity 在當前候選池 top 1% 門檻
+  + verdict='track' + semantic > 0.85；小樣本（< 100）下 top 1% 退化為「最高 1 筆」；
+  讀 `daily_pushes` 算當日已 breaking 筆數扣除剩餘配額（預設 2）；同篇今日已被推
+  （任何 push_type）不再 breaking 重推
+- ✅ **M4.3 record_pushes**：用 (push_date, candidate_post_id) UniqueConstraint
+  防重複 — 預先 SELECT 已存在的 candidate id + 同批 picks 內 dedup，回傳
+  PushWriteStat(inserted, skipped_dupe)；`pushed_at` 留 None 給 bot 那層真正送出時回寫
+- ✅ **19 tests**：`tests/test_feed.py` — pool 過濾 / 桶分配 / age 邊界 / breaking
+  各條件 / daily cap / dedup（DB 既存 + 同批次）全綠
+- 🐛 **順手修**：`services/scoring.py::score_batch` 加 `now` 參數轉發給
+  `score_candidate`，否則 `test_score_batch_handles_mixed_outcomes` 在 wall-clock
+  跨日後會失敗（posted_at 寫死 NOW、batch 用 real clock）
 
 ### M3 現況（2026-05-22）
 

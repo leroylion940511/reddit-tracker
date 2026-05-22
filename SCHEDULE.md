@@ -66,14 +66,14 @@
 **前置**：M3 final_score 可算
 **完成判準**：每日 09:00 推 5 篇到 Telegram，破例觸發即時推送，按鈕回寫 feedback
 
-- [ ] 4.1 寫 `services/feed.py::pick_daily_top5`：過去 24h 候選池選 3 已爆（age ≥ 6h, velocity rank top 3）+ 2 早期（age < 3h, semantic rank top 2）
-- [ ] 4.2 寫 `services/feed.py::check_breaking`：即時破例條件（age < 1h, velocity top 1%, haiku=track, semantic > 0.85），每日上限 2
-- [ ] 4.3 daily_pushes 寫入流程 + 防重複（同 candidate 不重推）
-- [ ] 4.4 寫 `bot/handlers.py` 推送訊息格式器：subreddit + 互動數 + karma + Opus 摘要 + 三按鈕
-- [ ] 4.5 inline button callback：❤️→feedback.action='collect'、👎→'dislike'、🔕→'mute_author'
-- [ ] 4.6 bot 指令：`/feed`、`/digest`、`/settings`（先做骨架，settings 內容後續補）
-- [ ] 4.7 接 `scheduler.py`：`daily_push_job` 每日 09:00、`breaking_check_job` 每 10 分鐘
-- [ ] 4.8 端到端測：fake scraper → discovery → scoring → daily push 訊息真的出現在 Telegram
+- [x] 4.1 寫 `services/feed.py::pick_daily_top5`：過去 24h 候選池選 3 已爆（age ≥ 6h, velocity rank top 3）+ 2 早期（age < 3h, semantic rank top 2）
+- [x] 4.2 寫 `services/feed.py::check_breaking`：即時破例條件（age < 1h, velocity top 1%, haiku=track, semantic > 0.85），每日上限 2
+- [x] 4.3 daily_pushes 寫入流程 + 防重複（同 candidate 不重推）
+- [x] 4.4 寫 `bot/formatter.py` 推送訊息格式器：subreddit + 互動數 + karma + 摘要佔位 + 三按鈕（Opus 摘要 M5/M6 再灌進來）
+- [x] 4.5 inline button callback：❤️→feedback.action='collect'、👎→'dislike'、🔕→'mute_author'（含冪等寫入 + asyncio.to_thread bridge）
+- [~] 4.6 bot 指令：`/feed`、`/digest`、`/settings` — 骨架（deferred stub）+ `/start` `/help` 上線；實際內容 M5 / M6 再填
+- [x] 4.7 接 `scheduler.py`：`daily_push_job`（CronTrigger 01:00 UTC = 09:00 Asia/Taipei）、`breaking_check_job`（IntervalTrigger 10 分鐘）；asyncio.run 橋接 sync→async；缺 token / chat_id graceful skip
+- [x] 4.8 端到端：真實 candidate (cand=241, r/ChineseLanguage) → pick_daily_top5 → record_pushes → deliver_picks 在 Telegram 收到、按 ❤️ 寫進 feedback id=1
 
 ---
 

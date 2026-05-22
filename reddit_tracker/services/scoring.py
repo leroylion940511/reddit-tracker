@@ -383,13 +383,14 @@ def score_batch(
     service: ScoringService,
     *,
     limit: int = 50,
+    now: datetime | None = None,
 ) -> list[ScoringOutcome]:
     """掃一批未評分的 candidate，逐筆走 ScoringService。"""
     posts = fetch_unscored(session, limit=limit)
     outcomes: list[ScoringOutcome] = []
     for p in posts:
         try:
-            outcomes.append(service.score_candidate(session, p))
+            outcomes.append(service.score_candidate(session, p, now=now))
         except Exception as e:  # noqa: BLE001
             logger.exception("score_candidate(%s) hard fail", p.id)
             outcomes.append(

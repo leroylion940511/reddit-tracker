@@ -352,7 +352,7 @@ def test_score_batch_handles_mixed_outcomes(session):
     _persist_post(session, _make_post(rid="ok2", age_hours=12.0))
 
     svc = ScoringService(scorer=FakeScorer())
-    outcomes = score_batch(session, svc, limit=10)
+    outcomes = score_batch(session, svc, limit=10, now=NOW)
     assert len(outcomes) == 3
     # 兩篇過、一篇 rules fail
     assert sum(1 for o in outcomes if o.rules_passed) == 2

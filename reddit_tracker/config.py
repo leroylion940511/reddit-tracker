@@ -56,6 +56,12 @@ class Settings(BaseSettings):
     scoring_minutes: int = 30                 # 每 30 分鐘掃未評分 candidate
     scoring_batch_limit: int = 50             # 單批最多評幾篇
 
+    # --- Push 排程（M4）---
+    # 預設 01:00 UTC = 09:00 Asia/Taipei
+    daily_push_hour_utc: int = 1
+    daily_push_minute_utc: int = 0
+    breaking_check_minutes: int = 10
+
     # --- Misc ---
     log_level: str = "INFO"
 
