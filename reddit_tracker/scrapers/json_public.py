@@ -1,27 +1,40 @@
-"""Public JSON endpoint scraper — 不需要 OAuth。
+"""Public JSON endpoint scraper — no-reddit-api 路線的唯一實作。
 
-Reddit 的 `<url>.json` 後綴對未認證請求仍可用，速率限制大約 10 req/min（per IP），
-TOS 允許 personal use。本實作是 OAuth 申請等待期間的暫代方案；介面與 PRAWScraper
-一致，OAuth 過了之後 factory 切換即可。
+Reddit 的 `<url>.json` 後綴對未認證請求可用，速率限制大約 10 req/min（per IP），
+TOS 允許 personal / academic use。M1 probe 實測結果見
+`docs/m1_public_endpoints_probe.md`：
 
-限制：
-- duplicates / user submissions：endpoint 存在但 Reddit 對未認證請求有時 403。
-  失敗時記 warning 並回 []（不 raise），讓上層在 OAuth 通過前能優雅降級。
-- author_karma / upvote_ratio：欄位多數能拿到，但偶有 null。
+| endpoint                       | success_rate | 備註 |
+| ------------------------------ | ------------ | ---- |
+| /r/<sub>/new.json              | 100%         | 主軸 discovery |
+| /comments/<id>.json            | 100%         | 樹深 10 / 500 cap，MoreComments 0/9 樣本中皆為 0 |
+| /r/<sub>/search.json           | 視 sub       | r/AmItheAsshole 200；r/tifu 403（疑似 NSFW 旗標）|
+| /user/<name>/about.json        | 83%          | 偶有 403（shadowban / deleted）|
+| /user/<name>/submitted.json    | 100%         | M5 author_followup |
+| /duplicates/<id>.json          | 67%          | 偶有 403（疑似 NSFW / quarantine）|
+| /search.json (all-reddit)      | **0%**       | 一律 403，不可用 |
+
+設計取捨：
+- 失敗（403 / 404）一律記 debug log + 回 None / []，不 raise，讓上層 ingest 不中斷
+- HTTP 429 / 503 是 throttle 訊號 → raise RateLimited，由呼叫端決定退避
+- author_about 做 24h LRU cache，同 username 一天只打一次
 """
 
 from __future__ import annotations
 
 import logging
 import time
+from datetime import datetime, timezone
 from typing import Any
 
 import requests
 from requests.exceptions import HTTPError
 
 from .base import (
+    CommentNode,
     PostPayload,
     RedditScraper,
+    UserProfile,
     _detect_deleted,
     _parse_created_utc,
 )
@@ -49,6 +62,7 @@ class PublicJSONScraper(RedditScraper):
         user_agent: str,
         min_interval_seconds: float = 6.5,
         timeout: float = 15.0,
+        user_about_cache_ttl: float = 86400.0,
     ) -> None:
         if not user_agent or "reddit_tracker" not in user_agent:
             raise ValueError(
@@ -69,6 +83,8 @@ class PublicJSONScraper(RedditScraper):
         self._timeout = timeout
         self._min_interval = min_interval_seconds
         self._last_request_at: float = 0.0
+        self._user_about_cache: dict[str, tuple[float, UserProfile | None]] = {}
+        self._user_about_cache_ttl = user_about_cache_ttl
 
     # ------------------------------------------------------------------
     # RedditScraper interface
@@ -116,13 +132,9 @@ class PublicJSONScraper(RedditScraper):
         try:
             data = self._get_json(f"/duplicates/{post_id}.json")
         except HTTPError as e:
-            logger.warning(
-                "fetch_duplicates 失敗 (post_id=%s, status=%s)；"
-                "public JSON endpoint 對 duplicates 有時限制，"
-                "等 OAuth 過了用 PRAWScraper 才穩定支援",
-                post_id,
-                e.response.status_code if e.response is not None else "?",
-            )
+            status = e.response.status_code if e.response is not None else None
+            # probe 數據：dups endpoint 偶發 403（疑似 NSFW / quarantine）；不算錯誤
+            logger.debug("fetch_duplicates(post_id=%s) status=%s, treat as empty", post_id, status)
             return []
         # duplicates response 結構：[original_listing, duplicates_listing]
         if not isinstance(data, list) or len(data) < 2:
@@ -136,13 +148,83 @@ class PublicJSONScraper(RedditScraper):
                 params={"limit": limit, "sort": "new"},
             )
         except HTTPError as e:
-            logger.warning(
-                "fetch_user_submissions 失敗 (user=%s, status=%s)",
-                username,
-                e.response.status_code if e.response is not None else "?",
-            )
+            status = e.response.status_code if e.response is not None else None
+            logger.debug("fetch_user_submissions(user=%s) status=%s, treat as empty",
+                         username, status)
             return []
         return self._parse_listing(data)
+
+    def fetch_user_about(self, username: str) -> UserProfile | None:
+        """`/user/<name>/about.json` — 拿 link_karma + comment_karma + created_utc。
+
+        對同一 username 在 `user_about_cache_ttl` 秒內只打一次 endpoint。
+        負面結果（None）也會 cache，避免對 shadowbanned 帳號重複試。
+        """
+        now = time.monotonic()
+        cached = self._user_about_cache.get(username)
+        if cached and (now - cached[0]) < self._user_about_cache_ttl:
+            return cached[1]
+
+        try:
+            data = self._get_json(f"/user/{username}/about.json")
+        except HTTPError as e:
+            status = e.response.status_code if e.response is not None else None
+            logger.debug("fetch_user_about(%s) status=%s, treat as missing", username, status)
+            self._user_about_cache[username] = (now, None)
+            return None
+
+        if not isinstance(data, dict):
+            self._user_about_cache[username] = (now, None)
+            return None
+        d = (data.get("data") or {})
+        created_ts = d.get("created_utc")
+        profile = UserProfile(
+            username=username,
+            link_karma=_safe_int(d.get("link_karma")),
+            comment_karma=_safe_int(d.get("comment_karma")),
+            created_utc=(
+                datetime.fromtimestamp(float(created_ts), tz=timezone.utc)
+                if created_ts is not None
+                else None
+            ),
+        )
+        self._user_about_cache[username] = (now, profile)
+        return profile
+
+    def fetch_comment_tree(
+        self, post_id: str, *, limit: int = 500, depth: int = 10
+    ) -> list[CommentNode]:
+        """`/comments/<id>.json?limit=L&depth=D` — 拿留言樹並攤平成扁平 list。
+
+        Reddit 回 [submission_listing, comments_listing]；只關心後者。
+        submission.author 從 listing 0 拿，用於標記 is_submitter。
+        """
+        try:
+            data = self._get_json(
+                f"/comments/{post_id}.json",
+                params={"limit": limit, "depth": depth},
+            )
+        except HTTPError as e:
+            status = e.response.status_code if e.response is not None else None
+            logger.debug("fetch_comment_tree(%s) status=%s, treat as empty",
+                         post_id, status)
+            return []
+        if not isinstance(data, list) or len(data) < 2:
+            return []
+
+        # 從 submission listing 拿 author（用於標 is_submitter）
+        submitter = None
+        sub_children = data[0].get("data", {}).get("children", []) if isinstance(data[0], dict) else []
+        if sub_children:
+            d = sub_children[0].get("data") or {}
+            submitter = d.get("author") if d.get("author") != "[deleted]" else None
+
+        # 攤平
+        comment_children = data[1].get("data", {}).get("children", []) if isinstance(data[1], dict) else []
+        flat: list[CommentNode] = []
+        _flatten_comments(comment_children, parent_id=f"t3_{post_id}",
+                          submitter=submitter, depth=0, out=flat)
+        return flat
 
     # ------------------------------------------------------------------
     # internals
@@ -221,3 +303,77 @@ def _safe_float(v: Any) -> float | None:
         return float(v) if v is not None else None
     except (TypeError, ValueError):
         return None
+
+
+def _safe_int(v: Any) -> int | None:
+    try:
+        return int(v) if v is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _flatten_comments(
+    children: list,
+    *,
+    parent_id: str,
+    submitter: str | None,
+    depth: int,
+    out: list[CommentNode],
+) -> None:
+    """Reddit comment listing → flatten 成 CommentNode list（DFS pre-order）。
+
+    `parent_id` 對最上層是 t3_<post>，對巢狀回覆是上一層 t1_<comment>。
+    `kind=more` 節點轉為 placeholder，記下 omitted_count 給上層提示 "more shown" 用。
+    """
+    for c in children:
+        if not isinstance(c, dict):
+            continue
+        kind = c.get("kind")
+        d = c.get("data") or {}
+        if kind == "more":
+            out.append(
+                CommentNode(
+                    comment_id=d.get("id", ""),
+                    parent_id=parent_id,
+                    author=None,
+                    body="",
+                    score=0,
+                    created_utc=datetime.fromtimestamp(0, tz=timezone.utc),
+                    depth=depth,
+                    is_submitter=False,
+                    is_more_placeholder=True,
+                    omitted_count=_safe_int(d.get("count")) or 0,
+                )
+            )
+            continue
+        if kind != "t1":
+            continue
+        author = d.get("author")
+        if author == "[deleted]":
+            author = None
+        try:
+            created = _parse_created_utc(float(d.get("created_utc", 0)))
+        except (TypeError, ValueError):
+            created = datetime.fromtimestamp(0, tz=timezone.utc)
+        cid = d.get("id", "")
+        out.append(
+            CommentNode(
+                comment_id=cid,
+                parent_id=parent_id,
+                author=author,
+                body=d.get("body") or "",
+                score=_safe_int(d.get("score")) or 0,
+                created_utc=created,
+                depth=depth,
+                is_submitter=bool(submitter and author == submitter),
+            )
+        )
+        replies = d.get("replies")
+        if isinstance(replies, dict):
+            _flatten_comments(
+                replies.get("data", {}).get("children", []),
+                parent_id=f"t1_{cid}",
+                submitter=submitter,
+                depth=depth + 1,
+                out=out,
+            )

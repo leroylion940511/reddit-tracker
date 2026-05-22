@@ -12,7 +12,7 @@ import hashlib
 import logging
 from datetime import datetime, timedelta, timezone
 
-from .base import PostPayload, RedditScraper
+from .base import CommentNode, PostPayload, RedditScraper, UserProfile
 
 logger = logging.getLogger(__name__)
 
@@ -146,3 +146,56 @@ class FakeScraper(RedditScraper):
         matched = [p for p in self._corpus if p.author == username]
         matched.sort(key=lambda p: p.created_utc, reverse=True)
         return matched[:limit]
+
+    def fetch_user_about(self, username: str) -> UserProfile | None:
+        # 以 corpus 內任一篇取作者欄位，karma 用 hash 派生確保穩定
+        any_post = next((p for p in self._corpus if p.author == username), None)
+        if any_post is None:
+            return None
+        h = sum(ord(c) for c in username)
+        return UserProfile(
+            username=username,
+            link_karma=any_post.author_karma or (h * 13 % 5000),
+            comment_karma=h * 7 % 3000,
+            created_utc=datetime(2020, 1, 1, tzinfo=timezone.utc),
+        )
+
+    def fetch_comment_tree(
+        self, post_id: str, *, limit: int = 500, depth: int = 10
+    ) -> list[CommentNode]:
+        anchor = self._by_id.get(post_id)
+        if not anchor:
+            return []
+        # 用 num_comments 上限造一棵小樹：top-level N 筆，其中 1/3 帶一條子回覆
+        n_top = min(int(anchor.num_comments), 6)
+        out: list[CommentNode] = []
+        now = datetime.now(timezone.utc)
+        for i in range(n_top):
+            cid = f"fk{post_id[-3:]}{i:02d}"
+            is_op_reply = (i % 3 == 0) and anchor.author is not None
+            out.append(
+                CommentNode(
+                    comment_id=cid,
+                    parent_id=f"t3_{post_id}",
+                    author=anchor.author if is_op_reply else f"replier_{i}",
+                    body=f"fake top-level reply #{i} on {post_id}",
+                    score=10 + i * 3,
+                    created_utc=now - timedelta(minutes=15 * i),
+                    depth=0,
+                    is_submitter=is_op_reply,
+                )
+            )
+            if i % 3 == 0 and i < depth:
+                out.append(
+                    CommentNode(
+                        comment_id=f"{cid}r0",
+                        parent_id=f"t1_{cid}",
+                        author=f"deep_replier_{i}",
+                        body=f"fake nested reply under #{i}",
+                        score=2 + i,
+                        created_utc=now - timedelta(minutes=15 * i + 5),
+                        depth=1,
+                        is_submitter=False,
+                    )
+                )
+        return out

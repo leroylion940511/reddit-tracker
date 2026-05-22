@@ -1,8 +1,21 @@
 # Reddit 素人爆文發現、追蹤與問答系統 — 專題企劃書 v4
 
+> **🔀 no-reddit-api 分支補充（2026-05-22）**
+> 本分支不申請 OAuth、不裝 PRAW，全程走 **Reddit public JSON endpoint**（`<url>.json` 形式）。
+> M1 endpoint probe 顯示 user_about / user_submitted / duplicates / comments 四個 M5/M6 用得到的 endpoint 在公開路徑下成功率 67–100%（見 [docs/m1_public_endpoints_probe.md](docs/m1_public_endpoints_probe.md)），足以完整支援企劃書所有功能。
+> 受影響項目：
+> - §三 技術選型表「Reddit API + PRAW 7.x」→ 改為 **Reddit public JSON endpoint + requests**
+> - §五 SQL 註解提到 PRAW 物件處 → 改為 public JSON dict
+> - §八 速率：PRAW 100 QPM → public JSON ~9 QPM（min_interval 6.5s），對應 §四 探索層 polling 頻率
+>   調整：subreddit 60min → 90min、keyword 6h → 12h
+> - §九 風險一補充：public path 比 OAuth 更易被 TLS / header 指紋偵測，已於 `PublicJSONScraper` 內處理（requests + Accept-Language）
+> - 留言層 `submission.duplicates()` / `submission.comments.list()` 等 PRAW 語法 → 由 `scrapers/json_public.py::fetch_comment_tree` + `services/comment_tree.py` 取代
+>
+> 命題與三段式互動模型（探索 → 推送 → 收藏追蹤 → 問答）完全不變。
+
 > **v4 與 v3 的核心差異**
 > v3 立基於 Threads + Apify Scraper，成本實測落在 $246/月，且仍受 Threads 公開搜尋的 cookie 認證風險。
-> v4 改採 **Reddit 官方 API（PRAW）** 作為主資料來源，每月成本估 $15–25（降幅約 90%），且資料抓取合規性大幅優於第三方 scraper。
+> v4 改採 **Reddit 公開資料**作為主資料來源，每月成本估 $15–25（降幅約 90%），且資料抓取合規性大幅優於第三方 scraper。
 > 平台改變的同時，**核心命題與三段式互動模型（探索 → 推送 → 收藏追蹤 → 問答）一律沿用 v3**，已寫好的評分層 / DB schema 大架構繼續用，僅替換資料來源與抽取邏輯。
 
 ---

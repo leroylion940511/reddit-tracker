@@ -41,10 +41,16 @@ class Settings(BaseSettings):
     telegram_chat_id: str | None = None
 
     # --- Discovery 排程 ---
-    poll_subreddit_minutes: int = 60
-    poll_keyword_hours: int = 6
-    discovery_per_sub_limit: int = 50         # /new 每 sub 抓多少
-    discovery_per_keyword_limit: int = 50     # search 每詞抓多少
+    # 預設值對 public JSON (~10 QPM) 已校準；OAuth 過了可手動下調 interval。
+    poll_subreddit_minutes: int = 90
+    poll_keyword_hours: int = 12
+    discovery_per_sub_limit: int = 30         # /new 每 sub 抓多少
+    discovery_per_keyword_limit: int = 30     # search 每詞抓多少
+
+    # --- Scraper (public JSON) 速率 ---
+    # PublicJSONScraper 對單一連線的最小請求間隔；預設 6.5s ≈ 9 QPM，
+    # 留 buffer 對 Reddit ~10 QPM 限制。OAuth (PRAW) 路徑會忽略此值。
+    public_json_min_interval_seconds: float = 6.5
 
     # --- Scoring 排程（M3）---
     scoring_minutes: int = 30                 # 每 30 分鐘掃未評分 candidate

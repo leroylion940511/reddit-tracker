@@ -172,3 +172,54 @@ def test_keyword_discovery_dedupes_and_tracks_yield(seeded_session):
     seeded_session.commit()
     assert sum(s.inserted for s in stats2) == 0
     assert sum(s.skipped_dupe for s in stats2) >= 1
+
+
+def test_keyword_search_is_per_sub_not_all_reddit(seeded_session):
+    """fan-out 路徑：keyword 不再呼叫 subreddit='all'，而是每個 enabled sub
+    各搜一次（restrict_sr=on）。"""
+
+    class _RecordingScraper(FakeScraper):
+        def __init__(self):
+            super().__init__(corpus=[])
+            self.calls: list[tuple[str, str]] = []
+
+        def search(self, query, subreddit="all", time_filter="day", limit=50):
+            self.calls.append((query, subreddit))
+            return []
+
+    rec = _RecordingScraper()
+    discover_from_keywords(seeded_session, rec, per_keyword_limit=5)
+
+    # 沒有任何 call 帶 subreddit='all'
+    assert all(sub != "all" for _q, sub in rec.calls), \
+        f"keyword discovery 不該打 all-reddit search；calls={rec.calls[:5]}"
+    # 中文 keyword 不會打到 en-only sub（lang filter）
+    update_calls = [sub for q, sub in rec.calls if q == "更新"]
+    # subreddit_list.py 內 r/AmItheAsshole / r/tifu 等是 en
+    assert "AmItheAsshole" not in update_calls
+    assert "tifu" not in update_calls
+    # zh keyword 至少有打到 zh sub
+    assert any(sub in ("Taiwan", "HongKong", "China_irl", "taipei") for sub in update_calls)
+
+
+def test_keyword_search_skips_failing_sub(seeded_session):
+    """單一 sub 搜尋失敗（例：403）不阻塞其他 sub。"""
+
+    class _PartialFailScraper(FakeScraper):
+        def __init__(self):
+            super().__init__(corpus=[_make_payload("hit_zh", sub="Taiwan",
+                                                    title="後續：colleague 自爆")])
+
+        def search(self, query, subreddit="all", time_filter="day", limit=50):
+            if subreddit.lower() == "hongkong":
+                raise RuntimeError("simulated 403")
+            return super().search(query, subreddit=subreddit,
+                                  time_filter=time_filter, limit=limit)
+
+    stats = discover_from_keywords(seeded_session, _PartialFailScraper(),
+                                   per_keyword_limit=10)
+    seeded_session.commit()
+
+    # 仍應有命中（'後續' seed 在 r/Taiwan 命中）
+    assert any(s.inserted > 0 for s in stats), \
+        f"failing sub 不該阻塞其他 sub，stats={stats}"

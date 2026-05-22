@@ -24,12 +24,19 @@ def build_scraper(kind: str | None = None) -> RedditScraper:
     user_agent = os.getenv("REDDIT_USER_AGENT", "reddit_tracker/0.1 by unknown")
 
     if kind == "public_json":
+        # 從 settings 拿 throttle；測試 / scripts 沒 .env 時 fallback 預設
+        try:
+            from ..config import get_settings
+            interval = get_settings().public_json_min_interval_seconds
+        except Exception:  # noqa: BLE001
+            interval = 6.5
         logger.info(
-            "Using PublicJSONScraper (no OAuth). "
-            "M5 收藏追蹤的 duplicates / user_submissions 在這條路徑下不穩定，"
-            "正式運轉前請切到 REDDIT_SCRAPER=praw"
+            "Using PublicJSONScraper (no OAuth, min_interval=%.1fs). "
+            "M5 duplicates / user_submissions 走 public path 多數可用，"
+            "詳見 docs/m1_public_endpoints_probe.md",
+            interval,
         )
-        return PublicJSONScraper(user_agent=user_agent)
+        return PublicJSONScraper(user_agent=user_agent, min_interval_seconds=interval)
 
     if kind == "praw":
         from .praw_oauth import PRAWScraper  # 延後 import — 避免 OAuth 還沒過時誤觸

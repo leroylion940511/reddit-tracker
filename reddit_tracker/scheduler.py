@@ -23,7 +23,8 @@ from .db import session_scope
 from .llm.factory import build_scorer
 from .scrapers.factory import build_scraper
 from .services.discovery import discover_from_keywords, discover_from_subreddits
-from .services.scoring import ScoringService, score_batch
+from .services.enrichment import enrich_author_profiles
+from .services.scoring import ScoringService, fetch_unscored, score_batch
 
 logger = logging.getLogger("scheduler")
 
@@ -69,8 +70,14 @@ def _close_scraper(scraper) -> None:
 def _run_scoring() -> None:
     settings = get_settings()
     service = ScoringService(scorer=build_scorer())
+    scraper = build_scraper()
     with session_scope() as session:
+        # 先補 author_karma / account_created_utc，硬規則才不會無條件放行
+        batch = fetch_unscored(session, limit=settings.scoring_batch_limit)
+        if batch:
+            enrich_author_profiles(session, scraper, batch)
         outcomes = score_batch(session, service, limit=settings.scoring_batch_limit)
+    _close_scraper(scraper)
     total = len(outcomes)
     passed_rules = sum(1 for o in outcomes if o.rules_passed)
     tracked = sum(1 for o in outcomes if o.haiku_verdict == "track")

@@ -8,10 +8,10 @@
 ## M1 — Reddit API 可行性驗證（阻塞所有後續）
 
 **前置**：無
-**完成判準**：拿到 OAuth credentials、PRAW 跑通 /new + search + duplicates 三個 API、確認 100 QPM 內可達成每日吞吐目標
+**完成判準**（no-reddit-api 分支版）：public JSON path 跑通 /new + search + duplicates 三個 endpoint、確認 ~9 QPM 預算內可達成每日吞吐目標
 
-- [x] 1.1 到 https://www.reddit.com/prefs/apps 註冊「personal use script」app，取 `client_id` / `client_secret`，寫進 `.env`
-- [x] 1.2 安裝 PRAW (`uv add praw`)，寫 `scripts/m1_praw_hello.py` 驗證 `reddit.read_only` 連得上
+- [~] 1.1 ~~註冊 OAuth app~~ → no-reddit-api 分支取消申請；走 public JSON
+- [x] 1.2 寫 `scripts/m1_hello.py` 透過 `PublicJSONScraper` 驗證連通性（M1.2–1.7 等價）
 - [x] 1.3 試 `reddit.subreddit("Taiwan").new(limit=50)`，確認回貼文 + 欄位齊（id, title, selftext, author, score, num_comments, created_utc, permalink, upvote_ratio）
 - [x] 1.4 試 `reddit.subreddit("all").search("update", time_filter="day", limit=50)` 跑跨 sub 關鍵字搜尋
 - [x] 1.5 試 `submission.duplicates()` 拿 crosspost（找一個熱門 submission ID 驗）
@@ -33,14 +33,14 @@
 - [x] 2.2 寫 `models.py`：candidate_posts（含 subreddit, author_karma, upvote_ratio）+ 其餘 9 張表
 - [x] 2.3 alembic init + 第一個 migration（10 表 + 索引）
 - [x] 2.4 `alembic upgrade head` 驗證；空 DB schema OK
-- [x] 2.5 寫 `scrapers/reddit.py::RedditScraper`：PRAW 包一層，吐統一的 `PostPayload` dataclass（沿用 v3 介面）
+- [x] 2.5 寫 `scrapers/json_public.py::PublicJSONScraper`：public JSON endpoint 包一層，吐統一的 `PostPayload` dataclass（沿用 v3 介面）
 - [x] 2.6 寫 `scrapers/fake.py`：fixture-based fake scraper，吐預設 50 筆假 Reddit 資料供測試
 - [x] 2.7 寫 `scrapers/factory.py`：依環境變數切 real / fake
 - [x] 2.8 寫 `seeds/subreddit_list.py` + `seeds/keyword_seeds.py` + `seeds/loader.py`（冪等寫入 DB）
 - [x] 2.9 寫 `services/discovery.py::discover_from_subreddits`：批次掃 sub /new → 寫 `candidate_posts`（reddit_post_id UNIQUE 去重）+ 更新 `subreddit_sources` 統計
 - [x] 2.10 寫 `services/discovery.py::discover_from_keywords`：跨 sub 搜尋 → 寫 candidate（同 dedup）
 - [x] 2.11 寫 `scheduler.py`：`subreddit_discovery_job`（IntervalTrigger 60min）+ `keyword_discovery_job`（IntervalTrigger 6h）
-- [x] 2.12 `tests/test_discovery.py`：sub /new dedup、keyword dedup、disabled source、stat update、PRAW deleted 貼文處理
+- [x] 2.12 `tests/test_discovery.py`：sub /new dedup、keyword dedup、disabled source、stat update、deleted 貼文處理（public JSON `_detect_deleted`）
 - [ ] 2.13 連續跑 24h，目標累積 ≥ 200 筆 candidate 作為 M3 評分驗證的料
 
 ---

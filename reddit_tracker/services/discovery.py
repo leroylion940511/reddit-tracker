@@ -82,44 +82,101 @@ def discover_from_subreddits(
 # ---------------------------------------------------------------------------
 
 
+def _lang_compatible(seed_lang: str | None, sub_lang_hint: str | None) -> bool:
+    """zh seed → zh / mixed / None sub；en seed → en / mixed / None sub。
+
+    無 lang 資訊（None / 'mixed'）兩邊都通行，避免過度限縮。
+    """
+    if not seed_lang or seed_lang == "mixed":
+        return True
+    if not sub_lang_hint or sub_lang_hint == "mixed":
+        return True
+    return seed_lang == sub_lang_hint
+
+
 def discover_from_keywords(
     session: Session,
     scraper: RedditScraper,
     *,
-    per_keyword_limit: int = 50,
+    per_keyword_limit: int = 30,
     time_filter: str = "day",
     skip_deleted: bool = True,
 ) -> list[DiscoveryStat]:
+    """Keyword discovery — 對每個 seed 在 lang-compatible enabled subs 內
+    `restrict_sr=on` 搜尋（fan-out）。
+
+    為何不打 all-reddit search？
+        Public JSON 的 `/search.json` 對 unauthenticated 一律 403（M1 probe
+        實測）。OAuth path 才能搜全站。fan-out 到「我們已知關心的 subs」
+        雖然失去 `r/legaladvice` 之類未追蹤 sub 的覆蓋，但保留 keyword 撈
+        「同 sub /new 已被淘汰的舊文」的價值，且每個 (seed, sub) 失敗不影響
+        其他組合。
+
+    回傳：每個 keyword 一筆 aggregated DiscoveryStat（fetched / inserted /
+    dupe / deleted 跨所有 sub 加總）。
+    """
     seeds = session.scalars(
         select(KeywordSeed).where(KeywordSeed.enabled == True)  # noqa: E712
     ).all()
+    subs = session.scalars(
+        select(SubredditSource).where(SubredditSource.enabled == True)  # noqa: E712
+    ).all()
+
     if not seeds:
         logger.warning("沒有 enabled 的 keyword_seeds — 跑過 seeds.loader 了嗎？")
+        return []
+    if not subs:
+        logger.warning("沒有 enabled 的 subreddit_sources，keyword discovery 無 sub 可打")
         return []
 
     stats: list[DiscoveryStat] = []
     for seed in seeds:
-        try:
-            payloads = scraper.search(
-                seed.keyword,
-                subreddit="all",
-                time_filter=time_filter,
-                limit=per_keyword_limit,
-            )
-        except Exception as e:  # noqa: BLE001
-            logger.error("search(%s) 失敗: %s", seed.keyword, e)
-            continue
-
-        stat = _ingest_payloads(
-            session,
-            payloads,
-            discovery_source=f"keyword:{seed.keyword}",
-            skip_deleted=skip_deleted,
-            lang_hint=seed.lang,
+        agg = DiscoveryStat(
+            source=f"keyword:{seed.keyword}",
+            fetched=0,
+            inserted=0,
+            skipped_deleted=0,
+            skipped_dupe=0,
         )
+        searched_subs = 0
+        for sub in subs:
+            if not _lang_compatible(seed.lang, sub.lang_hint):
+                continue
+            try:
+                payloads = scraper.search(
+                    seed.keyword,
+                    subreddit=sub.name,
+                    time_filter=time_filter,
+                    limit=per_keyword_limit,
+                )
+            except Exception as e:  # noqa: BLE001 — 該 sub 壞掉不阻塞其他
+                logger.warning(
+                    "search(seed=%s, sub=%s) 失敗: %s",
+                    seed.keyword, sub.name, e,
+                )
+                continue
+            searched_subs += 1
+            sub_stat = _ingest_payloads(
+                session,
+                payloads,
+                discovery_source=f"keyword:{seed.keyword}",
+                skip_deleted=skip_deleted,
+                lang_hint=sub.lang_hint or seed.lang,
+            )
+            agg.fetched += sub_stat.fetched
+            agg.inserted += sub_stat.inserted
+            agg.skipped_deleted += sub_stat.skipped_deleted
+            agg.skipped_dupe += sub_stat.skipped_dupe
+
         seed.last_polled_at = datetime.now(timezone.utc)
-        seed.total_candidates_yielded += stat.yielded
-        stats.append(stat)
+        seed.total_candidates_yielded += agg.yielded
+        logger.info(
+            "keyword '%s' fan-out: searched_subs=%d fetched=%d inserted=%d "
+            "dupe=%d deleted=%d",
+            seed.keyword, searched_subs, agg.fetched, agg.inserted,
+            agg.skipped_dupe, agg.skipped_deleted,
+        )
+        stats.append(agg)
 
     session.flush()
     return stats

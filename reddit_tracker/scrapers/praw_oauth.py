@@ -16,7 +16,14 @@ from datetime import datetime, timezone
 
 import praw  # type: ignore[import-untyped]
 
-from .base import PostPayload, RedditScraper, _detect_deleted
+from .base import (
+    CommentNode,
+    PostPayload,
+    RedditScraper,
+    UserProfile,
+    _detect_deleted,
+    _parse_created_utc,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +92,57 @@ class PRAWScraper(RedditScraper):
         except Exception as e:  # noqa: BLE001
             logger.warning("fetch_user_submissions(%s) 失敗: %s", username, e)
             return []
+
+    def fetch_user_about(self, username: str) -> UserProfile | None:
+        try:
+            r = self._reddit.redditor(username)
+            return UserProfile(
+                username=username,
+                link_karma=int(r.link_karma) if r.link_karma is not None else None,
+                comment_karma=int(r.comment_karma) if r.comment_karma is not None else None,
+                created_utc=datetime.fromtimestamp(r.created_utc, tz=timezone.utc),
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.warning("fetch_user_about(%s) 失敗: %s", username, e)
+            return None
+
+    def fetch_comment_tree(
+        self, post_id: str, *, limit: int = 500, depth: int = 10
+    ) -> list[CommentNode]:
+        try:
+            sub = self._reddit.submission(id=post_id)
+            sub.comment_limit = limit
+            sub.comments.replace_more(limit=0)
+            submitter = sub.author.name if sub.author else None
+            out: list[CommentNode] = []
+            _walk_praw_forest(sub.comments, submitter=submitter, depth=0,
+                              parent_id=f"t3_{post_id}", out=out, max_depth=depth)
+            return out
+        except Exception as e:  # noqa: BLE001
+            logger.warning("fetch_comment_tree(%s) 失敗: %s", post_id, e)
+            return []
+
+
+def _walk_praw_forest(forest, *, submitter, depth, parent_id, out, max_depth):
+    if depth > max_depth:
+        return
+    for c in forest:
+        author = c.author.name if c.author else None
+        out.append(
+            CommentNode(
+                comment_id=c.id,
+                parent_id=parent_id,
+                author=author,
+                body=c.body or "",
+                score=int(c.score),
+                created_utc=_parse_created_utc(c.created_utc),
+                depth=depth,
+                is_submitter=bool(submitter and author == submitter),
+            )
+        )
+        if hasattr(c, "replies"):
+            _walk_praw_forest(c.replies, submitter=submitter, depth=depth + 1,
+                              parent_id=f"t1_{c.id}", out=out, max_depth=max_depth)
 
 
 def _submission_to_payload(sub) -> PostPayload:

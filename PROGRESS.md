@@ -4,7 +4,12 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-05-22（M3 全部完成：scoring pipeline + 33/33 tests + M3.7 baseline accuracy 0.733）
+**Last updated:** 2026-05-22（no-reddit-api 分支 P1–P4：public endpoint probe + comment_tree / enrichment 補齊 + 48/48 tests）
+
+> **本分支策略**：不申請 OAuth、不用 PRAW，全程走 public JSON endpoint。M1 probe
+> 實測 4 個 M5/M6 用得到的 endpoint（user_about / user_submitted / duplicates /
+> comments）皆 80%+ 成功率，詳見 [docs/m1_public_endpoints_probe.md](docs/m1_public_endpoints_probe.md)。
+> `praw_oauth.py` 暫保留為對照實作，factory 預設只走 `public_json`。
 
 ---
 
@@ -12,8 +17,8 @@
 
 前身為 Threads Tracker (v1–v3)。v3 進行到 M3 主幹完成後，重新評估發現 Threads 資料源（Apify Scraper）月成本 $246、且公開搜尋的 cookie 認證風險長期難解。決定整個改建到 Reddit：
 
-- 官方 API（PRAW）免費，月成本估 $15–36，降幅 ~90%
-- 留言原生樹狀結構，crosspost 一行 API 即可拿——v3 在 Threads 上 quote 抓不到的問題消失
+- Reddit 資料免費（no-reddit-api 分支走 public JSON endpoint，月成本估 $15–36，降幅 ~90%）
+- 留言原生樹狀結構，crosspost 一行 endpoint 即可拿——v3 在 Threads 上 quote 抓不到的問題消失
 - Subreddit 是天然主題容器，比關鍵字搜尋更穩定
 
 研究命題與三段式互動（探索 → 推送 → 收藏追蹤 → 問答）完全沿用。
@@ -24,7 +29,7 @@
 
 | 里程碑 | 主題 | 狀態 | 備註 |
 |--------|------|------|------|
-| M1 | Reddit API 可行性驗證 | 🟡 | OAuth 申請已送、審核中；public JSON path 已跑通連通性 / 預算驗證 |
+| M1 | Reddit API 可行性驗證 | 🟢 | no-reddit-api 分支：public JSON path 跑通連通性、預算、4 endpoint probe；OAuth 不申請 |
 | M2 | 探索層 + DB 重構 | 🟢 | 12 表 schema / alembic migration、雙 source discovery、scheduler 雙 job、5/5 tests 過、端到端 smoke 76 筆 |
 | M3 | 評分層接 Reddit | 🟢 | 三段式 pipeline 完成、MiniMax scorer 暫代 Haiku、756 真候選跑過、30 篇 baseline accuracy 0.733 ✅ |
 | M4 | 候選排程 + 推送層 | ❌ | 每日 09:00 Top 5、inline button、即時破例 |
@@ -54,11 +59,11 @@
 
 | 模組 | 原因 |
 |------|------|
-| `scrapers/apify.py` `watcher.py` `factory.py` | 整個刪掉，改寫 `scrapers/reddit.py`（PRAW wrapper） |
+| `scrapers/apify.py` `watcher.py` `factory.py` | 整個刪掉，改寫 `scrapers/json_public.py`（無 OAuth public JSON wrapper） |
 | `models.py` | schema 大改：`reddit_post_id`、`subreddit`、`author_karma`、`upvote_ratio`；新增 `subreddit_sources` 表 |
 | `alembic/versions/*` | 重生 migration |
 | `services/discovery.py` | 主軸由 keyword 改為 subreddit /new，keyword 降為輔助 |
-| `services/detection.py` | 改用 PRAW comment tree + submission.duplicates() |
+| `services/detection.py` | 改用 public JSON comment tree（`services/comment_tree.py`）+ /duplicates/ endpoint |
 | `seeds/*` | 新增 subreddit 名單 + 中英文雙 keyword 種子池 |
 | `tests/test_discovery.py` `test_smoke.py` | 跟著 schema 改 |
 
@@ -71,22 +76,24 @@
 **M4.1–4.3**：候選排程 + 推送層。先寫 `services/feed.py::pick_daily_top5`
 （3 已爆 + 2 早期）與 `daily_pushes` 防重複，再接 Telegram bot。
 
-人工標記（M3.7）等 candidate_posts ≥ 200 後再做；目前 baseline doc 框架已備在
-`docs/m3_haiku_baseline.md`。
-
 完整任務清單見 `SCHEDULE.md`。
 
-### M1 現況（2026-05-15）
+### M1 現況（2026-05-22，no-reddit-api 分支結算）
 
-- ✅ **M1.1 已送申請**（leroylion940511，academic / single-user / non-commercial 框架），等審
+- 🚫 **OAuth 申請取消**：本分支不申請、不用 PRAW；走 public JSON path
 - ✅ **M1.2–1.7 等價驗證已過** — 透過 `scripts/m1_hello.py` + `PublicJSONScraper` 跑通：
   fetch_new / search / fetch_post / fetch_duplicates / fetch_user_submissions
-- ✅ **M1.8 預算試算**：subreddit 16×24 + keyword 20×4 + tracked 30×8 = **704 calls/day ≈ 0.49 QPM**
-  — PRAW 100 QPM 上限的 ~205× 餘裕、public JSON ~10 QPM 上限的 ~20× 餘裕，都遠超目標
+- ✅ **M1 endpoint probe**：`scripts/m1_public_endpoints_probe.py` 對 4 個 M5/M6
+  關鍵 endpoint 各 6–9 樣本，user_about 83% / user_submitted 100% /
+  duplicates 67% / comments 100%（樹深 10 / 500 cap，MoreComments 比例 0%）。
+  另確認 `/search.json` (all-reddit) **一律 403**，keyword discovery 須 per-sub
+  `restrict_sr=on` 才會通。詳見 [docs/m1_public_endpoints_probe.md](docs/m1_public_endpoints_probe.md)
+- ✅ **M1.8 預算試算**：subreddit 14×16 + keyword 20×2 + tracked 30×8 + scoring
+  about-lookup ≈ 600 calls/day ≈ 0.4 QPM — public JSON ~10 QPM 餘裕 25×
 - ✅ **M1.9 / 1.10 seeds 完成**：`reddit_tracker/seeds/subreddit_list.py`（15 sub，5 中 + 10 英）、
   `keyword_seeds.py`（20 詞，10 中 + 10 英）
-- ⏳ **M1.11 GO/NO-GO**：public JSON 條件下 **GO**（足以推進 M2–M4 開發）；
-  OAuth 通過後升級為完整 GO
+- ✅ **M1.11 GO**：public JSON 條件下足以完整推進 M2–M6（含 crosspost、author profile、
+  comment tree、重量問答 context），不需 OAuth
 
 ### M3 現況（2026-05-22）
 
@@ -112,7 +119,7 @@
   AskReddit 式討論題、新聞轉貼、規則 meta 問題。詳細見
   [docs/m3_haiku_baseline.md](docs/m3_haiku_baseline.md)
 - ✅ **MiniMax scorer**：`llm/minimax.py` 暫代 Haiku，OpenAI-compatible chat
-  completion；每篇 ~$0.0002 USD、~3s 延遲；OAuth 通過後切回 Haiku 4.5
+  completion；每篇 ~$0.0002 USD、~3s 延遲；若有 ANTHROPIC_API_KEY 可隨時切回 Haiku 4.5
 - ✅ **M3 smoke**：`scripts/m3_smoke.py` 用 FakeScraper 跑通 discovery → scoring
   完整 wiring；39 candidate × 3 stage = 117 scoring_records 寫入正確
 
@@ -141,7 +148,11 @@
   - **缺 `Accept-Language` header → 403 Blocked**（即使 UA 完全合法）
   - **httpx 的 TLS 指紋不穩**（同一 client r/Taiwan 200、r/tifu 403）；改用 `requests` 後穩定
   - User-Agent 必須含具識別性的字串（含 username 或 project name），否則 403
-- `PublicJSONScraper.fetch_duplicates()` 在 public path 下回傳常為空集合 → M5 強依賴 OAuth
+- `PublicJSONScraper.fetch_duplicates()` 早期觀察「常為空」其實是樣本太新（r/new 抓的）；
+  改抓 `num_crossposts > 0` 的 post 後實測 67% 成功率，count 與 endpoint 回的 dups 數一致。
+  M5 crosspost 偵測可走 public path，但需容忍偶發 403（NSFW / quarantine）
+- `/search.json`（all-reddit）對未認證請求 403。`services/discovery.py::discover_from_keywords`
+  已改為對每個 lang-compatible enabled subreddit 各做 `restrict_sr=on` 搜尋的 fan-out 模式
 - SQLite + `DateTime(timezone=True)` 不會強制 timezone，但 SQLAlchemy 會做 conversion；
   testing 用 in-memory SQLite 沒問題
 
@@ -162,14 +173,11 @@ uv run python scripts/m2_smoke.py
 # 4. 持續運轉（兩個 discovery job）
 uv run python -m reddit_tracker.scheduler
 
-# 5. （原始）核心依賴清單，僅供參考
-uv add praw python-telegram-bot anthropic apscheduler fastapi sqlalchemy alembic
-uv add --dev pytest pytest-asyncio
+# 5. 連通性 / 預算驗證
+uv run python scripts/m1_hello.py
 
-# 3. 把這資料夾的 5 個 .md 移進新 repo 根目錄
-
-# 4. PRAW 連線測試（M1.2）
-uv run python -c "import praw; r = praw.Reddit(client_id='...', client_secret='...', user_agent='reddit_tracker/0.1 by <你的 Reddit username>'); print(r.read_only)"
+# 6. M5/M6 用得到的 endpoint 可行性驗證（一次跑完約 2 分鐘）
+uv run python scripts/m1_public_endpoints_probe.py
 ```
 
 ---
@@ -195,7 +203,7 @@ uv run python -c "import praw; r = praw.Reddit(client_id='...', client_secret='.
 - **每日推送 5 篇 = 3 已爆 + 2 早期**：固定配比，可由 config 調整
 - **問答 context 比 v3 肥 50%**：Reddit comment tree 樹狀且更長，重量 context 預估 12k–45k input tokens（v3 是 8k–35k）
 - **個位數使用者共用同一份每日推送**：先不做個人化
-- **PRAW QPM 控制**：保持 < 60 QPM（保留 buffer，hard limit 是 100）
+- **Public JSON QPM 控制**：保持 < 9 QPM（PublicJSONScraper 預設 min_interval 6.5s ≈ 9 QPM；Reddit unauthenticated hard limit ~10 QPM）
 
 ---
 
@@ -204,5 +212,5 @@ uv run python -c "import praw; r = praw.Reddit(client_id='...', client_secret='.
 - Reddit API 政策變動（2023 Apollo 事件 precedent）— M1 註冊時選對類型即可，但長期需留意
 - 中文 subreddit 樣本量不足（每日 50–100 篇）→ 英文 sub 作為主要樣本
 - 重量 context 問答 token 成本（預估 $0.15/次）— M6 實測
-- PRAW 對 deleted / removed 貼文的處理（content = `[deleted]` / `[removed]`）需在 scraper 層判斷
+- Public JSON 對 deleted / removed 貼文的處理（content = `[deleted]` / `[removed]`）已在 `scrapers/base.py::_detect_deleted` 統一判斷
 - 沒有推播 retry / rate limit 處理（沿用 v3 待補）
