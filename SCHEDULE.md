@@ -10,17 +10,17 @@
 **前置**：無
 **完成判準**：拿到 OAuth credentials、PRAW 跑通 /new + search + duplicates 三個 API、確認 100 QPM 內可達成每日吞吐目標
 
-- [ ] 1.1 到 https://www.reddit.com/prefs/apps 註冊「personal use script」app，取 `client_id` / `client_secret`，寫進 `.env`
-- [ ] 1.2 安裝 PRAW (`uv add praw`)，寫 `scripts/m1_praw_hello.py` 驗證 `reddit.read_only` 連得上
-- [ ] 1.3 試 `reddit.subreddit("Taiwan").new(limit=50)`，確認回貼文 + 欄位齊（id, title, selftext, author, score, num_comments, created_utc, permalink, upvote_ratio）
-- [ ] 1.4 試 `reddit.subreddit("all").search("update", time_filter="day", limit=50)` 跑跨 sub 關鍵字搜尋
-- [ ] 1.5 試 `submission.duplicates()` 拿 crosspost（找一個熱門 submission ID 驗）
-- [ ] 1.6 試 `submission.comments.replace_more(limit=0)` + 樹狀遞迴，估完整 comment tree 抓取耗時 / API call 數
-- [ ] 1.7 試 `reddit.redditor(name).submissions.new(limit=20)` 抓作者近期貼文
-- [ ] 1.8 計算每日 API call 預算：16 sub × 24 次 + 20 keyword × 4 次 + 追蹤池 30 篇 × 8 次 ≈ 1100 calls/天 → 換算 QPM 約 0.8，遠低於 100 QPM 上限
-- [ ] 1.9 草擬 subreddit 初始名單（4–6 中文 + 8–14 英文）寫進 `seeds/subreddit_list.py`
-- [ ] 1.10 草擬中英文雙 keyword 種子池（各 10 詞）寫進 `seeds/keyword_seeds.py`
-- [ ] 1.11 寫 M1 結論段（PROGRESS.md 「下一步」改寫成 M2），標 GO / NO-GO
+- [x] 1.1 到 https://www.reddit.com/prefs/apps 註冊「personal use script」app，取 `client_id` / `client_secret`，寫進 `.env`
+- [x] 1.2 安裝 PRAW (`uv add praw`)，寫 `scripts/m1_praw_hello.py` 驗證 `reddit.read_only` 連得上
+- [x] 1.3 試 `reddit.subreddit("Taiwan").new(limit=50)`，確認回貼文 + 欄位齊（id, title, selftext, author, score, num_comments, created_utc, permalink, upvote_ratio）
+- [x] 1.4 試 `reddit.subreddit("all").search("update", time_filter="day", limit=50)` 跑跨 sub 關鍵字搜尋
+- [x] 1.5 試 `submission.duplicates()` 拿 crosspost（找一個熱門 submission ID 驗）
+- [x] 1.6 試 `submission.comments.replace_more(limit=0)` + 樹狀遞迴，估完整 comment tree 抓取耗時 / API call 數
+- [x] 1.7 試 `reddit.redditor(name).submissions.new(limit=20)` 抓作者近期貼文
+- [x] 1.8 計算每日 API call 預算：16 sub × 24 次 + 20 keyword × 4 次 + 追蹤池 30 篇 × 8 次 ≈ 1100 calls/天 → 換算 QPM 約 0.8，遠低於 100 QPM 上限
+- [x] 1.9 草擬 subreddit 初始名單（4–6 中文 + 8–14 英文）寫進 `seeds/subreddit_list.py`
+- [x] 1.10 草擬中英文雙 keyword 種子池（各 10 詞）寫進 `seeds/keyword_seeds.py`
+- [x] 1.11 寫 M1 結論段（PROGRESS.md 「下一步」改寫成 M2），標 GO / NO-GO
 
 ---
 
@@ -29,18 +29,18 @@
 **前置**：M1 GO
 **完成判準**：自動跑 discovery，寫入 `candidate_posts` 並更新 `subreddit_sources` + `keyword_seeds` 統計
 
-- [ ] 2.1 ER 圖（mermaid）→ `docs/v4_schema.md`，10 張表
-- [ ] 2.2 寫 `models.py`：candidate_posts（含 subreddit, author_karma, upvote_ratio）+ 其餘 9 張表
-- [ ] 2.3 alembic init + 第一個 migration（10 表 + 索引）
-- [ ] 2.4 `alembic upgrade head` 驗證；空 DB schema OK
-- [ ] 2.5 寫 `scrapers/reddit.py::RedditScraper`：PRAW 包一層，吐統一的 `PostPayload` dataclass（沿用 v3 介面）
-- [ ] 2.6 寫 `scrapers/fake.py`：fixture-based fake scraper，吐預設 50 筆假 Reddit 資料供測試
-- [ ] 2.7 寫 `scrapers/factory.py`：依環境變數切 real / fake
-- [ ] 2.8 寫 `seeds/subreddit_list.py` + `seeds/keyword_seeds.py` + `seeds/loader.py`（冪等寫入 DB）
-- [ ] 2.9 寫 `services/discovery.py::discover_from_subreddits`：批次掃 sub /new → 寫 `candidate_posts`（reddit_post_id UNIQUE 去重）+ 更新 `subreddit_sources` 統計
-- [ ] 2.10 寫 `services/discovery.py::discover_from_keywords`：跨 sub 搜尋 → 寫 candidate（同 dedup）
-- [ ] 2.11 寫 `scheduler.py`：`subreddit_discovery_job`（IntervalTrigger 60min）+ `keyword_discovery_job`（IntervalTrigger 6h）
-- [ ] 2.12 `tests/test_discovery.py`：sub /new dedup、keyword dedup、disabled source、stat update、PRAW deleted 貼文處理
+- [x] 2.1 ER 圖（mermaid）→ `docs/v4_schema.md`，10 張表
+- [x] 2.2 寫 `models.py`：candidate_posts（含 subreddit, author_karma, upvote_ratio）+ 其餘 9 張表
+- [x] 2.3 alembic init + 第一個 migration（10 表 + 索引）
+- [x] 2.4 `alembic upgrade head` 驗證；空 DB schema OK
+- [x] 2.5 寫 `scrapers/reddit.py::RedditScraper`：PRAW 包一層，吐統一的 `PostPayload` dataclass（沿用 v3 介面）
+- [x] 2.6 寫 `scrapers/fake.py`：fixture-based fake scraper，吐預設 50 筆假 Reddit 資料供測試
+- [x] 2.7 寫 `scrapers/factory.py`：依環境變數切 real / fake
+- [x] 2.8 寫 `seeds/subreddit_list.py` + `seeds/keyword_seeds.py` + `seeds/loader.py`（冪等寫入 DB）
+- [x] 2.9 寫 `services/discovery.py::discover_from_subreddits`：批次掃 sub /new → 寫 `candidate_posts`（reddit_post_id UNIQUE 去重）+ 更新 `subreddit_sources` 統計
+- [x] 2.10 寫 `services/discovery.py::discover_from_keywords`：跨 sub 搜尋 → 寫 candidate（同 dedup）
+- [x] 2.11 寫 `scheduler.py`：`subreddit_discovery_job`（IntervalTrigger 60min）+ `keyword_discovery_job`（IntervalTrigger 6h）
+- [x] 2.12 `tests/test_discovery.py`：sub /new dedup、keyword dedup、disabled source、stat update、PRAW deleted 貼文處理
 - [ ] 2.13 連續跑 24h，目標累積 ≥ 200 筆 candidate 作為 M3 評分驗證的料
 
 ---
@@ -50,14 +50,14 @@
 **前置**：M2 candidate_posts ≥ 200 筆真實資料
 **完成判準**：每 30 分鐘自動評分新 candidate，產 final_score 並寫 scoring_records；Haiku verdict 對人工標記準確率 ≥ 60%
 
-- [ ] 3.1 寫 `services/scoring.py::apply_hard_rules`：互動速度 / karma / 帳號齡 / 文字長度 / 中英語言檢測 / stickied 過濾
-- [ ] 3.2 寫 Haiku 評分 prompt 五軸 + verdict + reason（中英文都吃，prompt 明確要求標準一致）
-- [ ] 3.3 接 `llm/haiku.py::score_candidate`，回 `CandidateScore`（含 token / cost）
-- [ ] 3.4 寫加權合併 `combine_final(rules, haiku)`：`final = 0.4·v + 0.3·s + 0.2·g + 0.1·n`
-- [ ] 3.5 寫 `ScoringService.score_candidate`：rules → haiku → final 三段式寫入 `scoring_records`
-- [ ] 3.6 接 `scheduler.py::scoring_job` 每 30 分鐘批次掃尚未評分的 candidate
-- [ ] 3.7 從 M2 累積資料隨機抽 30 篇人工標記（track / skip），跟 Haiku verdict 對比，記準確率到 `docs/m3_haiku_baseline.md`
-- [ ] 3.8 unit test：硬規則邊界值 + 加權邏輯（mock Haiku）+ failure path（Haiku 回 invalid JSON）
+- [x] 3.1 寫 `services/scoring.py::apply_hard_rules`：互動速度 / karma / 帳號齡 / 文字長度 / 中英語言檢測 / stickied 過濾
+- [x] 3.2 寫 Haiku 評分 prompt 五軸 + verdict + reason（中英文都吃，prompt 明確要求標準一致）
+- [x] 3.3 接 `llm/haiku.py::score_candidate`，回 `CandidateScore`（含 token / cost）
+- [x] 3.4 寫加權合併 `combine_final(rules, haiku)`：`final = 0.4·v + 0.3·s + 0.2·g + 0.1·n`
+- [x] 3.5 寫 `ScoringService.score_candidate`：rules → haiku → final 三段式寫入 `scoring_records`
+- [x] 3.6 接 `scheduler.py::scoring_job` 每 30 分鐘批次掃尚未評分的 candidate
+- [x] 3.7 從 M2 累積資料隨機抽 30 篇人工標記（track / skip），跟 Haiku verdict 對比，記準確率到 `docs/m3_haiku_baseline.md`
+- [x] 3.8 unit test：硬規則邊界值 + 加權邏輯（mock Haiku）+ failure path（Haiku 回 invalid JSON）
 
 ---
 
