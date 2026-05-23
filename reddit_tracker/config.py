@@ -62,6 +62,19 @@ class Settings(BaseSettings):
     daily_push_minute_utc: int = 0
     breaking_check_minutes: int = 10
 
+    # --- Tracked polling 排程（M5）---
+    # select_due_posts 自己按 tier 過濾，這個 interval 只是『多久檢查一次有沒有 due』
+    # 設成 15 分鐘以對齊 tier='hot' 的最細頻率即可。
+    polling_minutes: int = 15
+
+    # --- Detection 排程（M5.3–5.6）---
+    # 比 snapshot 重（一篇 tracked 一輪要打 3 個 endpoint），預設 60 分鐘
+    detection_minutes: int = 60
+
+    # --- Milestone push 排程（M5.8）---
+    # 騎 breaking_check 同節奏即可
+    milestone_check_minutes: int = 10
+
     # --- Misc ---
     log_level: str = "INFO"
 

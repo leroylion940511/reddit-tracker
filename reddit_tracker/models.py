@@ -201,6 +201,12 @@ class PostSnapshot(Base):
 
 class RelatedPost(Base):
     __tablename__ = "related_posts"
+    __table_args__ = (
+        UniqueConstraint(
+            "tracked_post_id", "relation_type", "reddit_post_id",
+            name="uq_related_post_triple",
+        ),
+    )
 
     id: Mapped[int] = big_pk()
     tracked_post_id: Mapped[int] = big_fk("tracked_posts.id")
@@ -211,6 +217,7 @@ class RelatedPost(Base):
     content: Mapped[str | None] = mapped_column(Text)
     posted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     discovered_at: Mapped[datetime] = utc_now()
+    notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     tracked: Mapped[TrackedPost] = relationship(back_populates="related")
 

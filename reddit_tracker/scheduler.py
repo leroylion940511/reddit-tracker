@@ -26,7 +26,13 @@ from .llm.factory import build_scorer
 from .scrapers.factory import build_scraper
 from .services.discovery import discover_from_keywords, discover_from_subreddits
 from .services.enrichment import enrich_author_profiles
+from .services.detection import detect_for_tracked
 from .services.feed import check_breaking, pick_daily_top5, record_pushes
+from .services.notification import (
+    build_daily_digest,
+    fetch_pending_milestones,
+)
+from .services.polling import ACTIVE_STATUS, run_polling
 from .services.scoring import ScoringService, fetch_unscored, score_batch
 
 logger = logging.getLogger("scheduler")
@@ -129,6 +135,16 @@ def _run_daily_push() -> None:
         len(picks), stat.inserted, stat.skipped_dupe, sent, failed,
     )
 
+    # M5.8 — 在每日推送之後接著送 digest
+    with session_scope() as session:
+        digest_entries = build_daily_digest(session, push_date=push_date, now=now)
+    if digest_entries:
+        d_sent, d_marked = _deliver_digest_sync(digest_entries)
+        logger.info(
+            "daily_digest: trackeds=%d sent=%d related_marked=%d",
+            len(digest_entries), d_sent, d_marked,
+        )
+
 
 def _run_breaking_check() -> None:
     """每 10 分鐘檢查破例條件。"""
@@ -150,6 +166,144 @@ def _run_breaking_check() -> None:
         "breaking: picked=%d inserted=%d dupe=%d sent=%d failed=%d",
         len(picks), stat.inserted, stat.skipped_dupe, sent, failed,
     )
+
+
+def _run_polling() -> None:
+    """M5.2：每 N 分鐘掃 tracked_posts 看誰 due，跑 capture_snapshot。"""
+    scraper = build_scraper()
+    with session_scope() as session:
+        stat = run_polling(session, scraper)
+    _close_scraper(scraper)
+    if stat.total_due == 0:
+        logger.debug("polling: 沒有 due 的 tracked_post")
+        return
+    logger.info(
+        "polling done: due=%d captured=%d archived=%d errors=%d",
+        stat.total_due, stat.captured, stat.archived, stat.errors,
+    )
+
+
+def _run_detection() -> None:
+    """M5.3–M5.7：對所有 active tracked_post 跑四類偵測。
+
+    比 polling 重一個量級（3 endpoints/篇），預設 60 分鐘一次。
+    """
+    from sqlalchemy import select
+
+    from .models import TrackedPost
+
+    scraper = build_scraper()
+    total = 0
+    inserted = 0
+    milestones = 0
+    with session_scope() as session:
+        actives = session.scalars(
+            select(TrackedPost).where(TrackedPost.status == ACTIVE_STATUS)
+        ).all()
+        total = len(actives)
+        for tp in actives:
+            try:
+                stat = detect_for_tracked(session, scraper, tp)
+                inserted += stat.inserted
+                milestones += stat.milestones
+            except Exception as e:  # noqa: BLE001
+                logger.error("detection tracked=%d failed: %s", tp.id, e)
+    _close_scraper(scraper)
+    if total == 0:
+        logger.debug("detection: 無 active tracked_post")
+        return
+    logger.info(
+        "detection done: active=%d inserted=%d milestones=%d",
+        total, inserted, milestones,
+    )
+
+
+def _deliver_milestones_sync(pendings) -> tuple[int, int]:
+    """sync-to-async：在 BlockingScheduler thread 內 asyncio.run sender。"""
+    settings = get_settings()
+    ready = _telegram_ready(settings)
+    if ready is None or not pendings:
+        return (0, 0)
+    token, chat_id = ready
+    from telegram import Bot
+
+    from .bot.related_sender import deliver_milestones
+    from .db import session_scope as _scope
+
+    async def _go() -> tuple[int, int]:
+        bot = Bot(token=token)
+        async with bot:
+            with _scope() as s:
+                # rebind ORM rows to this fresh session 以便 mark_notified 寫 notified_at
+                from sqlalchemy import select as _sel
+
+                from .models import CandidatePost, RelatedPost, TrackedPost
+                from .services.notification import PendingMilestone
+
+                ids = [p.related.id for p in pendings]
+                rows = s.execute(
+                    _sel(RelatedPost, TrackedPost, CandidatePost)
+                    .join(TrackedPost, TrackedPost.id == RelatedPost.tracked_post_id)
+                    .join(CandidatePost, CandidatePost.id == TrackedPost.candidate_post_id)
+                    .where(RelatedPost.id.in_(ids))
+                ).all()
+                rebound = [PendingMilestone(r, t, c) for r, t, c in rows]
+                return await deliver_milestones(bot, chat_id, rebound, session=s)
+
+    return asyncio.run(_go())
+
+
+def _run_milestone_check() -> None:
+    """M5.8：撈未推送的 milestone → 即時 Telegram 推送 → mark notified_at。"""
+    settings = get_settings()
+    if _telegram_ready(settings) is None:
+        return
+    with session_scope() as session:
+        pendings = fetch_pending_milestones(session)
+    if not pendings:
+        return
+    sent, failed = _deliver_milestones_sync(pendings)
+    logger.info(
+        "milestone push: pending=%d sent=%d failed=%d",
+        len(pendings), sent, failed,
+    )
+
+
+def _deliver_digest_sync(entries) -> tuple[int, int]:
+    settings = get_settings()
+    ready = _telegram_ready(settings)
+    if ready is None or not entries:
+        return (0, 0)
+    token, chat_id = ready
+    from telegram import Bot
+
+    from .bot.related_sender import deliver_digest
+    from .db import session_scope as _scope
+
+    async def _go() -> tuple[int, int]:
+        bot = Bot(token=token)
+        async with bot:
+            with _scope() as s:
+                # 重抓 entries 對應的 RelatedPost / Tracked / Candidate 進 fresh session
+                from sqlalchemy import select as _sel
+
+                from .models import CandidatePost, RelatedPost, TrackedPost
+                from .services.notification import DigestEntry
+
+                rebuilt: list[DigestEntry] = []
+                for e in entries:
+                    tracked = s.get(TrackedPost, e.tracked.id)
+                    cand = s.get(CandidatePost, e.candidate.id)
+                    related = s.scalars(
+                        _sel(RelatedPost).where(
+                            RelatedPost.id.in_([r.id for r in e.related])
+                        )
+                    ).all()
+                    if tracked is not None and cand is not None and related:
+                        rebuilt.append(DigestEntry(tracked=tracked, candidate=cand, related=list(related)))
+                return await deliver_digest(bot, chat_id, rebuilt, session=s)
+
+    return asyncio.run(_go())
 
 
 def _run_scoring() -> None:
@@ -227,6 +381,39 @@ def build_scheduler() -> BlockingScheduler:
         max_instances=1,
         coalesce=True,
     )
+
+    # M5.2 — 追蹤池輪詢；interval 對齊 tier='hot' 的 15 min，內部再依 tier 過濾
+    sched.add_job(
+        _run_polling,
+        trigger=IntervalTrigger(minutes=settings.polling_minutes),
+        id="polling",
+        name="poll_tracked_posts",
+        next_run_time=None,
+        max_instances=1,
+        coalesce=True,
+    )
+
+    # M5.3–5.7 — 後續事件偵測；重一個量級故 60 min 一次
+    sched.add_job(
+        _run_detection,
+        trigger=IntervalTrigger(minutes=settings.detection_minutes),
+        id="detection",
+        name="detect_related_events",
+        next_run_time=None,
+        max_instances=1,
+        coalesce=True,
+    )
+
+    # M5.8 — milestone 即時推送
+    sched.add_job(
+        _run_milestone_check,
+        trigger=IntervalTrigger(minutes=settings.milestone_check_minutes),
+        id="milestone_check",
+        name="push_pending_milestones",
+        next_run_time=None,
+        max_instances=1,
+        coalesce=True,
+    )
     return sched
 
 
@@ -250,13 +437,17 @@ def main() -> int:
     tg = _telegram_ready(settings)
     logger.info(
         "scheduler starting | sub=%dmin keyword=%dh scoring=%dmin "
-        "daily_push=%02d:%02dUTC breaking=%dmin telegram=%s scraper=%s",
+        "daily_push=%02d:%02dUTC breaking=%dmin polling=%dmin "
+        "detection=%dmin milestone=%dmin telegram=%s scraper=%s",
         settings.poll_subreddit_minutes,
         settings.poll_keyword_hours,
         settings.scoring_minutes,
         settings.daily_push_hour_utc,
         settings.daily_push_minute_utc,
         settings.breaking_check_minutes,
+        settings.polling_minutes,
+        settings.detection_minutes,
+        settings.milestone_check_minutes,
         "ready" if tg else "disabled",
         settings.reddit_scraper,
     )

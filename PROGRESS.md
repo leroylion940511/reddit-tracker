@@ -4,7 +4,7 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-05-23（M4 完成 — scheduler + 真實 Telegram 端到端跑通，99/99 tests 全綠）
+**Last updated:** 2026-05-23（M5 全段完成 — 升格 + polling + 四類偵測 + milestone push + /saved /timeline，160/160 tests 全綠）
 
 > **本分支策略**：不申請 OAuth、不用 PRAW，全程走 public JSON endpoint。M1 probe
 > 實測 4 個 M5/M6 用得到的 endpoint（user_about / user_submitted / duplicates /
@@ -33,7 +33,7 @@
 | M2 | 探索層 + DB 重構 | 🟢 | 12 表 schema / alembic migration、雙 source discovery、scheduler 雙 job、5/5 tests 過、端到端 smoke 76 筆 |
 | M3 | 評分層接 Reddit | 🟢 | 三段式 pipeline 完成、MiniMax scorer 暫代 Haiku、756 真候選跑過、30 篇 baseline accuracy 0.733 ✅ |
 | M4 | 候選排程 + 推送層 | 🟢 | feed.py + bot 全部接通 + scheduler 雙 job + 真 Telegram 端到端 (cand=241 收到推送、按 ❤️ 寫 feedback id=1) + 99 tests |
-| M5 | 收藏追蹤層 | ❌ | 升格邏輯、分級輪詢、四類後續事件偵測（含 crosspost）|
+| M5 | 收藏追蹤層 | 🟢 | 升格 + tier polling + 四類偵測（author_followup / author_reply / hot_reply / crosspost）+ milestone immediate push + daily digest + `RelatedPost.notified_at` 去重 + `/saved` `/timeline` + alembic migration (notified_at + uq_related_post_triple) + 8-job scheduler + smoke end-to-end + 61 新 tests (160/160) |
 | M6 | 問答層 | ❌ | `/ask` 對話模式、重量 context 組裝（comment tree）|
 | M7 | 評估與調優 | ❌ | 收藏率、後續命中率、中英 subreddit 對照 |
 | M8 | 報告與 demo | ❌ | 案例分析 + 問答自評 |
@@ -73,9 +73,11 @@
 
 ## 下一步（單一優先）
 
-**M5.1–5.2**：收藏追蹤層。`feedback.action='collect'` 升格 → 建 `tracked_posts`
-row、`polling_tier='hot'`；改寫 `services/polling.py` 用分級輪詢（0–24h: 15min /
-1–7d: 1h / 7–30d: 6h）抓 post snapshot。完整任務清單見 `SCHEDULE.md`。
+**M6**：問答層。`/ask <id>` 開 QASession（記憶體 dict 管狀態），context 組裝
+器吃 candidate / latest snapshot / 完整 comment_tree（flatten + depth） / 作者
+近 30 篇 / related_posts（含 crosspost），呼叫 Opus 多輪對話，5 分鐘 idle
+timeout 自動關。token / cost 寫 `qa_messages` + `llm_records`。完整任務清單見
+`SCHEDULE.md`。
 
 ### M1 現況（2026-05-22，no-reddit-api 分支結算）
 
@@ -93,6 +95,78 @@ row、`polling_tier='hot'`；改寫 `services/polling.py` 用分級輪詢（0–
   `keyword_seeds.py`（20 詞，10 中 + 10 英）
 - ✅ **M1.11 GO**：public JSON 條件下足以完整推進 M2–M6（含 crosspost、author profile、
   comment tree、重量問答 context），不需 OAuth
+
+### M5 現況（2026-05-23，全段完成）
+
+- ✅ **M5.3–5.6 偵測層 `services/detection.py`**：四類純函式 + `detect_for_tracked`
+  編排器。各 endpoint 獨立 try/except，單類失敗不阻塞其他。
+  - `detect_author_followup`：作者近期貼文中比原貼新且非自己者，title 二元組
+    Jaccard（中英文都吃，不靠空白切詞）+ 同 sub `+0.3` 加成（cap 1.0）→ relevance
+  - `detect_author_reply`：filter `CommentNode.is_submitter=True`，存 raw score
+  - `detect_hot_reply`：絕對 ≥ 50 **或** top 與第二名比 ≥ 1.3 倍；`more` placeholder
+    自動跳過；OP reply 與 hot reply 視為不同 relation_type、可同篇 fire 兩筆
+  - `detect_crossposts`：`fetch_duplicates` 結果直接收
+  - `persist_findings`：dedup 鍵 `(tracked_post_id, relation_type, reddit_post_id)`；
+    alembic UniqueConstraint `uq_related_post_triple` 做 DB-level 保險
+- ✅ **M5.7 `evaluate_milestone` heuristic**：依 `relation_type` 用閾值 — followup
+  ≥ 0.7、author_reply ≥ 20、hot_reply ≥ 200、crosspost ≥ 100。預留接口、TODO
+  切 Haiku 對 finding.content 做語義判斷
+- ✅ **M5.8 推送層 `services/notification.py` + `bot/related_sender.py`**：
+  - `fetch_pending_milestones`：is_milestone=True AND notified_at IS NULL AND
+    tracked.status='active'，join Tracked+Candidate 回 PendingMilestone dataclass
+  - `build_daily_digest`：lookback_hours=24、非 milestone、未 notified，依 tracked
+    分組、每組取 relevance top N（預設 5）
+  - `mark_notified`：idempotent，已 notified 的不覆寫時戳
+  - sender 套用各自 formatter（`format_milestone_message` 帶 emoji + 原文連結、
+    `format_digest_message` 一封多 tracked 聚合）
+  - 對應 alembic migration 加 `RelatedPost.notified_at` + `uq_related_post_triple`
+- ✅ **M5.9 `/saved` `/timeline`**：純讀 query，`asyncio.to_thread` 包 sync DB；
+  saved 顯示 tier emoji（🔴 hot / 🟠 cooling / 🟡 archive）+ snapshot 數 + related
+  數 + milestone 計數；timeline 列「快照變化（新→舊，相對時間）」與「相關事件
+  （時間排序、milestone 標 ★）」
+- ✅ **M5 scheduler 變 8 job**：原 6 + `detection`（60min）+ `milestone_check`（10min）;
+  `daily_push` 接著跑 `_deliver_digest_sync` 把當日 digest 一起發
+- ✅ **M5.10 smoke `scripts/m5_smoke.py`**：FakeScraper 餵 1 candidate +
+  2 user_submissions + 3 comments + 1 dup → 偵測寫 5 筆 RelatedPost（4 milestone：
+  followup + OP reply + hot_reply + crosspost）→ `/saved` 列出該篇 `★ 4`、
+  `/timeline` 渲染快照 + 5 條相關事件
+- 🧪 **61 新 tests**：detection 17 / notification 10 / bot_m5 12 / promotion 9 /
+  polling 13 → 全套 160/160 過、ruff clean
+- 📌 **既知設計取捨**：
+  - 首位 collect 使用者寫入 `TrackedPost.user_id`；後續者再 ❤️ 同篇仍寫 feedback row
+    但不換 owner（個位數使用者規模下夠用，未來多用戶可改成 user×candidate 多對一）
+  - milestone 即時推送在 scheduler thread 內 `asyncio.run`，每輪 fetch_pending +
+    重抓 ORM rows 進 fresh session 後 send → mark_notified（避免 session 跨執行緒）
+
+### M5 現況（2026-05-23）
+
+- ✅ **M5.1 升格邏輯**：`services/promotion.py::promote_to_tracked`，feedback.action=
+  'collect' 寫成 feedback row 後在同一 session_scope 升格成 TrackedPost
+  (polling_tier='hot' / status='active') + 累加 `subreddit_sources.total_collected`。
+  Idempotent on candidate（`CandidatePost.tracked` 是 `uselist=False`）— 第二位
+  使用者再 ❤️ 同篇只回 already_tracked，total_collected 也不會重複加。
+  Integrate 點在 `bot/handlers._record_feedback_sync`，feedback layer 本身保持單純。
+- ✅ **M5.2 分級輪詢 `services/polling.py`**：
+  - `tier_for_age`：0–24h='hot' / 24h–7d='cooling' / 7–30d='archive' / >30d=None
+  - `select_due_posts`：Python-side filter（SQLite 表達不了 `last_polled_at +
+    interval(tier)`），對 status='active' 的 TrackedPost 看 `now - last_polled_at`
+    是否 ≥ tier interval（hot=15min / cooling=1h / archive=6h）
+  - `capture_snapshot`：打 `scraper.fetch_post` → 寫 `PostSnapshot(score,
+    num_comments, upvote_ratio)`、更新 `last_polled_at` 與 `polling_tier`（隨 age
+    自動升級）；age >30d 寫一筆 final snapshot 後 `status='archived'`；
+    fetch_post 回 None 也直接 archived（貼文被刪 / quarantine）；
+    scraper raise 不 archived 但仍更新 last_polled_at 避免立即重試
+  - `run_polling`：上述兩者的編排，回 `PollingStat(total_due, captured, archived,
+    errors)`
+- ✅ **M5 scheduler 接 polling job**：`IntervalTrigger(minutes=polling_minutes=15)`
+  對齊 tier='hot' 細粒度；jobs 從 5 個變 6 個（subreddit / keyword / scoring /
+  daily_push / breaking_check / polling）
+- ✅ **22 新 tests**：`tests/test_polling.py` 13 個（tier 邊界 / select_due 各情境 /
+  capture_snapshot 5 種 outcome / run_polling 編排）+ `tests/test_promotion.py` 9
+  個（promote 三種 outcome + subreddit 統計 + integration with `_record_feedback_sync`）
+- 🧪 **注意 `polling_tier='archive'` ≠ `status='archived'`**：前者只是「降頻到 6h
+  一次」仍在追蹤；後者是「終止追蹤」（壽命過 30 天 / 被刪 / quarantine）。M5.3+
+  的偵測函式需以 `status='active'` 為篩選條件，不要誤排除 archive tier
 
 ### M4 現況（2026-05-23）
 

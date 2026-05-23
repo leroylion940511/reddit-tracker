@@ -82,16 +82,16 @@
 **前置**：M4 ❤️ 按鈕能寫 feedback
 **完成判準**：收藏一篇後，系統自動偵測四類後續事件（含 crosspost）並推送
 
-- [ ] 5.1 寫升格邏輯：`feedback.action='collect'` → 建 `tracked_posts` row，啟動分級輪詢
-- [ ] 5.2 改 `services/polling.py`：以 `tracked_posts.polling_tier` 為驅動，沿用 tier_for_age（0–24h: 15min / 1–7d: 1h / 7–30d: 6h）
-- [ ] 5.3 寫 `related_posts` 偵測 — `author_followup`：`redditor.submissions.new(limit=20)` 比對，Haiku 判斷與原事件相關性
-- [ ] 5.4 寫 `related_posts` 偵測 — `author_reply`：`submission.comments.list()` 過濾 `comment.author == submission.author`
-- [ ] 5.5 寫 `related_posts` 偵測 — `hot_reply`：comment.score > 50 或比第二名 top reply 高 30%
-- [ ] 5.6 寫 `related_posts` 偵測 — `crosspost`：`submission.duplicates()`，整批寫入
-- [ ] 5.7 寫 `services/detection.py::evaluate_milestone`：用 Haiku 判定 `is_milestone`
-- [ ] 5.8 後續推送邏輯：日常更新加進每日彙整、`is_milestone=true` 即時推送
-- [ ] 5.9 新增 bot 指令：`/saved` 列收藏、`/timeline <id>` 看時間軸
-- [ ] 5.10 端到端測：fake 收藏 → 餵假後續資料 → 確認推送觸發
+- [x] 5.1 寫升格邏輯：`feedback.action='collect'` → 建 `tracked_posts` row，啟動分級輪詢
+- [x] 5.2 改 `services/polling.py`：以 `tracked_posts.polling_tier` 為驅動，沿用 tier_for_age（0–24h: 15min / 1–7d: 1h / 7–30d: 6h）
+- [x] 5.3 寫 `related_posts` 偵測 — `author_followup`：`fetch_user_submissions(limit=20)` 比對，title bigram Jaccard + 同 sub 加成
+- [x] 5.4 寫 `related_posts` 偵測 — `author_reply`：`fetch_comment_tree` 過濾 `is_submitter=True`
+- [x] 5.5 寫 `related_posts` 偵測 — `hot_reply`：comment.score ≥ 50 或 ≥ 1.3 × 第二名
+- [x] 5.6 寫 `related_posts` 偵測 — `crosspost`：`fetch_duplicates`，整批寫入
+- [x] 5.7 寫 `services/detection.py::evaluate_milestone`：先 heuristic 閾值（followup ≥ 0.7、author_reply ≥ 20、hot_reply ≥ 200、crosspost ≥ 100），TODO 切 Haiku
+- [x] 5.8 後續推送邏輯：digest 騎 daily_push_job、milestone 騎 breaking_check interval 即時推送；`RelatedPost.notified_at` 防重
+- [x] 5.9 新增 bot 指令：`/saved` 列收藏、`/timeline <id>` 看時間軸
+- [x] 5.10 端到端測：`scripts/m5_smoke.py` + `tests/test_detection.py` (17) + `tests/test_notification.py` (10) + `tests/test_bot_m5.py` (12) + `tests/test_promotion.py` (9) + `tests/test_polling.py` (13)，全套 160 過
 
 ---
 

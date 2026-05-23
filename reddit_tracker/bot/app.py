@@ -28,8 +28,11 @@ def build_application() -> Application:
     app = ApplicationBuilder().token(s.telegram_bot_token).build()
     app.add_handler(CommandHandler("start", handlers.start_cmd))
     app.add_handler(CommandHandler("help", handlers.help_cmd))
-    # M4.6 / M5 / M6 placeholders
-    for name in ("feed", "saved", "ask", "exit", "digest", "timeline", "settings"):
+    # M5.9 — /saved + /timeline 上線
+    app.add_handler(CommandHandler("saved", handlers.saved_cmd))
+    app.add_handler(CommandHandler("timeline", handlers.timeline_cmd))
+    # M4.6 / M6 placeholders
+    for name in ("feed", "ask", "exit", "digest", "settings"):
         app.add_handler(CommandHandler(name, handlers.deferred_cmd))
 
     # 三按鈕回饋：所有 callback_data 以 'fb:' 開頭都進這個 handler

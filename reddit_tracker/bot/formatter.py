@@ -15,6 +15,7 @@ from __future__ import annotations
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 from ..services.feed import FeedPick
+from ..services.notification import DigestEntry, PendingMilestone
 
 
 # 按鈕 callback_data 設計：盡量短，Telegram 限制 1–64 bytes。
@@ -133,6 +134,62 @@ def format_push_message(pick: FeedPick) -> tuple[str, InlineKeyboardMarkup]:
     return text, InlineKeyboardMarkup(buttons)
 
 
+RELATION_LABELS = {
+    "author_followup": "📝 作者新貼文",
+    "author_reply": "💬 原作回覆",
+    "hot_reply": "🔥 高熱度留言",
+    "crosspost": "🔁 被轉貼",
+}
+
+
+def _candidate_link(c) -> str | None:
+    link = _permalink_url(c.permalink)
+    if link is None:
+        return None
+    return f'<a href="{_escape_html(link)}">原文</a>'
+
+
+def format_milestone_message(pending: PendingMilestone) -> str:
+    """單筆 milestone 的即時推送訊息（M5.8）。
+
+    無按鈕 — milestone 不需 collect/dislike，使用者已經收藏這篇了。
+    """
+    c, t, r = pending.candidate, pending.tracked, pending.related  # noqa: F841
+    label = RELATION_LABELS.get(r.relation_type, r.relation_type)
+    title = _escape_html(c.title or "(無標題)")
+    lines = [
+        f"🎯 收藏追蹤 · {label}",
+        f"r/{_escape_html(c.subreddit)} · u/{_escape_html(c.author_username or '?')}",
+        "",
+        f"<b>{title}</b>",
+        "",
+        _escape_html((r.content or "")[:500]),
+    ]
+    link = _candidate_link(c)
+    if link:
+        lines += ["", link]
+    return "\n".join(lines)
+
+
+def format_digest_message(entries: list[DigestEntry]) -> str:
+    """彙整訊息（M5.8）— 一封訊息整理今日所有 tracked 的非-milestone 後續事件。"""
+    if not entries:
+        return ""
+    lines = [f"📰 收藏追蹤 · 今日彙整（{len(entries)} 篇）", ""]
+    for i, e in enumerate(entries, start=1):
+        title = _escape_html(e.candidate.title or "(無標題)")
+        lines.append(f"<b>{i}. r/{_escape_html(e.candidate.subreddit)} · {title}</b>")
+        link = _permalink_url(e.candidate.permalink)
+        if link:
+            lines.append(f'   <a href="{_escape_html(link)}">原文</a>')
+        for r in e.related:
+            label = RELATION_LABELS.get(r.relation_type, r.relation_type)
+            snippet = _escape_html((r.content or "")[:140])
+            lines.append(f"   • {label}: {snippet}")
+        lines.append("")
+    return "\n".join(lines).rstrip()
+
+
 __all__ = [
     "ACTION_COLLECT",
     "ACTION_DISLIKE",
@@ -140,7 +197,10 @@ __all__ = [
     "ACTION_TO_FEEDBACK",
     "CALLBACK_PREFIX",
     "PUSH_TYPE_HEADERS",
+    "RELATION_LABELS",
     "decode_callback",
     "encode_callback",
+    "format_digest_message",
+    "format_milestone_message",
     "format_push_message",
 ]
