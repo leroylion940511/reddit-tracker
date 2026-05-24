@@ -33,6 +33,7 @@ from .services.notification import (
     fetch_pending_milestones,
 )
 from .services.polling import ACTIVE_STATUS, run_polling
+from .services.qa import sweep_idle as qa_sweep_idle
 from .services.scoring import ScoringService, fetch_unscored, score_batch
 
 logger = logging.getLogger("scheduler")
@@ -306,6 +307,17 @@ def _deliver_digest_sync(entries) -> tuple[int, int]:
     return asyncio.run(_go())
 
 
+def _run_qa_sweep() -> None:
+    """M6：掃 5 分鐘以上無互動的 active QA session 強制關閉。"""
+    settings = get_settings()
+    with session_scope() as session:
+        closed = qa_sweep_idle(
+            session, ttl_seconds=settings.qa_idle_ttl_seconds
+        )
+    if closed:
+        logger.info("qa_sweep: closed=%d users=%s", len(closed), closed)
+
+
 def _run_scoring() -> None:
     settings = get_settings()
     service = ScoringService(scorer=build_scorer())
@@ -414,6 +426,17 @@ def build_scheduler() -> BlockingScheduler:
         max_instances=1,
         coalesce=True,
     )
+
+    # M6 — QA session idle sweep（每分鐘檢查一次）
+    sched.add_job(
+        _run_qa_sweep,
+        trigger=IntervalTrigger(minutes=settings.qa_idle_sweep_minutes),
+        id="qa_idle_sweep",
+        name="qa_idle_sweep",
+        next_run_time=None,
+        max_instances=1,
+        coalesce=True,
+    )
     return sched
 
 
@@ -438,7 +461,7 @@ def main() -> int:
     logger.info(
         "scheduler starting | sub=%dmin keyword=%dh scoring=%dmin "
         "daily_push=%02d:%02dUTC breaking=%dmin polling=%dmin "
-        "detection=%dmin milestone=%dmin telegram=%s scraper=%s",
+        "detection=%dmin milestone=%dmin qa_sweep=%dmin telegram=%s scraper=%s",
         settings.poll_subreddit_minutes,
         settings.poll_keyword_hours,
         settings.scoring_minutes,
@@ -448,6 +471,7 @@ def main() -> int:
         settings.polling_minutes,
         settings.detection_minutes,
         settings.milestone_check_minutes,
+        settings.qa_idle_sweep_minutes,
         "ready" if tg else "disabled",
         settings.reddit_scraper,
     )

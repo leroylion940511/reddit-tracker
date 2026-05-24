@@ -4,7 +4,7 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-05-23（M5 全段完成 — 升格 + polling + 四類偵測 + milestone push + /saved /timeline，160/160 tests 全綠）
+**Last updated:** 2026-05-24（M6 全段完成 — `/ask` `/exit` + 多輪 MiniMax chat + 重量 context 組裝 + 5min idle sweep，198/198 tests 全綠）
 
 > **本分支策略**：不申請 OAuth、不用 PRAW，全程走 public JSON endpoint。M1 probe
 > 實測 4 個 M5/M6 用得到的 endpoint（user_about / user_submitted / duplicates /
@@ -34,7 +34,7 @@
 | M3 | 評分層接 Reddit | 🟢 | 三段式 pipeline 完成、MiniMax scorer 暫代 Haiku、756 真候選跑過、30 篇 baseline accuracy 0.733 ✅ |
 | M4 | 候選排程 + 推送層 | 🟢 | feed.py + bot 全部接通 + scheduler 雙 job + 真 Telegram 端到端 (cand=241 收到推送、按 ❤️ 寫 feedback id=1) + 99 tests |
 | M5 | 收藏追蹤層 | 🟢 | 升格 + tier polling + 四類偵測（author_followup / author_reply / hot_reply / crosspost）+ milestone immediate push + daily digest + `RelatedPost.notified_at` 去重 + `/saved` `/timeline` + alembic migration (notified_at + uq_related_post_triple) + 8-job scheduler + smoke end-to-end + 61 新 tests (160/160) |
-| M6 | 問答層 | ❌ | `/ask` 對話模式、重量 context 組裝（comment tree）|
+| M6 | 問答層 | 🟢 | MiniMax 多輪 chat（Opus 由專案決定替換為 MiniMax）+ in-memory session state + 重量 system prompt（origin / snapshots / comment tree / related events）+ `/ask` `/exit` + 自由文字 MessageHandler + scheduler `qa_idle_sweep` (TTL=5min) + 38 新 tests (198/198) |
 | M7 | 評估與調優 | ❌ | 收藏率、後續命中率、中英 subreddit 對照 |
 | M8 | 報告與 demo | ❌ | 案例分析 + 問答自評 |
 
@@ -73,11 +73,71 @@
 
 ## 下一步（單一優先）
 
-**M6**：問答層。`/ask <id>` 開 QASession（記憶體 dict 管狀態），context 組裝
-器吃 candidate / latest snapshot / 完整 comment_tree（flatten + depth） / 作者
-近 30 篇 / related_posts（含 crosspost），呼叫 Opus 多輪對話，5 分鐘 idle
-timeout 自動關。token / cost 寫 `qa_messages` + `llm_records`。完整任務清單見
+**M7**：評估與調優。`scripts/eval_*.py` 系列：收藏率（feedback.collect /
+daily_pushes，依 push_type 分組）、後續命中率（30 天內 related_posts ≥ 1
+的 tracked 比例）、中英 sub 對照、四類 related 分布；系統需先連續跑 7 天
+真實資料。Haiku/MiniMax prompt 跟硬規則閾值在 M7 過後做一輪 retune。M6
+token 實測會在這階段一起補（用真實 MiniMax key 跑 5 個 tracked × 3 輪，記
+input / output / cost 到 `docs/m6_token_baseline.md`）。完整任務清單見
 `SCHEDULE.md`。
+
+### M6 現況（2026-05-24，全段完成）
+
+- ✅ **M6.1 `services/qa.py::QASessionState`**：dataclass 持 user_id /
+  tracked_post_id / qa_session_id / system_prompt / history / system_tokens_estimate /
+  started_at / last_active_at；in-memory `_ACTIVE: dict[user_id, state]` +
+  `threading.Lock` 給 BlockingScheduler (sweep) 與 asyncio (bot) 兩個 thread
+  共用。`reset_state()` 給單元測試清空
+- ✅ **M6.2 重量 context 組裝 `build_system_prompt`**：
+  - SYSTEM_PROMPT_HEADER 嚴格要求只依 context 答 / 不編造 / 中英都吃
+  - 4 個 section：ORIGINAL POST + SNAPSHOTS（最舊→最新）+ RELATED EVENTS
+    （依 relation_type 分組、relevance 排序、milestone 標 ★）+ COMMENT TREE
+    （`comment_tree.to_prompt_text` 縮排呈現，標 [OP]）
+  - Token budget 18k：超出自動 trim comments → `top_n_by_score(60)` + 標
+    「trimmed to top X by score」
+  - Scraper 可選；None / fetch_comment_tree 失敗時 comment section 留空，
+    不阻塞流程
+- ✅ **M6.3 `/ask <id>` handler**：驗 4 種拒絕（not_found / not_owner /
+  archived / already_active）+ 整數參數；成功時回 system_tokens 估值讓使用者
+  心裡有底（也利於 M7 token baseline）
+- ✅ **M6.4 自由文字路由**：`MessageHandler(filters.TEXT & ~filters.COMMAND)`
+  接 `chat_message`：active 走 chat、無 session 回最小提示；reply > 3900
+  字自動截斷加「…（後續截斷）」尾註避開 Telegram 4096 限制；尾註附
+  `in=X out=Y cost=$Z.NNNN`
+- ✅ **M6.5 `/exit` + 5min idle sweep**：scheduler 新增 `qa_idle_sweep` job
+  （每分鐘觸發、TTL 從 `qa_idle_ttl_seconds=300` 拉），掃 in-memory state
+  找 `last_active_at <= now - 5min` 的 user，呼 `close_session(reason='ended_idle')`
+  寫 `QASession.ended_at` + `state='ended_idle'`，從 `_ACTIVE` pop 出來
+- ✅ **M6.6 DB 寫入**：`handle_message` 每輪寫 user QAMessage → call chat
+  → 寫 assistant QAMessage（含 tokens + cost）+ LLMRecord（purpose='qa'、
+  context_ref 帶 qa_session_id / tracked_post_id / turn）；chat raise 時
+  rollback in-memory history（user row 保留以利追蹤）
+- ✅ **M6 chat 替換策略**：原企劃寫 Opus，本次決定改 MiniMax（與 scoring
+  共用 `chatcompletion_v2` endpoint、同 base_url / api_key，省一份 SDK 依
+  賴）。`llm/minimax_chat.py::MinimaxChat` 為實作、`FakeChat` 為離線 stub、
+  `build_chat()` factory 無 key 自動 fallback FakeChat 不阻塞 dev
+- ✅ **M6.8 38 新 tests**：
+  - `tests/test_qa.py`（18）：context 4 / open 5 / handle_message 4 / close
+    1 / sweep 2 / state utils 2
+  - `tests/test_bot_qa.py`（14）：/ask 7 拒絕 + 成功 / /exit 2 / chat_message
+    4 / 整合 1
+  - `tests/test_minimax_chat.py`（6）：cost / FakeChat / build_chat fallback
+  - 全套 160 → 198，0 失敗、ruff clean
+- 🧪 **`scripts/m6_smoke.py`**：1 candidate → promote → 1 snapshot + 2 related
+  → open session（prompt 784 chars / 34 lines / ~313 tokens / 3 comments）
+  → FakeChat 跑 2 輪（qa_messages=4, llm_records=2）→ sweep_idle 強制收
+  → ended_idle ✓ → 再 open → 手動 close ✓
+- 📌 **既知設計取捨**：
+  - In-memory state 用 module-level dict — 個位數使用者下夠用，多 process
+    才需要 Redis；`reset_state()` 暴露給 tests 清乾淨
+  - System prompt 一次組好快取在記憶體（不每輪重組）— Reddit comment tree
+    在 5 分鐘內變動很小，且重組會多打一次 fetch_comment_tree
+  - Anthropic prompt cache 沒接（MiniMax API 沒提供）— M7 對帳會看 monthly
+    cost 是否超出企劃預估 $0.15/次再決定要不要 hack
+  - `LLMRecord.context_ref` 寫 dict 而非裸 ID — 之後對帳 / 報告分析能直接
+    `WHERE context_ref->>'tracked_post_id' = ?` 撈一個 tracked 的所有 QA 開銷
+  - 不寫 `qa_messages.user / assistant_tokens` 分離欄位 — `usage` 是 per-call
+    維度（一次 chat 同時算進 / 出），存在 assistant 那筆 row 即可，user row 留 None
 
 ### M1 現況（2026-05-22，no-reddit-api 分支結算）
 

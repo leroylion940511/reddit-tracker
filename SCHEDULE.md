@@ -100,14 +100,14 @@
 **前置**：M5 tracked_posts + related_posts 有資料
 **完成判準**：`/ask <id>` 進入問答模式、多輪對話、`/exit` 或 5 分鐘 idle timeout 離開、token 成本實測過
 
-- [ ] 6.1 寫 `services/qa.py`：session 狀態管理（每使用者同時只能一個 active session，記憶體 dict 即可）
-- [ ] 6.2 寫 context 組裝器：原貼文 + 最新 EvolutionSummary + 完整 comment tree（含巢狀層級標註）+ 作者近 30 篇 + related_posts（含 crosspost）
-- [ ] 6.3 `bot/handlers.py` 新增 `/ask <id>` handler：建 qa_sessions row、組 system prompt（開 Opus prompt cache）、回 ready prompt
-- [ ] 6.4 改 message handler：active session 中所有非指令訊息走 Opus 多輪對話
-- [ ] 6.5 寫 `/exit` handler + 5 分鐘 idle timeout（背景 task 掃 qa_sessions.started_at）
-- [ ] 6.6 qa_messages 寫入：每輪 user / assistant 各一筆，連同 `cost_usd` 記到 llm_records
-- [ ] 6.7 token 實測：跑 5 個真實事件 × 3 輪問答，記錄 input / output / cache hit 比例與成本到 `docs/m6_token_baseline.md`
-- [ ] 6.8 unit test：session 狀態機（開 → 訊息 → exit / timeout）+ context 組裝器（mock data）
+- [x] 6.1 寫 `services/qa.py`：session 狀態管理（每使用者同時只能一個 active session，in-memory dict + threading.Lock）
+- [x] 6.2 寫 context 組裝器：原貼 + snapshots + 完整 comment tree（縮排呈現）+ 已偵測 related_posts（含 author_followup / crosspost）；token budget 超出時自動 trim 到 top-N by score
+- [x] 6.3 `bot/handlers.py` 新增 `/ask <id>` handler：驗 owner / not_found / archived / already_active；建 qa_sessions row + 重量 system prompt 一次組好快取
+- [x] 6.4 新增 MessageHandler(filters.TEXT & ~filters.COMMAND)：active session 中所有自由文字走 chat handler；non-session 收到自由文字回最小提示
+- [x] 6.5 寫 `/exit` handler + scheduler `qa_idle_sweep` job（每分鐘掃，TTL=5 分鐘 → state='ended_idle'）
+- [x] 6.6 qa_messages 寫入：user / assistant 各一筆，連同 cost_usd / input_tokens / output_tokens 記到 llm_records (purpose=qa, context_ref={qa_session_id, tracked_post_id, turn})
+- [~] 6.7 token 實測：~~Opus~~ 改用 MiniMax（專案決定），smoke 跑通流程；真實 token baseline 留到 M7 對帳階段補 `docs/m6_token_baseline.md`
+- [x] 6.8 unit tests：18 個 qa state machine / context + 14 個 bot async handler + 6 個 chat client = 38 個新測試，全套 198 過
 
 ---
 

@@ -12,7 +12,14 @@ from __future__ import annotations
 
 import logging
 
-from telegram.ext import Application, ApplicationBuilder, CallbackQueryHandler, CommandHandler
+from telegram.ext import (
+    Application,
+    ApplicationBuilder,
+    CallbackQueryHandler,
+    CommandHandler,
+    MessageHandler,
+    filters,
+)
 
 from ..config import get_settings
 from . import handlers
@@ -31,13 +38,21 @@ def build_application() -> Application:
     # M5.9 — /saved + /timeline 上線
     app.add_handler(CommandHandler("saved", handlers.saved_cmd))
     app.add_handler(CommandHandler("timeline", handlers.timeline_cmd))
-    # M4.6 / M6 placeholders
-    for name in ("feed", "ask", "exit", "digest", "settings"):
+    # M6 — /ask /exit 上線
+    app.add_handler(CommandHandler("ask", handlers.ask_cmd))
+    app.add_handler(CommandHandler("exit", handlers.exit_cmd))
+    # 其餘 stub
+    for name in ("feed", "digest", "settings"):
         app.add_handler(CommandHandler(name, handlers.deferred_cmd))
 
     # 三按鈕回饋：所有 callback_data 以 'fb:' 開頭都進這個 handler
     app.add_handler(
         CallbackQueryHandler(handlers.feedback_callback, pattern=r"^fb:")
+    )
+
+    # M6 — active QA session 中的自由文字走 chat handler
+    app.add_handler(
+        MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.chat_message)
     )
     return app
 

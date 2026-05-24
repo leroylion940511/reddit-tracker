@@ -75,6 +75,11 @@ class Settings(BaseSettings):
     # 騎 breaking_check 同節奏即可
     milestone_check_minutes: int = 10
 
+    # --- QA idle sweep（M6）---
+    # 5 分鐘無互動 → 強制關 session；scheduler 每分鐘掃一次即可
+    qa_idle_sweep_minutes: int = 1
+    qa_idle_ttl_seconds: int = 300
+
     # --- Misc ---
     log_level: str = "INFO"
 

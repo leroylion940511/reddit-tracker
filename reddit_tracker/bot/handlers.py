@@ -18,12 +18,15 @@ from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
 from ..db import session_scope
+from ..llm.minimax_chat import ChatClient, build_chat
 from ..models import (
     CandidatePost,
     PostSnapshot,
     RelatedPost,
     TrackedPost,
 )
+from ..scrapers.base import RedditScraper
+from ..services import qa as qa_service
 from ..services.feedback import FeedbackOutcome, record_feedback
 from ..services.promotion import promote_to_tracked
 from .formatter import ACTION_TO_FEEDBACK, RELATION_LABELS, decode_callback
@@ -38,7 +41,8 @@ HELP_TEXT = (
     "/feed              查看今日推送 (M4.6 上線)\n"
     "/saved             列出已收藏\n"
     "/timeline <id>     看單篇時間軸\n"
-    "/ask <id>          進入問答模式 (M6 上線)\n"
+    "/ask <id>          進入問答模式（5 分鐘無互動自動結束）\n"
+    "/exit              離開問答模式\n"
 )
 
 _DEFERRED_MSG = "這個功能還沒上線，等之後的里程碑開放。"
@@ -349,16 +353,182 @@ async def feedback_callback(update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> 
             logger.warning("edit_message_text failed: %s", e)
 
 
+# ---------------------------------------------------------------------------
+# M6 — /ask /exit + 自由文字路由
+# ---------------------------------------------------------------------------
+
+
+# 在第一次呼叫時 lazy-build；保留 module-level 以便 unit test 直接 patch
+_CHAT_CLIENT: ChatClient | None = None
+
+
+def _get_chat_client() -> ChatClient:
+    global _CHAT_CLIENT
+    if _CHAT_CLIENT is None:
+        _CHAT_CLIENT = build_chat()
+    return _CHAT_CLIENT
+
+
+def _build_scraper_safe() -> RedditScraper | None:
+    """組 system prompt 用，抓不到 scraper 就回 None（context 留空）。"""
+    try:
+        from ..scrapers.factory import build_scraper
+
+        return build_scraper()
+    except Exception as e:  # noqa: BLE001
+        logger.warning("qa /ask: build_scraper failed: %s — comment tree 留空", e)
+        return None
+
+
+def _open_session_sync(
+    user_id: int, tracked_id: int
+) -> tuple[qa_service.OpenOutcome, int]:
+    """同步包裝；回 (outcome, system_tokens_estimate)。"""
+    scraper = _build_scraper_safe()
+    try:
+        with session_scope() as session:
+            outcome = qa_service.open_session(
+                session,
+                user_id=user_id,
+                tracked_post_id=tracked_id,
+                scraper=scraper,
+            )
+            tokens = (
+                outcome.state.system_tokens_estimate
+                if outcome.state is not None
+                else 0
+            )
+            return outcome, tokens
+    finally:
+        if scraper is not None:
+            close = getattr(scraper, "close", None)
+            if callable(close):
+                close()
+
+
+def _handle_qa_message_sync(user_id: int, text: str) -> qa_service.TurnOutcome:
+    chat = _get_chat_client()
+    with session_scope() as session:
+        return qa_service.handle_message(
+            session, user_id=user_id, text=text, chat=chat
+        )
+
+
+def _close_session_sync(user_id: int) -> qa_service.CloseOutcome:
+    with session_scope() as session:
+        return qa_service.close_session(session, user_id=user_id)
+
+
+async def ask_cmd(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    msg = update.effective_message
+    user = update.effective_user
+    if msg is None or user is None:
+        return
+    args = ctx.args or []
+    if not args:
+        await msg.reply_text(
+            "用法：/ask <tracked_id>。先用 /saved 看到 id。"
+        )
+        return
+    try:
+        tracked_id = int(args[0])
+    except ValueError:
+        await msg.reply_text("tracked_id 必須是整數。")
+        return
+
+    outcome, system_tokens = await asyncio.to_thread(
+        _open_session_sync, user.id, tracked_id
+    )
+    if outcome.not_found:
+        await msg.reply_text(f"找不到 tracked_post id={tracked_id}。")
+        return
+    if outcome.not_owner:
+        await msg.reply_text("這篇不是你的收藏。")
+        return
+    if outcome.archived:
+        await msg.reply_text("這篇已封存（archived），無法開問答模式。")
+        return
+    if outcome.already_active:
+        existing_id = (
+            outcome.state.tracked_post_id if outcome.state is not None else "?"
+        )
+        await msg.reply_text(
+            f"你已經有一個進行中的問答（tracked={existing_id}）。"
+            f"先 /exit 再 /ask <id> 換主題。"
+        )
+        return
+
+    await msg.reply_text(
+        f"✅ 已進入問答模式（tracked={tracked_id}, system≈{system_tokens} tokens）。\n"
+        "可以直接打字提問；/exit 結束。5 分鐘沒動作會自動結束。"
+    )
+
+
+async def exit_cmd(update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    msg = update.effective_message
+    user = update.effective_user
+    if msg is None or user is None:
+        return
+    outcome = await asyncio.to_thread(_close_session_sync, user.id)
+    if outcome.not_in_session:
+        await msg.reply_text("你目前沒有進行中的問答。")
+        return
+    await msg.reply_text(
+        f"已結束問答（session={outcome.qa_session_id}，{outcome.turns} 輪對話）。"
+    )
+
+
+async def chat_message(update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """active QA session 中的自由文字 — 走 chat；否則回提示。"""
+    msg = update.effective_message
+    user = update.effective_user
+    if msg is None or user is None or not msg.text:
+        return
+    state = qa_service.get_active(user.id)
+    if state is None:
+        # 非 session 中收到自由文字 — 給最小提示，避免噪訊
+        await msg.reply_text(
+            "目前沒有進行中的問答。用 /ask <id> 開始，或 /help 看指令。"
+        )
+        return
+
+    outcome = await asyncio.to_thread(_handle_qa_message_sync, user.id, msg.text)
+    if outcome.not_in_session:
+        # 與上面理論不會打到 — 防競態
+        await msg.reply_text("問答 session 已結束，請重新 /ask <id>。")
+        return
+    if outcome.error:
+        await msg.reply_text(f"問答出錯：{outcome.error}")
+        return
+    reply = outcome.reply or "(LLM 回了空訊息)"
+    # Telegram 4096 限制；長回覆切到 3900 留 footer 空間
+    if len(reply) > 3900:
+        reply = reply[:3900] + "\n\n…（後續截斷）"
+    footer = ""
+    if outcome.cost_usd is not None:
+        footer = (
+            f"\n\n— in={outcome.input_tokens} out={outcome.output_tokens}"
+            f" cost=${outcome.cost_usd:.4f}"
+        )
+    await msg.reply_text(reply + footer)
+
+
 __all__ = [
     "ACTION_REPLIES",
     "DUPLICATE_REPLY",
     "HELP_TEXT",
     "INVALID_REPLY",
     "MISSING_REPLY",
+    "_close_session_sync",
+    "_handle_qa_message_sync",
+    "_open_session_sync",
     "_record_feedback_sync",
     "_saved_list_sync",
     "_timeline_sync",
+    "ask_cmd",
+    "chat_message",
     "deferred_cmd",
+    "exit_cmd",
     "feedback_callback",
     "help_cmd",
     "saved_cmd",
