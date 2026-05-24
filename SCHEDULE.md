@@ -111,6 +111,19 @@
 
 ---
 
+## M6.9 — `/track <url>` 主動追蹤入口（backlog，跑完 7 天再做）
+
+**前置**：系統連續運轉 ≥ 7 天，M7 評估腳本即將動工
+**完成判準**：貼一個 reddit URL（或純 post_id）即可加入追蹤池，沿用 M5 polling / detection
+
+- [ ] 6.9.1 `bot/url_parser.py`：吃 `reddit.com/r/<sub>/comments/<id>/...` / `old.reddit.com` / `redd.it/<id>` / 純 base36 id，回 `reddit_post_id` 或 None
+- [ ] 6.9.2 `bot/handlers.py::track_cmd`：解析 URL → `scraper.fetch_post(id)` → upsert `candidate_posts`（reddit_post_id UNIQUE 自動 dedup）→ `promote_to_tracked`（跳過評分）→ 回 tracked_id
+- [ ] 6.9.3 `bot/app.py`：註冊 `CommandHandler("track", ...)`，把 `/help` 文案補上
+- [ ] 6.9.4 unit tests：URL parser 5 變體 + handler 4 路徑（合法 / 已追蹤 / 抓不到 / archived post）
+- [ ] 6.9.5 設計筆記：跳過 scoring 的影響 — M7 收藏率分母不含這類 candidate（合理，避免污染指標）
+
+---
+
 ## M7 — 評估與調優
 
 **前置**：M6 完整流水線可跑、系統累積至少 7 天真實資料
