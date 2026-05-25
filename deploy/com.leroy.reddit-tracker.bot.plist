@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  reddit_tracker telegram bot — launchd LaunchAgent
+
+  Bot 的 long polling loop 同樣會被 macOS background QoS 節流; 用 launchd
+  搭配 ProcessType=Interactive 解。設定理由詳見 scheduler plist 的註解。
+
+  安裝/移除/查看: 看 deploy/install_launchd.sh
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.leroy.reddit-tracker.bot</string>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/leroy/reddit_tracker</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/leroy/.local/bin/uv</string>
+        <string>run</string>
+        <string>python</string>
+        <string>-m</string>
+        <string>reddit_tracker.bot.app</string>
+    </array>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/leroy/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>HOME</key>
+        <string>/Users/leroy</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+
+    <key>ProcessType</key>
+    <string>Interactive</string>
+
+    <key>StandardOutPath</key>
+    <string>/Users/leroy/reddit_tracker/bot.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/leroy/reddit_tracker/bot.log</string>
+</dict>
+</plist>

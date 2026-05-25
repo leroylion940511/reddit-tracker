@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  reddit_tracker scheduler — launchd LaunchAgent
+
+  為什麼用 LaunchAgent 而非 nohup / 前景 Terminal:
+  - macOS 對 nohup'd background process 套用嚴格 timer coalescing,
+    導致 APScheduler 的 Event.wait timer 不準時 fire (實測 1h+ delay)
+  - 前景 Terminal 也會被降 QoS (Terminal 視窗被蓋住時)
+  - launchd 跑出來的 process 不受這兩種節流影響,
+    且 ProcessType=Interactive 進一步告訴 OS 「我時間敏感,別 coalesce」
+
+  安裝/移除/查看: 看 deploy/install_launchd.sh
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.leroy.reddit-tracker.scheduler</string>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/leroy/reddit_tracker</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/leroy/.local/bin/uv</string>
+        <string>run</string>
+        <string>python</string>
+        <string>-m</string>
+        <string>reddit_tracker.scheduler</string>
+    </array>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/leroy/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>HOME</key>
+        <string>/Users/leroy</string>
+    </dict>
+
+    <!-- 開機 / launchctl bootstrap 時自動啟動 -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- crash 自動重啟 -->
+    <key>KeepAlive</key>
+    <true/>
+
+    <!-- 兩次啟動最少間隔 30s, 避免設定壞掉時 hot-loop -->
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+
+    <!-- 時間敏感 process, 避免 App Nap / QoS 降級 -->
+    <key>ProcessType</key>
+    <string>Interactive</string>
+
+    <!-- 輸出進專案根目錄的 log (append, launchd 不會 truncate) -->
+    <key>StandardOutPath</key>
+    <string>/Users/leroy/reddit_tracker/scheduler.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/leroy/reddit_tracker/scheduler.log</string>
+</dict>
+</plist>

@@ -45,6 +45,9 @@ dumps/
 *.log
 logs/
 
+# --- Runtime PID files (launchd 接管後不該再產生，保險擋一道) ---
+*.pid
+
 # --- Editors ---
 .vscode/
 .idea/
