@@ -7,8 +7,15 @@
   - macOS 對 nohup'd background process 套用嚴格 timer coalescing,
     導致 APScheduler 的 Event.wait timer 不準時 fire (實測 1h+ delay)
   - 前景 Terminal 也會被降 QoS (Terminal 視窗被蓋住時)
-  - launchd 跑出來的 process 不受這兩種節流影響,
-    且 ProcessType=Interactive 進一步告訴 OS 「我時間敏感,別 coalesce」
+  - launchd 跑出來的 process 不受這兩種節流影響
+
+  為什麼還要包 caffeinate -i:
+  - 實測 ProcessType=Interactive 對 launchd 起的 uv parent 有效,
+    但 uv exec 出的 python child 走自己的 QoS class, 沒繼承父層 hint
+  - 結果 child 還是被 idle sleep coalesce, APScheduler 卡在 __psynch_cvwait
+  - caffeinate -i 阻止 idle sleep 並 propagate 到整個 child process tree,
+    是 macOS 上對付這種 cv_wait coalesce 的標準解法
+  - -i 只擋 idle sleep, 不擋顯示器睡眠或手動 sleep, 對 user 無感
 
   安裝/移除/查看: 看 deploy/install_launchd.sh
 -->
@@ -22,6 +29,8 @@
 
     <key>ProgramArguments</key>
     <array>
+        <string>/usr/bin/caffeinate</string>
+        <string>-i</string>
         <string>/Users/leroy/.local/bin/uv</string>
         <string>run</string>
         <string>python</string>

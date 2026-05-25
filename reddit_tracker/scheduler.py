@@ -14,10 +14,11 @@ import asyncio
 import logging
 import signal
 import sys
+import time
 from datetime import datetime, timezone
 from typing import Callable
 
-from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 
@@ -97,7 +98,7 @@ def _telegram_ready(settings) -> tuple[str, int] | None:
 
 
 def _deliver_picks_sync(picks, *, push_date) -> tuple[int, int]:
-    """sync-to-async 橋接：在 BlockingScheduler 的 thread 內 asyncio.run 跑 sender。"""
+    """sync-to-async 橋接：在 BackgroundScheduler 的 worker thread 內 asyncio.run 跑 sender。"""
     settings = get_settings()
     ready = _telegram_ready(settings)
     if ready is None or not picks:
@@ -221,7 +222,7 @@ def _run_detection() -> None:
 
 
 def _deliver_milestones_sync(pendings) -> tuple[int, int]:
-    """sync-to-async：在 BlockingScheduler thread 內 asyncio.run sender。"""
+    """sync-to-async：在 BackgroundScheduler worker thread 內 asyncio.run sender。"""
     settings = get_settings()
     ready = _telegram_ready(settings)
     if ready is None or not pendings:
@@ -340,9 +341,9 @@ def _run_scoring() -> None:
     )
 
 
-def build_scheduler() -> BlockingScheduler:
+def build_scheduler() -> BackgroundScheduler:
     settings = get_settings()
-    sched = BlockingScheduler(timezone="UTC")
+    sched = BackgroundScheduler(timezone="UTC")
 
     sched.add_job(
         _run_subreddit_discovery,
@@ -479,7 +480,21 @@ def main() -> int:
     # 啟動時各跑一次 — 不然要等 60 分鐘才看到第一批資料
     run_initial_pass()
 
+    # BackgroundScheduler 在 worker thread 跑 job, sched.start() non-blocking
     sched.start()
+
+    # macOS 對長 cv_wait timer 會做 timer coalescing (即使 launchd 包 caffeinate -i
+    # + ProcessType=Interactive 也一樣), 導致 APScheduler 內部 _main_loop 的 wait
+    # 被睡進去不喚醒, scheduled job 完全不 fire. 解法: main thread 每秒呼叫
+    # sched.wakeup() 強制 worker thread 的 cv_wait 立刻返回重算 next_run, cv_wait
+    # 永遠 ≤1 秒 — coalesce 機制以「閒置秒數」為粒度, 拿不到 1 秒以內的 wait.
+    # time.sleep(1) 本身走 nanosleep syscall (非 cv_wait), 不受 coalesce 影響.
+    try:
+        while True:
+            time.sleep(1)
+            sched.wakeup()
+    except (KeyboardInterrupt, SystemExit):
+        sched.shutdown(wait=False)
     return 0
 
 

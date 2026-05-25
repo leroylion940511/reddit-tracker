@@ -10,7 +10,7 @@
   session 關掉，回收 user_id list。
 
 In-memory state 用 module-level dict + threading.Lock 保護（bot handler 在
-asyncio thread 跑、scheduler sweep 在 BlockingScheduler thread 跑）。
+asyncio thread 跑、scheduler sweep 在 BackgroundScheduler worker thread 跑）。
 
 Context 組裝原則（reddit_tracker_proposal §4.6）：
 1. 原貼基本資料 + 最新 snapshot（演化）
