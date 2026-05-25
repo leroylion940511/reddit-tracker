@@ -202,6 +202,43 @@ def test_keyword_search_is_per_sub_not_all_reddit(seeded_session):
     assert any(sub in ("Taiwan", "HongKong", "China_irl", "taipei") for sub in update_calls)
 
 
+def test_keyword_search_same_post_across_fanout_doesnt_crash(seeded_session):
+    """Regression：同一篇貼文被多個 (seed, sub) 命中時不該撞 UNIQUE constraint。
+
+    舊版 _ingest_payloads 結尾沒 flush，下一次 fan-out 的 SELECT 看不到 pending
+    rows，外層 session.flush() 就 batch INSERT 兩筆同 reddit_post_id 整支死。
+    """
+
+    class _StuckScraper(FakeScraper):
+        """不論 query / sub 為何，都回同一篇貼文（模擬熱門 cross-keyword post）。"""
+
+        def __init__(self):
+            super().__init__(corpus=[])
+            self._payload = _make_payload("crossfanout", sub="Taiwan",
+                                          title="後續更新：colleague 自爆")
+
+        def search(self, query, subreddit="all", time_filter="day", limit=50):
+            return [self._payload]
+
+    stats = discover_from_keywords(
+        seeded_session, _StuckScraper(), per_keyword_limit=5
+    )
+    seeded_session.commit()
+
+    # 不該 raise；且最終 DB 只有 1 筆 reddit_post_id='crossfanout'
+    rows = seeded_session.scalars(
+        select(CandidatePost.reddit_post_id).where(
+            CandidatePost.reddit_post_id == "crossfanout"
+        )
+    ).all()
+    assert len(rows) == 1
+    # 第一次撞到該 post 算 inserted，後續所有 fan-out 都算 skipped_dupe
+    total_inserted = sum(s.inserted for s in stats)
+    total_dupe = sum(s.skipped_dupe for s in stats)
+    assert total_inserted == 1
+    assert total_dupe >= 1
+
+
 def test_keyword_search_skips_failing_sub(seeded_session):
     """單一 sub 搜尋失敗（例：403）不阻塞其他 sub。"""
 

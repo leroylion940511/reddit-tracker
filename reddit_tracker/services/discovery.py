@@ -247,4 +247,10 @@ def _ingest_payloads(
         )
         existing_ids.add(p.reddit_post_id)  # 同一批內也防重
         stat.inserted += 1
+    # 立刻 flush — 讓下一次 `_ingest_payloads` 的 SELECT 看得到本次新加的
+    # pending rows。沒這行的話，keyword fan-out 同篇貼文被兩個 (seed,sub) 命中時，
+    # 第二次 SELECT 看不到第一次的 pending insert → batch flush 撞 UNIQUE constraint
+    # → 整支 scheduler 死。
+    if stat.inserted:
+        session.flush()
     return stat

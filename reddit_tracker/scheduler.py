@@ -15,6 +15,7 @@ import logging
 import signal
 import sys
 from datetime import datetime, timezone
+from typing import Callable
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -476,13 +477,45 @@ def main() -> int:
         settings.reddit_scraper,
     )
     # 啟動時各跑一次 — 不然要等 60 分鐘才看到第一批資料
-    logger.info("running initial pass...")
-    _run_subreddit_discovery()
-    _run_keyword_discovery()
-    _run_scoring()
+    run_initial_pass()
 
     sched.start()
     return 0
+
+
+# 給 main() / test 共用 — initial pass 每支獨立 try/except，單支死不影響其他
+INITIAL_PASS_JOBS: list[tuple[str, Callable[[], None]]] = [
+    ("subreddit_discovery", _run_subreddit_discovery),
+    ("keyword_discovery", _run_keyword_discovery),
+    ("scoring", _run_scoring),
+]
+
+
+def run_initial_pass() -> dict[str, str]:
+    """跑啟動時的 initial pass。每支 job 獨立 try/except。
+
+    回 {job_name: 'ok' | 'error:<msg>'}。任一支 raise 不會打斷其他 job，
+    也不會把 scheduler process 帶下水 — bug B (2026-05-25 scheduler crash) 的
+    韌性層。後續 scheduled job 一樣會準時跑（已註冊到 sched）。
+    """
+    logger.info("running initial pass...")
+    results: dict[str, str] = {}
+    for name, fn in INITIAL_PASS_JOBS:
+        try:
+            fn()
+            results[name] = "ok"
+        except Exception as e:  # noqa: BLE001 — 故意吞，避免單支 raise 殺 process
+            logger.exception("initial pass job '%s' failed: %s", name, e)
+            results[name] = f"error:{e}"
+    failed = [k for k, v in results.items() if v != "ok"]
+    if failed:
+        logger.warning(
+            "initial pass 完成（部分失敗）：ok=%d failed=%s",
+            sum(1 for v in results.values() if v == "ok"), failed,
+        )
+    else:
+        logger.info("initial pass ok: %s", list(results.keys()))
+    return results
 
 
 if __name__ == "__main__":
