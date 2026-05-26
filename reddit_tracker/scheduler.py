@@ -19,8 +19,28 @@ from datetime import datetime, timezone
 from typing import Callable
 
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.base import STATE_STOPPED
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
+
+
+class _PollingBackgroundScheduler(BackgroundScheduler):
+    """繞 macOS cv_wait coalesce — _main_loop 改用 time.sleep polling.
+
+    APScheduler 預設 _main_loop 用 threading.Event.wait(timeout) 算下次 fire,
+    但 macOS 對長 cv_wait 會 coalesce, BlockingScheduler / BackgroundScheduler
+    同樣中招 (實測 launchd + caffeinate -i + main thread 每秒 sched.wakeup()
+    都救不了 — wakeup 的 Event.set() 也被 mach kernel batched).
+    這裡 override _main_loop 用 time.sleep (走 nanosleep, 非 cv_wait) polling.
+    """
+
+    def _main_loop(self) -> None:
+        while self.state != STATE_STOPPED:
+            wait_seconds = self._process_jobs()
+            # _process_jobs 回到下個 fire 的秒數, None = TIMEOUT_MAX.
+            # 卡 ≤1s 確保 misfire 不會被延遲過久.
+            sleep_for = 1.0 if wait_seconds is None else min(wait_seconds, 1.0)
+            time.sleep(sleep_for)
 
 from .config import get_settings
 from .db import session_scope
@@ -341,16 +361,15 @@ def _run_scoring() -> None:
     )
 
 
-def build_scheduler() -> BackgroundScheduler:
+def build_scheduler() -> _PollingBackgroundScheduler:
     settings = get_settings()
-    sched = BackgroundScheduler(timezone="UTC")
+    sched = _PollingBackgroundScheduler(timezone="UTC")
 
     sched.add_job(
         _run_subreddit_discovery,
         trigger=IntervalTrigger(minutes=settings.poll_subreddit_minutes),
         id="subreddit_discovery",
         name="discover_from_subreddits",
-        next_run_time=None,  # 由 main() 視情況啟動時跑一次
         max_instances=1,
         coalesce=True,
     )
@@ -359,7 +378,6 @@ def build_scheduler() -> BackgroundScheduler:
         trigger=IntervalTrigger(hours=settings.poll_keyword_hours),
         id="keyword_discovery",
         name="discover_from_keywords",
-        next_run_time=None,
         max_instances=1,
         coalesce=True,
     )
@@ -368,7 +386,6 @@ def build_scheduler() -> BackgroundScheduler:
         trigger=IntervalTrigger(minutes=settings.scoring_minutes),
         id="scoring",
         name="score_unscored_candidates",
-        next_run_time=None,
         max_instances=1,
         coalesce=True,
     )
@@ -391,7 +408,6 @@ def build_scheduler() -> BackgroundScheduler:
         trigger=IntervalTrigger(minutes=settings.breaking_check_minutes),
         id="breaking_check",
         name="breaking_check",
-        next_run_time=None,
         max_instances=1,
         coalesce=True,
     )
@@ -402,7 +418,6 @@ def build_scheduler() -> BackgroundScheduler:
         trigger=IntervalTrigger(minutes=settings.polling_minutes),
         id="polling",
         name="poll_tracked_posts",
-        next_run_time=None,
         max_instances=1,
         coalesce=True,
     )
@@ -413,7 +428,6 @@ def build_scheduler() -> BackgroundScheduler:
         trigger=IntervalTrigger(minutes=settings.detection_minutes),
         id="detection",
         name="detect_related_events",
-        next_run_time=None,
         max_instances=1,
         coalesce=True,
     )
@@ -424,7 +438,6 @@ def build_scheduler() -> BackgroundScheduler:
         trigger=IntervalTrigger(minutes=settings.milestone_check_minutes),
         id="milestone_check",
         name="push_pending_milestones",
-        next_run_time=None,
         max_instances=1,
         coalesce=True,
     )
@@ -435,7 +448,6 @@ def build_scheduler() -> BackgroundScheduler:
         trigger=IntervalTrigger(minutes=settings.qa_idle_sweep_minutes),
         id="qa_idle_sweep",
         name="qa_idle_sweep",
-        next_run_time=None,
         max_instances=1,
         coalesce=True,
     )
@@ -480,19 +492,13 @@ def main() -> int:
     # 啟動時各跑一次 — 不然要等 60 分鐘才看到第一批資料
     run_initial_pass()
 
-    # BackgroundScheduler 在 worker thread 跑 job, sched.start() non-blocking
+    # _PollingBackgroundScheduler 的 _main_loop 在 worker thread 自己跑 polling
+    # (不靠 cv_wait), sched.start() non-blocking. main thread 只負責 keepalive,
+    # 等 signal 來 graceful shutdown. time.sleep(60) 走 nanosleep, 不受 coalesce.
     sched.start()
-
-    # macOS 對長 cv_wait timer 會做 timer coalescing (即使 launchd 包 caffeinate -i
-    # + ProcessType=Interactive 也一樣), 導致 APScheduler 內部 _main_loop 的 wait
-    # 被睡進去不喚醒, scheduled job 完全不 fire. 解法: main thread 每秒呼叫
-    # sched.wakeup() 強制 worker thread 的 cv_wait 立刻返回重算 next_run, cv_wait
-    # 永遠 ≤1 秒 — coalesce 機制以「閒置秒數」為粒度, 拿不到 1 秒以內的 wait.
-    # time.sleep(1) 本身走 nanosleep syscall (非 cv_wait), 不受 coalesce 影響.
     try:
         while True:
-            time.sleep(1)
-            sched.wakeup()
+            time.sleep(60)
     except (KeyboardInterrupt, SystemExit):
         sched.shutdown(wait=False)
     return 0
