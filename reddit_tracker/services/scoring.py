@@ -101,6 +101,10 @@ def _interaction_velocity(post: CandidatePost, age_h: float | None) -> float | N
         return None
     ups = post.initial_score or 0
     comments = post.initial_num_comments or 0
+    # 來源沒給 engagement 信號（RSS feed / 剛 post 的 candidate）回 None,
+    # apply_hard_rules 視為 unknown-pass — 不卡死 Plan C 整批 candidate.
+    if ups == 0 and comments == 0:
+        return None
     return (ups + comments * 2) / age_h
 
 
@@ -123,8 +127,12 @@ def apply_hard_rules(
     velocity = _interaction_velocity(post, age_h)
     details["age_hours"] = round(age_h, 3) if age_h is not None else None
     details["velocity"] = round(velocity, 3) if velocity is not None else None
-    if velocity is None:
+    if age_h is None:
         fail_reasons.append("missing_posted_at")
+    elif velocity is None:
+        # _interaction_velocity 在 ups==0 且 comments==0 時回 None,
+        # 表示來源未提供 engagement 信號（RSS / 剛貼出）→ 不卡, 由後續 Haiku 判斷.
+        details["velocity_unknown"] = True
     elif velocity < MIN_VELOCITY:
         fail_reasons.append(f"velocity<{MIN_VELOCITY}")
 

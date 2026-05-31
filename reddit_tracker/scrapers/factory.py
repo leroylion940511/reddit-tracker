@@ -3,8 +3,9 @@
 對應 SCHEDULE.md M2.7。沿用 v3 的 factory pattern（PROGRESS.md 第 101 行）。
 
 環境變數：
-    REDDIT_SCRAPER=public_json  (預設，M1 階段，無需 OAuth)
-    REDDIT_SCRAPER=praw         (OAuth 過了再切，需要 CLIENT_ID/SECRET)
+    REDDIT_SCRAPER=rss          (Plan C 預設，2026-05-29 .json 被全擋後的 fallback)
+    REDDIT_SCRAPER=public_json  (原 M1 路徑，5/29 後對多數 sub 已 403)
+    REDDIT_SCRAPER=praw         (OAuth 通過後切回，需要 CLIENT_ID/SECRET)
     REDDIT_SCRAPER=fake         (測試用，M2.6 補)
 """
 
@@ -20,8 +21,22 @@ logger = logging.getLogger(__name__)
 
 
 def build_scraper(kind: str | None = None) -> RedditScraper:
-    kind = (kind or os.getenv("REDDIT_SCRAPER", "public_json")).lower()
+    kind = (kind or os.getenv("REDDIT_SCRAPER", "rss")).lower()
     user_agent = os.getenv("REDDIT_USER_AGENT", "reddit_tracker/0.1 by unknown")
+
+    if kind == "rss":
+        from .rss import RssScraper
+        try:
+            from ..config import get_settings
+            interval = get_settings().public_json_min_interval_seconds
+        except Exception:  # noqa: BLE001
+            interval = 6.5
+        logger.info(
+            "Using RssScraper (Plan C, no engagement signals, min_interval=%.1fs). "
+            "keyword_discovery / detection / Q&A 暫停, 等 OAuth 通過切回 PRAW.",
+            interval,
+        )
+        return RssScraper(user_agent=user_agent, min_interval_seconds=interval)
 
     if kind == "public_json":
         # 從 settings 拿 throttle；測試 / scripts 沒 .env 時 fallback 預設
