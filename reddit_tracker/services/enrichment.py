@@ -53,7 +53,17 @@ def enrich_author_profiles(
     for c in pending:
         name = c.author_username
         if name not in profile_cache:
-            profile = scraper.fetch_user_about(name)
+            try:
+                profile = scraper.fetch_user_about(name)
+            except NotImplementedError:
+                # Plan C (RssScraper) 不支援 user about endpoint.
+                # 整批 candidate 維持 author_karma=None / account_created_utc=None,
+                # apply_hard_rules 對 None karma / age 是 fallback 放行, scoring 仍可跑.
+                logger.info(
+                    "enrich_author_profiles: scraper 不支援 fetch_user_about, "
+                    "跳過 enrichment (Plan C 預期行為)"
+                )
+                return stat
             profile_cache[name] = profile
             stat.looked_up += 1
         else:
