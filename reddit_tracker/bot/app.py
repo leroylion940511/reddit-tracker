@@ -41,9 +41,10 @@ def build_application() -> Application:
     # M6 — /ask /exit 上線
     app.add_handler(CommandHandler("ask", handlers.ask_cmd))
     app.add_handler(CommandHandler("exit", handlers.exit_cmd))
-    # 其餘 stub
-    for name in ("feed", "digest", "settings"):
-        app.add_handler(CommandHandler(name, handlers.deferred_cmd))
+    # Plan C 階段補上的指令（純 DB 讀取，不依賴 comment tree）
+    app.add_handler(CommandHandler("feed", handlers.feed_cmd))
+    app.add_handler(CommandHandler("digest", handlers.digest_cmd))
+    app.add_handler(CommandHandler("settings", handlers.settings_cmd))
 
     # 三按鈕回饋：所有 callback_data 以 'fb:' 開頭都進這個 handler
     app.add_handler(

@@ -4,7 +4,7 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-05-24（M6 全段完成 — `/ask` `/exit` + 多輪 MiniMax chat + 重量 context 組裝 + 5min idle sweep，198/198 tests 全綠）
+**Last updated:** 2026-06-02（Plan C 階段補上 `/feed` `/digest` `/settings` 三個指令，純 DB 讀取不依賴 comment tree，232/232 tests 全綠）
 
 > **本分支策略**：不申請 OAuth、不用 PRAW，全程走 public JSON endpoint。M1 probe
 > 實測 4 個 M5/M6 用得到的 endpoint（user_about / user_submitted / duplicates /
@@ -72,6 +72,20 @@
 ---
 
 ## 下一步（單一優先）
+
+**Plan C 期間補完 bot 三個 deferred 指令** ✅（2026-06-02）：
+
+- `/feed` — 今日 daily_pushes 依 push_type 分組（🔥 已爆貼 / ⚡ 早期下注 / 🚨 即時破例）；
+  今日無推送則 fallback 列過去 24h 通過 final scoring 的 top 5
+- `/digest` — user 自己 tracked_posts 過去 7 天的 milestone，依 tracked 分組 + 各
+  relation_type 統計 + 每篇 top 3 milestone snippet（每筆附 `/timeline <id>`）
+- `/settings` — scraper mode（Plan C 在 RSS 時顯示警示 banner）+ 過去 24h
+  candidate / scoring 通過率 + 該 user 收藏統計
+- `app.py` 把 deferred_cmd 拿掉，三個指令各自掛 handler；HELP_TEXT 同步更新
+- 18 新 tests（test_bot_feed_digest_settings.py）：feed 空 / 今日分組 / 只列今日 /
+  fallback 路徑 / fallback 過濾 stale；digest 空 / 無 milestone / 分組 / 跨 user
+  隔離 / 排除非 milestone；settings 各 scraper mode / 通過率 / 個人統計 / 零資料
+  邊界 + 3 個 async dispatcher smoke
 
 **M7**：評估與調優。`scripts/eval_*.py` 系列：收藏率（feedback.collect /
 daily_pushes，依 push_type 分組）、後續命中率（30 天內 related_posts ≥ 1

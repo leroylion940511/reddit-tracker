@@ -10,19 +10,22 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy import func, select
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
+from ..config import get_settings
 from ..db import session_scope
 from ..llm.minimax_chat import ChatClient, build_chat
 from ..models import (
     CandidatePost,
+    DailyPush,
     PostSnapshot,
     RelatedPost,
+    ScoringRecord,
     TrackedPost,
 )
 from ..scrapers.base import RedditScraper
@@ -38,7 +41,9 @@ HELP_TEXT = (
     "Reddit Tracker 指令：\n"
     "/start             註冊\n"
     "/help              顯示說明\n"
-    "/feed              查看今日推送 (M4.6 上線)\n"
+    "/feed              查看今日推送\n"
+    "/digest            本週收藏動態摘要\n"
+    "/settings          系統狀態與設定\n"
     "/saved             列出已收藏\n"
     "/timeline <id>     看單篇時間軸\n"
     "/ask <id>          進入問答模式（5 分鐘無互動自動結束）\n"
@@ -236,6 +241,296 @@ def _timeline_sync(user_id: int, tracked_id: int) -> str:
             lines.append("")
             lines.append("尚無任何快照或相關事件。")
         return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# /feed /digest /settings — Plan C 階段補齊的指令
+# ---------------------------------------------------------------------------
+
+
+_PUSH_TYPE_META = {
+    "already_hot": ("🔥", "已爆貼"),
+    "early_bet":   ("⚡", "早期下注"),
+    "breaking":    ("🚨", "即時破例"),
+}
+
+
+def _today_utc() -> date:
+    return datetime.now(timezone.utc).date()
+
+
+def _permalink_url(c: CandidatePost) -> str | None:
+    link = c.permalink
+    if not link:
+        return None
+    return link if link.startswith("http") else f"https://www.reddit.com{link}"
+
+
+def _feed_today_sync(user_id: int) -> str:
+    """組 /feed 訊息：今日 daily_pushes 依 push_type 分組；
+    若今日無推送則 fallback 列過去 24h 通過 final scoring 的 top 5。"""
+    _ = user_id  # 推送是全體共用，不分使用者；保留參數以對齊 cmd 介面
+    today = _today_utc()
+    with session_scope() as session:
+        rows = session.execute(
+            select(DailyPush, CandidatePost)
+            .join(CandidatePost, CandidatePost.id == DailyPush.candidate_post_id)
+            .where(DailyPush.push_date == today)
+            .order_by(DailyPush.push_type.asc(), DailyPush.rank.asc().nulls_last())
+        ).all()
+
+        if rows:
+            grouped: dict[str, list[tuple[DailyPush, CandidatePost]]] = {}
+            for dp, c in rows:
+                grouped.setdefault(dp.push_type, []).append((dp, c))
+            lines = [f"📬 今日推送（{today.isoformat()}，共 {len(rows)} 篇）", ""]
+            for ptype, items in grouped.items():
+                emoji, label = _PUSH_TYPE_META.get(ptype, ("•", ptype))
+                lines.append(f"<b>{emoji} {label}（{len(items)}）</b>")
+                for dp, c in items:
+                    rank = f"#{dp.rank}" if dp.rank is not None else ""
+                    title = _escape_html((c.title or "(無標題)")[:80])
+                    url = _permalink_url(c)
+                    link_html = (
+                        f'<a href="{_escape_html(url)}">{title}</a>' if url else title
+                    )
+                    lines.append(
+                        f"  {rank} r/{_escape_html(c.subreddit)} · {link_html}"
+                    )
+                lines.append("")
+            return "\n".join(lines).rstrip()
+
+        # fallback：過去 24h 通過 final scoring 的 top 5
+        since = datetime.now(timezone.utc) - timedelta(hours=24)
+        finals = session.execute(
+            select(ScoringRecord, CandidatePost)
+            .join(CandidatePost, CandidatePost.id == ScoringRecord.candidate_post_id)
+            .where(
+                ScoringRecord.stage == "final",
+                ScoringRecord.passed.is_(True),
+                ScoringRecord.scored_at >= since,
+            )
+            .order_by(ScoringRecord.score.desc().nulls_last())
+            .limit(5)
+        ).all()
+
+        if not finals:
+            return (
+                f"📬 今日（{today.isoformat()}）尚未推送。\n"
+                "過去 24 小時也沒有通過評分的候選——可能是 scheduler 剛起、"
+                "或 Plan C 階段 RSS 訊號退化（沒有 score / comments）。\n"
+                "用 /settings 看系統健康狀態。"
+            )
+
+        lines = [
+            f"📬 今日（{today.isoformat()}）尚未推送。",
+            "",
+            f"近 24h 通過評分的候選 top {len(finals)}：",
+            "",
+        ]
+        for i, (sr, c) in enumerate(finals, start=1):
+            title = _escape_html((c.title or "(無標題)")[:80])
+            url = _permalink_url(c)
+            link_html = (
+                f'<a href="{_escape_html(url)}">{title}</a>' if url else title
+            )
+            score = f"{sr.score:.2f}" if sr.score is not None else "—"
+            lines.append(
+                f"{i}. r/{_escape_html(c.subreddit)} · final={score}\n   {link_html}"
+            )
+        return "\n".join(lines)
+
+
+def _digest_sync(user_id: int) -> str:
+    """組 /digest 訊息：列出 user 自己 tracked_posts 過去 7 天的 milestone。"""
+    now = datetime.now(timezone.utc)
+    since = now - timedelta(days=7)
+    with session_scope() as session:
+        rows = session.execute(
+            select(RelatedPost, TrackedPost, CandidatePost)
+            .join(TrackedPost, TrackedPost.id == RelatedPost.tracked_post_id)
+            .join(CandidatePost, CandidatePost.id == TrackedPost.candidate_post_id)
+            .where(
+                TrackedPost.user_id == user_id,
+                RelatedPost.is_milestone.is_(True),
+                RelatedPost.discovered_at >= since,
+            )
+            .order_by(
+                TrackedPost.id.asc(),
+                RelatedPost.relevance_score.desc().nulls_last(),
+                RelatedPost.discovered_at.desc(),
+            )
+        ).all()
+
+        if not rows:
+            owned = session.scalar(
+                select(func.count(TrackedPost.id)).where(
+                    TrackedPost.user_id == user_id,
+                    TrackedPost.status == "active",
+                )
+            ) or 0
+            if owned == 0:
+                return "你還沒收藏任何貼文。用 ❤️ 收藏推送的貼文後，這裡會出現摘要。"
+            return (
+                f"📭 過去 7 天沒有任何 milestone。\n"
+                f"目前 active 收藏 {owned} 篇。\n"
+                "（Plan C 期間 detection 暫停，milestone 訊號只能等 OAuth 通過後恢復）"
+            )
+
+        grouped: dict[int, list[RelatedPost]] = {}
+        meta: dict[int, tuple[TrackedPost, CandidatePost]] = {}
+        for r, t, c in rows:
+            grouped.setdefault(t.id, []).append(r)
+            meta.setdefault(t.id, (t, c))
+
+        lines = [f"📰 本週摘要（{len(rows)} 個 milestone，{len(grouped)} 篇收藏）", ""]
+        for tid, items in grouped.items():
+            t, c = meta[tid]
+            title = _escape_html((c.title or "(無標題)")[:70])
+            lines.append(
+                f"<b>★ r/{_escape_html(c.subreddit)} · {title}</b>"
+                f"  <code>/timeline {tid}</code>"
+            )
+            type_counts: dict[str, int] = {}
+            for r in items:
+                type_counts[r.relation_type] = type_counts.get(r.relation_type, 0) + 1
+            summary = "、".join(
+                f"{RELATION_LABELS.get(k, k)} ×{v}" for k, v in type_counts.items()
+            )
+            lines.append(f"  {summary}")
+            for r in items[:3]:  # 每篇只列 top 3 milestone snippet
+                snippet = _escape_html((r.content or "")[:120])
+                ts = r.posted_at or r.discovered_at
+                ts_str = _fmt_relative_time(ts, now) if ts else "?"
+                label = RELATION_LABELS.get(r.relation_type, r.relation_type)
+                lines.append(f"    {ts_str} · {label}: {snippet}")
+            if len(items) > 3:
+                lines.append(f"    …還有 {len(items) - 3} 筆，看 /timeline {tid}")
+            lines.append("")
+        return "\n".join(lines).rstrip()
+
+
+def _settings_sync(user_id: int) -> str:
+    """組 /settings 訊息：scraper mode + 系統健康 + 該 user 統計。"""
+    s = get_settings()
+    now = datetime.now(timezone.utc)
+    since_24h = now - timedelta(hours=24)
+    plan_c_modes = {"rss"}
+    scraper_label = {
+        "public_json": "public JSON (anonymous)",
+        "praw":        "PRAW (OAuth)",
+        "rss":         "RSS fallback (Plan C)",
+        "fake":        "Fake (dev)",
+    }.get(s.reddit_scraper, s.reddit_scraper)
+    in_plan_c = s.reddit_scraper in plan_c_modes
+
+    with session_scope() as session:
+        # 系統面（全體）
+        cand_24h = session.scalar(
+            select(func.count(CandidatePost.id)).where(
+                CandidatePost.discovered_at >= since_24h
+            )
+        ) or 0
+        rules_24h = session.scalar(
+            select(func.count(ScoringRecord.id)).where(
+                ScoringRecord.stage == "rules",
+                ScoringRecord.scored_at >= since_24h,
+            )
+        ) or 0
+        rules_pass_24h = session.scalar(
+            select(func.count(ScoringRecord.id)).where(
+                ScoringRecord.stage == "rules",
+                ScoringRecord.passed.is_(True),
+                ScoringRecord.scored_at >= since_24h,
+            )
+        ) or 0
+        final_pass_24h = session.scalar(
+            select(func.count(ScoringRecord.id)).where(
+                ScoringRecord.stage == "final",
+                ScoringRecord.passed.is_(True),
+                ScoringRecord.scored_at >= since_24h,
+            )
+        ) or 0
+        pushed_today = session.scalar(
+            select(func.count(DailyPush.id)).where(
+                DailyPush.push_date == _today_utc()
+            )
+        ) or 0
+
+        # 個人面
+        my_active = session.scalar(
+            select(func.count(TrackedPost.id)).where(
+                TrackedPost.user_id == user_id,
+                TrackedPost.status == "active",
+            )
+        ) or 0
+        my_archived = session.scalar(
+            select(func.count(TrackedPost.id)).where(
+                TrackedPost.user_id == user_id,
+                TrackedPost.status == "archived",
+            )
+        ) or 0
+
+    rules_rate = (rules_pass_24h / rules_24h * 100) if rules_24h else 0.0
+
+    lines = [
+        "⚙️ <b>系統設定</b>",
+        f"  scraper：<code>{_escape_html(scraper_label)}</code>",
+        f"  user_agent：<code>{_escape_html(s.reddit_user_agent)}</code>",
+        f"  poll：sub={s.poll_subreddit_minutes}min · scoring={s.scoring_minutes}min"
+        f" · breaking={s.breaking_check_minutes}min",
+    ]
+    if in_plan_c:
+        lines.append(
+            "  ⚠️ Plan C：keyword_discovery / detection / Q&A 暫停，等 OAuth 通過切回 PRAW"
+        )
+    lines.append("")
+    lines.append("📊 <b>過去 24 小時</b>")
+    lines.append(f"  新候選：{cand_24h}")
+    lines.append(
+        f"  rules 通過：{rules_pass_24h}/{rules_24h}（{rules_rate:.0f}%）"
+    )
+    lines.append(f"  final 通過：{final_pass_24h}")
+    lines.append(f"  今日已推送：{pushed_today}")
+    lines.append("")
+    lines.append("👤 <b>你的狀態</b>")
+    lines.append(f"  active 收藏：{my_active}")
+    lines.append(f"  archived：{my_archived}")
+    lines.append(f"  user_id：<code>{user_id}</code>")
+    return "\n".join(lines)
+
+
+async def feed_cmd(update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    msg = update.effective_message
+    user = update.effective_user
+    if msg is None or user is None:
+        return
+    text = await asyncio.to_thread(_feed_today_sync, user.id)
+    await msg.reply_text(
+        text, parse_mode=ParseMode.HTML, disable_web_page_preview=True
+    )
+
+
+async def digest_cmd(update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    msg = update.effective_message
+    user = update.effective_user
+    if msg is None or user is None:
+        return
+    text = await asyncio.to_thread(_digest_sync, user.id)
+    await msg.reply_text(
+        text, parse_mode=ParseMode.HTML, disable_web_page_preview=True
+    )
+
+
+async def settings_cmd(update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    msg = update.effective_message
+    user = update.effective_user
+    if msg is None or user is None:
+        return
+    text = await asyncio.to_thread(_settings_sync, user.id)
+    await msg.reply_text(
+        text, parse_mode=ParseMode.HTML, disable_web_page_preview=True
+    )
 
 
 async def saved_cmd(update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> None:
@@ -520,18 +815,24 @@ __all__ = [
     "INVALID_REPLY",
     "MISSING_REPLY",
     "_close_session_sync",
+    "_digest_sync",
+    "_feed_today_sync",
     "_handle_qa_message_sync",
     "_open_session_sync",
     "_record_feedback_sync",
     "_saved_list_sync",
+    "_settings_sync",
     "_timeline_sync",
     "ask_cmd",
     "chat_message",
     "deferred_cmd",
+    "digest_cmd",
     "exit_cmd",
+    "feed_cmd",
     "feedback_callback",
     "help_cmd",
     "saved_cmd",
+    "settings_cmd",
     "start_cmd",
     "timeline_cmd",
 ]
