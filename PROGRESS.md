@@ -4,7 +4,7 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-06-02（Plan C 階段補上 `/feed` `/digest` `/settings` 三個指令，純 DB 讀取不依賴 comment tree，232/232 tests 全綠）
+**Last updated:** 2026-06-02（M7 baseline 半段完成 — 7.1/7.2/7.3/7.4/7.7/7.9 共 5 支 eval 腳本 + dry-run cleanup + 整合報告 `docs/m7_baseline_2026-06-02.md`；7.6 prompt retune 與 7.8 QA 自評待 OAuth 通過後做）
 
 > **本分支策略**：不申請 OAuth、不用 PRAW，全程走 public JSON endpoint。M1 probe
 > 實測 4 個 M5/M6 用得到的 endpoint（user_about / user_submitted / duplicates /
@@ -35,7 +35,7 @@
 | M4 | 候選排程 + 推送層 | 🟢 | feed.py + bot 全部接通 + scheduler 雙 job + 真 Telegram 端到端 (cand=241 收到推送、按 ❤️ 寫 feedback id=1) + 99 tests |
 | M5 | 收藏追蹤層 | 🟢 | 升格 + tier polling + 四類偵測（author_followup / author_reply / hot_reply / crosspost）+ milestone immediate push + daily digest + `RelatedPost.notified_at` 去重 + `/saved` `/timeline` + alembic migration (notified_at + uq_related_post_triple) + 8-job scheduler + smoke end-to-end + 61 新 tests (160/160) |
 | M6 | 問答層 | 🟢 | MiniMax 多輪 chat（Opus 由專案決定替換為 MiniMax）+ in-memory session state + 重量 system prompt（origin / snapshots / comment tree / related events）+ `/ask` `/exit` + 自由文字 MessageHandler + scheduler `qa_idle_sweep` (TTL=5min) + 38 新 tests (198/198) |
-| M7 | 評估與調優 | ❌ | 收藏率、後續命中率、中英 subreddit 對照 |
+| M7 | 評估與調優 | 🟡 | 7.1/7.2/7.3/7.4/7.7/7.9 完成（5 支 eval + dry-run cleanup + baseline 報告）；7.6 retune / 7.8 QA 自評等 OAuth 通過 |
 | M8 | 報告與 demo | ❌ | 案例分析 + 問答自評 |
 
 ---
@@ -72,6 +72,18 @@
 ---
 
 ## 下一步（單一優先）
+
+**M7 baseline 半段完成** ✅（2026-06-02）— 詳見 [docs/m7_baseline_2026-06-02.md](docs/m7_baseline_2026-06-02.md)：
+
+- `scripts/eval_collection_rate.py` (7.1)、`eval_followup_hit.py` (7.2)、
+  `eval_lang_breakdown.py` (7.3)、`eval_relation_dist.py` (7.4)、
+  `eval_llm_cost.py` (7.9)、`m7_disable_dead_sources.py` (7.7, dry-run)
+- 收藏率 64.3%（pre-Plan-C 71% → Plan-C 57%，already_hot 71% → 33%）
+- 後續命中率 archived 80% / active 0%；avg 9.2 related/篇 + 2.2 milestone/篇
+- 中英對照：英文 haiku 通過 20% vs 中文 8.6%；中文 sub 在 daily picks 曝光僅 1/14
+- 月成本 $1.5（企劃預估 $15–36，便宜 10×）
+- cleanup 結論「現階段不該動」：6 個零收藏 sub 都是 never-pushed，picker 樣本不足
+- 待辦：7.6 prompt retune（針對中文）+ 7.8 QA 自評（要 OAuth 通過）
 
 **Plan C 期間補完 bot 三個 deferred 指令** ✅（2026-06-02）：
 
