@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 
+from telegram import BotCommand
 from telegram.ext import (
     Application,
     ApplicationBuilder,
@@ -27,12 +28,41 @@ from . import handlers
 logger = logging.getLogger(__name__)
 
 
+# Telegram 端的指令選單 (setMyCommands). 描述 ≤ 256 chr 但實務上越短越好.
+BOT_COMMANDS: list[BotCommand] = [
+    BotCommand("start", "註冊 / 顯示介紹"),
+    BotCommand("help", "查指令列表"),
+    BotCommand("feed", "今日推送內容"),
+    BotCommand("digest", "本週收藏動態摘要"),
+    BotCommand("saved", "我的收藏列表"),
+    BotCommand("timeline", "看單篇時間軸 (帶 id)"),
+    BotCommand("ask", "進入問答模式 (帶 id)"),
+    BotCommand("exit", "離開問答模式"),
+    BotCommand("settings", "系統狀態與設定"),
+]
+
+
+async def _post_init(app: Application) -> None:
+    """bot 啟動後自動把指令選單同步到 Telegram 端 (setMyCommands).
+
+    沒這層的話, Telegram 客戶端的 / 自動完成清單永遠是空的或舊的;
+    每次改 BOT_COMMANDS 後下次 bot 重啟即會自動 sync.
+    """
+    await app.bot.set_my_commands(BOT_COMMANDS)
+    logger.info("bot.set_my_commands synced: %d cmds", len(BOT_COMMANDS))
+
+
 def build_application() -> Application:
     s = get_settings()
     if not s.telegram_bot_token:
         raise RuntimeError("TELEGRAM_BOT_TOKEN is not configured")
 
-    app = ApplicationBuilder().token(s.telegram_bot_token).build()
+    app = (
+        ApplicationBuilder()
+        .token(s.telegram_bot_token)
+        .post_init(_post_init)
+        .build()
+    )
     app.add_handler(CommandHandler("start", handlers.start_cmd))
     app.add_handler(CommandHandler("help", handlers.help_cmd))
     # M5.9 — /saved + /timeline 上線
