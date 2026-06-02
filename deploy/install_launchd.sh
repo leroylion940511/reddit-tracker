@@ -42,6 +42,9 @@ _install_one() {
     cp "$src" "$dst"
     # 已經載入過就先 bootout (idempotent install)
     launchctl bootout "gui/$UID_NUM/$label" 2>/dev/null || true
+    # bootout 與 bootstrap 間留 buffer: launchd 對同 label 連續操作偶爾會回
+    # `Bootstrap failed: 5: Input/output error` (ratelimit), sleep 2 後穩定
+    sleep 2
     launchctl bootstrap "gui/$UID_NUM" "$dst"
     launchctl enable "gui/$UID_NUM/$label"
     echo "✓ installed $label"
