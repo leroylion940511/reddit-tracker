@@ -4,7 +4,7 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-06-08（subreddit 大小寫正規化 — PostPayload + seeds_loader + DB housekeeping，7,698 candidate rows + 9 source rows 對齊 lowercase；M7 retune backlog #3 結案）
+**Last updated:** 2026-06-08（M7.6 變體完成 — haiku SYSTEM_PROMPT retune：擴展 story_potential 涵蓋議題型 + 0/0 互動 disclaimer；中文 sub haiku pass 15.1% vs 英文 35.3% 失準根因 = story_potential 定義太窄；A/B 驗證留 OAuth 後）
 
 > **本分支策略**：不申請 OAuth、不用 PRAW，全程走 public JSON endpoint。M1 probe
 > 實測 4 個 M5/M6 用得到的 endpoint（user_about / user_submitted / duplicates /
@@ -72,6 +72,20 @@
 ---
 
 ## 下一步（單一優先）
+
+**M7.6 變體 — Haiku prompt retune（中文 sub 識別偏弱）** ✅（2026-06-08, M7 retune backlog #1）：
+- 命題：SCHEDULE 7.6 原本要分析 dislike 樣本，但只累積 5 筆要等 OAuth；改用 scoring 視角的等價分析 — 中文 sub haiku pass 15.1% vs 英文 35.3%（差 2.3×）
+- 分析：[scripts/eval_haiku_fail_samples.py](scripts/eval_haiku_fail_samples.py) 抽 5 中文 sub × 10 + 2 英文對照 sub × 5 = 60 筆 haiku verdict=skip 樣本 → [docs/m7_haiku_fail_samples.md](docs/m7_haiku_fail_samples.md)
+- 三個失準模式（[docs/m7_haiku_fail_analysis.md](docs/m7_haiku_fail_analysis.md)）：
+  - 2.1 諮詢題大量被 skip（旅遊 / 美食 / 簽證） — **合理判定，不是 bug**；中文地方 sub 結構性差異，不該動 prompt
+  - 2.2 議題討論型被低估（紀念六四 / 文化反思）：`emotional_pull=0.8` 但 `story_potential=0.3` → skip。**真盲點**：prompt 把 story_potential 限定為「事件繼續發生」，沒涵蓋「議題引發持續討論」
+  - 2.3 0/0 互動被當冷度證據：60% candidate 是 `score=0 num_comments=0`（剛發布 + RSS 退化），Haiku 推斷低 story_potential。**真盲點**：prompt 沒提醒這是時間序起點
+- 修法（[llm/haiku.py](reddit_tracker/llm/haiku.py)）：
+  - SYSTEM_PROMPT 擴展 story_potential 定義 — 加 (a) 事件型 + (b) 議題型；註明 `emotional_pull ≥ 0.7 且 authenticity ≥ 0.6` 時不要因「沒具體後續」就 < 0.4
+  - 加 0/0 互動 disclaimer — 明確告訴模型那是時間序起點不是冷度證據
+  - **不**動 verdict 門檻 / build_user_prompt（避免過度鬆綁讓英文 sub 噪音貼也被打爆）
+- 6 個新 tests（[tests/test_haiku_prompt.py](tests/test_haiku_prompt.py)）覆蓋 prompt 含關鍵段落 + JSON schema 保留 + verdict 門檻不變 + parser 行為不變。全套 248/248 過
+- 留 backlog：A/B 驗證等 OAuth 通過後 ≥ 50 dislike 樣本，跑 eval_dislike_features.py（新腳本），驗證 retune 是否提升 precision；每週對帳 eval_lang_breakdown.py 看中文 pass 是否升到 25%+
 
 **Subreddit 大小寫正規化** ✅（2026-06-08, M7 retune backlog #3）：
 - 症狀：candidate_posts 內 mixed-case（taiwan 381 + Taiwan 8 + Taipei 197 + Updateme 17…），跟 subreddit_sources.name 對不上、JOIN 統計失準
