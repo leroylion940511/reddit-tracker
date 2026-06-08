@@ -25,7 +25,7 @@ from reddit_tracker.services.discovery import (
 def _make_payload(
     pid: str,
     *,
-    sub: str = "Taiwan",
+    sub: str = "taiwan",
     title: str = "hi",
     author: str | None = "alice",
     deleted: bool = False,
@@ -63,22 +63,22 @@ def test_subreddit_discovery_inserts_and_updates_stats(seeded_session):
     stats = discover_from_subreddits(seeded_session, scraper, per_sub_limit=10)
     seeded_session.commit()
 
-    taiwan_stat = next(s for s in stats if s.source == "subreddit:Taiwan")
+    taiwan_stat = next(s for s in stats if s.source == "subreddit:taiwan")
     assert taiwan_stat.inserted == 3
     assert taiwan_stat.skipped_dupe == 0
     assert taiwan_stat.skipped_deleted == 0
 
     taiwan = seeded_session.scalar(
-        select(SubredditSource).where(SubredditSource.name == "Taiwan")
+        select(SubredditSource).where(SubredditSource.name == "taiwan")
     )
     assert taiwan.total_candidates_yielded == 3
     assert taiwan.last_polled_at is not None
 
     rows = seeded_session.scalars(
-        select(CandidatePost).where(CandidatePost.subreddit == "Taiwan")
+        select(CandidatePost).where(CandidatePost.subreddit == "taiwan")
     ).all()
     assert {r.reddit_post_id for r in rows} == {"a1", "a2", "a3"}
-    assert all(r.discovery_source == "subreddit:Taiwan" for r in rows)
+    assert all(r.discovery_source == "subreddit:taiwan" for r in rows)
 
 
 def test_subreddit_discovery_dedupes_on_second_pass(seeded_session):
@@ -88,13 +88,13 @@ def test_subreddit_discovery_dedupes_on_second_pass(seeded_session):
     stats2 = discover_from_subreddits(seeded_session, scraper, per_sub_limit=10)
     seeded_session.commit()
 
-    taiwan_stat = next(s for s in stats2 if s.source == "subreddit:Taiwan")
+    taiwan_stat = next(s for s in stats2 if s.source == "subreddit:taiwan")
     assert taiwan_stat.fetched == 2
     assert taiwan_stat.inserted == 0
     assert taiwan_stat.skipped_dupe == 2
 
     taiwan = seeded_session.scalar(
-        select(SubredditSource).where(SubredditSource.name == "Taiwan")
+        select(SubredditSource).where(SubredditSource.name == "taiwan")
     )
     # 第二次沒 yield 任何新候選
     assert taiwan.total_candidates_yielded == 2
@@ -102,7 +102,7 @@ def test_subreddit_discovery_dedupes_on_second_pass(seeded_session):
 
 def test_disabled_source_is_skipped(seeded_session):
     taiwan = seeded_session.scalar(
-        select(SubredditSource).where(SubredditSource.name == "Taiwan")
+        select(SubredditSource).where(SubredditSource.name == "taiwan")
     )
     taiwan.enabled = False
     seeded_session.commit()
@@ -111,9 +111,9 @@ def test_disabled_source_is_skipped(seeded_session):
     stats = discover_from_subreddits(seeded_session, scraper, per_sub_limit=10)
     seeded_session.commit()
 
-    assert not any(s.source == "subreddit:Taiwan" for s in stats)
+    assert not any(s.source == "subreddit:taiwan" for s in stats)
     taiwan = seeded_session.scalar(
-        select(SubredditSource).where(SubredditSource.name == "Taiwan")
+        select(SubredditSource).where(SubredditSource.name == "taiwan")
     )
     assert taiwan.last_polled_at is None
     assert taiwan.total_candidates_yielded == 0
@@ -130,13 +130,13 @@ def test_deleted_payloads_are_skipped(seeded_session):
     stats = discover_from_subreddits(seeded_session, scraper, per_sub_limit=10)
     seeded_session.commit()
 
-    taiwan_stat = next(s for s in stats if s.source == "subreddit:Taiwan")
+    taiwan_stat = next(s for s in stats if s.source == "subreddit:taiwan")
     assert taiwan_stat.fetched == 3
     assert taiwan_stat.inserted == 2
     assert taiwan_stat.skipped_deleted == 1
 
     rows = seeded_session.scalars(
-        select(CandidatePost.reddit_post_id).where(CandidatePost.subreddit == "Taiwan")
+        select(CandidatePost.reddit_post_id).where(CandidatePost.subreddit == "taiwan")
     ).all()
     assert set(rows) == {"ok1", "ok2"}
 
@@ -195,11 +195,11 @@ def test_keyword_search_is_per_sub_not_all_reddit(seeded_session):
         f"keyword discovery 不該打 all-reddit search；calls={rec.calls[:5]}"
     # 中文 keyword 不會打到 en-only sub（lang filter）
     update_calls = [sub for q, sub in rec.calls if q == "更新"]
-    # subreddit_list.py 內 r/AmItheAsshole / r/tifu 等是 en
-    assert "AmItheAsshole" not in update_calls
+    # subreddit_list.py 內 r/amitheasshole / r/tifu 等是 en
+    assert "amitheasshole" not in update_calls
     assert "tifu" not in update_calls
     # zh keyword 至少有打到 zh sub
-    assert any(sub in ("Taiwan", "HongKong", "China_irl", "taipei") for sub in update_calls)
+    assert any(sub in ("taiwan", "hongkong", "china_irl", "taipei") for sub in update_calls)
 
 
 def test_keyword_search_same_post_across_fanout_doesnt_crash(seeded_session):
@@ -214,7 +214,7 @@ def test_keyword_search_same_post_across_fanout_doesnt_crash(seeded_session):
 
         def __init__(self):
             super().__init__(corpus=[])
-            self._payload = _make_payload("crossfanout", sub="Taiwan",
+            self._payload = _make_payload("crossfanout", sub="taiwan",
                                           title="後續更新：colleague 自爆")
 
         def search(self, query, subreddit="all", time_filter="day", limit=50):
@@ -244,7 +244,7 @@ def test_keyword_search_skips_failing_sub(seeded_session):
 
     class _PartialFailScraper(FakeScraper):
         def __init__(self):
-            super().__init__(corpus=[_make_payload("hit_zh", sub="Taiwan",
+            super().__init__(corpus=[_make_payload("hit_zh", sub="taiwan",
                                                     title="後續：colleague 自爆")])
 
         def search(self, query, subreddit="all", time_filter="day", limit=50):
@@ -257,6 +257,6 @@ def test_keyword_search_skips_failing_sub(seeded_session):
                                    per_keyword_limit=10)
     seeded_session.commit()
 
-    # 仍應有命中（'後續' seed 在 r/Taiwan 命中）
+    # 仍應有命中（'後續' seed 在 r/taiwan 命中）
     assert any(s.inserted > 0 for s in stats), \
         f"failing sub 不該阻塞其他 sub，stats={stats}"

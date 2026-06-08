@@ -224,7 +224,7 @@ def _ingest_payloads(
         session.add(
             CandidatePost(
                 reddit_post_id=p.reddit_post_id,
-                subreddit=p.subreddit,
+                subreddit=(p.subreddit or "").lower(),
                 title=p.title,
                 selftext=p.selftext,
                 permalink=p.permalink,

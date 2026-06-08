@@ -4,7 +4,7 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-06-08（Plan C picker fallback 修上 — 6/6 6/7 6/8 連三天「無候選」bug 已解；M7 retune backlog #2 結案）
+**Last updated:** 2026-06-08（subreddit 大小寫正規化 — PostPayload + seeds_loader + DB housekeeping，7,698 candidate rows + 9 source rows 對齊 lowercase；M7 retune backlog #3 結案）
 
 > **本分支策略**：不申請 OAuth、不用 PRAW，全程走 public JSON endpoint。M1 probe
 > 實測 4 個 M5/M6 用得到的 endpoint（user_about / user_submitted / duplicates /
@@ -72,6 +72,18 @@
 ---
 
 ## 下一步（單一優先）
+
+**Subreddit 大小寫正規化** ✅（2026-06-08, M7 retune backlog #3）：
+- 症狀：candidate_posts 內 mixed-case（taiwan 381 + Taiwan 8 + Taipei 197 + Updateme 17…），跟 subreddit_sources.name 對不上、JOIN 統計失準
+- 根因：Reddit JSON 內 `d["subreddit"]` 不同 endpoint 偶爾回不同 case；seeds 寫顯示名（大寫），scraper 寫入 candidate 用 reddit 回的 case
+- 修法：
+  - [scrapers/base.py](reddit_tracker/scrapers/base.py) `PostPayload.__post_init__` 統一 `subreddit.lower()`（外部→系統的單一闸口）
+  - [seeds/subreddit_list.py](reddit_tracker/seeds/subreddit_list.py) 全 lowercase + `__post_init__` 保險
+  - [seeds/loader.py](reddit_tracker/seeds/loader.py) 比對既存 row 用 `func.lower()`，認領舊 mixed-case row 並 rename，不會多開一筆小寫版
+  - [services/discovery.py](reddit_tracker/services/discovery.py) `_ingest_payloads` 雙保險 `(p.subreddit or "").lower()`
+  - [scripts/m7_normalize_subreddit_case.py](scripts/m7_normalize_subreddit_case.py) 一次性 housekeeping（dry-run + --apply）：9 source rename + 7,698 candidate UPDATE，無合併衝突
+- 6 新 tests（test_subreddit_case_normalize.py）涵蓋 PostPayload 4 種輸入 + seeds_loader 認領 + ingest 雙保險。全套 242/242 過
+- 預期：M7 eval 統計（eval_lang_breakdown / eval_relation_dist）的 subreddit JOIN 從此完全乾淨
 
 **Plan C picker fallback** ✅（2026-06-08, commit `0fae935`）：
 - 症狀：6/6 6/7 6/8 三天早上 9 點都印「無候選」沒推送

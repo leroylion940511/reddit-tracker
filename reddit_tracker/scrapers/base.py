@@ -88,6 +88,13 @@ class PostPayload:
 
     extras: dict = field(default_factory=dict)   # provider-specific raw fields
 
+    def __post_init__(self) -> None:
+        # Reddit 對同一個 sub 在不同 endpoint 偶爾回不同 case（例：r/Taiwan 與 r/taiwan
+        # 都 200，但 JSON 內 d["subreddit"] 兩種寫法都看過）。為了讓 candidate_posts
+        # 與 subreddit_sources 永遠能 JOIN 上，所有 PostPayload 進系統時統一 lowercase。
+        if self.subreddit and self.subreddit != self.subreddit.lower():
+            object.__setattr__(self, "subreddit", self.subreddit.lower())
+
     @property
     def full_url(self) -> str:
         return f"https://www.reddit.com{self.permalink}"

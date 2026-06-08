@@ -16,31 +16,39 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class SubredditSeed:
-    name: str           # 不含 r/ 前綴
+    name: str           # 不含 r/ 前綴；統一 lowercase 作為 canonical key
     language: str       # zh / en
     category: str
     note: str = ""
 
+    def __post_init__(self) -> None:
+        # canonical key 一律 lowercase — 對齊 PostPayload.__post_init__ 的
+        # normalize，讓 subreddit_sources.name ↔ candidate_posts.subreddit 永遠 join 得上
+        if self.name != self.name.lower():
+            object.__setattr__(self, "name", self.name.lower())
 
+
+# 名稱統一小寫：Reddit 對 /r/Taiwan 與 /r/taiwan 都 200，但 JSON 內 d["subreddit"]
+# 寫法不一致。canonical key 一律 lowercase。
 SUBREDDIT_SEEDS: list[SubredditSeed] = [
     # --- 中文 ---
-    SubredditSeed("Taiwan", "zh", "regional", "台灣綜合，最大中文素人爆文池"),
-    SubredditSeed("HongKong", "zh", "regional", "香港中文 + 英文混雜"),
-    SubredditSeed("China_irl", "zh", "regional", "中國時事 / 生活，發文量穩定"),
+    SubredditSeed("taiwan", "zh", "regional", "台灣綜合，最大中文素人爆文池"),
+    SubredditSeed("hongkong", "zh", "regional", "香港中文 + 英文混雜"),
+    SubredditSeed("china_irl", "zh", "regional", "中國時事 / 生活，發文量穩定"),
     SubredditSeed("taipei", "zh", "regional", "台北地方，事件型貼文密度高"),
-    SubredditSeed("ChineseLanguage", "zh", "language", "語言學習，補語料用"),
+    SubredditSeed("chineselanguage", "zh", "language", "語言學習，補語料用"),
 
     # --- 英文 storytelling / 事件 ---
     SubredditSeed("tifu", "en", "story", "Today I Fucked Up，自述事件第一手素材"),
     SubredditSeed("relationship_advice", "en", "story", "感情 drama，後續發展密度極高"),
-    SubredditSeed("AmItheAsshole", "en", "story", "倫理判斷型，留言互動極熱"),
+    SubredditSeed("amitheasshole", "en", "story", "倫理判斷型，留言互動極熱"),
     SubredditSeed("confession", "en", "story", "匿名告解，事件型短文"),
     SubredditSeed("offmychest", "en", "story", "情緒宣洩，部分含後續更新"),
-    SubredditSeed("BestofRedditorUpdates", "en", "meta", "彙整有後續的事件，研究『四類後續』的金礦"),
-    SubredditSeed("MaliciousCompliance", "en", "story", "故事性強、結尾有 punchline"),
-    SubredditSeed("UpdateMe", "en", "meta", "讀者追更工具 sub，可推測哪些貼文有後續"),
+    SubredditSeed("bestofredditorupdates", "en", "meta", "彙整有後續的事件，研究『四類後續』的金礦"),
+    SubredditSeed("maliciouscompliance", "en", "story", "故事性強、結尾有 punchline"),
+    SubredditSeed("updateme", "en", "meta", "讀者追更工具 sub，可推測哪些貼文有後續"),
     SubredditSeed("legaladvice", "en", "advice", "法律諮詢，事件型 + 後續發展明確"),
-    SubredditSeed("AskReddit", "en", "general", "問答海量，作為對照組（預期評分通過率低）"),
+    SubredditSeed("askreddit", "en", "general", "問答海量，作為對照組（預期評分通過率低）"),
 ]
 
 
