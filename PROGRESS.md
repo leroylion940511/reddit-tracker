@@ -4,7 +4,7 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-06-02（M7 baseline 半段完成 — 7.1/7.2/7.3/7.4/7.7/7.9 共 5 支 eval 腳本 + dry-run cleanup + 整合報告 `docs/m7_baseline_2026-06-02.md`；7.6 prompt retune 與 7.8 QA 自評待 OAuth 通過後做）
+**Last updated:** 2026-06-08（Plan C picker fallback 修上 — 6/6 6/7 6/8 連三天「無候選」bug 已解；M7 retune backlog #2 結案）
 
 > **本分支策略**：不申請 OAuth、不用 PRAW，全程走 public JSON endpoint。M1 probe
 > 實測 4 個 M5/M6 用得到的 endpoint（user_about / user_submitted / duplicates /
@@ -72,6 +72,13 @@
 ---
 
 ## 下一步（單一優先）
+
+**Plan C picker fallback** ✅（2026-06-08, commit `0fae935`）：
+- 症狀：6/6 6/7 6/8 三天早上 9 點都印「無候選」沒推送
+- 根因：兩個主桶都空——already_hot 要 velocity 但 RSS 全 None；early_bet 要 age<3h 但 9 點前那 3h 還沒被 scoring 趕上；灰帶 3-6h 照 M4.1 設計刻意跳過
+- 修法：`pick_daily_top5` 偵測 `velocity_none_ratio > 90%` 時，退化為「final_score top 5 取滿」全標 `early_bet`，log 印 `plan_c fallback engaged`
+- 4 新 tests 全套 236/236 過。預期 6/9 起每天 9 AM 正常推 5 篇
+- 同次修上：[reddit_tracker/bot/app.py](reddit_tracker/bot/app.py) `post_init` 自動 sync Telegram 端 setMyCommands；[scripts/refresh_bot_commands.py](scripts/refresh_bot_commands.py) 不重啟也能刷選單
 
 **M7 baseline 半段完成** ✅（2026-06-02）— 詳見 [docs/m7_baseline_2026-06-02.md](docs/m7_baseline_2026-06-02.md)：
 
