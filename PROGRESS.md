@@ -4,7 +4,7 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-06-08（M7.6 變體完成 — haiku SYSTEM_PROMPT retune：擴展 story_potential 涵蓋議題型 + 0/0 互動 disclaimer；中文 sub haiku pass 15.1% vs 英文 35.3% 失準根因 = story_potential 定義太窄；A/B 驗證留 OAuth 後）
+**Last updated:** 2026-06-08（M8 cold-start 部分完成 — 8.7 README + .env.example 對齊 no-reddit-api 分支實況；docs/report.md Ch1-5 + Ch8 骨架 + Ch6 灌 M7 baseline + lang_breakdown + cost 數據；8.4 案例分析 + 8.6 demo + 8.8 slides 等資料 / 由 user 自做）
 
 > **本分支策略**：不申請 OAuth、不用 PRAW，全程走 public JSON endpoint。M1 probe
 > 實測 4 個 M5/M6 用得到的 endpoint（user_about / user_submitted / duplicates /
@@ -36,7 +36,7 @@
 | M5 | 收藏追蹤層 | 🟢 | 升格 + tier polling + 四類偵測（author_followup / author_reply / hot_reply / crosspost）+ milestone immediate push + daily digest + `RelatedPost.notified_at` 去重 + `/saved` `/timeline` + alembic migration (notified_at + uq_related_post_triple) + 8-job scheduler + smoke end-to-end + 61 新 tests (160/160) |
 | M6 | 問答層 | 🟢 | MiniMax 多輪 chat（Opus 由專案決定替換為 MiniMax）+ in-memory session state + 重量 system prompt（origin / snapshots / comment tree / related events）+ `/ask` `/exit` + 自由文字 MessageHandler + scheduler `qa_idle_sweep` (TTL=5min) + 38 新 tests (198/198) |
 | M7 | 評估與調優 | 🟡 | 7.1/7.2/7.3/7.4/7.7/7.9 完成（5 支 eval + dry-run cleanup + baseline 報告）；7.6 retune / 7.8 QA 自評等 OAuth 通過 |
-| M8 | 報告與 demo | ❌ | 案例分析 + 問答自評 |
+| M8 | 報告與 demo | 🟡 | 8.1/8.2/8.3/8.5/8.7 ✅ (docs/report.md Ch1-5 + Ch8 + Ch6 灌數據；README + .env.example 對齊)；8.4 樁 (等 OAuth)；8.6 demo / 8.8 slides 由 user 自做 |
 
 ---
 
@@ -72,6 +72,14 @@
 ---
 
 ## 下一步（單一優先）
+
+**M8 cold-start — 報告骨架 + onboarding 整理** ✅（2026-06-08, SCHEDULE 8.1/8.2/8.3/8.5/8.7）：
+- 8.7 [README.md](README.md) 大改 — 反映 no-reddit-api 分支實況（Plan C / RSS / public_json / OAuth 申請中）+ M1-M7 完成度表 + 真實技術棧（含 MiniMax）+ 文件索引（含新 M7 docs）
+- 8.7 [.env.example](.env.example) 補齊 — 加 `REDDIT_SCRAPER` 4 種選項說明 + `MINIMAX_*` 三個變數 + 排程 envs 一律列出做為 override 參考
+- 8.1+8.2+8.5 [docs/report.md](docs/report.md) — Ch1 動機（含 v3→v4 + Plan C 兩段 pivot）+ Ch2 目標 + Ch3 系統架構（含 v4 vs v3 差異表 + Plan C 退化處理）+ Ch4 核心功能（M2-M6 五層摘要）+ Ch5 DB schema（12 表 + M5 migration）+ Ch8 倫理（公開性 / 去識別 / LLM 責任界線 / Reddit ToS / 資料保留刪除）
+- 8.3 Ch6 評估結果灌真實數據：漏斗總覽 17,743 → 9 tracked / 中英對照 zh 15.1% vs en 35.3% / 四類後續 / 後續命中 / 成本 $1.5/月 / Plan C 適應性
+- 8.4 Ch7 案例分析留樁 — 樣本不足（1 unique tracked），等 OAuth + 14 天運轉後展開 ≥ 3 個生命週期
+- 待 user：8.6 5 分鐘 demo 影片 + 8.8 10–15 頁簡報 slides
 
 **M7.6 變體 — Haiku prompt retune（中文 sub 識別偏弱）** ✅（2026-06-08, M7 retune backlog #1）：
 - 命題：SCHEDULE 7.6 原本要分析 dislike 樣本，但只累積 5 筆要等 OAuth；改用 scoring 視角的等價分析 — 中文 sub haiku pass 15.1% vs 英文 35.3%（差 2.3×）

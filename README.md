@@ -1,61 +1,96 @@
 # Reddit Tracker
 
-素人爆文發現、追蹤與問答系統 — 基於 Reddit 官方 API（PRAW）的自動化探索 / 評分 / 收藏追蹤 / 對話式問答流水線。
+素人爆文發現、追蹤與問答系統 — 透過 Reddit public JSON / RSS endpoint 做自動化探索、評分、收藏追蹤與對話式問答的流水線。
 
-> v4。前身為 Threads Tracker (v1–v3)，因 Threads 第三方 scraper 月成本 $246 與 cookie 認證風險過高，重建到 Reddit 官方 API（月成本估 $15–36，降幅 ~90%）。研究命題不變，僅換資料源與抽取邏輯。
+> v4。前身為 Threads Tracker (v1–v3)。Threads 第三方 scraper 月成本 $246 + cookie 認證風險高，整段重建到 Reddit。研究命題（素人爆文 → 後續事件 → 重量 context 問答）不變。
+
+> **本分支策略**（`no-reddit-api`）：不申請 Reddit OAuth、不用 PRAW。
+> 主走 public JSON endpoint；5/29 起 .json anonymous 被擋後 fallback 到 RSS（Plan C）。
+> 月成本實測 **$1.5**（企劃預估 $15–36，便宜 10×）。
 
 ## 核心架構
 
 雙環：每日推送主環 + 收藏追蹤副環。
 
 ```
-探索層 (Subreddit /new + 關鍵字, 60 min)
+探索層 (Subreddit /new RSS + 關鍵字 search, 90 min / 12 h)
     ↓
 評分層 (硬規則 → Haiku 五軸 → 加權)
     ↓
-候選排程層 (每日 09:00 Top 5 = 3 已爆 + 2 早期)
+候選排程層 (每日 09:00 Top 5 = 3 已爆 + 2 早期；Plan C fallback：主桶皆空時用 final_score top 5)
     ↓
-推送層 (Telegram + inline button)
+推送層 (Telegram + inline button ❤️/👎/🔕)
     ↓ ❤️ 收藏
-追蹤層 (分級輪詢 15min/1h/6h)
-    ↓ 四類後續事件：作者新貼 / 作者留言更新 / 高分回應 / crosspost
-後續推送 + 問答層 (/ask <id> 重量 context 多輪對話)
+追蹤層 (分級輪詢 hot=15min / cooling=1h / archive=6h / >30d=終止)
+    ↓ 四類後續事件偵測：作者新貼 / 作者留言 / 高分回應 / crosspost
+後續推送 (milestone 即時 / digest 隨 daily push) + 問答層 (/ask <id> 重量 context 多輪)
 ```
 
 ## 技術棧
 
-- Python 3.11 / `uv`
-- PRAW（Reddit 官方 API wrapper）
+- Python 3.12 / `uv`
+- Reddit data：`scrapers/json_public.py`（public JSON）+ `scrapers/rss.py`（Plan C fallback）；OAuth `praw_oauth.py` 留著未啟用
 - python-telegram-bot
-- Anthropic SDK（Haiku 評分 / Opus 問答）
-- APScheduler / FastAPI / SQLAlchemy / Alembic
+- LLM：Anthropic Haiku 4.5（評分）/ MiniMax（問答，原企劃 Opus 改用 MiniMax 共用 endpoint 省一份 SDK）
+- APScheduler / SQLAlchemy 2.0 / Alembic
 - 預設 SQLite，可切 Postgres（`DATABASE_URL`）
 
 ## 快速開始
 
 ```bash
 # 1. 依賴
-uv venv
 uv sync
 
 # 2. 環境變數（複製 .env.example → .env 後填值）
 cp .env.example .env
 
-# 3. PRAW 連線測試
-uv run python -c "import praw; r = praw.Reddit(client_id='...', client_secret='...', user_agent='reddit_tracker/0.1 by <reddit_username>'); print(r.read_only)"
+# 3. 建 DB schema
+uv run alembic upgrade head
+
+# 4. 載 seeds（15 subreddit + 20 keyword）+ 跑一輪 discovery
+uv run python scripts/m2_smoke.py
+
+# 5. 連通性驗證（public JSON）
+uv run python scripts/m1_hello.py
+
+# 6. 持續運轉（scheduler 8 個 job）
+uv run python -m reddit_tracker.scheduler
 ```
 
-申請 Reddit OAuth app（personal use script）：<https://www.reddit.com/prefs/apps>
+正式部署走 launchd（詳見 `deploy/`），caffeinate 確保 mac 不睡。
+
+## 里程碑完成度
+
+| 里程碑 | 主題 | 狀態 |
+|--------|------|------|
+| M1 | Reddit data 可行性驗證 | ✅ public JSON 4 endpoint 80%+ 成功率 |
+| M2 | 探索層 + DB 重構 | ✅ 12 表 schema / 雙 source / 5/5 tests |
+| M3 | 評分層 | ✅ 三段式 + Haiku 對人工標記 accuracy 0.733 |
+| M4 | 候選排程 + 推送層 | ✅ daily_push + breaking + Telegram 端到端 |
+| M5 | 收藏追蹤層 | ✅ 升格 + tier polling + 四類偵測 + milestone |
+| M6 | 問答層 | ✅ 多輪 chat + 重量 system prompt + idle sweep |
+| M7 | 評估與調優 | 🟡 baseline + Plan C fallback + zh haiku retune；7.8 等 OAuth |
+| M8 | 報告與 demo | 🟡 [`docs/report.md`](docs/report.md) 骨架 + Ch6 數據填中 |
+
+詳細狀態：[`PROGRESS.md`](PROGRESS.md)（每次有進展更新）。
 
 ## 專案文件
 
 | 檔案 | 用途 |
 |------|------|
-| [`PROGRESS.md`](PROGRESS.md) | 跨 session 的單一狀態真相，里程碑 M1–M8 完成度 |
-| [`SCHEDULE.md`](SCHEDULE.md) | 任務級里程碑清單 |
+| [`PROGRESS.md`](PROGRESS.md) | 跨 session 單一狀態真相 |
+| [`SCHEDULE.md`](SCHEDULE.md) | 任務級里程碑（M1–M8 細項） |
 | [`reddit_tracker_proposal.md`](reddit_tracker_proposal.md) | 完整企劃書 v4 |
+| [`docs/v4_schema.md`](docs/v4_schema.md) | 12 表 ER 圖 |
+| [`docs/m1_public_endpoints_probe.md`](docs/m1_public_endpoints_probe.md) | M1 endpoint 可行性實測 |
+| [`docs/m3_haiku_baseline.md`](docs/m3_haiku_baseline.md) | M3 Haiku verdict vs 人工標記對比 |
+| [`docs/m7_baseline_2026-06-02.md`](docs/m7_baseline_2026-06-02.md) | M7 baseline 評估 |
+| [`docs/m7_haiku_fail_analysis.md`](docs/m7_haiku_fail_analysis.md) | M7.6 zh prompt retune 診斷 |
+| [`docs/report.md`](docs/report.md) | M8 期末報告（撰寫中） |
 | [`CLAUDE.md`](CLAUDE.md) / [`AGENTS.md`](AGENTS.md) | AI agent 協作規範 |
 
-## 狀態
+## OAuth 申請狀態
 
-剛 bootstrap，M1（Reddit API 可行性驗證）未啟動。詳見 [`PROGRESS.md`](PROGRESS.md)。
+`no-reddit-api` 分支不申請 OAuth；但 `praw_oauth.py` 實作留著，待 Reddit Data Access Request 通過後可一行切換。詳見 [`docs/m1_public_endpoints_probe.md`](docs/m1_public_endpoints_probe.md)。
+
+申請動機與後續計畫：[M7 Reddit Data Access Request 已申請中](PROGRESS.md)（等回覆，可解鎖 7.8 QA 自評 / dislike 樣本累積）。
