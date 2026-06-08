@@ -197,6 +197,13 @@ def pick_daily_top5(
     Already hot 桶：age ≥ 6h、velocity 由大到小取 N。
     Early bet 桶：age < 3h、semantic 由大到小取 M，且不能與已選桶重複。
     缺額不補（5 篇是上限不是下限）— 若兩桶各只有 1 篇，回傳就是 2 筆。
+
+    **Plan C fallback** (2026-06-08 加上): 主流程兩桶湊到 0 筆且 pool 中超過 90%
+    的 candidate velocity=None (RSS 模式), 退化為「按 final_score top N 取滿」,
+    全部標 push_type='early_bet'. 動機: RSS 沒 ups/comments 訊號讓 already_hot
+    桶永遠空, 而 9 AM trigger 時 <3h 桶通常還沒被 scoring 趕上,
+    結果是有 400+ final.passed=True 但 picker 卻全跳過. 詳見
+    docs/m7_baseline_2026-06-02.md §1。
     """
     now = _ensure_utc(now) or datetime.now(timezone.utc)
     pool = _load_pool(session, now=now, window_hours=window_hours)
@@ -228,7 +235,31 @@ def pick_daily_top5(
         picks.append(_to_pick(fc, push_type="already_hot", rank=i))
     for i, fc in enumerate(early_picks, start=1):
         picks.append(_to_pick(fc, push_type="early_bet", rank=i))
-    return picks
+
+    if picks:
+        return picks
+
+    # ---- Plan C fallback ----
+    velocity_none_ratio = (
+        sum(1 for p in pool if p.velocity is None) / len(pool)
+    )
+    if velocity_none_ratio < 0.9:
+        # 不是 Plan C 場景 (主桶湊到 0 純粹是運氣差或樣本小), 不退化, 維持空 list
+        return picks
+
+    target = already_hot_count + early_bet_count
+    fallback_pool = [p for p in pool if p.final_score is not None]
+    fallback_pool.sort(key=lambda p: p.final_score, reverse=True)  # type: ignore[arg-type]
+    fallback_picks = fallback_pool[:target]
+    logger.info(
+        "pick_daily_top5: plan_c fallback engaged "
+        "(pool=%d velocity_none_ratio=%.2f picked=%d via final_score)",
+        len(pool), velocity_none_ratio, len(fallback_picks),
+    )
+    return [
+        _to_pick(fc, push_type="early_bet", rank=i + 1)
+        for i, fc in enumerate(fallback_picks)
+    ]
 
 
 # ---------------------------------------------------------------------------

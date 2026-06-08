@@ -10,17 +10,13 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
-from decimal import Decimal
 
-import pytest
 from sqlalchemy import select
 
-from reddit_tracker.llm.base import HaikuVerdict
 from reddit_tracker.models import CandidatePost, DailyPush, ScoringRecord
 from reddit_tracker.services.feed import (
     ALREADY_HOT_MIN_AGE_H,
     BREAKING_DAILY_CAP,
-    BREAKING_MAX_AGE_H,
     BREAKING_MIN_SEMANTIC,
     EARLY_BET_MAX_AGE_H,
     FeedPick,
@@ -133,7 +129,7 @@ def test_pool_excludes_out_of_window(session):
 
 
 def test_pool_excludes_unscored(session):
-    p = _persist(session, _make_post(rid="unscored", age_hours=8.0))
+    _persist(session, _make_post(rid="unscored", age_hours=8.0))
     # 不寫 scoring_records → final 不存在 → 不入池
     picks = pick_daily_top5(session, now=NOW)
     assert picks == []
@@ -234,6 +230,81 @@ def test_pick_top5_age_boundary_exact_3h(session):
     session.flush()
     picks = pick_daily_top5(session, now=NOW)
     assert picks == []
+
+
+# ---------------------------------------------------------------------------
+# Plan C fallback (2026-06-08)
+# ---------------------------------------------------------------------------
+
+
+def test_pick_top5_plan_c_fallback_when_all_velocity_none(session):
+    """Plan C / RSS 模式: velocity 全 None + 沒人在 <3h 桶 → fallback 用
+    final_score top 5 取滿, 全標 early_bet."""
+    # 6 篇都 6-24h (落在 already_hot 桶 age 範圍, 但 velocity 全 None)
+    # 都通過 final scoring 但無 engagement 訊號
+    posts = []
+    for i, score in enumerate([0.9, 0.85, 0.7, 0.6, 0.5, 0.45]):
+        p = _persist(session, _make_post(rid=f"p{i}", age_hours=10.0))
+        _write_scoring(
+            session, p,
+            velocity=None,       # ← Plan C: RSS 沒 ups/comments
+            semantic=score,
+            final_score=score,
+        )
+        posts.append(p)
+    session.flush()
+
+    picks = pick_daily_top5(session, now=NOW)
+    assert len(picks) == 5  # top 5 取滿
+    # final_score 由大到小
+    assert [p.candidate.reddit_post_id for p in picks] == [
+        "p0", "p1", "p2", "p3", "p4"
+    ]
+    # 全標 early_bet
+    assert all(p.push_type == "early_bet" for p in picks)
+    # rank 1..5
+    assert [p.rank for p in picks] == [1, 2, 3, 4, 5]
+
+
+def test_pick_top5_fallback_only_engages_in_plan_c(session):
+    """非 Plan C 場景 (pool 小但 velocity 有值) → 不退化, 結果照常為空."""
+    # 1 篇 4h (灰帶) 有 velocity, 主桶兩個都空 → 不退化
+    p = _persist(session, _make_post(rid="gray", age_hours=4.0))
+    _write_scoring(session, p, velocity=80.0, semantic=0.7, final_score=0.7)
+    session.flush()
+    picks = pick_daily_top5(session, now=NOW)
+    assert picks == []   # 灰帶照規矩跳過, 不觸發 fallback (velocity 非 None ratio = 100%)
+
+
+def test_pick_top5_fallback_does_not_override_normal_pick(session):
+    """主桶有貨時 fallback 不介入."""
+    h = _persist(session, _make_post(rid="hot", age_hours=8.0))
+    _write_scoring(session, h, velocity=100.0, semantic=0.6, final_score=0.7)
+    e = _persist(session, _make_post(rid="early", age_hours=1.5))
+    _write_scoring(session, e, velocity=50.0, semantic=0.9, final_score=0.6)
+    session.flush()
+    picks = pick_daily_top5(session, now=NOW)
+    types = [p.push_type for p in picks]
+    assert "already_hot" in types
+    assert "early_bet" in types
+    assert len(picks) == 2
+
+
+def test_pick_top5_fallback_skips_final_score_none(session):
+    """fallback 池中 final_score=None 的會被跳過 (避免排序 NoneType error)."""
+    p1 = _persist(session, _make_post(rid="p1", age_hours=10.0))
+    _write_scoring(session, p1, velocity=None, semantic=0.5, final_score=0.7)
+    p2 = _persist(session, _make_post(rid="p2", age_hours=10.0))
+    # final_score=None 但 passed=True (理論上不該存在, 防禦性檢查)
+    _write_scoring(
+        session, p2, velocity=None, semantic=0.6, final_score=None,
+        final_passed=True,
+    )
+    session.flush()
+    picks = pick_daily_top5(session, now=NOW)
+    # p2 因為 _load_pool 的 `final.score is None → skip` 早就被排除
+    # 所以 fallback 池只有 p1
+    assert [p.candidate.reddit_post_id for p in picks] == ["p1"]
 
 
 # ---------------------------------------------------------------------------
