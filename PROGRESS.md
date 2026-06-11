@@ -4,7 +4,34 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-06-08（M8 cold-start 部分完成 — 8.7 README + .env.example 對齊 no-reddit-api 分支實況；docs/report.md Ch1-5 + Ch8 骨架 + Ch6 灌 M7 baseline + lang_breakdown + cost 數據；8.4 案例分析 + 8.6 demo + 8.8 slides 等資料 / 由 user 自做）
+**Last updated:** 2026-06-11（incident triage + db.py WAL 修上 + launchd 全停 — daily_top5_push 6/9-6/11 連 3 天死在 sqlite database is locked，commit `6cfede8` 加 WAL + busy_timeout=5s；scheduler + bot launchd job 已 bootout 暫停服務；下次 session 重啟 launchd 即帶 6/8 之後三個 commit 全部生效）
+
+## ⚠️ 服務狀態（2026-06-11 16:45）
+
+**launchd jobs 已停**：
+- `com.leroy.reddit-tracker.scheduler` — bootout
+- `com.leroy.reddit-tracker.bot` — bootout
+- 確認方式：`launchctl list | grep reddit` 應該無輸出
+- `caffeinate -i` 隨之結束（它是 launchd ProgramArguments 的 wrapper）
+
+**重啟方式**（下次要復跑時）：
+```bash
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.leroy.reddit-tracker.scheduler.plist
+sleep 2  # 避開 launchd ratelimit (參考 commit 6b1894f)
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.leroy.reddit-tracker.bot.plist
+# 驗證
+launchctl list | grep reddit  # 應該看到兩個 PID
+tail -f scheduler.log         # 應該看到 "Scheduler started" + PRAGMA WAL 觸發
+```
+
+重啟後立即生效的 commits（停服期間累積未生效）：
+- `6304bc3` subreddit 大小寫 lowercase normalize（PostPayload + ingest）
+- `7fc83fd` M7.6 haiku SYSTEM_PROMPT retune（議題型 + 0/0 disclaimer）
+- `6cfede8` db.py WAL + busy_timeout=5s（修 lock 致死）
+
+**DB 已實際切到 WAL** — 即使 launchd 重啟前，DB file 本身已是 WAL 模式（直接 `sqlite3 PRAGMA journal_mode=WAL` 跑過）。`reddit_tracker.db-wal` + `-shm` 兩個輔助檔會持續存在直到下次 checkpoint。
+
+
 
 > **本分支策略**：不申請 OAuth、不用 PRAW，全程走 public JSON endpoint。M1 probe
 > 實測 4 個 M5/M6 用得到的 endpoint（user_about / user_submitted / duplicates /
@@ -72,6 +99,21 @@
 ---
 
 ## 下一步（單一優先）
+
+**Incident triage — daily_push lock 致死 + db.py WAL 修上** ✅（2026-06-11, commit `6cfede8`）：
+- 症狀：user 回報「這幾天沒收到 Telegram 通知，但 bot 還活」。實查確認 launchd scheduler + bot 都還在跑，discovery 持續累積 candidate（過去 3 天 +3,737 筆，最新 6/11 07:00）
+- log 找出真因：6/9 / 6/10 / 6/11 連 3 天 9 AM daily_top5_push 都 raise `sqlite3.OperationalError: database is locked`，死在 `services/feed.py:399 record_pushes/session.flush()`
+- Plan C fallback ✅ 確實有 engage（log 三天都印 `plan_c fallback engaged pool=~580 picked=5 via final_score`）— 5 篇都選好了，全死在「寫 daily_pushes」這一步
+- 245 次 OperationalError 累積在 scheduler.log，bot ↔ scheduler 兩 process 並發寫 SQLite 必撞 lock 是長期 systemic 問題
+- 根因：SQLite 預設 `journal_mode=delete` + `busy_timeout=0` — 撞鎖立即 fail 不重試
+- 修法（[reddit_tracker/db.py](reddit_tracker/db.py)）：
+  - `create_engine` `connect_args["timeout"]=5.0`
+  - `@event.listens_for("connect")` 跑 `PRAGMA journal_mode=WAL` + `synchronous=NORMAL` + `busy_timeout=5000`
+  - WAL 讓 reader 與 writer 不互相 block；只有 writer 之間 mutex
+  - [.gitignore](.gitignore) 加 `*.db-wal` / `*.db-shm`
+- DB file 已用 `sqlite3 CLI PRAGMA journal_mode=WAL` 一次性切到 WAL，即使重啟前對現存 connection 也立即生效降低衝突
+- 248/248 pytest 過
+- 接著 launchd 兩個 job 全 bootout 暫停服務（user 要先做其他事）
 
 **M8 cold-start — 報告骨架 + onboarding 整理** ✅（2026-06-08, SCHEDULE 8.1/8.2/8.3/8.5/8.7）：
 - 8.7 [README.md](README.md) 大改 — 反映 no-reddit-api 分支實況（Plan C / RSS / public_json / OAuth 申請中）+ M1-M7 完成度表 + 真實技術棧（含 MiniMax）+ 文件索引（含新 M7 docs）
