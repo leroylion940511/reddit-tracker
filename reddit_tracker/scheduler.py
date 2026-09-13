@@ -460,6 +460,9 @@ def main() -> int:
         level=settings.log_level,
         format="%(asctime)s %(levelname)s %(name)s | %(message)s",
     )
+    # httpx INFO 會把 Telegram Bot API URL 寫進 log，該 URL 內含 bot token。
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
 
     sched = build_scheduler()
 

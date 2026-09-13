@@ -94,6 +94,10 @@ def run_polling() -> None:
         level=get_settings().log_level,
         format="%(asctime)s %(levelname)s %(name)s | %(message)s",
     )
+    # httpx INFO 會把 Telegram Bot API URL 寫進 log，該 URL 內含 bot token。
+    # 專案自己的 INFO log 保留，第三方 HTTP transport 僅保留 warning/error。
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
     app = build_application()
     logger.info("bot.start_polling")
     app.run_polling()
