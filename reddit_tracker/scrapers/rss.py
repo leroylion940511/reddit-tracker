@@ -86,6 +86,12 @@ class RssScraper(RedditScraper):
         self._min_interval = min_interval_seconds
         self._last_request_at: float = 0.0
         self._search_warned = False
+        # A 429 applies to the current RSS discovery round, not only to the
+        # subreddit that happened to be requested.  Suppress the rest of this
+        # scraper instance so a single throttled request cannot turn into a
+        # burst across every enabled source.  The scheduler creates a fresh
+        # scraper on the next scheduled round, after the cooldown window.
+        self._rate_limited = False
 
     # ------------------------------------------------------------------
     # RedditScraper interface
@@ -162,6 +168,8 @@ class RssScraper(RedditScraper):
         self._last_request_at = time.monotonic()
 
     def _get_rss(self, path: str, params: dict | None = None) -> str | None:
+        if self._rate_limited:
+            return None
         self._throttle()
         url = f"{REDDIT_HOST}{path}"
         try:
@@ -172,7 +180,14 @@ class RssScraper(RedditScraper):
             return resp.text
         except HTTPError as e:
             status = e.response.status_code if e.response is not None else None
-            logger.warning("RSS fetch %s status=%s", path, status)
+            if status == 429:
+                self._rate_limited = True
+                logger.warning(
+                    "RSS fetch %s status=429; skipping remaining feeds in this discovery round",
+                    path,
+                )
+            else:
+                logger.warning("RSS fetch %s status=%s", path, status)
             return None
         except requests.RequestException as e:
             logger.warning("RSS fetch %s error: %s", path, e)

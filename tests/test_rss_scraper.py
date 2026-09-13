@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import pytest
+import requests
 
 from reddit_tracker.scrapers.rss import RssScraper
 
@@ -155,3 +156,21 @@ def test_user_agent_required_and_must_contain_marker():
         RssScraper(user_agent="curl/7.0")
     # 帶 reddit_tracker 即可
     RssScraper(user_agent="reddit_tracker/x.y by anyone")
+
+
+def test_rate_limit_skips_remaining_feeds_in_current_round(monkeypatch):
+    scraper = _scraper()
+    response = requests.Response()
+    response.status_code = 429
+    error = requests.HTTPError(response=response)
+    calls = 0
+
+    def get(*_args, **_kwargs):
+        nonlocal calls
+        calls += 1
+        raise error
+
+    monkeypatch.setattr(scraper._session, "get", get)
+    assert scraper.fetch_new("taiwan") == []
+    assert scraper.fetch_new("hongkong") == []
+    assert calls == 1
