@@ -45,8 +45,10 @@ _install_one() {
     # bootout 與 bootstrap 間留 buffer: launchd 對同 label 連續操作偶爾會回
     # `Bootstrap failed: 5: Input/output error` (ratelimit), sleep 2 後穩定
     sleep 2
-    launchctl bootstrap "gui/$UID_NUM" "$dst"
+    # A disabled LaunchAgent must be enabled before bootstrap.  The reverse
+    # order leaves it unloaded on current macOS launchd.
     launchctl enable "gui/$UID_NUM/$label"
+    launchctl bootstrap "gui/$UID_NUM" "$dst"
     echo "✓ installed $label"
 }
 
