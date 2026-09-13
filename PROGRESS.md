@@ -9,7 +9,8 @@
 ## 本次變更（2026-09-13 — RSS one-day trial 準備）
 
 - ✅ 實機 RSS probe：`r/taiwan/new/.rss` 成功回傳 5 篇當日貼文（含 post id、title、UTC time、`source=rss`）。快速連抓多個 feed 時 Reddit 對後續請求回 429，證實 RSS 可用但必須保守節流。
-- ✅ 本機試跑設定改為 RSS 15 秒 request 間隔、每次 M3 最多評 5 篇，避免 RSS burst 與 Gemini Free Tier 回補同時造成限流；這兩個 `.env` override 不會提交。
+- ✅ 本機試跑設定改為 RSS 60 秒 request 間隔、每次 M3 最多評 5 篇，避免 RSS burst 與 Gemini Free Tier 回補同時造成限流；這兩個 `.env` override 不會提交。
+- ✅ 21:16 CST 開始一天試跑：RSS 間隔再降為 60 秒，429 時跳過該輪剩餘 feed、等待下個 90 分鐘 discovery round；scheduler / bot 均由 launchd 啟動且各只有一個 process。初始 pass 完成，M3 處理 5 篇、rules pass 2、無 errors，DB 尚餘 8 篇未評分。
 
 ## 本次變更（2026-09-13 — Gemini Free Tier API）
 
