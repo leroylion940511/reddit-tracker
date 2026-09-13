@@ -14,6 +14,7 @@ import logging
 from ..config import get_settings
 from .base import LLMScorer
 from .fake import FakeScorer
+from .gemini import GeminiScorer
 from .haiku import HaikuScorer
 from .minimax import MinimaxScorer
 from .web_chat import WebSessionScorer
@@ -48,6 +49,32 @@ def build_scorer() -> LLMScorer:
             base_url=settings.minimax_base_url,
             model=settings.minimax_model,
         )
+
+    if provider == "gemini":
+        if not settings.gemini_api_key:
+            logger.warning("GEMINI_API_KEY 未設定 → fallback 到 FakeScorer（不會真打 API）")
+            return FakeScorer()
+        fallback: LLMScorer | None = None
+        if settings.gemini_fallback_provider == "web":
+            fallback = WebSessionScorer(
+                provider=settings.web_llm_provider,
+                cdp_url=settings.web_llm_cdp_url,
+                timeout=settings.web_llm_timeout_seconds,
+                poll_interval=settings.web_llm_poll_interval_seconds,
+                settle_seconds=settings.web_llm_settle_seconds,
+                lock_path=settings.web_llm_lock_path,
+            )
+        elif settings.gemini_fallback_provider == "fake":
+            fallback = FakeScorer()
+        else:
+            raise ValueError("GEMINI_FALLBACK_PROVIDER must be one of: web, fake")
+        logger.info(
+            "LLM_PROVIDER=gemini → M3 使用 %s（daily=%d, fallback=%s）",
+            settings.gemini_scoring_model,
+            settings.gemini_scoring_daily_limit,
+            settings.gemini_fallback_provider,
+        )
+        return GeminiScorer(fallback=fallback)
 
     if provider == "web":
         logger.info(

@@ -31,7 +31,7 @@
 - Python 3.12 / `uv`
 - Reddit data：`scrapers/json_public.py`（public JSON）+ `scrapers/rss.py`（Plan C fallback）；OAuth `praw_oauth.py` 留著未啟用
 - python-telegram-bot
-- LLM：預設 `web` provider，透過使用者手動登入的 ChatGPT 或 Gemini 網頁工作階段進行評分與問答（零 API key）；也保留 Anthropic / MiniMax / Fake 相容實作
+- LLM：預設 Gemini Developer API（M3：Gemini 3.5 Flash-Lite；M6：Gemini 3.5 Flash），含免費額度保護與 browser fallback；也保留手動登入網頁、Anthropic、MiniMax、Fake 相容實作
 - APScheduler / SQLAlchemy 2.0 / Alembic
 - 預設 SQLite，可切 Postgres（`DATABASE_URL`）
 
@@ -59,7 +59,38 @@ uv run python -m reddit_tracker.scheduler
 
 正式部署走 launchd（詳見 `deploy/`），caffeinate 確保 mac 不睡。
 
-## 零 API-key LLM 設定（預設）
+## 本機控制台
+
+啟動控制台後會自動開啟瀏覽器；它只監聽 `127.0.0.1:8765`，不會把資料庫、
+Telegram 對話或服務控制功能暴露到網路。
+
+```bash
+uv run python -m reddit_tracker.web
+```
+
+控制台可一鍵啟動／停止 scheduler 與 Telegram Bot、調整不含憑證的 `.env`
+設定、查看候選貼文／追蹤／評分／推送／LLM 紀錄、瀏覽完整 QA 對話與兩個服務的
+最新日誌。停止專案會同時 `bootout` 與 `disable` 背景服務，避免下次登入自動復活。
+
+## Gemini Free Tier API（預設）
+
+將 key 只寫進本機 `.env`，不應提交或貼進文件。M3 與 M6 共用保守的跨 process
+額度保護：評分每日 450 次、QA 每日 50 次、每分鐘 5 次；日界線採 Gemini 的 Pacific
+time。API 回傳 429 時會最多重試兩次，仍受限才改走下方已登入的 browser provider。
+
+```bash
+# .env
+LLM_PROVIDER=gemini
+GEMINI_API_KEY=...            # 僅本機 .env
+GEMINI_SCORING_MODEL=gemini-3.5-flash-lite
+GEMINI_QA_MODEL=gemini-3.5-flash
+GEMINI_FALLBACK_PROVIDER=web
+```
+
+實際 Free Tier RPM／TPM／RPD 以 Google AI Studio 專案頁面為準；若確認有餘裕，再從
+控制台提高每日限制。不要一次重跑所有舊評分紀錄。
+
+## 已登入網頁 LLM fallback
 
 此做法參考 [Multi-AI Chat Desktop](https://github.com/teddashh/multi-ai-chat-desktop)：由使用者在官方網頁手動登入，再透過本機瀏覽器工作階段處理 prompt，而不是呼叫付費 API。它不會讀取帳密或 cookie、不會自動登入、也不會繞過 CAPTCHA、帳號限制或免費額度。
 
@@ -67,7 +98,8 @@ uv run python -m reddit_tracker.scheduler
 # 先開隔離的 Chrome profile，並在開出的分頁手動登入 ChatGPT 或 Gemini。
 open -na "Google Chrome" --args --remote-debugging-port=9222 --remote-allow-origins=http://127.0.0.1:9222 --user-data-dir="$HOME/.reddit-tracker-llm-profile"
 
-# .env：LLM_PROVIDER=web，WEB_LLM_PROVIDER=chatgpt（或 gemini）
+# Gemini 額度耗盡時使用的 fallback。也可單獨設 LLM_PROVIDER=web。
+WEB_LLM_PROVIDER=chatgpt # 或 gemini
 uv run python scripts/llm_web_session_doctor.py
 ```
 

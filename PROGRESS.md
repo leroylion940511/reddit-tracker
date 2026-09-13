@@ -4,25 +4,70 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-06-11（incident triage + db.py WAL 修上 + launchd 全停 — daily_top5_push 6/9-6/11 連 3 天死在 sqlite database is locked，commit `6cfede8` 加 WAL + busy_timeout=5s；scheduler + bot launchd job 已 bootout 暫停服務；下次 session 重啟 launchd 即帶 6/8 之後三個 commit 全部生效）
+**Last updated:** 2026-09-13（Gemini Free Tier API 完成接入與實測；服務仍維持停用）
 
-## ⚠️ 服務狀態（2026-06-11 16:45）
+## 本次變更（2026-09-13 — RSS one-day trial 準備）
 
-**launchd jobs 已停**：
-- `com.leroy.reddit-tracker.scheduler` — bootout
-- `com.leroy.reddit-tracker.bot` — bootout
-- 確認方式：`launchctl list | grep reddit` 應該無輸出
-- `caffeinate -i` 隨之結束（它是 launchd ProgramArguments 的 wrapper）
+- ✅ 實機 RSS probe：`r/taiwan/new/.rss` 成功回傳 5 篇當日貼文（含 post id、title、UTC time、`source=rss`）。快速連抓多個 feed 時 Reddit 對後續請求回 429，證實 RSS 可用但必須保守節流。
+- ✅ 本機試跑設定改為 RSS 15 秒 request 間隔、每次 M3 最多評 5 篇，避免 RSS burst 與 Gemini Free Tier 回補同時造成限流；這兩個 `.env` override 不會提交。
 
-**重啟方式**（下次要復跑時）：
+## 本次變更（2026-09-13 — Gemini Free Tier API）
+
+- ✅ 新增 `LLM_PROVIDER=gemini`：M3 評分使用 `gemini-3.5-flash-lite` 的 JSON mode；M6 問答使用 `gemini-3.5-flash`。兩條路徑皆記錄 API usage token，Free Tier 成本記為 `$0`。
+- ✅ 加入跨 scheduler / Telegram bot 的本機額度 guard：Pacific 日界線、評分 450 次／日、QA 50 次／日、5 RPM；Gemini 429 最多 retry 兩次，仍受限才 fallback 至既有手動登入 browser provider。
+- ✅ 實機驗證：API key 可列出可用模型；QA 與 M3 JSON request 均回覆成功（M3 正常 JSON、Gemini 3.5 系列可用）。此 key 對新使用者不再提供 Gemini 2.5 Flash / Flash-Lite generate endpoint，故預設改為 3.5 系列。
+- ✅ 268/268 pytest 通過；本次變更檔案 ruff 通過。全 repo ruff 仍有既存 16 個 scheduler / import lint 問題，未在此功能變更中修改。
+- ⚠️ launchd scheduler 與 bot 仍維持 disabled；本次只做 API 最小請求，不會自行啟動服務。
+
+## 本次變更（2026-09-13 — 本機操作控制台）
+
+- ✅ 新增 `reddit_tracker.web` 本機 dashboard：總覽、scheduler / Telegram Bot 一鍵啟動與停止、非敏感設定編輯、SQLite 資料瀏覽、QA 歷史對話、服務日誌與 Chrome LLM doctor。
+- ✅ 控制台只綁定 `127.0.0.1:8765`；不會讀取或顯示 API key／Telegram token。launchctl 呼叫使用固定 allowlist，停止時同時 bootout + disable，防止 `RunAtLoad` 在下次登入時重啟。
+- ✅ `uv run python -m reddit_tracker.web` 啟動並自動開啟瀏覽器；不會因建置控制台而啟動既有背景服務。
+
+## 本次變更（2026-09-13 — 零 API-key LLM browser provider）
+
+- ✅ 新增 `LLM_PROVIDER=web`：評分（M3）與 `/ask`（M6）共用已登入的 ChatGPT / Gemini 官方網頁工作階段，取代 Anthropic / MiniMax API；回報成本固定 `$0`。
+- ✅ 參考 `teddashh/multi-ai-chat-desktop` 的 adapter 架構，保留 ChatGPT / Gemini 的 input、send、response、streaming selector；目前實作為 Python + 本機 Chrome DevTools，非其 Tauri app 的直接依賴。
+- ✅ 安全邊界：只允許 loopback CDP、使用者手動登入、絕不讀帳密／cookie／既有對話、不自動登入或繞過 CAPTCHA／配額；scheduler 和 bot 以跨 process lock 序列化網頁請求。
+- ✅ 實機驗證：隔離 Chrome profile 已手動登入 ChatGPT；`llm_web_session_doctor.py` 回覆 `READY`。短 QA round-trip 回傳 `QA_OK`、虛構 Reddit 貼文五軸 JSON 成功解析為 `track`，均為 `$0` API 成本。ChatGPT 152 的 mobile composer / 繁中 send button / assistant turn selector 與 CDP Origin allowlist 已納入 adapter。
+- ⚠️ 兩個 launchd job 目前仍停用；這次只驗證 provider，不自動啟動 Reddit 抓取或 Telegram 推送服務。
+
+## ⚠️ 服務狀態（2026-08-19 — 全部暫停，且已停用自動重啟）
+
+**launchd jobs**：
+- `com.leroy.reddit-tracker.bot` — bootout + **disable**
+- `com.leroy.reddit-tracker.scheduler` — bootout + **disable**
+- 確認方式：`launchctl list | grep reddit` 應該無輸出；`launchctl print-disabled gui/$(id -u) | grep reddit` 應顯示兩個都是 `disabled`
+- **實測驗證過根因**：8/13 只 bootout、沒 disable，結果 8/18 17:11 開機/登入時 launchd 依 `RunAtLoad=true` 自動把兩個 job 重新載入（PID 1399/1403），8/19 發現後才補上 disable。確認過沒有 crontab 或其他 plist 在搞，純粹是 RunAtLoad 的效果。
+
+**關閉方式**（下次要暫停服務時）：
 ```bash
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.leroy.reddit-tracker.scheduler.plist
-sleep 2  # 避開 launchd ratelimit (參考 commit 6b1894f)
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.leroy.reddit-tracker.bot.plist
-# 驗證
-launchctl list | grep reddit  # 應該看到兩個 PID
-tail -f scheduler.log         # 應該看到 "Scheduler started" + PRAGMA WAL 觸發
+launchctl bootout gui/$(id -u)/com.leroy.reddit-tracker.bot
+launchctl bootout gui/$(id -u)/com.leroy.reddit-tracker.scheduler
 ```
+若要連重開機也不自動復活，額外加：
+```bash
+launchctl disable gui/$(id -u)/com.leroy.reddit-tracker.bot
+launchctl disable gui/$(id -u)/com.leroy.reddit-tracker.scheduler
+```
+（兩個 plist 都設了 `RunAtLoad=true` + `KeepAlive=true`，單純 bootout 不會阻止重開機/登入後 launchd 自動重新載入，disable 才會。）
+
+**重啟方式**（若之後又被 disable 過，要先 enable 再 bootstrap）：
+```bash
+launchctl enable gui/$(id -u)/com.leroy.reddit-tracker.scheduler
+launchctl enable gui/$(id -u)/com.leroy.reddit-tracker.bot
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.leroy.reddit-tracker.scheduler.plist
+sleep 2  # 避開 launchd ratelimit
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.leroy.reddit-tracker.bot.plist
+launchctl list | grep reddit  # 應該看到兩個 PID
+```
+
+**Demo 用 DB 變更**（純人工 SQL，無 migration）：
+- `UPDATE tracked_posts SET status='active' WHERE id IN (2, 3);`（讓 /ask 2 /ask 3 可開 session）
+- demo 結束想還原：`UPDATE tracked_posts SET status='archived' WHERE id IN (2, 3);`
+
+重啟後驗證：`tail -f scheduler.log` 應該看到 "Scheduler started" + PRAGMA WAL 觸發。
 
 重啟後立即生效的 commits（停服期間累積未生效）：
 - `6304bc3` subreddit 大小寫 lowercase normalize（PostPayload + ingest）

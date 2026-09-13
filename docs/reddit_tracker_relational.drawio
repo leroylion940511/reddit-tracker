@@ -1,0 +1,315 @@
+<mxfile host="app.diagrams.net" modified="2026-06-24T00:00:00.000Z" agent="Claude" version="22.0.0">
+  <diagram name="reddit_tracker Relational schema" id="rel-main">
+    <mxGraphModel dx="1800" dy="1400" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1380" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title + note -->
+        <mxCell id="t_title" value="Relational schema — reddit_tracker" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=20;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="500" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="t_note" value="底線 = PK；箭頭從 FK 指向被參照的 PK" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=12;fontStyle=2;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="430" y="22" width="400" height="24" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== candidate_posts ===================== -->
+        <mxCell id="h_cand" value="candidate_posts" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="54" width="200" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="c_cand_id" value="id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;fontStyle=4;" vertex="1" parent="1">
+          <mxGeometry x="60" y="78" width="40" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="c_cand_rid" value="reddit_post_id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="100" y="78" width="105" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="c_cand_sub" value="subreddit" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="205" y="78" width="70" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="c_cand_title" value="title" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="275" y="78" width="50" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="c_cand_self" value="selftext" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="325" y="78" width="60" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="c_cand_perm" value="permalink" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="385" y="78" width="75" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="c_cand_auser" value="author_username" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="460" y="78" width="125" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="c_cand_akarma" value="author_karma" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="585" y="78" width="105" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="c_cand_acutc" value="author_created_utc" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="690" y="78" width="145" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="c_cand_posted" value="posted_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="835" y="78" width="75" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="c_cand_disc" value="discovered_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="910" y="78" width="100" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="c_cand_dsrc" value="discovery_source" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="78" width="120" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="c_cand_isc" value="initial_score" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1130" y="78" width="100" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="c_cand_inc" value="initial_num_comments" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1230" y="78" width="155" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="c_cand_uvr" value="upvote_ratio" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1385" y="78" width="95" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="c_cand_lang" value="lang" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1480" y="78" width="45" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="c_cand_meta" value="metadata" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1525" y="78" width="75" height="32" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== subreddit_sources ===================== -->
+        <mxCell id="h_subr" value="subreddit_sources" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="164" width="200" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="c_subr_id" value="id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;fontStyle=4;" vertex="1" parent="1"><mxGeometry x="60" y="188" width="40" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_subr_name" value="name" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="100" y="188" width="70" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_subr_lh" value="lang_hint" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="170" y="188" width="75" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_subr_en" value="enabled" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="245" y="188" width="65" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_subr_lpa" value="last_polled_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="310" y="188" width="110" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_subr_tcy" value="total_candidates_yielded" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="420" y="188" width="165" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_subr_tp" value="total_promoted" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="585" y="188" width="115" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_subr_tc" value="total_collected" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="700" y="188" width="115" height="32" as="geometry" /></mxCell>
+
+        <!-- ===================== keyword_seeds ===================== -->
+        <mxCell id="h_kw" value="keyword_seeds" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="274" width="200" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="c_kw_id" value="id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;fontStyle=4;" vertex="1" parent="1"><mxGeometry x="60" y="298" width="40" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_kw_keyword" value="keyword" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="100" y="298" width="75" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_kw_cat" value="category" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="175" y="298" width="75" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_kw_lang" value="lang" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="250" y="298" width="50" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_kw_en" value="enabled" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="300" y="298" width="65" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_kw_lpa" value="last_polled_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="365" y="298" width="110" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_kw_tcy" value="total_candidates_yielded" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="475" y="298" width="165" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_kw_tp" value="total_promoted" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="640" y="298" width="115" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_kw_tc" value="total_collected" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="755" y="298" width="115" height="32" as="geometry" /></mxCell>
+
+        <!-- ===================== scoring_records ===================== -->
+        <mxCell id="h_sc" value="scoring_records" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="384" width="200" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="c_sc_id" value="id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;fontStyle=4;" vertex="1" parent="1"><mxGeometry x="60" y="408" width="40" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_sc_cpid" value="candidate_post_id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="100" y="408" width="125" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_sc_stage" value="stage" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="225" y="408" width="55" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_sc_passed" value="passed" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="280" y="408" width="60" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_sc_score" value="score" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="340" y="408" width="55" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_sc_details" value="details" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="395" y="408" width="60" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_sc_scored" value="scored_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="455" y="408" width="80" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_sc_cost" value="cost_usd" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="535" y="408" width="75" height="32" as="geometry" /></mxCell>
+
+        <!-- ===================== daily_pushes ===================== -->
+        <mxCell id="h_dp" value="daily_pushes" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="494" width="200" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="c_dp_id" value="id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;fontStyle=4;" vertex="1" parent="1"><mxGeometry x="60" y="518" width="40" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_dp_date" value="push_date" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="100" y="518" width="85" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_dp_cpid" value="candidate_post_id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="185" y="518" width="125" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_dp_type" value="push_type" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="310" y="518" width="85" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_dp_rank" value="rank" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="395" y="518" width="50" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_dp_pushed" value="pushed_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="445" y="518" width="80" height="32" as="geometry" /></mxCell>
+
+        <!-- ===================== feedback ===================== -->
+        <mxCell id="h_fb" value="feedback" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="604" width="200" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="c_fb_id" value="id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;fontStyle=4;" vertex="1" parent="1"><mxGeometry x="60" y="628" width="40" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_fb_user" value="user_id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="100" y="628" width="65" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_fb_cpid" value="candidate_post_id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="165" y="628" width="125" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_fb_action" value="action" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="290" y="628" width="60" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_fb_acted" value="acted_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="350" y="628" width="80" height="32" as="geometry" /></mxCell>
+
+        <!-- ===================== tracked_posts ===================== -->
+        <mxCell id="h_tp" value="tracked_posts" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="714" width="200" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="c_tp_id" value="id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;fontStyle=4;" vertex="1" parent="1"><mxGeometry x="60" y="738" width="40" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_tp_cpid" value="candidate_post_id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="100" y="738" width="125" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_tp_user" value="user_id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="225" y="738" width="65" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_tp_promoted" value="promoted_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="290" y="738" width="95" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_tp_tier" value="polling_tier" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="385" y="738" width="90" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_tp_lpa" value="last_polled_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="475" y="738" width="110" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_tp_status" value="status" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="585" y="738" width="55" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_tp_summary" value="initial_summary" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="640" y="738" width="115" height="32" as="geometry" /></mxCell>
+
+        <!-- ===================== post_snapshots ===================== -->
+        <mxCell id="h_ps" value="post_snapshots" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="824" width="200" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="c_ps_id" value="id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;fontStyle=4;" vertex="1" parent="1"><mxGeometry x="60" y="848" width="40" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_ps_tpid" value="tracked_post_id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="100" y="848" width="110" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_ps_captured" value="captured_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="210" y="848" width="95" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_ps_score" value="score" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="305" y="848" width="55" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_ps_nc" value="num_comments" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="360" y="848" width="110" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_ps_uvr" value="upvote_ratio" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="470" y="848" width="95" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_ps_newc" value="new_comments" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="565" y="848" width="110" height="32" as="geometry" /></mxCell>
+
+        <!-- ===================== related_posts ===================== -->
+        <mxCell id="h_rp" value="related_posts" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="934" width="200" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="c_rp_id" value="id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;fontStyle=4;" vertex="1" parent="1"><mxGeometry x="60" y="958" width="40" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_rp_tpid" value="tracked_post_id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="100" y="958" width="110" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_rp_rid" value="reddit_post_id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="210" y="958" width="110" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_rp_type" value="relation_type" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="320" y="958" width="100" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_rp_rscore" value="relevance_score" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="420" y="958" width="115" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_rp_milestone" value="is_milestone" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="535" y="958" width="95" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_rp_content" value="content" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="630" y="958" width="70" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_rp_posted" value="posted_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="700" y="958" width="80" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_rp_disc" value="discovered_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="780" y="958" width="100" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_rp_notified" value="notified_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="880" y="958" width="90" height="32" as="geometry" /></mxCell>
+
+        <!-- ===================== qa_sessions ===================== -->
+        <mxCell id="h_qs" value="qa_sessions" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="1044" width="200" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="c_qs_id" value="id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;fontStyle=4;" vertex="1" parent="1"><mxGeometry x="60" y="1068" width="40" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_qs_user" value="user_id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="100" y="1068" width="65" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_qs_tpid" value="tracked_post_id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="165" y="1068" width="110" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_qs_started" value="started_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="275" y="1068" width="80" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_qs_ended" value="ended_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="355" y="1068" width="75" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_qs_state" value="state" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="430" y="1068" width="55" height="32" as="geometry" /></mxCell>
+
+        <!-- ===================== qa_messages ===================== -->
+        <mxCell id="h_qm" value="qa_messages" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="1154" width="200" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="c_qm_id" value="id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;fontStyle=4;" vertex="1" parent="1"><mxGeometry x="60" y="1178" width="40" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_qm_qsid" value="qa_session_id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="100" y="1178" width="110" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_qm_role" value="role" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="210" y="1178" width="50" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_qm_content" value="content" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="260" y="1178" width="75" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_qm_in" value="input_tokens" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="335" y="1178" width="100" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_qm_out" value="output_tokens" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="435" y="1178" width="105" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_qm_cost" value="cost_usd" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="540" y="1178" width="75" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_qm_sent" value="sent_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="615" y="1178" width="75" height="32" as="geometry" /></mxCell>
+
+        <!-- ===================== llm_records ===================== -->
+        <mxCell id="h_llm" value="llm_records" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="1264" width="200" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="h_llm_note" value="（無 FK；context_ref 是 JSON 軟連結）" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=12;fontStyle=2;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="200" y="1264" width="320" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="c_llm_id" value="id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;fontStyle=4;" vertex="1" parent="1"><mxGeometry x="60" y="1288" width="40" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_llm_prov" value="provider" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="100" y="1288" width="70" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_llm_model" value="model" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="170" y="1288" width="60" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_llm_purpose" value="purpose" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="230" y="1288" width="70" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_llm_in" value="input_tokens" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="300" y="1288" width="100" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_llm_out" value="output_tokens" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="400" y="1288" width="105" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_llm_cached" value="cached_tokens" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="505" y="1288" width="105" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_llm_cost" value="cost_usd" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="610" y="1288" width="75" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_llm_called" value="called_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="685" y="1288" width="80" height="32" as="geometry" /></mxCell>
+        <mxCell id="c_llm_ctx" value="context_ref" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d9d9d9;strokeColor=#000000;fontSize=11;" vertex="1" parent="1"><mxGeometry x="765" y="1288" width="95" height="32" as="geometry" /></mxCell>
+
+        <!-- ===================== FK ARROWS ===================== -->
+        <!-- FK1: scoring_records.candidate_post_id -> candidate_posts.id -->
+        <mxCell id="fk1" style="endArrow=classic;html=1;edgeStyle=none;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.5;" edge="1" parent="1" source="c_sc_cpid" target="c_cand_id">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="162" y="400" />
+              <mxPoint x="52"  y="400" />
+              <mxPoint x="52"  y="130" />
+              <mxPoint x="80"  y="130" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- FK2: daily_pushes.candidate_post_id -> candidate_posts.id -->
+        <mxCell id="fk2" style="endArrow=classic;html=1;edgeStyle=none;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.5;" edge="1" parent="1" source="c_dp_cpid" target="c_cand_id">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="248" y="510" />
+              <mxPoint x="40"  y="510" />
+              <mxPoint x="40"  y="142" />
+              <mxPoint x="80"  y="142" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- FK3: feedback.candidate_post_id -> candidate_posts.id -->
+        <mxCell id="fk3" style="endArrow=classic;html=1;edgeStyle=none;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.5;" edge="1" parent="1" source="c_fb_cpid" target="c_cand_id">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="228" y="620" />
+              <mxPoint x="28"  y="620" />
+              <mxPoint x="28"  y="154" />
+              <mxPoint x="80"  y="154" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- FK4: tracked_posts.candidate_post_id -> candidate_posts.id -->
+        <mxCell id="fk4" style="endArrow=classic;html=1;edgeStyle=none;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.5;" edge="1" parent="1" source="c_tp_cpid" target="c_cand_id">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="162" y="730" />
+              <mxPoint x="16"  y="730" />
+              <mxPoint x="16"  y="166" />
+              <mxPoint x="80"  y="166" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- FK5: post_snapshots.tracked_post_id -> tracked_posts.id -->
+        <mxCell id="fk5" style="endArrow=classic;html=1;edgeStyle=none;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.5;" edge="1" parent="1" source="c_ps_tpid" target="c_tp_id">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="155" y="840" />
+              <mxPoint x="52"  y="840" />
+              <mxPoint x="52"  y="790" />
+              <mxPoint x="80"  y="790" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- FK6: related_posts.tracked_post_id -> tracked_posts.id -->
+        <mxCell id="fk6" style="endArrow=classic;html=1;edgeStyle=none;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.5;" edge="1" parent="1" source="c_rp_tpid" target="c_tp_id">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="155" y="950" />
+              <mxPoint x="40"  y="950" />
+              <mxPoint x="40"  y="802" />
+              <mxPoint x="80"  y="802" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- FK7: qa_sessions.tracked_post_id -> tracked_posts.id -->
+        <mxCell id="fk7" style="endArrow=classic;html=1;edgeStyle=none;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.5;" edge="1" parent="1" source="c_qs_tpid" target="c_tp_id">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="220" y="1060" />
+              <mxPoint x="28"  y="1060" />
+              <mxPoint x="28"  y="814" />
+              <mxPoint x="80"  y="814" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- FK8: qa_messages.qa_session_id -> qa_sessions.id -->
+        <mxCell id="fk8" style="endArrow=classic;html=1;edgeStyle=none;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=#000000;strokeWidth=1.5;" edge="1" parent="1" source="c_qm_qsid" target="c_qs_id">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="155" y="1170" />
+              <mxPoint x="52"  y="1170" />
+              <mxPoint x="52"  y="1120" />
+              <mxPoint x="80"  y="1120" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -12,11 +12,13 @@ Opus 摘要與問答留待 M4 / M6 再加。
 from .base import HaikuVerdict, LLMScorer
 from .factory import build_scorer
 from .fake import FakeScorer
+from .gemini import GeminiScorer
 from .haiku import HaikuScorer
 from .minimax import MinimaxScorer
 
 __all__ = [
     "FakeScorer",
+    "GeminiScorer",
     "HaikuScorer",
     "HaikuVerdict",
     "LLMScorer",

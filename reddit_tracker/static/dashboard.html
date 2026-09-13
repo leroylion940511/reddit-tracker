@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="本機 Reddit Tracker 控制台" />
+    <title>Reddit Tracker 控制台</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230e7490'/%3E%3Cpath d='M18 38c0-10 7-17 16-17s16 7 16 17' fill='none' stroke='white' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='27' cy='34' r='3' fill='white'/%3E%3Ccircle cx='41' cy='34' r='3' fill='white'/%3E%3Cpath d='M27 44c4 3 7 3 11 0' fill='none' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="/static/dashboard.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">R</span><span>Reddit<br />Tracker</span></div>
+      <nav aria-label="主要導覽">
+        <button class="nav active" data-view="overview">總覽</button>
+        <button class="nav" data-view="data">資料庫</button>
+        <button class="nav" data-view="conversations">對話紀錄</button>
+        <button class="nav" data-view="logs">服務日誌</button>
+        <button class="nav" data-view="settings">專案設定</button>
+      </nav>
+      <p class="local-note">僅限這台電腦使用<br />127.0.0.1</p>
+    </aside>
+    <main>
+      <header><div><p class="eyebrow">LOCAL CONTROL PLANE</p><h1 id="page-title">系統總覽</h1></div><button class="quiet" id="refresh">重新整理</button></header>
+      <div id="notice" role="status" aria-live="polite"></div>
+
+      <section class="view active" id="view-overview">
+        <div class="hero-controls"><div><h2>背景服務</h2><p>控制排程器與 Telegram Bot，不會在未點擊前啟動任何工作。</p></div><div class="button-row"><button class="primary" id="start-all">啟動專案</button><button class="danger" id="stop-all">停止專案</button></div></div>
+        <div class="services" id="services"></div>
+        <div class="metric-grid" id="metrics"></div>
+        <section class="panel two-col"><div><h2>最近活動</h2><dl id="latest"></dl></div><div><h2>LLM 工作階段</h2><p id="llm-summary" class="big-number">—</p><button class="secondary" id="doctor">檢查瀏覽器 LLM 連線</button><pre id="doctor-output" class="inline-output" hidden></pre></div></section>
+      </section>
+
+      <section class="view" id="view-data">
+        <div class="section-head"><div><h2>資料庫資料</h2><p>直接讀取本機 SQLite；每次最多顯示 200 筆。</p></div><select id="data-kind" aria-label="選擇資料表"><option value="candidates">候選貼文</option><option value="tracked">追蹤貼文</option><option value="scoring">評分紀錄</option><option value="pushes">推送紀錄</option><option value="feedback">使用者回饋</option><option value="related">後續事件</option><option value="llm">LLM 紀錄</option></select></div>
+        <div class="table-wrap"><table><thead id="data-head"></thead><tbody id="data-body"></tbody></table></div>
+      </section>
+
+      <section class="view" id="view-conversations">
+        <div class="section-head"><div><h2>歷史問答</h2><p>選擇一個 session 查看 Telegram 中的完整問題與回覆。</p></div></div>
+        <div class="conversation-layout"><div class="session-list" id="session-list"></div><article class="messages" id="messages"><p class="empty">從左側選擇對話。</p></article></div>
+      </section>
+
+      <section class="view" id="view-logs">
+        <div class="section-head"><div><h2>服務日誌</h2><p>顯示每個檔案最後 180 行。</p></div><div class="segmented"><button class="selected" data-log="scheduler">排程器</button><button data-log="bot">Bot</button></div></div><pre class="log-output" id="log-output">載入中…</pre>
+      </section>
+
+      <section class="view" id="view-settings">
+        <div class="section-head"><div><h2>專案設定</h2><p>只可修改非敏感設定；金鑰與 Telegram 憑證不會顯示或寫入此頁。</p></div></div>
+        <form id="settings-form" class="settings-grid"></form>
+        <div class="form-actions"><button class="primary" type="submit" form="settings-form">儲存設定</button><span id="restart-hint"></span></div>
+        <section class="panel"><h2>憑證狀態</h2><div id="secret-status" class="status-list"></div></section>
+      </section>
+    </main>
+    <script src="/static/dashboard.js"></script>
+  </body>
+</html>

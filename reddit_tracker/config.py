@@ -28,12 +28,26 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./reddit_tracker.db"
 
     # --- LLM (M3+) ---
-    llm_provider: str = "anthropic"             # anthropic / minimax / web / fake
+    llm_provider: str = "anthropic"             # anthropic / minimax / gemini / web / fake
     anthropic_api_key: str | None = None
 
     minimax_api_key: str | None = None
     minimax_base_url: str = "https://api.minimaxi.chat/v1"
     minimax_model: str = "MiniMax-Text-01"
+
+    # --- Gemini Developer API (Free Tier guardrails) ---
+    # API 的實際 RPM/TPM/RPD 以 AI Studio 顯示為準。這些是本機保守上限，避免
+    # scheduler 一次回補把免費額度耗盡；日界線採 Gemini 的 Pacific time。
+    gemini_api_key: str | None = None
+    gemini_scoring_model: str = "gemini-3.5-flash-lite"
+    gemini_qa_model: str = "gemini-3.5-flash"
+    gemini_scoring_daily_limit: int = 450
+    gemini_qa_daily_limit: int = 50
+    gemini_requests_per_minute: int = 5
+    gemini_timeout_seconds: float = 60.0
+    gemini_max_429_retries: int = 2
+    gemini_quota_state_path: str = "/tmp/reddit-tracker-gemini-quota.json"
+    gemini_fallback_provider: str = "web"       # web / fake
 
     # --- 零 API-key LLM（已登入的瀏覽器工作階段）---
     # `web` provider 只透過本機 Chrome DevTools 連線到使用者手動登入的分頁；
