@@ -69,6 +69,10 @@ case "$cmd" in
         echo "  tail -f scheduler.log bot.log"
         ;;
     reload)
+        # launchd bootout occasionally leaves a caffeinate/uv child orphaned.
+        # Remove any old process before reloading so there is never a duplicate
+        # scheduler (which would otherwise double RSS and LLM traffic).
+        _kill_legacy
         for l in "${LABELS[@]}"; do _install_one "$l"; done
         ;;
     uninstall)

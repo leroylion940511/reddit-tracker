@@ -468,7 +468,11 @@ def main() -> int:
 
     def _shutdown(signum, frame):  # noqa: ARG001
         logger.info("Shutting down scheduler (signal=%s)", signum)
-        sched.shutdown(wait=False)
+        # During the initial pass `sched.start()` has not run yet.  Calling
+        # shutdown then raises SchedulerNotRunningError and can leave the
+        # launchd child process alive after bootout.
+        if sched.running:
+            sched.shutdown(wait=False)
         sys.exit(0)
 
     signal.signal(signal.SIGINT, _shutdown)
@@ -503,7 +507,8 @@ def main() -> int:
         while True:
             time.sleep(60)
     except (KeyboardInterrupt, SystemExit):
-        sched.shutdown(wait=False)
+        if sched.running:
+            sched.shutdown(wait=False)
     return 0
 
 
