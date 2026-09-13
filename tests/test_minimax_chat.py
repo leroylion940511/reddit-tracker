@@ -48,6 +48,7 @@ def test_build_chat_falls_back_when_no_key(monkeypatch):
     from reddit_tracker import config
 
     config.get_settings.cache_clear()
+    monkeypatch.setenv("LLM_PROVIDER", "minimax")
     monkeypatch.setenv("MINIMAX_API_KEY", "")
     chat = build_chat()
     assert isinstance(chat, FakeChat)
@@ -58,6 +59,7 @@ def test_minimax_chat_requires_key(monkeypatch):
     from reddit_tracker import config
 
     config.get_settings.cache_clear()
+    monkeypatch.setenv("LLM_PROVIDER", "minimax")
     monkeypatch.setenv("MINIMAX_API_KEY", "")
     with pytest.raises(RuntimeError):
         MinimaxChat()

@@ -31,7 +31,7 @@
 - Python 3.12 / `uv`
 - Reddit data：`scrapers/json_public.py`（public JSON）+ `scrapers/rss.py`（Plan C fallback）；OAuth `praw_oauth.py` 留著未啟用
 - python-telegram-bot
-- LLM：Anthropic Haiku 4.5（評分）/ MiniMax（問答，原企劃 Opus 改用 MiniMax 共用 endpoint 省一份 SDK）
+- LLM：預設 `web` provider，透過使用者手動登入的 ChatGPT 或 Gemini 網頁工作階段進行評分與問答（零 API key）；也保留 Anthropic / MiniMax / Fake 相容實作
 - APScheduler / SQLAlchemy 2.0 / Alembic
 - 預設 SQLite，可切 Postgres（`DATABASE_URL`）
 
@@ -58,6 +58,20 @@ uv run python -m reddit_tracker.scheduler
 ```
 
 正式部署走 launchd（詳見 `deploy/`），caffeinate 確保 mac 不睡。
+
+## 零 API-key LLM 設定（預設）
+
+此做法參考 [Multi-AI Chat Desktop](https://github.com/teddashh/multi-ai-chat-desktop)：由使用者在官方網頁手動登入，再透過本機瀏覽器工作階段處理 prompt，而不是呼叫付費 API。它不會讀取帳密或 cookie、不會自動登入、也不會繞過 CAPTCHA、帳號限制或免費額度。
+
+```bash
+# 先開隔離的 Chrome profile，並在開出的分頁手動登入 ChatGPT 或 Gemini。
+open -na "Google Chrome" --args --remote-debugging-port=9222 --remote-allow-origins=http://127.0.0.1:9222 --user-data-dir="$HOME/.reddit-tracker-llm-profile"
+
+# .env：LLM_PROVIDER=web，WEB_LLM_PROVIDER=chatgpt（或 gemini）
+uv run python scripts/llm_web_session_doctor.py
+```
+
+`doctor` 回覆 `READY` 後，scheduler 的五軸評分與 Telegram `/ask` 會共用該工作階段，所有 API 成本記為 `$0`。為避免 scheduler 與 bot 同時寫入同一個網頁輸入框，請求會跨 process 序列化；免費帳號遇到速率／用量上限時，既有 pipeline 會記錄該筆失敗而非靜默改用付費 API。
 
 ## 里程碑完成度
 

@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -29,12 +28,22 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./reddit_tracker.db"
 
     # --- LLM (M3+) ---
-    llm_provider: str = "anthropic"             # anthropic / minimax / fake
+    llm_provider: str = "anthropic"             # anthropic / minimax / web / fake
     anthropic_api_key: str | None = None
 
     minimax_api_key: str | None = None
     minimax_base_url: str = "https://api.minimaxi.chat/v1"
     minimax_model: str = "MiniMax-Text-01"
+
+    # --- 零 API-key LLM（已登入的瀏覽器工作階段）---
+    # `web` provider 只透過本機 Chrome DevTools 連線到使用者手動登入的分頁；
+    # 絕不把帳密 / cookie 寫進設定或 DB，也不會連到非 localhost 的 CDP。
+    web_llm_provider: str = "chatgpt"            # chatgpt / gemini
+    web_llm_cdp_url: str = "http://127.0.0.1:9222"
+    web_llm_timeout_seconds: float = 180.0
+    web_llm_poll_interval_seconds: float = 1.0
+    web_llm_settle_seconds: float = 3.0
+    web_llm_lock_path: str = "/tmp/reddit-tracker-web-llm.lock"
 
     # --- Telegram (M4+) ---
     telegram_bot_token: str | None = None

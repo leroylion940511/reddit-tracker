@@ -173,12 +173,28 @@ class FakeChat(ChatClient):
 
 
 def build_chat() -> ChatClient:
-    """Factory — 依設定吐 MinimaxChat / FakeChat。
+    """Factory — 依設定吐 WebSessionChat / MinimaxChat / FakeChat。
 
     M6 預設走 MiniMax（即使 LLM_PROVIDER=anthropic 也走 MiniMax，因 Opus 改
     用 MiniMax 取代是專案決定）；缺 key 自動 fallback FakeChat 不阻塞 dev。
     """
     settings = get_settings()
+    if (settings.llm_provider or "").lower() == "web":
+        # 延遲 import：避免舊有 MiniMax-only 使用者在 import 時載入 browser dependency。
+        from .web_chat import WebSessionChat
+
+        logger.info(
+            "LLM_PROVIDER=web → QA 使用 %s 已登入瀏覽器工作階段（零 API key）",
+            settings.web_llm_provider,
+        )
+        return WebSessionChat(
+            provider=settings.web_llm_provider,
+            cdp_url=settings.web_llm_cdp_url,
+            timeout=settings.web_llm_timeout_seconds,
+            poll_interval=settings.web_llm_poll_interval_seconds,
+            settle_seconds=settings.web_llm_settle_seconds,
+            lock_path=settings.web_llm_lock_path,
+        )
     if not settings.minimax_api_key:
         logger.warning("MINIMAX_API_KEY 未設定 → QA 使用 FakeChat（不會真打 API）")
         return FakeChat()

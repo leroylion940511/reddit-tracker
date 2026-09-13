@@ -16,6 +16,7 @@ from .base import LLMScorer
 from .fake import FakeScorer
 from .haiku import HaikuScorer
 from .minimax import MinimaxScorer
+from .web_chat import WebSessionScorer
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,20 @@ def build_scorer() -> LLMScorer:
             api_key=settings.minimax_api_key,
             base_url=settings.minimax_base_url,
             model=settings.minimax_model,
+        )
+
+    if provider == "web":
+        logger.info(
+            "LLM_PROVIDER=web → 使用 %s 已登入瀏覽器工作階段（零 API key）",
+            settings.web_llm_provider,
+        )
+        return WebSessionScorer(
+            provider=settings.web_llm_provider,
+            cdp_url=settings.web_llm_cdp_url,
+            timeout=settings.web_llm_timeout_seconds,
+            poll_interval=settings.web_llm_poll_interval_seconds,
+            settle_seconds=settings.web_llm_settle_seconds,
+            lock_path=settings.web_llm_lock_path,
         )
 
     raise ValueError(f"unknown LLM_PROVIDER: {provider}")
