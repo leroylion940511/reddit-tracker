@@ -12,6 +12,7 @@
 - ✅ 本機試跑設定改為 RSS 60 秒 request 間隔、每次 M3 最多評 5 篇，避免 RSS burst 與 Gemini Free Tier 回補同時造成限流；這兩個 `.env` override 不會提交。
 - ✅ 21:16 CST 開始一天試跑：RSS 間隔再降為 60 秒，429 時跳過該輪剩餘 feed、等待下個 90 分鐘 discovery round；scheduler / bot 均由 launchd 啟動且各只有一個 process。初始 pass 完成，M3 處理 5 篇、rules pass 2、無 errors，DB 尚餘 8 篇未評分。
 - ✅ 21:22 CST RSS cooldown 後複測：專案 `RssScraper.fetch_new("taiwan")` 再次成功解析 5 篇當日貼文；429 為短時 request throttling，非 RSS endpoint 失效。
+- ✅ 一天試跑完成（2026-09-13 21:16 → 2026-09-14 21:16 CST）：18 次 subreddit discovery round 中 14 次有新增，累積寫入 1,730 筆 RSS 候選、4,358 筆去重；來源涵蓋 AskReddit、offmychest、relationship_advice、中文 sub 等 14 個 subreddit。M3 三階段各完成 238 筆，Gemini Flash-Lite 共處理 238 篇、48 篇通過 Haiku gate。scheduler / bot 持續存活，試跑最終階段沒有 scheduler ERROR 或 bot warning/error。少數 RSS 429 / user feed 404/403 已由 Plan C 防護處理，不中斷下一輪排程。
 
 ## 本次變更（2026-09-13 — Gemini Free Tier API）
 
