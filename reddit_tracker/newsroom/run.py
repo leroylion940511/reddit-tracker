@@ -17,13 +17,14 @@ from sqlalchemy import select
 
 from ..config import get_settings
 from ..db import session_scope
-from ..models import NewsroomEdition, ReaderProfile
+from ..models import AgentArtifactRecord, AgentRun, NewsroomEdition, ReaderProfile
+from .contracts import EditionPlan
 from .gemini_writer import GeminiNewsroomWriter
 from .planning import previous_calendar_day_window, plan_edition
 from .publisher import format_telegram_messages, send_telegram_messages
 from .rendering import EditionView, load_edition_view, render_html
 from .repository import create_reader_profile, get_or_create_edition
-from .writing import NewsroomWritingError, TemplateDraftingAgent, draft_edition
+from .writing import NewsroomWritingError, TemplateDraftingAgent, draft_edition, refresh_draft_edition
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +61,21 @@ def _trial_reader(session) -> ReaderProfile:
     )
 
 
-def prepare_edition(*, edition_date: date, writer_mode: str | None = None) -> PreparedEdition:
+def _saved_plan(session, *, edition: NewsroomEdition) -> EditionPlan:
+    artifact = session.scalar(
+        select(AgentArtifactRecord)
+        .join(AgentRun, AgentArtifactRecord.agent_run_id == AgentRun.id)
+        .where(AgentRun.edition_id == edition.id, AgentRun.stage == "assignment")
+        .order_by(AgentRun.id.desc())
+    )
+    if artifact is None or not artifact.payload:
+        raise RuntimeError("edition has no saved assignment plan for refresh")
+    return EditionPlan.model_validate(artifact.payload)
+
+
+def prepare_edition(
+    *, edition_date: date, writer_mode: str | None = None, refresh_existing: bool = False
+) -> PreparedEdition:
     """Idempotently create or load one trial edition; never sends Telegram."""
     settings = get_settings()
     chosen_writer = writer_mode or settings.newsroom_writer
@@ -101,6 +116,15 @@ def prepare_edition(*, edition_date: date, writer_mode: str | None = None) -> Pr
                     drafting_agent=TemplateDraftingAgent(),
                 )
                 writer_used = "template_fallback"
+        elif refresh_existing:
+            drafting_agent = GeminiNewsroomWriter() if chosen_writer == "gemini" else TemplateDraftingAgent()
+            refresh_draft_edition(
+                session,
+                edition=edition,
+                plan=_saved_plan(session, edition=edition),
+                drafting_agent=drafting_agent,
+            )
+            writer_used = f"{chosen_writer}_refresh"
         else:
             writer_used = "existing_draft"
         view = load_edition_view(session, edition=edition)
@@ -168,6 +192,7 @@ def main() -> int:
     parser.add_argument("--date", type=date.fromisoformat, default=_today_in_delivery_timezone())
     parser.add_argument("--writer", choices=("gemini", "template"))
     parser.add_argument("--preview", action="store_true", help="print a preview; this is the default")
+    parser.add_argument("--refresh", action="store_true", help="rewrite an unpublished draft with the selected writer")
     parser.add_argument("--send", action="store_true", help="send a prepared edition to Telegram")
     parser.add_argument("--html", help="optional local HTML preview path")
     args = parser.parse_args()
@@ -175,7 +200,11 @@ def main() -> int:
         prepared = publish_edition(edition_date=args.date)
         print(f"published edition={prepared.edition_id} items={len(prepared.view.items)}")
     else:
-        prepared = prepare_edition(edition_date=args.date, writer_mode=args.writer)
+        prepared = prepare_edition(
+            edition_date=args.date,
+            writer_mode=args.writer,
+            refresh_existing=args.refresh,
+        )
         print(f"preview edition={prepared.edition_id} items={len(prepared.view.items)} writer={prepared.writer_used}")
         for message in format_telegram_messages(prepared.view, preview=True):
             print("\n--- Telegram preview ---\n" + message)

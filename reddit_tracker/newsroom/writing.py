@@ -61,6 +61,14 @@ SENSITIVE_TERMS: dict[str, tuple[str, ...]] = {
     "成人或性相關內容": ("sexual", "sex", "nsfw", "色情", "性侵"),
 }
 
+FALLBACK_BEAT_LABELS = {
+    "relationships": "人際與情感",
+    "daily_life": "職場與日常",
+    "internet_culture": "網路現象",
+    "taiwan_life": "台灣與華語生活",
+    "human_interest": "人物故事",
+}
+
 
 def _compact(text: str | None, *, limit: int) -> str:
     compacted = re.sub(r"\s+", " ", text or "").strip()
@@ -129,23 +137,22 @@ class TemplateDraftingAgent:
     def draft(self, pitch: StoryPitch, evidence: EvidenceBrief) -> StoryDraft:
         source_names = "、".join(f"r/{source.subreddit}" for source in pitch.source_refs)
         original_titles = "；".join(source.original_title for source in pitch.source_refs)
-        statement_lines = "\n".join(f"- {claim.statement_zh}" for claim in evidence.claims)
+        beat_label = FALLBACK_BEAT_LABELS.get(pitch.beat, "日常生活")
         if pitch.kind is StoryKind.FEATURE:
             deck = f"從 {len(pitch.source_refs)} 則公開討論整理出的觀察，不把匿名經驗當成定論。"
             body = (
-                f"這篇專題從 {source_names} 的討論切入。\n\n"
+                f"這篇專題從 {source_names} 的公開討論切入，觀察 {beat_label} 的不同提問與經驗。\n\n"
                 f"原帖標題：{original_titles}\n\n"
-                f"可確認的來源脈絡：\n{statement_lines}\n\n"
-                "編輯提醒：這些內容呈現的是社群中的個人經驗與討論方向；"
-                "不同處境可能得出不同結論。"
+                "這些貼文呈現的是匿名使用者各自的處境，而非可推論到所有人的結論。"
+                "完整自述與脈絡請直接閱讀原帖；本文不將其延伸為已證實的外部事實。"
             )
         else:
             deck = "一則值得聊的公開討論，保留來源與不確定性讓讀者自行判斷。"
             body = (
-                f"這則故事來自 {source_names}。\n\n"
+                f"這則公開討論來自 {source_names}，聚焦在 {beat_label} 的一個日常提問或經驗。\n\n"
                 f"原帖標題：{original_titles}\n\n"
-                f"原作者自述：{evidence.claims[0].statement_zh}\n\n"
-                "目前能確認的是原帖所陳述的經驗；本文不把匿名敘事延伸為已證實的外部事實。"
+                "目前可確認的是原作者在 Reddit 提出的匿名自述。完整內容請見原帖；"
+                "本文不把它延伸為已證實的外部事實，也不替讀者作出單一結論。"
             )
         return StoryDraft(
             kind=pitch.kind,
@@ -303,12 +310,108 @@ def draft_edition(
     )
 
 
+def refresh_draft_edition(
+    session: Session,
+    *,
+    edition: NewsroomEdition,
+    plan: EditionPlan,
+    drafting_agent: DraftingAgent,
+) -> DraftingResult:
+    """Replace only prose of an unpublished edition after a writer recovery.
+
+    Existing item/source bridges are retained. The retry is explicit in the
+    ledger; it is useful when a temporary provider error produced a safe
+    fallback preview before the scheduled delivery.
+    """
+    if edition.status == "published":
+        raise NewsroomWritingError("published editions cannot be rewritten")
+    pitches = [*plan.briefs, *plan.features]
+    items = list(session.scalars(
+        select(EditionItem)
+        .where(EditionItem.edition_id == edition.id)
+        .order_by(EditionItem.position.asc())
+    ).all())
+    if len(items) != len(pitches):
+        raise NewsroomWritingError("edition items do not match the saved plan")
+    reddit_ids = [source.reddit_post_id for pitch in pitches for source in pitch.source_refs]
+    candidates = list(session.scalars(
+        select(CandidatePost).where(CandidatePost.reddit_post_id.in_(reddit_ids))
+    ).all())
+    candidates_by_reddit_id = {candidate.reddit_post_id: candidate for candidate in candidates}
+    try:
+        evidence_pairs = [
+            (pitch, EvidenceAgent().build(
+                pitch,
+                [candidates_by_reddit_id[source.reddit_post_id] for source in pitch.source_refs],
+            ))
+            for pitch in pitches
+        ]
+    except KeyError as exc:
+        raise NewsroomWritingError(f"missing source while refreshing draft: {exc}") from exc
+    source_candidate_ids = [
+        candidate_id
+        for pitch in pitches
+        for candidate_id in _candidate_ids_for_pitch(candidates_by_reddit_id, pitch)
+    ]
+    writing_run = start_agent_run(
+        session,
+        edition=edition,
+        stage=AgentStage.WRITING.value,
+        input_snapshot={"evidence_count": len(evidence_pairs), "writer": drafting_agent.name, "mode": "refresh"},
+    )
+    try:
+        drafts = drafting_agent.draft_many(evidence_pairs)
+    except Exception as exc:
+        fail_agent_run(session, run=writing_run, error_message=str(exc))
+        raise NewsroomWritingError(f"writer {drafting_agent.name} failed: {exc}") from exc
+    if len(drafts) != len(items):
+        fail_agent_run(session, run=writing_run, error_message="writer returned an incomplete refresh")
+        raise NewsroomWritingError("writer returned an incomplete refresh")
+    for item, draft, (pitch, _) in zip(items, drafts, evidence_pairs, strict=True):
+        if draft.kind is not pitch.kind or draft.source_refs != pitch.source_refs:
+            fail_agent_run(session, run=writing_run, error_message="writer changed bounded source contract")
+            raise NewsroomWritingError("writer changed bounded source contract")
+        item.kind = draft.kind.value
+        item.status = "drafted"
+        item.headline_zh = draft.headline_zh
+        item.body_zh = draft.body_zh
+        item.why_it_matters = draft.why_it_matters_zh
+        item.confidence = draft.confidence.value
+        item.warnings = draft.content_warnings
+    complete_agent_run(
+        session,
+        run=writing_run,
+        artifact_kind="story_drafts",
+        summary=f"以 {drafting_agent.name} 完成 {len(drafts)} 則稿件重寫；來源 bridge 未變更。",
+        payload={"drafts": [draft.model_dump(mode="json") for draft in drafts], "mode": "refresh"},
+        source_candidate_ids=source_candidate_ids,
+    )
+    chief_run = start_agent_run(
+        session,
+        edition=edition,
+        stage=AgentStage.CHIEF_EDITING.value,
+        input_snapshot={"draft_count": len(drafts), "mode": "refresh"},
+    )
+    edition.status = "drafted"
+    complete_agent_run(
+        session,
+        run=chief_run,
+        artifact_kind="edition_draft",
+        summary=f"重寫版已完成 {len(items)} 則草稿，等待發行。",
+        payload={"edition_item_ids": [item.id for item in items], "status": edition.status, "mode": "refresh"},
+        source_candidate_ids=source_candidate_ids,
+    )
+    session.flush()
+    return DraftingResult(evidence_briefs=[brief for _, brief in evidence_pairs], drafts=drafts, items=items)
+
+
 __all__ = [
     "ContentSafetyGate",
     "DraftingResult",
     "EvidenceAgent",
     "DraftingAgent",
     "NewsroomWritingError",
+    "refresh_draft_edition",
     "TemplateDraftingAgent",
     "draft_edition",
 ]

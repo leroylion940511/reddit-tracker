@@ -41,6 +41,8 @@ def test_drafting_creates_evidence_transparent_chinese_items_and_artifacts(sessi
     assert all("未經本系統獨立查證" in brief.uncertainty_notes[0] for brief in result.evidence_briefs)
     assert all(item.sources for item in result.items)
     assert all("原帖標題：" in draft.body_zh for draft in result.drafts)
+    assert all("原作者自述：" not in draft.body_zh for draft in result.drafts)
+    assert all("relationships 的" not in draft.body_zh for draft in result.drafts)
     assert [run.stage for run in sorted(edition.agent_runs, key=lambda run: run.id)][-3:] == [
         "verification", "writing", "chief_editing",
     ]
