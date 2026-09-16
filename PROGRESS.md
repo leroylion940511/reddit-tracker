@@ -6,6 +6,13 @@
 
 **Last updated:** 2026-09-16（v5 AI Newsroom foundation 已建立；v4 RSS 試跑仍在執行）
 
+## 本次變更（2026-09-16 — v5 N3 Evidence + Demo Drafting）
+
+- ✅ 新增 `newsroom.writing` 的 verification／writing／chief_editing 三段：每個 pitch 先轉為 `EvidenceBrief`，明確記錄原作者自述、Reddit-only 未獨立驗證的邊界與敏感內容 warning，再產出保留原帖標題、來源與「為何值得看」的繁中 draft。
+- ✅ 寫入 8 個 `edition_items` 與其 source bridge，並將三段 artifact 寫入 ledger；drafting 重跑保護改用 DB query，避免 ORM relationship cache 導致 unique position error。
+- ✅ 採 template writer 作為無 API、無外部副作用的 demo fallback；未來 Gemini writer 只替換 draft 生成，不會改變 evidence、source、safety 或 dashboard contract。
+- ➡️ 下一步：完成 N4/N5 的 Telegram preview formatter、離線 HTML 編輯室頁面與一鍵 demo script；Gemini writer adapter 留待 demo 後接入。
+
 ## 本次變更（2026-09-16 — v5 N2 Editorial Planning）
 
 - ✅ 新增 `newsroom.planning`：以出刊日期的**前一個 Asia/Taipei 日曆日**為 candidate window，統一轉成 UTC 查詢；`posted_at` 缺失時明確 fallback `discovered_at`。

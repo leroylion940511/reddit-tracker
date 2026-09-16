@@ -8,11 +8,15 @@ from .contracts import (
     AgentArtifact,
     AgentStage,
     Confidence,
+    EvidenceBrief,
+    EvidenceClaim,
+    EvidenceKind,
     EditionPlan,
     ReaderBrief,
     SourceRef,
     StoryKind,
     StoryPitch,
+    StoryDraft,
 )
 from .planning import (
     AssignmentEditorAgent,
@@ -30,6 +34,9 @@ __all__ = [
     "AssignmentEditorAgent",
     "CandidateWindow",
     "Confidence",
+    "EvidenceBrief",
+    "EvidenceClaim",
+    "EvidenceKind",
     "EditorialPlanningError",
     "EditionPlan",
     "ReaderBrief",
@@ -38,6 +45,7 @@ __all__ = [
     "SourceRef",
     "StoryKind",
     "StoryPitch",
+    "StoryDraft",
     "plan_edition",
     "previous_calendar_day_window",
 ]

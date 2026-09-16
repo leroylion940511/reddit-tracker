@@ -36,6 +36,12 @@ class Confidence(StrEnum):
     HIGH = "high"
 
 
+class EvidenceKind(StrEnum):
+    AUTHOR_STATEMENT = "author_statement"
+    COMMUNITY_RESPONSE = "community_response"
+    EDITORIAL_CONTEXT = "editorial_context"
+
+
 class SourceRef(BaseModel):
     """A public Reddit source required for every pitch and published item."""
 
@@ -110,3 +116,34 @@ class AgentArtifact(BaseModel):
     reason_codes: list[str] = Field(default_factory=list)
     confidence: Confidence | None = None
     warnings: list[str] = Field(default_factory=list)
+
+
+class EvidenceClaim(BaseModel):
+    """A source-attributed statement visible in the newsroom evidence card."""
+
+    kind: EvidenceKind
+    statement_zh: str = Field(min_length=1, max_length=1_000)
+    source_post_ids: list[str] = Field(min_length=1)
+
+
+class EvidenceBrief(BaseModel):
+    """The verification agent's bounded, source-first brief for one pitch."""
+
+    headline_zh: str = Field(min_length=1, max_length=120)
+    claims: list[EvidenceClaim] = Field(min_length=1)
+    uncertainty_notes: list[str] = Field(min_length=1)
+    content_warnings: list[str] = Field(default_factory=list)
+    confidence: Confidence
+
+
+class StoryDraft(BaseModel):
+    """A ready-to-publish Chinese draft; source refs remain mandatory."""
+
+    kind: StoryKind
+    headline_zh: str = Field(min_length=1, max_length=120)
+    deck_zh: str = Field(min_length=1, max_length=300)
+    body_zh: str = Field(min_length=1, max_length=3_000)
+    why_it_matters_zh: str = Field(min_length=1, max_length=500)
+    source_refs: list[SourceRef] = Field(min_length=1)
+    confidence: Confidence
+    content_warnings: list[str] = Field(default_factory=list)
