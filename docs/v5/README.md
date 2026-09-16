@@ -9,6 +9,7 @@ v5 將 v4 的「Reddit 候選 → 單篇通知」轉為「Reddit 候選 → 多 
 3. [架構與資料遷移](ARCHITECTURE.md)
 4. [里程碑](ROADMAP.md)
 5. [協作準則](WORKING_AGREEMENT.md)
+6. [離線 Demo](DEMO.md)
 
 ## 已確認的產品決策
 

@@ -201,11 +201,11 @@ class ScoutAgent:
             if beat in excluded_topics:
                 continue
             relevance = self._relevance(candidate, beat, brief, preference_tokens)
-            title = candidate.title.strip().replace("\n", " ")
+            headline_zh = self._headline_zh(candidate, beat)
             pitch = StoryPitch(
                 kind=StoryKind.BRIEF,
                 beat=beat,
-                headline_zh=f"{BEAT_LABELS[beat]}｜{title[:90]}",
+                headline_zh=headline_zh,
                 angle=f"從 r/{candidate.subreddit} 的一則公開討論切入 {BEAT_LABELS[beat]}。",
                 why_for_reader=(
                     f"符合本期 {BEAT_LABELS[beat]} 採訪線，並保留原帖讓讀者自行判斷。"
@@ -224,6 +224,14 @@ class ScoutAgent:
             key=lambda item: (item.relevance, item.candidate_ids[0]),
             reverse=True,
         )
+
+    @staticmethod
+    def _headline_zh(candidate: CandidatePost, beat: str) -> str:
+        metadata = candidate.meta_json or {}
+        translated = metadata.get("headline_zh") if isinstance(metadata, dict) else None
+        if isinstance(translated, str) and translated.strip():
+            return translated.strip()[:120]
+        return f"{BEAT_LABELS[beat]}｜一則值得留意的公開討論"
 
     @staticmethod
     def _relevance(

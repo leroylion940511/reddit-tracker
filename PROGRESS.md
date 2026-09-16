@@ -4,7 +4,15 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-09-16（v5 AI Newsroom foundation 已建立；v4 RSS 試跑仍在執行）
+**Last updated:** 2026-09-16（v5 AI Newsroom 可離線 demo；v4 RSS 試跑仍在執行）
+
+## 本次變更（2026-09-16 — v5 可展示離線 Demo）
+
+- ✅ 新增 `newsroom.demo` 一鍵端到端流程：建立**新的暫存 SQLite**、seed 10 則代表性候選、跑 N2 planning + N3 evidence/drafting，產生 8 則 edition、6 個可見 agent artifact、Telegram preview 與 HTML 編輯室。
+- ✅ 新增 `newsroom.rendering`：HTML 顯示每篇繁中 headline、原帖標題／可點 Reddit link、內容邊界／warning，以及右欄的六個 agent status、摘要與來源；輸出只含可檢視 artifact，沒有 prompt 或 private reasoning。
+- ✅ 實跑 `uv run python -m reddit_tracker.newsroom.demo --output <tmp>/daily-paper.html`：成功寫出 17 KB HTML + 224 KB isolated DB，8 items／6 artifacts，且 console preview 明確標示未發送。
+- ✅ Demo 原帖英文標題不再直接充當中文 headline：採訪 agent 優先用 source metadata 的 `headline_zh`，否則採用中文安全 fallback；原文標題另在成稿與 source card 保留。
+- ⚠️ 這是展示產品體驗的離線版：不讀 production DB、不打 Reddit／Gemini／Telegram；Gemini writer、真實 callback／08:30 scheduler 與既有 FastAPI dashboard 整合為下一階段。
 
 ## 本次變更（2026-09-16 — v5 N3 Evidence + Demo Drafting）
 
