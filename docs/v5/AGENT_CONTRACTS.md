@@ -12,6 +12,8 @@
 | `chief_editing` | 總編輯 agent | drafts、版面規格 | `Edition` 與發布摘要 | 更改來源事實、隱藏風險標記 |
 | `learning` | 學習 agent | 回饋、發行結果 | 下一期 profile adjustment | 不依單次 feedback 做劇烈偏好漂移 |
 
+N2 的讀者檔案、採訪與選題主編先使用 deterministic baseline，驗證時間窗、偏好、來源與版面多樣性；N3 起才用 LLM 產生查核與繁中稿件。
+
 ## Artifact 可見性
 
 網頁編輯室顯示 artifact 的 `summary`、`source_refs`、`reason_codes`、`confidence`、`warnings` 與時間；不顯示模型的 private reasoning 或未經整理的 prompt chain。

@@ -182,6 +182,23 @@ def complete_agent_run(
     return artifact
 
 
+def fail_agent_run(
+    session: Session,
+    *,
+    run: AgentRun,
+    error_message: str,
+    now: datetime | None = None,
+) -> AgentRun:
+    """Record a failed stage explicitly instead of silently returning no output."""
+    if run.status != "running":
+        raise ValueError("only a running agent run can be failed")
+    run.status = "failed"
+    run.error_message = error_message[:2_000]
+    run.completed_at = now or datetime.now(timezone.utc)
+    session.flush()
+    return run
+
+
 def record_reader_feedback(
     session: Session,
     *,
@@ -219,6 +236,7 @@ __all__ = [
     "VALID_FEEDBACK_ACTIONS",
     "complete_agent_run",
     "create_reader_profile",
+    "fail_agent_run",
     "get_or_create_edition",
     "record_reader_feedback",
     "start_agent_run",

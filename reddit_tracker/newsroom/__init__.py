@@ -14,14 +14,30 @@ from .contracts import (
     StoryKind,
     StoryPitch,
 )
+from .planning import (
+    AssignmentEditorAgent,
+    CandidateWindow,
+    EditorialPlanningError,
+    ReaderProfileAgent,
+    ScoutAgent,
+    plan_edition,
+    previous_calendar_day_window,
+)
 
 __all__ = [
     "AgentArtifact",
     "AgentStage",
+    "AssignmentEditorAgent",
+    "CandidateWindow",
     "Confidence",
+    "EditorialPlanningError",
     "EditionPlan",
     "ReaderBrief",
+    "ReaderProfileAgent",
+    "ScoutAgent",
     "SourceRef",
     "StoryKind",
     "StoryPitch",
+    "plan_edition",
+    "previous_calendar_day_window",
 ]

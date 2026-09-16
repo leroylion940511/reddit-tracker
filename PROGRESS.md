@@ -6,6 +6,14 @@
 
 **Last updated:** 2026-09-16（v5 AI Newsroom foundation 已建立；v4 RSS 試跑仍在執行）
 
+## 本次變更（2026-09-16 — v5 N2 Editorial Planning）
+
+- ✅ 新增 `newsroom.planning`：以出刊日期的**前一個 Asia/Taipei 日曆日**為 candidate window，統一轉成 UTC 查詢；`posted_at` 缺失時明確 fallback `discovered_at`。
+- ✅ 讀者檔案 agent 將明確 topic／排除條件與自然語言偏好轉為 `ReaderBrief`；採訪 agent 對候選做採訪線分類、排除 subreddit、偏好排序，且每個 `StoryPitch` 都帶原帖標題、完整 Reddit link 與 timestamp。
+- ✅ 選題主編按來源多樣性組出 6–8 則 brief + 1–2 則（每則至少 2 個來源）feature，固定產出 8–10 項 `EditionPlan`；候選不足時拒絕偽造版次並把 assignment agent run 寫為 failed。
+- ✅ `plan_edition` 已把 reader_profile／scout／assignment 三段可見 artifact 寫入 N1 ledger，包含 source bridge 與 retry-safe run record；N2 fixture tests 覆蓋台灣日界、window filter、偏好排除、來源與 artifact 追溯、8 項版面與候選不足。
+- ➡️ 下一步 N3：以 evidence brief 把每則候選的主張、原作者自述、留言觀點與不確定性結構化，再由 LLM 生成繁中短報／專題草稿與 content-safety gate。
+
 ## 本次變更（2026-09-16 — v5 N1 Reader + Edition Ledger）
 
 - ✅ 新增 Alembic revision `b91feebcd321`：`reader_profiles`、`newsroom_editions`、`edition_items` 與來源 bridge、`agent_runs`／artifact ledger 與來源 bridge、`reader_feedback`。每一期以 `(reader_profile_id, edition_date)` 唯一，stage retry 以 `(edition_id, stage, attempt)` 唯一，保證可重跑與可追溯。

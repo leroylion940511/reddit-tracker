@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | N0 Foundation | v5 規格、agent contracts、domain models、共同工作準則 | contracts tests + existing suite green；不觸碰 live service |
 | N1 Reader + edition schema | ✅ Alembic migration、reader profile／feedback／edition ledger repository | migration up/down 在複本 DB 過；可建立一位讀者與空版次 |
-| N2 Editorial planning | calendar window、偏好解讀、scout／assignment agent，能產生 8–10 則版面 plan | fixture candidates 產生多樣、可追溯的 plan；無來源項目被拒絕 |
+| N2 Editorial planning | ✅ calendar window、偏好解讀、scout／assignment agent，能產生 8–10 則版面 plan | fixture candidates 產生多樣、可追溯的 plan；無來源項目被拒絕 |
 | N3 Evidence + writing | evidence brief、繁中 short brief／feature writer、content safety gate | 每則稿件有 Reddit source、事實／觀點標記、敏感提示 tests |
 | N4 Publish + feedback | Telegram newspaper formatter、❤️／🚫／👀 callback、08:30 scheduler、dry-run | preview 不送訊息；送出後可回填 feedback 與 message ref |
 | N5 Newsroom dashboard | 偏好設定、edition archive、stage timeline、artifact 追溯 | 可從 edition 點到每項可見 artifact，沒有 token／private prompt 洩漏 |
