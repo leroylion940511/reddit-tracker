@@ -4,7 +4,30 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-09-13（Gemini Free Tier API 完成接入與實測；服務仍維持停用）
+**Last updated:** 2026-09-16（v5 AI Newsroom foundation 已建立；v4 RSS 試跑仍在執行）
+
+## 本次變更（2026-09-16 — v5 N1 Reader + Edition Ledger）
+
+- ✅ 新增 Alembic revision `b91feebcd321`：`reader_profiles`、`newsroom_editions`、`edition_items` 與來源 bridge、`agent_runs`／artifact ledger 與來源 bridge、`reader_feedback`。每一期以 `(reader_profile_id, edition_date)` 唯一，stage retry 以 `(edition_id, stage, attempt)` 唯一，保證可重跑與可追溯。
+- ✅ 新增 `newsroom.repository`：建立讀者、冪等建立版次、開啟／完成 agent run（artifact 必須連到既有 candidate）、以及 ❤️／🚫／👀 (`more`／`less`／`follow`) 回饋；跨讀者 item 回饋會被拒絕。
+- ✅ disposable SQLite 的 Alembic integration test 已實測 `upgrade head → downgrade 7778060d74e7`；production `reddit_tracker.db` 未執行 migration。N1 合計 10 個 newsroom／migration tests 通過。
+- ➡️ 下一步 N2：依 edition 的台灣日曆 window 讀取候選、產生 reader-aware `StoryPitch` 與 8–10 則 `EditionPlan`，不再沿用 v4 FIFO scoring picker。
+
+## 本次變更（2026-09-16 — v5 AI Newsroom 開發準備）
+
+- ✅ 產品方向正式從「Reddit 單篇推送」轉為「個人化 AI agent 每日報紙」：台灣讀者視角、中英文 Reddit 來源、繁中成稿、每日 08:30 Telegram 發行、8–10 則短報／專題混合版、網頁可追溯編輯室。
+- ✅ 決定**沿用本 repo、不 fork、不重建**：保留 scraper、candidate DB、LLM factory、Telegram transport 與 FastAPI dashboard；以 branch `codex/ai-newsroom-foundation` 隔離 v5 開發。v4 scheduler / bot / production DB 本次完全未改動。
+- ✅ 建立 v5 規格與分工文件：`docs/v5/` 含產品 brief、agent contracts、架構／安全切換、里程碑與 Codex／Claude Code 共用協作準則。
+- ✅ 新增 `reddit_tracker.newsroom.contracts`，用 Pydantic models 固化 ReaderBrief、StoryPitch、EditionPlan、AgentArtifact 的 source-first 可見產出契約；新增 fixture-only tests，沒有呼叫 Reddit、Telegram 或 LLM。
+- ✅ `uv sync --all-groups` 後以 `uv run --group dev python -m pytest -q` 驗證 **273 passed**（既有 FastAPI TestClient deprecation warning 1 則）；newsroom 新檔 Ruff 通過。直接呼叫 `pytest` 目前會失敗，因舊 console script 的 shebang 指向已搬遷的 workspace，已在協作準則中固定使用 module 形式。
+- ⚠️ v4 的 FIFO scoring（每 30 分鐘 5 篇）與 daily_top5 不符合新聞室需求；N2 必須改為 edition date window 優先處理。資料 migration 前必須先停服並備份，詳見 `docs/v5/ARCHITECTURE.md`。
+
+## 本次變更（2026-09-16 — Telegram 無通知診斷）
+
+- ✅ scheduler（PID 2097）與 Telegram bot（PID 2098）均持續存活；launchd 兩個 job 已 enable，scheduler 的 discovery、scoring、daily push、breaking 與 milestone jobs 都持續準時執行。
+- ✅ 9/14 09:00 CST daily push 成功送出 5 則（log：`sent=5 failed=0`）；9/15 與 9/16 09:00 CST daily push 均正常執行，但都記錄「無候選」，不是 Telegram 發送失敗。
+- ⚠️ 根因是 RSS 試跑設定 `SCORING_BATCH_LIMIT=5`、每 30 分鐘最多評 5 篇（理論上限 240/日），但 RSS 候選累積遠高於此：9/14–9/16 新增約 3,400 篇，尚有 3,532 篇未評，且目前只評到 9/13 19:25 的舊候選。daily picker 僅收過去 24 小時且 `final.passed=True` 的貼文，因此最近兩日池為空。
+- ⚠️ RSS 本身也無 single-post、comment tree、duplicates endpoint；M5 polling / milestone 偵測會持續印 warning，但不影響 daily push。另有 1 筆舊 pending milestone（2026-05-28）尚未通知，需另行判斷是否補送或清理。
 
 ## 本次變更（2026-09-13 — RSS one-day trial 準備）
 

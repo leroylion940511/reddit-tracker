@@ -3,6 +3,7 @@
 ## Project State
 
 - Always read `PROGRESS.md` at session start — it is the single source of truth for what's done, what's in progress, the immediate next step, and gotchas. Update it whenever the state actually changes (not every commit).
+- For v5 AI Newsroom work, also read `docs/v5/README.md` and the task-relevant linked specification before editing. `docs/v5/WORKING_AGREEMENT.md` is the shared Codex/Claude Code operating contract.
 
 ## Working Style
 

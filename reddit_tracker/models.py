@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 
 from sqlalchemy import (
@@ -87,6 +87,12 @@ class CandidatePost(Base):
     daily_pushes: Mapped[list[DailyPush]] = relationship(back_populates="candidate")
     feedbacks: Mapped[list[Feedback]] = relationship(back_populates="candidate")
     tracked: Mapped[TrackedPost | None] = relationship(back_populates="candidate", uselist=False)
+    edition_item_sources: Mapped[list[EditionItemSource]] = relationship(
+        back_populates="candidate"
+    )
+    agent_artifact_sources: Mapped[list[AgentArtifactSource]] = relationship(
+        back_populates="candidate"
+    )
 
 
 class SubredditSource(Base):
@@ -160,6 +166,193 @@ class Feedback(Base):
     acted_at: Mapped[datetime] = utc_now()
 
     candidate: Mapped[CandidatePost] = relationship(back_populates="feedbacks")
+
+
+# ---------------------------------------------------------------------------
+# v5 AI Newsroom
+# ---------------------------------------------------------------------------
+
+
+class ReaderProfile(Base):
+    """一位讀者的可調整偏好與發行設定。
+
+    v5 試刊只會建立一位讀者，但 schema 從第一天就支援多讀者，避免把
+    Telegram chat id 或偏好硬編進 scheduler。
+    """
+
+    __tablename__ = "reader_profiles"
+
+    id: Mapped[int] = big_pk()
+    telegram_chat_id: Mapped[int | None] = mapped_column(
+        BigInteger().with_variant(Integer(), "sqlite"), unique=True, index=True
+    )
+    preference_prompt: Mapped[str | None] = mapped_column(Text)
+    included_topics: Mapped[list | None] = mapped_column(JSON)
+    excluded_topics: Mapped[list | None] = mapped_column(JSON)
+    included_subreddits: Mapped[list | None] = mapped_column(JSON)
+    excluded_subreddits: Mapped[list | None] = mapped_column(JSON)
+    timezone: Mapped[str] = mapped_column(
+        String(64), default="Asia/Taipei", nullable=False
+    )
+    delivery_time: Mapped[str] = mapped_column(
+        String(5), default="08:30", nullable=False
+    )
+    active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = utc_now()
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    editions: Mapped[list[NewsroomEdition]] = relationship(back_populates="reader")
+    feedbacks: Mapped[list[ReaderFeedback]] = relationship(back_populates="reader")
+
+
+class NewsroomEdition(Base):
+    """一位讀者在一天內的一期報紙及其發行狀態。"""
+
+    __tablename__ = "newsroom_editions"
+    __table_args__ = (
+        UniqueConstraint("reader_profile_id", "edition_date", name="uq_reader_edition_date"),
+    )
+
+    id: Mapped[int] = big_pk()
+    reader_profile_id: Mapped[int] = big_fk("reader_profiles.id")
+    edition_date: Mapped[date] = mapped_column(Date, index=True)
+    window_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    window_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    status: Mapped[str] = mapped_column(String(24), default="planned", nullable=False)
+    editor_summary: Mapped[str | None] = mapped_column(Text)
+    telegram_message_id: Mapped[int | None] = mapped_column(BigInteger())
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = utc_now()
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    reader: Mapped[ReaderProfile] = relationship(back_populates="editions")
+    items: Mapped[list[EditionItem]] = relationship(back_populates="edition")
+    agent_runs: Mapped[list[AgentRun]] = relationship(back_populates="edition")
+
+
+class EditionItem(Base):
+    """報紙的一篇短報、專題或早報快訊；來源走 bridge table。"""
+
+    __tablename__ = "edition_items"
+    __table_args__ = (
+        UniqueConstraint("edition_id", "position", name="uq_edition_item_position"),
+    )
+
+    id: Mapped[int] = big_pk()
+    edition_id: Mapped[int] = big_fk("newsroom_editions.id")
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)  # brief / feature / breaking
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(24), default="planned", nullable=False)
+    headline_zh: Mapped[str | None] = mapped_column(String(120))
+    body_zh: Mapped[str | None] = mapped_column(Text)
+    why_it_matters: Mapped[str | None] = mapped_column(Text)
+    confidence: Mapped[str | None] = mapped_column(String(16))
+    warnings: Mapped[list | None] = mapped_column(JSON)
+    created_at: Mapped[datetime] = utc_now()
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    edition: Mapped[NewsroomEdition] = relationship(back_populates="items")
+    sources: Mapped[list[EditionItemSource]] = relationship(back_populates="edition_item")
+    feedbacks: Mapped[list[ReaderFeedback]] = relationship(back_populates="edition_item")
+
+
+class EditionItemSource(Base):
+    """報紙 item 到原始 candidate 的有序、多對多來源關係。"""
+
+    __tablename__ = "edition_item_sources"
+    __table_args__ = (
+        UniqueConstraint("edition_item_id", "candidate_post_id", name="uq_item_candidate_source"),
+    )
+
+    id: Mapped[int] = big_pk()
+    edition_item_id: Mapped[int] = big_fk("edition_items.id")
+    candidate_post_id: Mapped[int] = big_fk("candidate_posts.id")
+    source_order: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    source_role: Mapped[str] = mapped_column(String(24), default="primary", nullable=False)
+
+    edition_item: Mapped[EditionItem] = relationship(back_populates="sources")
+    candidate: Mapped[CandidatePost] = relationship(back_populates="edition_item_sources")
+
+
+class AgentRun(Base):
+    """一個 edition stage 的一次可重跑執行。"""
+
+    __tablename__ = "agent_runs"
+    __table_args__ = (
+        UniqueConstraint("edition_id", "stage", "attempt", name="uq_edition_stage_attempt"),
+    )
+
+    id: Mapped[int] = big_pk()
+    edition_id: Mapped[int] = big_fk("newsroom_editions.id")
+    stage: Mapped[str] = mapped_column(String(32), nullable=False)
+    attempt: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    status: Mapped[str] = mapped_column(String(24), default="running", nullable=False)
+    input_snapshot: Mapped[dict | None] = mapped_column(JSON)
+    error_message: Mapped[str | None] = mapped_column(Text)
+    started_at: Mapped[datetime] = utc_now()
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    edition: Mapped[NewsroomEdition] = relationship(back_populates="agent_runs")
+    artifacts: Mapped[list[AgentArtifactRecord]] = relationship(back_populates="agent_run")
+
+
+class AgentArtifactRecord(Base):
+    """供 dashboard 檢視的 agent artifact；不存 private reasoning。"""
+
+    __tablename__ = "agent_artifacts"
+
+    id: Mapped[int] = big_pk()
+    agent_run_id: Mapped[int] = big_fk("agent_runs.id")
+    artifact_kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    payload: Mapped[dict | None] = mapped_column(JSON)
+    confidence: Mapped[str | None] = mapped_column(String(16))
+    warnings: Mapped[list | None] = mapped_column(JSON)
+    created_at: Mapped[datetime] = utc_now()
+
+    agent_run: Mapped[AgentRun] = relationship(back_populates="artifacts")
+    sources: Mapped[list[AgentArtifactSource]] = relationship(back_populates="artifact")
+
+
+class AgentArtifactSource(Base):
+    """Artifact 的來源關係，讓選題／查核過程可回溯。"""
+
+    __tablename__ = "agent_artifact_sources"
+    __table_args__ = (
+        UniqueConstraint("agent_artifact_id", "candidate_post_id", name="uq_artifact_candidate_source"),
+    )
+
+    id: Mapped[int] = big_pk()
+    agent_artifact_id: Mapped[int] = big_fk("agent_artifacts.id")
+    candidate_post_id: Mapped[int] = big_fk("candidate_posts.id")
+    source_order: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+
+    artifact: Mapped[AgentArtifactRecord] = relationship(back_populates="sources")
+    candidate: Mapped[CandidatePost] = relationship(back_populates="agent_artifact_sources")
+
+
+class ReaderFeedback(Base):
+    """Telegram 報紙 item 的 ❤️／🚫／👀 回饋。"""
+
+    __tablename__ = "reader_feedback"
+    __table_args__ = (
+        UniqueConstraint("reader_profile_id", "edition_item_id", "action", name="uq_reader_item_action"),
+    )
+
+    id: Mapped[int] = big_pk()
+    reader_profile_id: Mapped[int] = big_fk("reader_profiles.id")
+    edition_item_id: Mapped[int] = big_fk("edition_items.id")
+    action: Mapped[str] = mapped_column(String(16), nullable=False)  # more / less / follow
+    acted_at: Mapped[datetime] = utc_now()
+
+    reader: Mapped[ReaderProfile] = relationship(back_populates="feedbacks")
+    edition_item: Mapped[EditionItem] = relationship(back_populates="feedbacks")
 
 
 # ---------------------------------------------------------------------------
@@ -273,16 +466,24 @@ class QAMessage(Base):
 
 __all__ = [
     "Base",
+    "AgentArtifactRecord",
+    "AgentArtifactSource",
+    "AgentRun",
     "CandidatePost",
     "DailyPush",
+    "EditionItem",
+    "EditionItemSource",
     "Feedback",
     "KeywordSeed",
     "LLMRecord",
     "PostSnapshot",
     "QAMessage",
     "QASession",
+    "ReaderFeedback",
+    "ReaderProfile",
     "RelatedPost",
     "ScoringRecord",
     "SubredditSource",
     "TrackedPost",
+    "NewsroomEdition",
 ]
