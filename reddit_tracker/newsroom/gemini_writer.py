@@ -11,6 +11,7 @@ from typing import Protocol
 
 from pydantic import BaseModel, Field, ValidationError
 
+from ..config import get_settings
 from ..llm.gemini import GeminiClient, GeminiResult
 from .contracts import EvidenceBrief, StoryDraft, StoryPitch
 
@@ -54,7 +55,10 @@ class GeminiNewsroomWriter:
     name = "gemini_batch"
 
     def __init__(self, *, client: _CompletionClient | None = None) -> None:
-        self.client = client or GeminiClient(purpose="newsroom")
+        self.client = client or GeminiClient(
+            purpose="newsroom",
+            model=get_settings().gemini_newsroom_model,
+        )
 
     def draft_many(
         self, pairs: list[tuple[StoryPitch, EvidenceBrief]]

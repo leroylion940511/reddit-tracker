@@ -4,7 +4,15 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-09-16（v5 受控試刊流程已完成程式驗證；production 尚未切換）
+**Last updated:** 2026-09-16（9/17 試刊已製作、08:30 launchd 排程已啟動）
+
+## 本次變更（2026-09-16 — production 試刊切換與 Gemini 實測）
+
+- ✅ 已停止並 disable 舊 `com.leroy.reddit-tracker.scheduler`／`.bot`，因此明早不會再收到舊 v4 的 09:00 top-5；舊程序已確認停止。
+- ✅ 在停止服務後以 SQLite `.backup` 建立 `reddit_tracker.db.backup-20260916-pre-newsroom`（77 MB），production DB 已從 `7778060d74e7` 升級至 v5 `b91feebcd321`。
+- ✅ 以 9/16（Asia/Taipei）候選池的 562 則貼文製作 9/17 版次：1 位 trial reader、8 個 drafted items、13 個成功的可檢視 agent runs；Telegram preview 與 HTML preview 都只在本機產生，尚未發送。
+- ✅ Google 免費 API 實測結果：`gemini-3.5-flash` 整期請求兩次皆 HTTP 503（temporary high demand），不適合作為關鍵路徑；既有評分用的 `gemini-3.5-flash-lite` 成功以**單一 JSON request**完成 8 則繁中稿。新聞室預設已改用 Flash-Lite，且每天僅需一筆整期 request、以本機 12 次/日 + 5 RPM guard 控制；若失敗保留完整繁中 template fallback。
+- ✅ 已安裝、enable 並啟動 `com.leroy.reddit-tracker.newsroom`；它只等待 Asia/Taipei **每日 08:30**，啟動不會立刻發訊息。9/17 已有 drafted edition，所以明早工作只剩 Telegram delivery，不會再依賴 Gemini 生成。
 
 ## 本次變更（2026-09-16 — v5 08:30 受控試刊，待 production 切換）
 

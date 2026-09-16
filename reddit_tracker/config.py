@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     gemini_api_key: str | None = None
     gemini_scoring_model: str = "gemini-3.5-flash-lite"
     gemini_qa_model: str = "gemini-3.5-flash"
+    gemini_newsroom_model: str = "gemini-3.5-flash-lite"
     gemini_scoring_daily_limit: int = 450
     gemini_qa_daily_limit: int = 50
     # Newsroom 將整期稿件合併成一個 JSON request；保留更小的日上限，避免
