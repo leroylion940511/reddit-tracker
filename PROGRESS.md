@@ -4,7 +4,15 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-09-16（v5 AI Newsroom 可離線 demo；v4 RSS 試跑仍在執行）
+**Last updated:** 2026-09-16（v5 受控試刊流程已完成程式驗證；production 尚未切換）
+
+## 本次變更（2026-09-16 — v5 08:30 受控試刊，待 production 切換）
+
+- ✅ 新增 Gemini 整期 writer：單一 guarded JSON request 產生 8–10 則繁中短稿；程式固定 story kind、信心、warning、原帖標題與 Reddit link，模型不能改寫來源契約。Gemini 失敗時會留下 failed agent run，且可改用 source-transparent template fallback，不會讓明早無報可讀。
+- ✅ 新增 `newsroom.run`：預設只做 preview；同一期可冪等重用草稿。發行前會標記 `publishing`，成功後記錄 Telegram message id／時間，避免 scheduler retry 重複發送。
+- ✅ 新增 Telegram newspaper formatter：保留每篇原帖標題與連結、以 article boundary 拆成 3,700 字內訊息；不使用未完成的 feedback button。
+- ✅ 新增獨立 `com.leroy.reddit-tracker.newsroom` launchd plist，以 `caffeinate -i` + polling APScheduler 在 Asia/Taipei 每日 08:30 發行；不會啟動時立即寄送。
+- ✅ 新增 Gemini writer／Telegram formatter contract tests；newsroom 定向測試 13 passed、Ruff passed。下一步是全套測試後，停 v4、備份 production SQLite、Alembic migration、用 9/16 真實候選製作 9/17 preview，並以保守多次 API probe 實測 Gemini 免費額度。
 
 ## 本次變更（2026-09-16 — v5 可展示離線 Demo）
 

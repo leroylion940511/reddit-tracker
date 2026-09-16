@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import Protocol
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -35,6 +36,16 @@ from .repository import complete_agent_run, fail_agent_run, start_agent_run
 
 class NewsroomWritingError(ValueError):
     """Raised when a plan cannot safely become a source-backed edition."""
+
+
+class DraftingAgent(Protocol):
+    """A bounded prose writer. Evidence and source references stay in our code."""
+
+    name: str
+
+    def draft_many(
+        self, pairs: list[tuple[StoryPitch, EvidenceBrief]]
+    ) -> list[StoryDraft]: ...
 
 
 @dataclass(frozen=True)
@@ -113,6 +124,8 @@ class EvidenceAgent:
 class TemplateDraftingAgent:
     """Compose transparent Chinese demo drafts without an external LLM call."""
 
+    name = "template"
+
     def draft(self, pitch: StoryPitch, evidence: EvidenceBrief) -> StoryDraft:
         source_names = "、".join(f"r/{source.subreddit}" for source in pitch.source_refs)
         original_titles = "；".join(source.original_title for source in pitch.source_refs)
@@ -145,8 +158,19 @@ class TemplateDraftingAgent:
             content_warnings=evidence.content_warnings,
         )
 
+    def draft_many(
+        self, pairs: list[tuple[StoryPitch, EvidenceBrief]]
+    ) -> list[StoryDraft]:
+        return [self.draft(pitch, evidence) for pitch, evidence in pairs]
 
-def draft_edition(session: Session, *, edition: NewsroomEdition, plan: EditionPlan) -> DraftingResult:
+
+def draft_edition(
+    session: Session,
+    *,
+    edition: NewsroomEdition,
+    plan: EditionPlan,
+    drafting_agent: DraftingAgent | None = None,
+) -> DraftingResult:
     """Persist N3 verification, writing, and chief-editing artifacts for a plan."""
     existing_item_id = session.scalar(
         select(EditionItem.id).where(EditionItem.edition_id == edition.id).limit(1)
@@ -198,13 +222,29 @@ def draft_edition(session: Session, *, edition: NewsroomEdition, plan: EditionPl
         source_candidate_ids=source_candidate_ids,
     )
 
+    writer = drafting_agent or TemplateDraftingAgent()
     writing_run = start_agent_run(
         session,
         edition=edition,
         stage=AgentStage.WRITING.value,
-        input_snapshot={"evidence_count": len(evidence_pairs), "writer": "template_demo"},
+        input_snapshot={"evidence_count": len(evidence_pairs), "writer": writer.name},
     )
-    drafts = [TemplateDraftingAgent().draft(pitch, brief) for pitch, brief in evidence_pairs]
+    try:
+        drafts = writer.draft_many(evidence_pairs)
+    except Exception as exc:
+        fail_agent_run(session, run=writing_run, error_message=str(exc))
+        raise NewsroomWritingError(f"writer {writer.name} failed: {exc}") from exc
+    if len(drafts) != len(evidence_pairs):
+        fail_agent_run(
+            session,
+            run=writing_run,
+            error_message=f"writer returned {len(drafts)} drafts for {len(evidence_pairs)} pitches",
+        )
+        raise NewsroomWritingError("writer returned an incomplete edition")
+    for draft, (pitch, _) in zip(drafts, evidence_pairs, strict=True):
+        if draft.kind is not pitch.kind or draft.source_refs != pitch.source_refs:
+            fail_agent_run(session, run=writing_run, error_message="writer changed bounded source contract")
+            raise NewsroomWritingError("writer changed bounded source contract")
     items: list[EditionItem] = []
     for position, (pitch, draft) in enumerate(zip(pitches, drafts, strict=True), start=1):
         item = EditionItem(
@@ -267,6 +307,7 @@ __all__ = [
     "ContentSafetyGate",
     "DraftingResult",
     "EvidenceAgent",
+    "DraftingAgent",
     "NewsroomWritingError",
     "TemplateDraftingAgent",
     "draft_edition",

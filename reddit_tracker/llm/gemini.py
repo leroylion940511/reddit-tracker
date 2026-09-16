@@ -152,9 +152,14 @@ class GeminiClient:
         )
         self.timeout = timeout if timeout is not None else settings.gemini_timeout_seconds
         self.max_retries = max_retries if max_retries is not None else settings.gemini_max_429_retries
-        limit = daily_limit if daily_limit is not None else (
-            settings.gemini_scoring_daily_limit if purpose == "scoring" else settings.gemini_qa_daily_limit
-        )
+        if daily_limit is not None:
+            limit = daily_limit
+        elif purpose == "scoring":
+            limit = settings.gemini_scoring_daily_limit
+        elif purpose == "newsroom":
+            limit = settings.gemini_newsroom_daily_limit
+        else:
+            limit = settings.gemini_qa_daily_limit
         self.guard = GeminiQuotaGuard(
             state_path=state_path or settings.gemini_quota_state_path,
             daily_limit=limit,

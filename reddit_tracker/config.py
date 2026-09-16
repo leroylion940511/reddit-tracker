@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     gemini_qa_model: str = "gemini-3.5-flash"
     gemini_scoring_daily_limit: int = 450
     gemini_qa_daily_limit: int = 50
+    # Newsroom 將整期稿件合併成一個 JSON request；保留更小的日上限，避免
+    # 試刊或重試和既有 scoring/QA 共用免費額度時失控。
+    gemini_newsroom_daily_limit: int = 12
     gemini_requests_per_minute: int = 5
     gemini_timeout_seconds: float = 60.0
     gemini_max_429_retries: int = 2
@@ -62,6 +65,13 @@ class Settings(BaseSettings):
     # --- Telegram (M4+) ---
     telegram_bot_token: str | None = None
     telegram_chat_id: str | None = None
+
+    # --- v5 AI Newsroom trial ---
+    newsroom_writer: str = "gemini"            # gemini / template
+    newsroom_template_fallback: bool = True
+    newsroom_delivery_timezone: str = "Asia/Taipei"
+    newsroom_delivery_hour: int = 8
+    newsroom_delivery_minute: int = 30
 
     # --- Discovery 排程 ---
     # 預設值對 public JSON (~10 QPM) 已校準；OAuth 過了可手動下調 interval。
