@@ -22,4 +22,6 @@ v5 將 v4 的「Reddit 候選 → 單篇通知」轉為「Reddit 候選 → 多 
 
 ## 現階段邊界
 
-v5 已部署至 production SQLite（2026-09-18），具備 candidate discovery、05:30 編採、08:30 Telegram 發行、回饋 callback、編輯室控制台與 SQLite migration。日後若有 schema 變更，使用 `deploy/install_launchd.sh newsroom-deploy` 會建立 online backup、執行 Alembic upgrade 並只重載 newsroom；它不會重新啟用舊 v4 scheduler／bot。Telegram callback 另需明確啟用 Bot receiver，才會接收使用者按鍵；目前仍維持 disabled。七日試刊尚在進行中。
+v5 已部署至 production SQLite，並在 2026-09-19 至 2026-09-25 完成七日試刊 gate：每天 08:30 實際發行 8 則、每則均有來源。日常運作維持 candidate discovery（90 分鐘）、05:30 編採與 08:30 Telegram 發行；控制台會保留試刊通過紀錄，並顯示近七日營運狀態。
+
+日後若有 schema 變更，使用 `deploy/install_launchd.sh newsroom-deploy` 會建立 online backup、執行 Alembic upgrade 並只重載 newsroom；它不會重新啟用舊 v4 scheduler。Telegram callback receiver 已於 2026-09-25 依使用者明確授權啟用，Telegram 與網頁回饋都可正常使用。

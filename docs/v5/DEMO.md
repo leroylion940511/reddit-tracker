@@ -23,4 +23,4 @@ uv run python -m reddit_tracker.newsroom.demo --open
 
 ## 目前與下一步
 
-這是可展示編輯室產品體驗的 demo，不是 production 資料的替代品。Gemini adapter、Telegram callback／08:30 scheduler 與本機 dashboard 已完成程式整合，且 production 已於 2026-09-18 安全部署；目前以七日試刊檢驗內容品質與穩定性。Telegram callback receiver 仍需另行啟用。
+這是可展示編輯室產品體驗的 demo，不是 production 資料的替代品。Gemini adapter、Telegram callback／08:30 scheduler 與本機 dashboard 已完成程式整合，production 已安全部署並完成 2026-09-19 至 2026-09-25 的七日試刊 gate。Telegram callback receiver 已於 2026-09-25 依使用者明確授權啟用。

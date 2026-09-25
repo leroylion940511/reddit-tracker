@@ -6,11 +6,11 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
 from reddit_tracker import web
-from reddit_tracker.models import Base, CandidatePost, EditionItem, SubredditSource
+from reddit_tracker.models import Base, CandidatePost, EditionItem, EditionItemSource, SubredditSource
 from reddit_tracker.newsroom.repository import create_reader_profile, get_or_create_edition
 
 
@@ -213,3 +213,61 @@ def test_newsroom_endpoints_show_safe_edition_artifacts_and_record_feedback(tmp_
     assert repeat.json()["duplicate"] is True
     session.close()
     engine.dispose()
+
+
+def test_newsroom_pilot_gate_remains_passed_after_its_original_week(session, monkeypatch):
+    reader = create_reader_profile(session, telegram_chat_id=100, preference_prompt="多看台灣生活。")
+    candidate = CandidatePost(
+        reddit_post_id="pilot-source",
+        subreddit="taiwan",
+        title="試刊來源",
+        selftext="可追溯的候選資料。",
+        permalink="/r/taiwan/comments/pilot-source/test/",
+    )
+    session.add(candidate)
+    session.flush()
+    for offset in range(7):
+        edition_date = date(2026, 9, 19) + timedelta(days=offset)
+        edition = get_or_create_edition(
+            session,
+            reader=reader,
+            edition_date=edition_date,
+            window_start=datetime.combine(edition_date - timedelta(days=1), datetime.min.time(), tzinfo=UTC),
+            window_end=datetime.combine(edition_date, datetime.min.time(), tzinfo=UTC),
+        ).edition
+        edition.status = "published"
+        for position in range(1, 9):
+            session.add(EditionItem(
+                edition_id=edition.id,
+                kind="brief",
+                position=position,
+                status="published",
+                headline_zh=f"試刊項目 {position}",
+                body_zh="來源完整的繁中摘要。",
+                why_it_matters="驗證七日 gate。",
+                confidence="medium",
+                warnings=[],
+            ))
+        session.flush()
+        items = session.scalars(select(EditionItem).where(EditionItem.edition_id == edition.id)).all()
+        session.add_all(EditionItemSource(edition_item_id=item.id, candidate_post_id=candidate.id) for item in items)
+    session.commit()
+
+    @contextmanager
+    def test_scope():
+        try:
+            yield session
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
+
+    monkeypatch.setattr(web, "session_scope", test_scope)
+    report = web._newsroom_pilot(now=datetime(2026, 9, 26, 9, tzinfo=UTC))
+
+    assert report["pilot_complete"] is True
+    assert report["current_window_complete"] is False
+    assert report["gate_passed_window"] == {
+        "start_date": "2026-09-19",
+        "end_date": "2026-09-25",
+    }

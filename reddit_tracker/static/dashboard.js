@@ -92,7 +92,14 @@ async function loadNewsroom() {
 }
 
 function renderPilot(pilot) {
-  $("#pilot-summary").textContent = pilot.pilot_complete ? "七日試刊 gate 已通過：每天都已出刊且來源完整。" : `已出刊 ${pilot.published_days} / 7 天；來源完整 ${pilot.source_complete_days} / 7 天。`;
+  if (pilot.pilot_complete) {
+    const gate = pilot.gate_passed_window;
+    const range = gate ? `${gate.start_date} 至 ${gate.end_date}` : "歷史紀錄";
+    const rolling = pilot.current_window_complete ? "近七日也全數符合。" : "下方仍顯示近七日的營運狀態。";
+    $("#pilot-summary").textContent = `七日試刊 gate 已通過（${range}）；${rolling}`;
+  } else {
+    $("#pilot-summary").textContent = `近七日已出刊 ${pilot.published_days} / 7 天；來源完整 ${pilot.source_complete_days} / 7 天。`;
+  }
   $("#pilot-days").innerHTML = pilot.days.map((day) => `<article class="pilot-day ${day.status === "published" && day.sources_complete ? "ready" : ""}"><strong>${escapeHtml(day.date)}</strong><small>${newsroomStatus(day.status)} · ${day.item_count} 則</small><span>${day.sources_complete ? "來源完整" : "待補來源／版次"} · ❤️ ${day.positive_feedback}</span></article>`).join("");
 }
 

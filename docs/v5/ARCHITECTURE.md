@@ -55,6 +55,6 @@ feedback → profile adjustment → next edition
 5. 保留 backup，並在控制台確認候選擷取、05:30 draft、08:30 發行與 artifact ledger。
 6. Telegram callback 需另外明確啟用 Bot receiver；不可用舊 v4 的「全部啟動」操作取代。
 
-### 本次 production 狀態（2026-09-18）
+### Production 狀態（截至 2026-09-25）
 
-上述程序已執行：production DB 已升級至 `d68a592f6d22`，備份 `reddit_tracker.backup-20260918-133504.db` 已通過 integrity check，且僅 v5 newsroom 已啟動。舊 v4 scheduler／bot 維持 disabled；Telegram callback receiver 也尚未啟用。試刊的完成條件仍是連續七天有來源完整的實際發行。
+上述程序已執行：production DB 已升級至 `d68a592f6d22`，備份 `reddit_tracker.backup-20260918-133504.db` 已通過 integrity check，且僅 v5 newsroom 排程已啟動。2026-09-19 至 2026-09-25 已連續七天有來源完整的實際發行，試刊 gate 通過；之後維持日常排程。舊 v4 scheduler 維持 disabled；Telegram callback receiver 已於 2026-09-25 依使用者明確授權啟用。

@@ -1,8 +1,8 @@
 # Reddit Tracker
 
-素人爆文發現、追蹤與問答系統 — 透過 Reddit public JSON / RSS endpoint 做自動化探索、評分、收藏追蹤與對話式問答的流水線。
+個人化 Reddit AI 每日報紙 — 將中英文 Reddit 討論編採為附來源、繁體中文的每日報紙，於每天 08:30（Asia/Taipei）送達 Telegram。
 
-> v4。前身為 Threads Tracker (v1–v3)。Threads 第三方 scraper 月成本 $246 + cookie 認證風險高，整段重建到 Reddit。研究命題（素人爆文 → 後續事件 → 重量 context 問答）不變。
+> 目前為 v5 AI Newsroom，已於 2026-09-19 至 2026-09-25 通過七日試刊 gate。v4 的探索、收藏追蹤與問答程式仍保留，但舊 scheduler／Bot 維持 disabled，避免重複推播。
 
 > **本分支策略**（`no-reddit-api`）：不申請 Reddit OAuth、不用 PRAW。
 > 主走 public JSON endpoint；5/29 起 .json anonymous 被擋後 fallback 到 RSS（Plan C）。
@@ -10,20 +10,16 @@
 
 ## 核心架構
 
-雙環：每日推送主環 + 收藏追蹤副環。
+目前主產品是新聞室；v4 的 daily Top-5、收藏追蹤與問答則保留為既有模組，不參與日常新聞室排程。
 
 ```
-探索層 (Subreddit /new RSS + 關鍵字 search, 90 min / 12 h)
+候選探索（Subreddit RSS，90 分鐘）
     ↓
-評分層 (硬規則 → Haiku 五軸 → 加權)
+前一個台灣日曆日候選 → reader profile → scout／assignment
     ↓
-候選排程層 (每日 09:00 Top 5 = 3 已爆 + 2 早期；Plan C fallback：主桶皆空時用 final_score top 5)
+evidence／繁中 writing／chief editing（05:30，保存 draft）
     ↓
-推送層 (Telegram + inline button ❤️/👎/🔕)
-    ↓ ❤️ 收藏
-追蹤層 (分級輪詢 hot=15min / cooling=1h / archive=6h / >30d=終止)
-    ↓ 四類後續事件偵測：作者新貼 / 作者留言 / 高分回應 / crosspost
-後續推送 (milestone 即時 / digest 隨 daily push) + 問答層 (/ask <id> 重量 context 多輪)
+Telegram 每日報紙（08:30）＋網頁編輯室／回饋
 ```
 
 ## 技術棧
@@ -38,8 +34,8 @@
 ## 快速開始
 
 ```bash
-# 1. 依賴
-uv sync
+# 1. 依賴（包含測試工具）
+uv sync --all-groups
 
 # 2. 環境變數（複製 .env.example → .env 後填值）
 cp .env.example .env
@@ -47,17 +43,14 @@ cp .env.example .env
 # 3. 建 DB schema
 uv run alembic upgrade head
 
-# 4. 載 seeds（15 subreddit + 20 keyword）+ 跑一輪 discovery
-uv run python scripts/m2_smoke.py
+# 4. 離線驗證完整新聞室流程（不讀 production DB、不送 Telegram）
+uv run python -m reddit_tracker.newsroom.demo --open
 
-# 5. 連通性驗證（public JSON）
-uv run python scripts/m1_hello.py
-
-# 6. 持續運轉（scheduler 8 個 job）
-uv run python -m reddit_tracker.scheduler
+# 5. 完整測試
+uv run --group dev python -m pytest -q
 ```
 
-正式部署走 launchd（詳見 `deploy/`），caffeinate 確保 mac 不睡。
+正式新聞室以 launchd 執行 candidate discovery（90 分鐘）、05:30 編採與 08:30 發行。涉及 production schema 的部署必須使用 `deploy/install_launchd.sh newsroom-deploy`，它會先建立 SQLite backup；詳見 [`docs/v5/ARCHITECTURE.md`](docs/v5/ARCHITECTURE.md)。
 
 ## 本機控制台
 
@@ -68,9 +61,7 @@ Telegram 對話或服務控制功能暴露到網路。
 uv run python -m reddit_tracker.web
 ```
 
-控制台可一鍵啟動／停止 scheduler 與 Telegram Bot、調整不含憑證的 `.env`
-設定、查看候選貼文／追蹤／評分／推送／LLM 紀錄、瀏覽完整 QA 對話與兩個服務的
-最新日誌。停止專案會同時 `bootout` 與 `disable` 背景服務，避免下次登入自動復活。
+控制台可查看每日報紙、來源健康、可檢視 agent artifact、讀者偏好、網頁 ❤️／🚫／👀 回饋與服務日誌；服務控制只會操作 v5 新聞室。舊 v4 scheduler 維持停用。Telegram callback receiver 已於 2026-09-25 依明確授權啟用，因此 Telegram 按鈕與網頁回饋都會寫入同一份 reader feedback ledger。
 
 ## Gemini Free Tier API（預設）
 
@@ -117,6 +108,8 @@ uv run python scripts/llm_web_session_doctor.py
 | M6 | 問答層 | ✅ 多輪 chat + 重量 system prompt + idle sweep |
 | M7 | 評估與調優 | 🟡 baseline + Plan C fallback + zh haiku retune；7.8 等 OAuth |
 | M8 | 報告與 demo | 🟡 [`docs/report.md`](docs/report.md) 骨架 + Ch6 數據填中 |
+| N0–N5 | v5 AI Newsroom foundation、編採、發行、控制台 | ✅ 已部署並具備來源可追溯與安全 fallback |
+| N6 | v5 七日試刊 | ✅ 2026-09-19 至 2026-09-25 7/7 準時出刊、來源完整 |
 
 詳細狀態：[`PROGRESS.md`](PROGRESS.md)（每次有進展更新）。
 
@@ -133,6 +126,7 @@ uv run python scripts/llm_web_session_doctor.py
 | [`docs/m7_baseline_2026-06-02.md`](docs/m7_baseline_2026-06-02.md) | M7 baseline 評估 |
 | [`docs/m7_haiku_fail_analysis.md`](docs/m7_haiku_fail_analysis.md) | M7.6 zh prompt retune 診斷 |
 | [`docs/report.md`](docs/report.md) | M8 期末報告（撰寫中） |
+| [`docs/v5/README.md`](docs/v5/README.md) | v5 AI Newsroom 規格、運作狀態與文件入口 |
 | [`CLAUDE.md`](CLAUDE.md) / [`AGENTS.md`](AGENTS.md) | AI agent 協作規範 |
 
 ## OAuth 申請狀態

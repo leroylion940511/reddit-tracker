@@ -34,7 +34,7 @@
 
       <section class="view" id="view-newsroom">
         <div class="section-head"><div><h2>AI 編輯室</h2><p>查看已出刊與未完成版次、可檢視的選題紀錄，並留下下一期偏好回饋。</p></div></div>
-        <section class="pilot panel"><div><h2>七日試刊</h2><p id="pilot-summary">載入中…</p></div><div class="pilot-days" id="pilot-days"></div></section>
+        <section class="pilot panel"><div><h2>試刊 Gate 與近七日</h2><p id="pilot-summary">載入中…</p></div><div class="pilot-days" id="pilot-days"></div></section>
         <section class="source-health panel"><div><h2>候選來源健康</h2><p id="source-health-summary">載入中…</p></div><div class="source-grid" id="source-health-list"></div></section>
         <section class="feedback-channel panel"><div><h2>回饋通路</h2><p id="feedback-channel-status">載入中…</p></div><p>網頁上的 ❤️／🚫／👀 可立即記錄；Telegram 按鈕是否接收，取決於獨立 Bot receiver 的狀態。</p></section>
         <details class="reader-profile"><summary>讀者版設定</summary><p>這些設定會在下一期選題時使用；發行時間維持 <span id="reader-delivery">—</span>。</p><form id="reader-profile-form" class="reader-grid"><label>想看的內容<textarea name="preference_prompt" required maxlength="500" placeholder="例如：多看台灣生活、人際情感與有趣的網路日常；少看政治攻防。"></textarea></label><label>優先主題<small>以逗號分隔，例如 relationships, taiwan_life</small><input name="included_topics" /></label><label>排除主題<small>以逗號分隔</small><input name="excluded_topics" /></label><label>優先 subreddit<small>以逗號分隔，不需 r/</small><input name="included_subreddits" /></label><label>排除 subreddit<small>以逗號分隔，不需 r/</small><input name="excluded_subreddits" /></label><label>優先關鍵字<small>出現在標題或正文時提高選題順位；以逗號分隔</small><input name="included_keywords" /></label><label>排除關鍵字<small>出現在標題或正文時不納入選題；以逗號分隔</small><input name="excluded_keywords" /></label><button class="secondary" type="submit">儲存讀者設定</button></form></details>

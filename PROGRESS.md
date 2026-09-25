@@ -4,7 +4,20 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-09-25（v5 新聞室七日試刊 gate 已通過並完成最終驗收）
+**Last updated:** 2026-09-25（Telegram callback receiver 已啟用，v5 日常運作中）
+
+## 本次變更（2026-09-25 — Telegram 回饋 receiver 上線）
+
+- ✅ 已依使用者明確授權啟用並 bootstrap `com.leroy.reddit-tracker.bot`，只恢復 Telegram long-polling callback／指令接收；舊 v4 scheduler 仍 disabled，不會恢復 09:00 Top-5 或其他舊排程。
+- ✅ 啟動前已確認 Telegram token／chat 設定與已安裝 plist 均就緒，且沒有既有 bot process；啟動後 launchd 為 `running`（PID 13036）、Python child 為 PID 13038、首次執行尚未退出，`bot.log` 已更新。
+- ✅ Telegram 每篇報紙的 ❤️／🚫／👀 現可寫入既有 `reader_feedback` ledger；handler 仍會確認 chat 屬於該 reader、冪等記錄並移除已處理按鈕。網頁回饋維持可用。
+
+## 本次變更（2026-09-25 — 試刊 Gate 固化與日常運作交接）
+
+- ✅ 控制台的試刊判定改為掃描歷史中任一段連續 7 天的「已發行、8–10 則、每則有來源」版次；一旦通過，通過日期區間會保留，不會在原始試刊週滑出「最近七天」後錯誤退回未通過。
+- ✅ 同一面板仍顯示近七日的發行、版面與來源完整度，讓歷史 launch gate 與目前營運健康分開判讀。
+- ✅ 根 README 與 v5 README／roadmap／架構／demo 文件已改為「試刊完成、日常運作中」；Telegram callback receiver 的啟用仍需使用者另行明確授權。
+- ✅ 新增 dashboard regression test：在 9/19–9/25 通過後，以 9/26 的滾動視窗查詢仍保有歷史通過結果；沒有操作 production DB、launchd 或 Telegram。
 
 ## 本次變更（2026-09-25 — 七日試刊驗收完成）
 

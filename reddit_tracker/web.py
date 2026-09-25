@@ -17,7 +17,7 @@ import time
 import webbrowser
 from collections.abc import Iterator
 from dataclasses import asdict
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Literal
 from zoneinfo import ZoneInfo
@@ -439,17 +439,22 @@ def _newsroom_edition(edition_id: int) -> dict[str, Any]:
     return jsonable_encoder(payload)
 
 
-def _newsroom_pilot() -> dict[str, Any]:
-    """Summarize the last seven local calendar days without changing the ledger."""
+def _newsroom_pilot(*, now: datetime | None = None) -> dict[str, Any]:
+    """Report the immutable pilot gate alongside the rolling seven-day view.
+
+    The pilot is a one-time launch criterion.  It must remain passed after the
+    first successful seven-day run rolls outside the dashboard's current
+    seven-day observation window.
+    """
     with session_scope() as session:
         reader = _active_reader_profile(session)
-        today = datetime.now(ZoneInfo(reader.timezone)).date()
+        current_time = now or datetime.now(ZoneInfo(reader.timezone))
+        today = current_time.astimezone(ZoneInfo(reader.timezone)).date()
         first_day = today - timedelta(days=6)
         editions = list(session.scalars(
             select(NewsroomEdition)
             .where(
                 NewsroomEdition.reader_profile_id == reader.id,
-                NewsroomEdition.edition_date >= first_day,
                 NewsroomEdition.edition_date <= today,
             )
             .order_by(NewsroomEdition.edition_date.asc())
@@ -492,11 +497,45 @@ def _newsroom_pilot() -> dict[str, Any]:
         })
     published_days = sum(day["status"] == "published" for day in days)
     source_complete_days = sum(day["sources_complete"] for day in days)
+    gate_window: dict[str, date] | None = None
+    if edition_by_day:
+        earliest_day = min(edition_by_day)
+        latest_start = today - timedelta(days=6)
+        candidate_start = earliest_day
+        while candidate_start <= latest_start:
+            candidate_days = [
+                edition_by_day.get(candidate_start + timedelta(days=offset))
+                for offset in range(7)
+            ]
+            if all(
+                edition is not None
+                and edition.status == "published"
+                and 8 <= len(items_by_edition.get(edition.id, [])) <= 10
+                and all(
+                    item.id in sourced_item_ids
+                    for item in items_by_edition.get(edition.id, [])
+                )
+                for edition in candidate_days
+            ):
+                gate_window = {
+                    "start_date": candidate_start,
+                    "end_date": candidate_start + timedelta(days=6),
+                }
+                break
+            candidate_start += timedelta(days=1)
+    current_window_complete = all(
+        day["status"] == "published" and day["layout_valid"] and day["sources_complete"]
+        for day in days
+    )
     return jsonable_encoder({
         "days": days,
         "published_days": published_days,
         "source_complete_days": source_complete_days,
-        "pilot_complete": published_days == 7 and source_complete_days == 7,
+        # Keep this established field as the durable launch-gate result for
+        # existing dashboard clients.  The rolling state is exposed separately.
+        "pilot_complete": gate_window is not None,
+        "gate_passed_window": gate_window,
+        "current_window_complete": current_window_complete,
     })
 
 
