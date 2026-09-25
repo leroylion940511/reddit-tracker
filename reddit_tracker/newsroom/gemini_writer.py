@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field, ValidationError
 from ..config import get_settings
 from ..llm.gemini import GeminiClient, GeminiResult
 from .contracts import EvidenceBrief, StoryDraft, StoryPitch
+from .writing import TemplateDraftingAgent
 
 
 class _CompletionClient(Protocol):
@@ -34,10 +35,10 @@ class GeminiWriterError(ValueError):
 
 class _GeneratedStory(BaseModel):
     position: int = Field(ge=1)
-    headline_zh: str = Field(min_length=4, max_length=120)
-    deck_zh: str = Field(min_length=8, max_length=300)
-    body_zh: str = Field(min_length=40, max_length=900)
-    why_it_matters_zh: str = Field(min_length=8, max_length=500)
+    headline_zh: str | None = Field(default=None, min_length=4, max_length=120)
+    deck_zh: str | None = Field(default=None, min_length=8, max_length=300)
+    body_zh: str | None = Field(default=None, min_length=40, max_length=900)
+    why_it_matters_zh: str | None = Field(default=None, min_length=8, max_length=500)
 
 
 class _GeneratedEdition(BaseModel):
@@ -59,6 +60,7 @@ class GeminiNewsroomWriter:
             purpose="newsroom",
             model=get_settings().gemini_newsroom_model,
         )
+        self.fallback_positions: tuple[int, ...] = ()
 
     def draft_many(
         self, pairs: list[tuple[StoryPitch, EvidenceBrief]]
@@ -101,19 +103,37 @@ class GeminiNewsroomWriter:
         expected = set(range(1, len(pairs) + 1))
         if set(by_position) != expected or len(by_position) != len(generated.stories):
             raise GeminiWriterError("Gemini response must contain each requested position exactly once")
-        return [
-            StoryDraft(
+        template = TemplateDraftingAgent()
+        fallback_positions: list[int] = []
+        drafts = []
+        for position, (pitch, evidence) in enumerate(pairs, start=1):
+            generated_story = by_position[position]
+            fallback = template.draft(pitch, evidence)
+            if any(
+                value is None
+                for value in (
+                    generated_story.headline_zh,
+                    generated_story.deck_zh,
+                    generated_story.body_zh,
+                    generated_story.why_it_matters_zh,
+                )
+            ):
+                fallback_positions.append(position)
+            drafts.append(StoryDraft(
                 kind=pitch.kind,
-                headline_zh=by_position[position].headline_zh,
-                deck_zh=by_position[position].deck_zh,
-                body_zh=by_position[position].body_zh,
-                why_it_matters_zh=by_position[position].why_it_matters_zh,
+                headline_zh=generated_story.headline_zh or fallback.headline_zh,
+                deck_zh=generated_story.deck_zh or fallback.deck_zh,
+                body_zh=generated_story.body_zh or fallback.body_zh,
+                why_it_matters_zh=(
+                    generated_story.why_it_matters_zh or fallback.why_it_matters_zh
+                ),
                 source_refs=pitch.source_refs,
                 confidence=evidence.confidence,
                 content_warnings=evidence.content_warnings,
             )
-            for position, (pitch, evidence) in enumerate(pairs, start=1)
-        ]
+        )
+        self.fallback_positions = tuple(fallback_positions)
+        return drafts
 
 
 __all__ = ["GeminiNewsroomWriter", "GeminiWriterError"]

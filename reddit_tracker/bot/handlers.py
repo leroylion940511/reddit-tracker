@@ -23,6 +23,8 @@ from ..llm.minimax_chat import ChatClient, build_chat
 from ..models import (
     CandidatePost,
     DailyPush,
+    EditionItem,
+    NewsroomEdition,
     PostSnapshot,
     RelatedPost,
     ScoringRecord,
@@ -33,6 +35,8 @@ from ..services import qa as qa_service
 from ..services.feedback import FeedbackOutcome, record_feedback
 from ..services.promotion import promote_to_tracked
 from .formatter import ACTION_TO_FEEDBACK, RELATION_LABELS, decode_callback
+from ..newsroom.publisher import NEWSROOM_ACTIONS, decode_newsroom_callback
+from ..newsroom.repository import record_reader_feedback
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +67,11 @@ ACTION_REPLIES = {
 DUPLICATE_REPLY = "（先前已收到相同的回饋）"
 INVALID_REPLY = "無效的按鈕回饋"
 MISSING_REPLY = "找不到這篇貼文"
+NEWSROOM_REPLIES = {
+    "more": "❤️ 已記錄：下次多看這類內容",
+    "less": "🚫 已記錄：下次少看這類內容",
+    "follow": "👀 已記錄：會留意這個話題的後續",
+}
 
 
 async def start_cmd(update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> None:
@@ -648,6 +657,53 @@ async def feedback_callback(update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> 
             logger.warning("edit_message_text failed: %s", e)
 
 
+def _record_newsroom_feedback_sync(chat_id: int, item_id: int, action: str) -> str:
+    """Record a v5 feedback action only for the edition's own Telegram chat."""
+    with session_scope() as session:
+        item = session.get(EditionItem, item_id)
+        if item is None:
+            return "missing"
+        edition = session.get(NewsroomEdition, item.edition_id)
+        if edition is None or edition.reader.telegram_chat_id != chat_id:
+            return "forbidden"
+        outcome = record_reader_feedback(session, reader=edition.reader, edition_item=item, action=action)
+        if outcome.feedback is None:
+            return "invalid"
+        return "duplicate" if outcome.duplicate else "ok"
+
+
+async def newsroom_feedback_callback(update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle `nr:<m|l|f>:<edition_item_id>` newspaper callbacks."""
+    query = update.callback_query
+    if query is None:
+        return
+    parsed = decode_newsroom_callback(query.data)
+    if parsed is None:
+        await query.answer(INVALID_REPLY)
+        return
+    short_action, item_id = parsed
+    action = NEWSROOM_ACTIONS.get(short_action)
+    if action is None or update.effective_chat is None:
+        await query.answer(INVALID_REPLY)
+        return
+    result = await asyncio.to_thread(_record_newsroom_feedback_sync, update.effective_chat.id, item_id, action)
+    if result in {"missing", "forbidden"}:
+        await query.answer("找不到可回饋的新聞項目")
+        return
+    if result == "invalid":
+        await query.answer(INVALID_REPLY)
+        return
+    reply = NEWSROOM_REPLIES[action]
+    if result == "duplicate":
+        reply = f"{reply} {DUPLICATE_REPLY}"
+    await query.answer(reply)
+    if query.message is not None:
+        try:
+            await query.edit_message_reply_markup(reply_markup=None)
+        except Exception as exc:  # noqa: BLE001 - feedback has already been persisted
+            logger.warning("edit newsroom keyboard failed: %s", exc)
+
+
 # ---------------------------------------------------------------------------
 # M6 — /ask /exit + 自由文字路由
 # ---------------------------------------------------------------------------
@@ -831,6 +887,7 @@ __all__ = [
     "feed_cmd",
     "feedback_callback",
     "help_cmd",
+    "newsroom_feedback_callback",
     "saved_cmd",
     "settings_cmd",
     "start_cmd",

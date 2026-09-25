@@ -146,6 +146,14 @@ class TemplateDraftingAgent:
                 "這些貼文呈現的是匿名使用者各自的處境，而非可推論到所有人的結論。"
                 "完整自述與脈絡請直接閱讀原帖；本文不將其延伸為已證實的外部事實。"
             )
+        elif pitch.kind is StoryKind.BREAKING:
+            deck = "同日早晨出現明確互動訊號的公開討論；先看來源，再決定是否追讀。"
+            body = (
+                f"這則早報快訊來自 {source_names}，在清晨已出現較高互動。\n\n"
+                f"原帖標題：{original_titles}\n\n"
+                "互動數字只能反映當時的 Reddit 討論熱度，不代表內容已獲外部證實。"
+                "完整脈絡請直接閱讀原帖。"
+            )
         else:
             deck = "一則值得聊的公開討論，保留來源與不確定性讓讀者自行判斷。"
             body = (
@@ -184,7 +192,7 @@ def draft_edition(
     )
     if existing_item_id is not None:
         raise NewsroomWritingError("edition already has drafted items")
-    pitches = [*plan.briefs, *plan.features]
+    pitches = [*plan.briefs, *plan.features, *([plan.breaking] if plan.breaking else [])]
     reddit_ids = [source.reddit_post_id for pitch in pitches for source in pitch.source_refs]
     candidates = list(session.scalars(
         select(CandidatePost).where(CandidatePost.reddit_post_id.in_(reddit_ids))
@@ -282,8 +290,19 @@ def draft_edition(
         session,
         run=writing_run,
         artifact_kind="story_drafts",
-        summary=f"完成 {len(drafts)} 則繁中示範稿；所有稿件保留原帖來源與資訊邊界。",
-        payload={"drafts": [draft.model_dump(mode="json") for draft in drafts]},
+        summary=(
+            f"完成 {len(drafts)} 則繁中示範稿；所有稿件保留原帖來源與資訊邊界。"
+            + (
+                f"第 {', '.join(map(str, writer.fallback_positions))} 則缺少模型欄位，"
+                "已以來源透明模板補齊。"
+                if getattr(writer, "fallback_positions", ())
+                else ""
+            )
+        ),
+        payload={
+            "drafts": [draft.model_dump(mode="json") for draft in drafts],
+            "template_fallback_positions": list(getattr(writer, "fallback_positions", ())),
+        },
         source_candidate_ids=source_candidate_ids,
     )
 
@@ -325,7 +344,7 @@ def refresh_draft_edition(
     """
     if edition.status == "published":
         raise NewsroomWritingError("published editions cannot be rewritten")
-    pitches = [*plan.briefs, *plan.features]
+    pitches = [*plan.briefs, *plan.features, *([plan.breaking] if plan.breaking else [])]
     items = list(session.scalars(
         select(EditionItem)
         .where(EditionItem.edition_id == edition.id)

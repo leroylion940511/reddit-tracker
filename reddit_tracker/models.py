@@ -191,6 +191,8 @@ class ReaderProfile(Base):
     excluded_topics: Mapped[list | None] = mapped_column(JSON)
     included_subreddits: Mapped[list | None] = mapped_column(JSON)
     excluded_subreddits: Mapped[list | None] = mapped_column(JSON)
+    included_keywords: Mapped[list | None] = mapped_column(JSON)
+    excluded_keywords: Mapped[list | None] = mapped_column(JSON)
     timezone: Mapped[str] = mapped_column(
         String(64), default="Asia/Taipei", nullable=False
     )

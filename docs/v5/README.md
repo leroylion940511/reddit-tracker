@@ -22,4 +22,4 @@ v5 將 v4 的「Reddit 候選 → 單篇通知」轉為「Reddit 候選 → 多 
 
 ## 現階段邊界
 
-本次 foundation 只建立規格、可驗證的 domain contract、工作流程與開發分支；不會修改正在執行的 v4 scheduler、Telegram bot 或 production SQLite schema。資料庫 migration 前必須先依 `ARCHITECTURE.md` 的切換程序停服與備份。
+v5 已部署至 production SQLite（2026-09-18），具備 candidate discovery、05:30 編採、08:30 Telegram 發行、回饋 callback、編輯室控制台與 SQLite migration。日後若有 schema 變更，使用 `deploy/install_launchd.sh newsroom-deploy` 會建立 online backup、執行 Alembic upgrade 並只重載 newsroom；它不會重新啟用舊 v4 scheduler／bot。Telegram callback 另需明確啟用 Bot receiver，才會接收使用者按鍵；目前仍維持 disabled。七日試刊尚在進行中。

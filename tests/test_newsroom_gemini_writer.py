@@ -70,3 +70,45 @@ def test_gemini_writer_rejects_missing_article_position(session):
 
     with pytest.raises(GeminiWriterError, match="validation"):
         GeminiNewsroomWriter(client=_FakeClient(response)).draft_many(pairs)
+
+
+def test_gemini_writer_fills_only_missing_model_fields_from_safe_template(session):
+    pairs = _pairs(session)
+    response = json.dumps({"stories": [
+        {
+            "position": position,
+            "headline_zh": f"第 {position} 則繁中標題",
+            "deck_zh": "這是一段清楚的短導言，保留匿名社群內容的邊界。",
+            "body_zh": "這是一段足夠長的繁中短報內容，僅整理原作者的公開自述，也提醒讀者這不是獨立查證後的外部事實。",
+            **({} if position == 5 else {"why_it_matters_zh": "它呈現一個值得讀者自行判斷的日常議題。"}),
+        }
+        for position in range(1, 9)
+    ]}, ensure_ascii=False)
+    writer = GeminiNewsroomWriter(client=_FakeClient(response))
+
+    drafts = writer.draft_many(pairs)
+
+    assert writer.fallback_positions == (5,)
+    assert drafts[4].headline_zh == "第 5 則繁中標題"
+    assert drafts[4].why_it_matters_zh == pairs[4][0].why_for_reader
+
+
+def test_gemini_writer_ignores_uncontracted_extra_model_fields(session):
+    pairs = _pairs(session)
+    response = json.dumps({"stories": [
+        {
+            "position": position,
+            "headline_zh": f"第 {position} 則繁中標題",
+            "deck_zh": "這是一段清楚的短導言，保留匿名社群內容的邊界。",
+            "body_zh": "這是一段足夠長的繁中短報內容，僅整理原作者的公開自述，也提醒讀者這不是獨立查證後的外部事實。",
+            "why_it_matters_zh": "它呈現一個值得讀者自行判斷的日常議題。",
+            **({"debt_zh": "模型額外產生的欄位不會進入刊物。"} if position == 6 else {}),
+        }
+        for position in range(1, 9)
+    ]}, ensure_ascii=False)
+    writer = GeminiNewsroomWriter(client=_FakeClient(response))
+
+    drafts = writer.draft_many(pairs)
+
+    assert len(drafts) == 8
+    assert writer.fallback_positions == ()

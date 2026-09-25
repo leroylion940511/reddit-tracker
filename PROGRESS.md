@@ -4,7 +4,59 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-09-16（9/17 試刊已製作、08:30 launchd 排程已啟動）
+**Last updated:** 2026-09-25（v5 新聞室七日試刊 gate 已通過並完成最終驗收）
+
+## 本次變更（2026-09-25 — 七日試刊驗收完成）
+
+- ✅ 2026-09-19 至 2026-09-25 連續 7 天皆於 08:30 實際發行（edition 2–8）；每期都是 8 則、8/8 項目具來源、各有 10 個 source bridge，Telegram 均成功投遞 9 則訊息。
+- ✅ 期間的 Gemini 缺欄／額外欄位與 RSS 單次 403／斷線都由既有安全 fallback 或後續輪次復原；沒有造成漏刊、重複投遞或來源不完整。最新 24 小時有 1,488 則候選、14 個 source。
+- ✅ 最終驗收：production SQLite `PRAGMA integrity_check` → `ok`；newsroom launchd running（PID 44476），舊 v4 scheduler／Bot 仍 disabled；`uv run --group dev python -m pytest -q` → **319 passed**（既有 FastAPI TestClient deprecation warning 1 則），Ruff 與 `git diff --check` 通過。
+- ✅ 七日監測 automation 已結束；日常新聞室仍照原排程運作（候選 discovery 90 分鐘、05:30 編採、08:30 發行）。Telegram callback receiver 仍維持 disabled，網頁回饋可用；若要讓 Telegram ❤️／🚫／👀 寫入回饋，仍需使用者明確授權單獨啟用 Bot receiver。
+
+## 本次變更（2026-09-21 — 七日試刊第 3 天）
+
+- ✅ 第 4 期於 05:30 編採、08:30 發行成功：8 則項目、10 個來源 bridge、9 則 Telegram 訊息；edition status 為 `published`，全部項目都有來源。RSS 發行前輪次完成 15 個 source，最近 24 小時新增 1,510 則候選、涵蓋 14 個 source。
+- ✅ 發現前次 Gemini 欄位容錯修正過度嚴格：模型額外輸出未使用的 `debt_zh` 欄位會讓整期改走模板 fallback。已恢復忽略非契約額外欄位；模型仍不能改動由程式持有的 kind、來源、信心與 warnings，且缺失必要欄位仍會逐則以安全模板補齊。
+- ✅ 新增 extra-field regression test，完整 `uv run --group dev python -m pytest -q` → **319 passed**（既有 FastAPI TestClient deprecation warning 1 則）；Ruff 與 `git diff --check` 通過。已用 `deploy/install_launchd.sh newsroom-reload` 套用至 production，僅 v5 newsroom 重載並確認 PID 44476 running。
+
+## 本次變更（2026-09-19 — 七日試刊第 1 天）
+
+- ✅ 05:30 成功完成第 2 期編採，08:30 已發行至 Telegram：8 則項目、10 個來源 bridge、9 則 Telegram 訊息；edition status 為 `published`，所有 8 則均有來源。
+- ✅ RSS 候選擷取持續正常：發行前最近一輪完成 15 個 source，沒有 429；最近 24 小時累積 1,435 則候選、涵蓋 14 個 source。
+- ✅ Gemini 本期輸出有 2 個必填稿件欄位遺漏，既有機制已安全以 source-transparent template 完整 fallback，因此未漏刊；現在改為逐則、逐欄位補齊，保留 Gemini 已通過驗證的內容，並在 writing artifact 記錄 `template_fallback_positions`，避免未來因單一缺欄讓整期退化為模板稿。
+- ✅ 驗證：Gemini writer／writing 定向測試、Ruff、`git diff --check` 通過；完整 `uv run --group dev python -m pytest -q` → **318 passed**（既有 FastAPI TestClient deprecation warning 1 則）。
+- ✅ 已執行 `deploy/install_launchd.sh newsroom-reload` 將無 schema 的 writer 修正套用到 production；僅 v5 newsroom 被重載，確認 `com.leroy.reddit-tracker.newsroom` 以 PID 13153 running，v4 scheduler／Bot 維持 disabled。
+
+## 本次變更（2026-09-18 — v5 可運作編採鏈路與控制台）
+
+- ✅ 找到 9/18 漏刊根因：v4 scheduler 停用後沒有任何 job 繼續擷取候選；9/17 台灣日曆窗口為 0 筆，選題 agent 因來源不足正確拒絕出刊。
+- ✅ v5 newsroom scheduler 現在啟動時會先跑一輪、之後每 90 分鐘只跑 subreddit candidate discovery；不會啟動 v4 scoring、Top-5、追蹤或 Telegram 發送工作。
+- ✅ 編採與發行拆成兩個 v5 jobs：05:30 先製作可檢閱 draft，08:30 才做冪等 Telegram 發行；避免把 Gemini 寫稿延遲或選題失敗壓在發送時刻。
+- ✅ 可選早報快訊已接入：只檢視 edition 當日凌晨後的候選，且必須同時達到初始 score 150／留言 25 的保守門檻；會保留來源、互動限制 warning 與完整 artifact，不會把歷史候選偽裝成即時訊息。
+- ✅ FastAPI 控制台新增「每日報紙」：版次歷史、來源與可見 agent artifacts、讀者偏好設定、網頁 ❤️／🚫／👀 回饋、新聞室服務狀態與 log。大量 artifact 來源僅顯示前 12 筆並標示總數，避免 UI 載入失控。
+- ✅ 「每日報紙」新增候選來源健康面板：逐一顯示 subreddit 的輪詢新鮮度、最後候選與 24 小時新增量；不顯示憑證或抓取內容。production 已驗證新 RSS 輪次的 `r/taiwan` 立即保存 21 篇候選（9 篇去重）。
+- ✅ 控制台的主要服務按鈕現在只控制 v5 newsroom；舊 v4 scheduler／bot 只顯示狀態，避免誤按「全部啟動」導致舊 Top-5 推播復活。
+- ✅ 控制台會讀取 Alembic head 與目前 DB version；schema 尚未升級時新聞室標示「需要部署」並拒絕啟動，避免新程式碰到舊 DB 後才在日誌失敗。
+- ✅ 控制台的 launchd 狀態判讀已對齊 macOS 實際 `=> disabled` 回覆；已停用的 v4 scheduler／Bot 現在正確顯示為「已停止」，不再誤標為「未載入」。production API 已實測能讀取服務、9/17 已發行 8 則版次、七日試刊與 reader profile。
+- ✅ 編輯室新增「回饋通路」狀態：依 Bot receiver 的即時狀態告知 Telegram 按鈕能否被接收；receiver 停用時明確引導使用網頁 ❤️／🚫／👀，避免誤認 Telegram 回饋已上線。
+- ✅ 控制台新增七日試刊面板：逐日顯示出刊、8–10 則 layout、來源完整度與 ❤️ 正向回饋，只有連續 7 天已出刊且來源完整才會顯示 gate 通過；已用隔離 migrated SQLite 實機檢視。
+- ✅ Telegram newspaper 改為每篇獨立、可來源追溯的訊息，附 ❤️／🚫／👀 callback；callback 會確認 chat 屬於該 reader、冪等寫入 `reader_feedback`，並在成功後移除鍵盤。現有 bot 仍 disabled，尚未將新 callback 上線。
+- ✅ 回饋學習 agent 會在每期編採前留下可檢視 artifact；同一採訪線累積至少兩次正向回饋才會成為 soft priority，避免單次點擊造成偏好劇烈漂移。
+- ✅ 讀者版設定補上優先／排除關鍵字：遷移、API、控制台與 scout 都已串接；優先字會提高選題排序，排除字會在標題或正文命中時剔除。
+- ✅ 選題候選不足時，版次與 failed assignment artifact 會保留為 `planning_failed`；控制台可直接顯示漏刊原因，不再因 transaction rollback 只剩服務日誌。
+- ✅ 已執行 `deploy/install_launchd.sh newsroom-deploy`：建立並驗證 SQLite 備份 `reddit_tracker.backup-20260918-133504.db`、production DB 升級至 `d68a592f6d22`、只重載 v5 `com.leroy.reddit-tracker.newsroom`（PID 88082）；舊 v4 scheduler／bot 仍維持 disabled。
+- ⚠️ 部署後首輪 candidate discovery 使用 RSS 時在 `/r/taiwan/new/.rss` 收到 429，依保護邏輯跳過本輪剩餘 feeds，結果 `inserted=0`；服務未中斷，但明日 05:30 是否有足夠候選仍需觀察。RSS 為匿名 fallback，必須維持保守節流。
+- ✅ 修正 newsroom reload 競態：先由 launchd `bootout` 再清除殘留程序，避免 `KeepAlive` 於重載期間短暫啟動第二個 scheduler，導致雙重 RSS 首次請求。已重載 production newsroom，確認僅 PID 88838／88843 一組程序。
+- ✅ RSS scraper 在 429 後會停止當輪 source traversal；尚未真正請求的 source 不再被更新為 `last_polled_at`，日誌與控制台可據此辨識候選新鮮度。首次 discovery 也改成 scheduler 啟動後的背景 job，避免保守節流的 15 分鐘 crawl 延誤 05:30 編採或 08:30 發行。
+- ✅ RSS discovery 改為每個 subreddit 完成後立即 commit 與進度記錄；長輪詢可在中途從健康面板看見新候選，也不會因後續來源失敗遺失先完成的資料。已清除 9/18 首次 429 舊程式錯標的 14 個 `last_polled_at`，避免控制台誤報來源新鮮。
+- ✅ 以 production SQLite online snapshot 做 9/19 不送訊息的 template 預檢：成功組出 8 則（6 brief／2 feature），每則都有 1–2 個 Reddit 來源；快照已移至垃圾桶，production DB、版次與 Telegram 均未改動。
+- ✅ 已建立每日 08:45 Asia/Taipei 的新聞室七日試刊檢查：正常無異常時保持安靜，遇失敗或完成 7/7 gate 才回報並繼續處理。
+- ✅ 全套驗證：`uv run --group dev python -m pytest -q` → **317 passed**（既有 FastAPI TestClient deprecation warning 1 則）；變更檔 Ruff、`node --check`、`bash -n` 與 `git diff --check` 通過；本機 UI 已實機檢視。
+
+## 本次變更（2026-09-17 — 發行失敗停損）
+
+- ✅ 9/17 08:30 首期已成功發行：edition 1、8 則稿件、Telegram 1 則訊息；scheduler log 顯示 job 成功完成。
+- ✅ 修正多訊息 Telegram 發行的失敗語意：若送出中斷，版次會標記 `delivery_failed`，不再退回 `drafted` 供 scheduler 自動重試，避免已送出前段後重複發送。需人工檢視 Telegram 與 log 後再處理此類版次。
 
 ## 本次變更（2026-09-16 — production 試刊切換與 Gemini 實測）
 

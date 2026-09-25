@@ -93,6 +93,16 @@ class RssScraper(RedditScraper):
         # scraper on the next scheduled round, after the cooldown window.
         self._rate_limited = False
 
+    @property
+    def rate_limited(self) -> bool:
+        """Whether Reddit told this discovery round to back off.
+
+        This is intentionally public read-only state.  Callers can stop a
+        multi-subreddit round as soon as the shared RSS endpoint throttles us,
+        instead of recording every untouched source as successfully polled.
+        """
+        return self._rate_limited
+
     # ------------------------------------------------------------------
     # RedditScraper interface
     # ------------------------------------------------------------------

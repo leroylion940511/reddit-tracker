@@ -63,8 +63,21 @@ def test_reader_profile_and_edition_are_idempotent(session):
 
     assert reader.timezone == "Asia/Taipei"
     assert reader.delivery_time == "08:30"
+    assert reader.included_keywords == []
+    assert reader.excluded_keywords == []
     assert duplicate.created is False
     assert duplicate.edition.id == edition.id
+
+
+def test_reader_profile_persists_explicit_keyword_controls(session):
+    reader = create_reader_profile(
+        session,
+        included_keywords=["remote work", "貓咪"],
+        excluded_keywords=["劇透"],
+    )
+
+    assert reader.included_keywords == ["remote work", "貓咪"]
+    assert reader.excluded_keywords == ["劇透"]
 
 
 def test_edition_rejects_an_invalid_calendar_window(session):

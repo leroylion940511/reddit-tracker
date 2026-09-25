@@ -1,11 +1,17 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from reddit_tracker import web
+from reddit_tracker.models import Base, CandidatePost, EditionItem, SubredditSource
+from reddit_tracker.newsroom.repository import create_reader_profile, get_or_create_edition
 
 
 def test_dashboard_and_static_assets_are_served():
@@ -16,6 +22,10 @@ def test_dashboard_and_static_assets_are_served():
 
     assert response.status_code == 200
     assert "Reddit Tracker 控制台" in response.text
+    assert "啟動新聞室" in response.text
+    assert "候選來源健康" in response.text
+    assert "回饋通路" in response.text
+    assert "啟動專案" not in response.text
     assert css.status_code == 200
 
 
@@ -74,3 +84,132 @@ def test_stop_service_disables_even_when_not_loaded(monkeypatch):
 
     assert result["result"] == "already_stopped"
     assert calls[1][1] == "disable"
+
+
+def test_service_status_recognizes_launchctl_symbolic_disabled_value(monkeypatch):
+    class Result:
+        def __init__(self, returncode: int, stdout: str = "", stderr: str = ""):
+            self.returncode = returncode
+            self.stdout = stdout
+            self.stderr = stderr
+
+    label = "com.leroy.reddit-tracker.bot"
+
+    def fake_run(command, **_kwargs):
+        if command[1] == "print-disabled":
+            return Result(0, f'{{\n    "{label}" => disabled\n}}')
+        return Result(1, stderr="service not loaded")
+
+    monkeypatch.setattr(web, "_run", fake_run)
+
+    status = web._service_status(label)
+
+    assert status["running"] is False
+    assert status["disabled"] is True
+
+
+def test_newsroom_start_refuses_schema_that_has_not_been_deployed(monkeypatch):
+    monkeypatch.setattr(web, "_service_status", lambda _label: {"running": False, "schema_ready": False})
+
+    with pytest.raises(RuntimeError, match="newsroom-deploy"):
+        web._start_service("com.leroy.reddit-tracker.newsroom")
+
+
+def test_newsroom_endpoints_show_safe_edition_artifacts_and_record_feedback(tmp_path: Path, monkeypatch):
+    engine = create_engine(
+        f"sqlite:///{tmp_path / 'newsroom-web.db'}",
+        future=True,
+        connect_args={"check_same_thread": False},
+    )
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine, expire_on_commit=False)
+    session = Session()
+    reader = create_reader_profile(
+        session,
+        telegram_chat_id=100,
+        preference_prompt="多看台灣生活。",
+    )
+    now = datetime.now(UTC)
+    edition = get_or_create_edition(
+        session,
+        reader=reader,
+        edition_date=date(2026, 9, 18),
+        window_start=now - timedelta(days=1),
+        window_end=now,
+    ).edition
+    edition.status = "drafted"
+    item = EditionItem(
+        edition_id=edition.id,
+        kind="brief",
+        position=1,
+        status="drafted",
+        headline_zh="一則可閱讀的 Reddit 討論",
+        body_zh="這是以來源為主的繁中摘要。",
+        why_it_matters="讓讀者判斷是否想多看這類主題。",
+        confidence="low",
+        warnings=[],
+    )
+    source = SubredditSource(name="taiwan", lang_hint="zh", enabled=True, last_polled_at=now)
+    candidate = CandidatePost(
+        reddit_post_id="source-health-1",
+        subreddit="taiwan",
+        title="候選來源健康測試",
+        selftext="來源資料可被控制台安全摘要。",
+        permalink="/r/taiwan/comments/source-health-1/test/",
+        discovered_at=now,
+    )
+    session.add_all([item, source, candidate])
+    session.commit()
+
+    @contextmanager
+    def test_scope():
+        scoped = Session()
+        try:
+            yield scoped
+            scoped.commit()
+        except Exception:
+            scoped.rollback()
+            raise
+        finally:
+            scoped.close()
+
+    monkeypatch.setattr(web, "session_scope", test_scope)
+    client = TestClient(web.app)
+
+    listed = client.get("/api/newsroom/editions")
+    detail = client.get(f"/api/newsroom/editions/{edition.id}")
+    pilot = client.get("/api/newsroom/pilot")
+    source_health = client.get("/api/newsroom/source-health")
+    profile = client.get("/api/newsroom/reader-profile")
+    saved_profile = client.put(
+        "/api/newsroom/reader-profile",
+        json={
+            "preference_prompt": "多看台灣生活，少看政治。",
+            "included_topics": ["taiwan_life", " taiwan_life "],
+            "excluded_topics": ["politics"],
+            "included_subreddits": ["taiwan"],
+            "excluded_subreddits": ["worldnews"],
+            "included_keywords": ["local food", " local food "],
+            "excluded_keywords": ["spoiler"],
+        },
+    )
+    first = client.post(f"/api/newsroom/items/{item.id}/feedback", json={"action": "more"})
+    repeat = client.post(f"/api/newsroom/items/{item.id}/feedback", json={"action": "more"})
+
+    assert listed.status_code == 200
+    assert listed.json()[0]["item_count"] == 1
+    assert detail.status_code == 200
+    assert detail.json()["view"]["items"][0]["id"] == item.id
+    assert pilot.status_code == 200
+    assert len(pilot.json()["days"]) == 7
+    assert source_health.json()["enabled_source_count"] == 1
+    assert source_health.json()["current_source_count"] == 1
+    assert source_health.json()["sources"][0]["recent_candidate_count"] == 1
+    assert profile.json()["delivery_time"] == "08:30"
+    assert saved_profile.json()["included_topics"] == ["taiwan_life"]
+    assert saved_profile.json()["included_keywords"] == ["local food"]
+    assert saved_profile.json()["excluded_keywords"] == ["spoiler"]
+    assert first.json()["duplicate"] is False
+    assert repeat.json()["duplicate"] is True
+    session.close()
+    engine.dispose()

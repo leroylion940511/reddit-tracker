@@ -4,8 +4,14 @@ from __future__ import annotations
 
 import asyncio
 
-from reddit_tracker.newsroom.publisher import TELEGRAM_SAFE_LENGTH, format_telegram_messages, send_telegram_messages
-from reddit_tracker.newsroom.rendering import EditionView, ItemView, SourceView
+from reddit_tracker.newsroom.publisher import (
+    TELEGRAM_SAFE_LENGTH,
+    decode_newsroom_callback,
+    format_telegram_delivery_messages,
+    format_telegram_messages,
+    send_telegram_messages,
+)
+from reddit_tracker.newsroom.rendering import ArtifactView, EditionView, ItemView, SourceView, render_html
 
 
 def _view(*, body_size: int = 80) -> EditionView:
@@ -23,6 +29,7 @@ def _view(*, body_size: int = 80) -> EditionView:
                 confidence="low",
                 warnings=[],
                 sources=[SourceView("Original Reddit title", "askreddit", f"https://reddit.example/{position}")],
+                id=position,
             )
             for position in range(1, 9)
         ],
@@ -38,6 +45,14 @@ def test_newspaper_messages_keep_source_title_and_link_below_limit():
     assert "https://reddit.example/8" in joined
 
 
+def test_delivery_messages_attach_distinct_feedback_to_each_article():
+    messages = format_telegram_delivery_messages(_view())
+
+    assert messages[0].edition_item_id is None
+    assert [message.edition_item_id for message in messages[1:]] == list(range(1, 9))
+    assert decode_newsroom_callback("nr:m:8") == ("m", 8)
+
+
 def test_sender_is_injectable_for_no_network_verification():
     sent: list[str] = []
 
@@ -49,3 +64,18 @@ def test_sender_is_injectable_for_no_network_verification():
 
     assert ids == [1, 2]
     assert sent == ["a", "b"]
+
+
+def test_html_limits_large_artifact_source_lists():
+    source = SourceView("Original Reddit title", "askreddit", "https://reddit.example/1")
+    view = EditionView(
+        edition_date="2026-09-17",
+        reader_summary="多看人際與日常。",
+        items=[],
+        artifacts=[ArtifactView("scout", "succeeded", 1, "摘要", None, [source] * 12, source_count=100)],
+    )
+
+    page = render_html(view)
+
+    assert "顯示 12 / 100 個來源" in page
+    assert page.count("Original Reddit title") == 12

@@ -141,6 +141,56 @@ def test_deleted_payloads_are_skipped(seeded_session):
     assert set(rows) == {"ok1", "ok2"}
 
 
+def test_rate_limited_scraper_stops_round_without_marking_unreached_sources(seeded_session):
+    class RateLimitedScraper(FakeScraper):
+        rate_limited = False
+
+        def __init__(self):
+            super().__init__(corpus=[])
+            self.calls: list[str] = []
+
+        def fetch_new(self, subreddit: str, limit: int = 50):
+            self.calls.append(subreddit)
+            self.rate_limited = True
+            return []
+
+    scraper = RateLimitedScraper()
+    stats = discover_from_subreddits(seeded_session, scraper, per_sub_limit=10)
+    seeded_session.commit()
+
+    assert len(scraper.calls) == 1
+    assert len(stats) == 1
+    polled_count = len(
+        seeded_session.scalars(select(SubredditSource).where(SubredditSource.last_polled_at.is_not(None))).all()
+    )
+    assert polled_count == 1
+
+
+def test_newsroom_style_per_source_commits_keep_completed_candidates(seeded_session, monkeypatch):
+    scraper = FakeScraper(corpus=[_make_payload("durable-1")])
+    commits: list[None] = []
+    original_commit = seeded_session.commit
+
+    def counted_commit():
+        commits.append(None)
+        original_commit()
+
+    monkeypatch.setattr(seeded_session, "commit", counted_commit)
+
+    stats = discover_from_subreddits(
+        seeded_session,
+        scraper,
+        per_sub_limit=10,
+        commit_each_source=True,
+    )
+
+    assert sum(stat.inserted for stat in stats) >= 1
+    assert len(commits) == len(stats)
+    assert seeded_session.scalar(
+        select(CandidatePost).where(CandidatePost.reddit_post_id == "durable-1")
+    ) is not None
+
+
 # ---------------------------------------------------------------------------
 # keyword discovery
 # ---------------------------------------------------------------------------

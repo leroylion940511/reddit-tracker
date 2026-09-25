@@ -71,8 +71,13 @@ class Settings(BaseSettings):
     newsroom_writer: str = "gemini"            # gemini / template
     newsroom_template_fallback: bool = True
     newsroom_delivery_timezone: str = "Asia/Taipei"
+    newsroom_preparation_hour: int = 5
+    newsroom_preparation_minute: int = 30
     newsroom_delivery_hour: int = 8
     newsroom_delivery_minute: int = 30
+    # v5 owns its candidate intake. This deliberately does not start v4's
+    # scoring, Top-5, polling, or bot jobs.
+    newsroom_discovery_interval_minutes: int = 90
 
     # --- Discovery 排程 ---
     # 預設值對 public JSON (~10 QPM) 已校準；OAuth 過了可手動下調 interval。

@@ -12,11 +12,12 @@ def test_run_demo_writes_an_inspectable_newsroom_html_and_isolated_db(tmp_path):
 
     html = output.read_text(encoding="utf-8")
     assert result.item_count == 8
-    assert result.artifact_count == 6
+    assert result.artifact_count == 7
     assert result.database_path.exists()
     assert "AI 編輯室每日報" in html
     assert "工作裡最難談的，往往不是工作" in html
     assert "讀者檔案 agent" in html
+    assert "學習 agent" in html
     assert "脈絡查核 agent" in html
     assert "https://www.reddit.com/r/" in html
     assert "❤️ 多看這類" in result.telegram_preview

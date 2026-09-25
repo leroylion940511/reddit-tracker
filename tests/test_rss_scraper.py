@@ -174,3 +174,4 @@ def test_rate_limit_skips_remaining_feeds_in_current_round(monkeypatch):
     assert scraper.fetch_new("taiwan") == []
     assert scraper.fetch_new("hongkong") == []
     assert calls == 1
+    assert scraper.rate_limited is True

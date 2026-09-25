@@ -35,6 +35,11 @@ class DiscoveryStat:
         return self.inserted
 
 
+def _is_rate_limited(scraper: RedditScraper) -> bool:
+    """Accept the optional capability without widening the base scraper API."""
+    return bool(getattr(scraper, "rate_limited", False))
+
+
 # ---------------------------------------------------------------------------
 # subreddit
 # ---------------------------------------------------------------------------
@@ -46,6 +51,7 @@ def discover_from_subreddits(
     *,
     per_sub_limit: int = 50,
     skip_deleted: bool = True,
+    commit_each_source: bool = False,
 ) -> list[DiscoveryStat]:
     sources = session.scalars(
         select(SubredditSource).where(SubredditSource.enabled == True)  # noqa: E712
@@ -72,8 +78,28 @@ def discover_from_subreddits(
         source.last_polled_at = datetime.now(timezone.utc)
         source.total_candidates_yielded += stat.yielded
         stats.append(stat)
+        # RSS intentionally spaces requests far apart.  Persist each finished
+        # source for the newsroom scheduler so a long round is observable and
+        # a later source failure cannot discard earlier candidate intake.
+        if commit_each_source:
+            session.commit()
+        logger.info(
+            "subreddit discovery r/%s: fetched=%d inserted=%d dupe=%d",
+            source.name,
+            stat.fetched,
+            stat.inserted,
+            stat.skipped_dupe,
+        )
+        if _is_rate_limited(scraper):
+            logger.warning(
+                "subreddit discovery stopped after r/%s: scraper rate-limited; "
+                "remaining sources stay unpolled for this round",
+                source.name,
+            )
+            break
 
-    session.flush()
+    if not commit_each_source:
+        session.flush()
     return stats
 
 

@@ -29,6 +29,8 @@ def test_v5_newsroom_migration_up_and_down(tmp_path, monkeypatch):
                 "agent_artifact_sources",
                 "reader_feedback",
             } <= tables
+            reader_columns = {column["name"] for column in inspect(engine).get_columns("reader_profiles")}
+            assert {"included_keywords", "excluded_keywords"} <= reader_columns
         finally:
             engine.dispose()
 

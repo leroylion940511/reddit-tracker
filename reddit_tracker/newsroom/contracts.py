@@ -60,6 +60,10 @@ class ReaderBrief(BaseModel):
     edition_date: date
     priority_topics: list[str] = Field(default_factory=list)
     excluded_topics: list[str] = Field(default_factory=list)
+    priority_subreddits: list[str] = Field(default_factory=list)
+    excluded_subreddits: list[str] = Field(default_factory=list)
+    priority_keywords: list[str] = Field(default_factory=list)
+    excluded_keywords: list[str] = Field(default_factory=list)
     summary: str = Field(min_length=1, max_length=500)
 
 

@@ -58,6 +58,20 @@ def test_edition_plan_accepts_the_confirmed_newspaper_shape():
     assert len(plan.briefs) + len(plan.features) == 8
 
 
+def test_edition_plan_allows_one_source_backed_early_brief():
+    plan = EditionPlan(
+        edition_date=date(2026, 9, 16),
+        reader_id=1,
+        briefs=[_pitch(StoryKind.BRIEF, n) for n in range(6)],
+        features=[_pitch(StoryKind.FEATURE, 10, source_count=2), _pitch(StoryKind.FEATURE, 11, source_count=2)],
+        breaking=_pitch(StoryKind.BREAKING, 20),
+        editor_summary="保留固定版面，另附一則來源可追溯的早報快訊。",
+    )
+
+    assert plan.breaking is not None
+    assert plan.breaking.kind is StoryKind.BREAKING
+
+
 def test_edition_plan_rejects_wrong_section_kind():
     with pytest.raises(ValidationError, match="briefs must contain only brief pitches"):
         EditionPlan(

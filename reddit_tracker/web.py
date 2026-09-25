@@ -16,8 +16,11 @@ import sys
 import time
 import webbrowser
 from collections.abc import Iterator
+from dataclasses import asdict
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Literal
+from zoneinfo import ZoneInfo
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Query
@@ -25,7 +28,9 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
-from sqlalchemy import func, inspect, select
+from alembic.config import Config
+from alembic.script import ScriptDirectory
+from sqlalchemy import func, inspect, select, text
 
 from .config import Settings, get_settings
 from .db import session_scope
@@ -34,12 +39,20 @@ from .models import (
     DailyPush,
     Feedback,
     LLMRecord,
+    EditionItem,
+    EditionItemSource,
+    NewsroomEdition,
     QAMessage,
     QASession,
     RelatedPost,
+    ReaderProfile,
+    ReaderFeedback,
     ScoringRecord,
+    SubredditSource,
     TrackedPost,
 )
+from .newsroom.rendering import load_edition_view
+from .newsroom.repository import record_reader_feedback
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 STATIC_ROOT = Path(__file__).resolve().parent / "static"
@@ -47,10 +60,12 @@ ENV_PATH = PROJECT_ROOT / ".env"
 LOG_PATHS = {
     "scheduler": PROJECT_ROOT / "scheduler.log",
     "bot": PROJECT_ROOT / "bot.log",
+    "newsroom": PROJECT_ROOT / "newsroom.log",
 }
 SERVICE_LABELS = (
     "com.leroy.reddit-tracker.scheduler",
     "com.leroy.reddit-tracker.bot",
+    "com.leroy.reddit-tracker.newsroom",
 )
 PLIST_SOURCES = {
     label: PROJECT_ROOT / "deploy" / f"{label}.plist" for label in SERVICE_LABELS
@@ -73,6 +88,10 @@ EDITABLE_SETTINGS: dict[str, tuple[type[str | int | float], Any]] = {
     "web_llm_provider": (str, {"chatgpt", "gemini"}),
     "web_llm_cdp_url": (str, None),
     "web_llm_timeout_seconds": (float, (10.0, 600.0)),
+    "newsroom_writer": (str, {"gemini", "template"}),
+    "newsroom_preparation_hour": (int, (0, 23)),
+    "newsroom_preparation_minute": (int, (0, 59)),
+    "newsroom_discovery_interval_minutes": (int, (5, 1440)),
     "poll_subreddit_minutes": (int, (5, 1440)),
     "poll_keyword_hours": (int, (1, 168)),
     "scoring_minutes": (int, (5, 1440)),
@@ -88,7 +107,21 @@ class SettingsUpdate(BaseModel):
 
 
 class ServiceAction(BaseModel):
-    service: Literal["scheduler", "bot", "all"] = "all"
+    service: Literal["scheduler", "bot", "newsroom"] = "newsroom"
+
+
+class NewsroomFeedbackAction(BaseModel):
+    action: Literal["more", "less", "follow"]
+
+
+class NewsroomReaderProfileUpdate(BaseModel):
+    preference_prompt: str = Field(min_length=1, max_length=500)
+    included_topics: list[str] = Field(default_factory=list, max_length=20)
+    excluded_topics: list[str] = Field(default_factory=list, max_length=20)
+    included_subreddits: list[str] = Field(default_factory=list, max_length=50)
+    excluded_subreddits: list[str] = Field(default_factory=list, max_length=50)
+    included_keywords: list[str] = Field(default_factory=list, max_length=30)
+    excluded_keywords: list[str] = Field(default_factory=list, max_length=30)
 
 
 def _run(command: list[str], *, timeout: float = 12.0) -> subprocess.CompletedProcess[str]:
@@ -103,8 +136,6 @@ def _label_for(service: str) -> str:
 
 
 def _labels(action: ServiceAction) -> tuple[str, ...]:
-    if action.service == "all":
-        return SERVICE_LABELS
     return (_label_for(action.service),)
 
 
@@ -113,14 +144,45 @@ def _service_status(label: str) -> dict[str, Any]:
     target = f"gui/{uid}/{label}"
     printed = _run(["launchctl", "print", target])
     disabled = _run(["launchctl", "print-disabled", f"gui/{uid}"])
-    disabled_flag = f'"{label}" => true' in disabled.stdout
-    return {
+    # macOS launchctl prints symbolic values (``=> disabled``), while older
+    # fixture/output variants may use booleans.  Accept both so the dashboard
+    # does not tell users that a deliberately disabled legacy service is only
+    # "not loaded".
+    disabled_flag = (
+        f'"{label}" => disabled' in disabled.stdout
+        or f'"{label}" => true' in disabled.stdout
+    )
+    status = {
         "label": label,
-        "name": "排程器" if label.endswith("scheduler") else "Telegram Bot",
+        "name": {
+            "scheduler": "v4 排程器",
+            "bot": "v4 Telegram Bot",
+            "newsroom": "AI 新聞室",
+        }[label.rsplit(".", maxsplit=1)[-1]],
         "running": printed.returncode == 0,
         "disabled": disabled_flag,
         "plist_installed": PLIST_DESTINATIONS[label].exists(),
         "detail": (printed.stderr or printed.stdout).strip()[-300:],
+    }
+    if label.endswith(".newsroom"):
+        status.update(_newsroom_schema_status())
+    return status
+
+
+def _newsroom_schema_status() -> dict[str, Any]:
+    """Expose only schema readiness, never database contents or credentials."""
+    try:
+        config = Config(str(PROJECT_ROOT / "alembic.ini"))
+        expected = ScriptDirectory.from_config(config).get_current_head()
+        with session_scope() as session:
+            actual = session.execute(text("SELECT version_num FROM alembic_version")).scalar_one_or_none()
+    except Exception as exc:  # noqa: BLE001 - dashboard must keep service status readable
+        return {"schema_ready": False, "schema_detail": f"無法確認 migration：{exc}"}
+    if actual == expected:
+        return {"schema_ready": True, "schema_detail": "資料庫 schema 已是最新版本。"}
+    return {
+        "schema_ready": False,
+        "schema_detail": "資料庫 schema 尚未升級；請先執行 newsroom-deploy。",
     }
 
 
@@ -147,6 +209,8 @@ def _start_service(label: str) -> dict[str, str]:
     status = _service_status(label)
     if status["running"]:
         return {"label": label, "result": "already_running"}
+    if label.endswith(".newsroom") and not status.get("schema_ready", False):
+        raise RuntimeError("新聞室資料庫尚未升級；請先執行 deploy/install_launchd.sh newsroom-deploy")
     uid = str(os.getuid())
     plist = _ensure_plist(label)
     enable = _run(["launchctl", "enable", f"gui/{uid}/{label}"])
@@ -271,11 +335,16 @@ def _overview() -> dict[str, Any]:
             "qa_sessions": session.scalar(select(func.count()).select_from(QASession)) or 0,
             "qa_messages": session.scalar(select(func.count()).select_from(QAMessage)) or 0,
             "related_events": session.scalar(select(func.count()).select_from(RelatedPost)) or 0,
+            "newsroom_editions": session.scalar(select(func.count()).select_from(NewsroomEdition)) or 0,
+            "newsroom_published": session.scalar(
+                select(func.count()).select_from(NewsroomEdition).where(NewsroomEdition.status == "published")
+            ) or 0,
         }
         latest = {
             "candidate": session.scalar(select(func.max(CandidatePost.discovered_at))),
             "qa": session.scalar(select(func.max(QAMessage.sent_at))),
             "llm": session.scalar(select(func.max(LLMRecord.called_at))),
+            "edition": session.scalar(select(func.max(NewsroomEdition.edition_date))),
         }
         llm_cost = session.scalar(select(func.coalesce(func.sum(LLMRecord.cost_usd), 0)))
     return jsonable_encoder({"counts": counts, "latest": latest, "llm_cost_usd": llm_cost, "services": service_statuses()})
@@ -329,6 +398,192 @@ def _qa_sessions(limit: int) -> list[dict[str, Any]]:
         }
         for qa, tracked, candidate in rows
     ])
+
+
+def _newsroom_editions(limit: int) -> list[dict[str, Any]]:
+    with session_scope() as session:
+        rows = session.execute(
+            select(NewsroomEdition, func.count(EditionItem.id))
+            .outerjoin(EditionItem, EditionItem.edition_id == NewsroomEdition.id)
+            .group_by(NewsroomEdition.id)
+            .order_by(NewsroomEdition.edition_date.desc(), NewsroomEdition.id.desc())
+            .limit(limit)
+        ).all()
+    return jsonable_encoder([
+        {
+            "id": edition.id,
+            "edition_date": edition.edition_date,
+            "status": edition.status,
+            "item_count": item_count,
+            "published_at": edition.published_at,
+            "editor_summary": edition.editor_summary,
+        }
+        for edition, item_count in rows
+    ])
+
+
+def _newsroom_edition(edition_id: int) -> dict[str, Any]:
+    with session_scope() as session:
+        edition = session.get(NewsroomEdition, edition_id)
+        if edition is None:
+            raise HTTPException(status_code=404, detail="找不到此新聞版次")
+        view = load_edition_view(session, edition=edition)
+        payload = {
+            "id": edition.id,
+            "edition_date": edition.edition_date,
+            "status": edition.status,
+            "published_at": edition.published_at,
+            "editor_summary": edition.editor_summary,
+            "view": asdict(view),
+        }
+    return jsonable_encoder(payload)
+
+
+def _newsroom_pilot() -> dict[str, Any]:
+    """Summarize the last seven local calendar days without changing the ledger."""
+    with session_scope() as session:
+        reader = _active_reader_profile(session)
+        today = datetime.now(ZoneInfo(reader.timezone)).date()
+        first_day = today - timedelta(days=6)
+        editions = list(session.scalars(
+            select(NewsroomEdition)
+            .where(
+                NewsroomEdition.reader_profile_id == reader.id,
+                NewsroomEdition.edition_date >= first_day,
+                NewsroomEdition.edition_date <= today,
+            )
+            .order_by(NewsroomEdition.edition_date.asc())
+        ).all())
+        edition_by_day = {edition.edition_date: edition for edition in editions}
+        items = list(session.scalars(
+            select(EditionItem).where(EditionItem.edition_id.in_([edition.id for edition in editions] or [-1]))
+        ).all())
+        items_by_edition: dict[int, list[EditionItem]] = {}
+        for item in items:
+            items_by_edition.setdefault(item.edition_id, []).append(item)
+        sourced_item_ids = set(session.scalars(
+            select(EditionItemSource.edition_item_id).where(
+                EditionItemSource.edition_item_id.in_([item.id for item in items] or [-1])
+            )
+        ).all())
+        feedback_rows = session.execute(
+            select(EditionItem.edition_id, ReaderFeedback.action, func.count(ReaderFeedback.id))
+            .join(ReaderFeedback, ReaderFeedback.edition_item_id == EditionItem.id)
+            .where(EditionItem.edition_id.in_([edition.id for edition in editions] or [-1]))
+            .group_by(EditionItem.edition_id, ReaderFeedback.action)
+        ).all()
+    feedback_by_edition: dict[int, dict[str, int]] = {}
+    for edition_id, action, count in feedback_rows:
+        feedback_by_edition.setdefault(edition_id, {})[action] = int(count)
+    days = []
+    for offset in range(7):
+        day = first_day + timedelta(days=offset)
+        edition = edition_by_day.get(day)
+        day_items = items_by_edition.get(edition.id, []) if edition else []
+        feedback = feedback_by_edition.get(edition.id, {}) if edition else {}
+        days.append({
+            "date": day,
+            "status": edition.status if edition else "missing",
+            "item_count": len(day_items),
+            "layout_valid": 8 <= len(day_items) <= 10,
+            "sources_complete": bool(day_items) and all(item.id in sourced_item_ids for item in day_items),
+            "positive_feedback": feedback.get("more", 0),
+            "feedback_total": sum(feedback.values()),
+        })
+    published_days = sum(day["status"] == "published" for day in days)
+    source_complete_days = sum(day["sources_complete"] for day in days)
+    return jsonable_encoder({
+        "days": days,
+        "published_days": published_days,
+        "source_complete_days": source_complete_days,
+        "pilot_complete": published_days == 7 and source_complete_days == 7,
+    })
+
+
+def _as_utc(value: datetime) -> datetime:
+    """SQLite may return a naive timestamp even for timezone-aware columns."""
+    return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
+
+
+def _newsroom_source_health() -> dict[str, Any]:
+    """Expose candidate-source freshness without exposing scraper credentials."""
+    settings = get_settings()
+    now = datetime.now(UTC)
+    recent_cutoff = now - timedelta(hours=24)
+    freshness_limit = timedelta(minutes=settings.newsroom_discovery_interval_minutes * 2 + 5)
+    with session_scope() as session:
+        sources = list(session.scalars(
+            select(SubredditSource)
+            .where(SubredditSource.enabled.is_(True))
+            .order_by(SubredditSource.name.asc())
+        ).all())
+        rows = []
+        for source in sources:
+            source_key = source.name.lower()
+            latest_candidate_at = session.scalar(
+                select(func.max(CandidatePost.discovered_at)).where(
+                    func.lower(CandidatePost.subreddit) == source_key
+                )
+            )
+            recent_candidates = session.scalar(
+                select(func.count())
+                .select_from(CandidatePost)
+                .where(
+                    func.lower(CandidatePost.subreddit) == source_key,
+                    CandidatePost.discovered_at >= recent_cutoff,
+                )
+            ) or 0
+            if source.last_polled_at is None:
+                poll_state = "never"
+            elif now - _as_utc(source.last_polled_at) <= freshness_limit:
+                poll_state = "current"
+            else:
+                poll_state = "stale"
+            rows.append({
+                "name": source.name,
+                "lang_hint": source.lang_hint,
+                "last_polled_at": source.last_polled_at,
+                "latest_candidate_at": latest_candidate_at,
+                "recent_candidate_count": int(recent_candidates),
+                "poll_state": poll_state,
+            })
+    return jsonable_encoder({
+        "poll_interval_minutes": settings.newsroom_discovery_interval_minutes,
+        "enabled_source_count": len(rows),
+        "current_source_count": sum(row["poll_state"] == "current" for row in rows),
+        "recent_candidate_count": sum(row["recent_candidate_count"] for row in rows),
+        "sources": rows,
+    })
+
+
+def _active_reader_profile(session) -> ReaderProfile:
+    reader = session.scalar(
+        select(ReaderProfile)
+        .where(ReaderProfile.active.is_(True))
+        .order_by(ReaderProfile.created_at.asc(), ReaderProfile.id.asc())
+    )
+    if reader is None:
+        raise HTTPException(status_code=404, detail="尚未建立新聞室讀者設定")
+    return reader
+
+
+def _clean_profile_values(values: list[str]) -> list[str]:
+    return list(dict.fromkeys(value.strip() for value in values if value.strip()))
+
+
+def _reader_profile_payload(reader: ReaderProfile) -> dict[str, Any]:
+    return jsonable_encoder({
+        "id": reader.id,
+        "preference_prompt": reader.preference_prompt or "",
+        "included_topics": reader.included_topics or [],
+        "excluded_topics": reader.excluded_topics or [],
+        "included_subreddits": reader.included_subreddits or [],
+        "excluded_subreddits": reader.excluded_subreddits or [],
+        "included_keywords": reader.included_keywords or [],
+        "excluded_keywords": reader.excluded_keywords or [],
+        "timezone": reader.timezone,
+        "delivery_time": reader.delivery_time,
+    })
 
 
 app = FastAPI(title="Reddit Tracker 控制台", docs_url=None, redoc_url=None)
@@ -422,8 +677,69 @@ def qa_messages(session_id: int) -> list[dict[str, Any]]:
     ])
 
 
+@app.get("/api/newsroom/editions")
+def newsroom_editions(limit: int = Query(default=30, ge=1, le=100)) -> list[dict[str, Any]]:
+    return _newsroom_editions(limit)
+
+
+@app.get("/api/newsroom/editions/{edition_id}")
+def newsroom_edition(edition_id: int) -> dict[str, Any]:
+    return _newsroom_edition(edition_id)
+
+
+@app.get("/api/newsroom/pilot")
+def newsroom_pilot() -> dict[str, Any]:
+    return _newsroom_pilot()
+
+
+@app.get("/api/newsroom/source-health")
+def newsroom_source_health() -> dict[str, Any]:
+    return _newsroom_source_health()
+
+
+@app.get("/api/newsroom/reader-profile")
+def newsroom_reader_profile() -> dict[str, Any]:
+    with session_scope() as session:
+        return _reader_profile_payload(_active_reader_profile(session))
+
+
+@app.put("/api/newsroom/reader-profile")
+def save_newsroom_reader_profile(payload: NewsroomReaderProfileUpdate) -> dict[str, Any]:
+    with session_scope() as session:
+        reader = _active_reader_profile(session)
+        reader.preference_prompt = payload.preference_prompt.strip()
+        reader.included_topics = _clean_profile_values(payload.included_topics)
+        reader.excluded_topics = _clean_profile_values(payload.excluded_topics)
+        reader.included_subreddits = _clean_profile_values(payload.included_subreddits)
+        reader.excluded_subreddits = _clean_profile_values(payload.excluded_subreddits)
+        reader.included_keywords = _clean_profile_values(payload.included_keywords)
+        reader.excluded_keywords = _clean_profile_values(payload.excluded_keywords)
+        session.flush()
+        return _reader_profile_payload(reader)
+
+
+@app.post("/api/newsroom/items/{item_id}/feedback")
+def newsroom_feedback(item_id: int, payload: NewsroomFeedbackAction) -> dict[str, Any]:
+    with session_scope() as session:
+        item = session.get(EditionItem, item_id)
+        if item is None:
+            raise HTTPException(status_code=404, detail="找不到此報紙項目")
+        edition = session.get(NewsroomEdition, item.edition_id)
+        if edition is None:
+            raise HTTPException(status_code=409, detail="報紙項目缺少版次")
+        reader = edition.reader
+        outcome = record_reader_feedback(session, reader=reader, edition_item=item, action=payload.action)
+        if outcome.feedback is None:
+            raise HTTPException(status_code=400, detail="無法記錄此回饋")
+        return {
+            "id": outcome.feedback.id,
+            "action": outcome.feedback.action,
+            "duplicate": outcome.duplicate,
+        }
+
+
 @app.get("/api/logs/{name}")
-def logs(name: Literal["scheduler", "bot"]) -> dict[str, str]:
+def logs(name: Literal["scheduler", "bot", "newsroom"]) -> dict[str, str]:
     return {"content": _tail(LOG_PATHS[name])}
 
 

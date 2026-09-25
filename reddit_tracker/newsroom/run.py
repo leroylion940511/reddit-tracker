@@ -20,8 +20,8 @@ from ..db import session_scope
 from ..models import AgentArtifactRecord, AgentRun, NewsroomEdition, ReaderProfile
 from .contracts import EditionPlan
 from .gemini_writer import GeminiNewsroomWriter
-from .planning import previous_calendar_day_window, plan_edition
-from .publisher import format_telegram_messages, send_telegram_messages
+from .planning import EditorialPlanningError, previous_calendar_day_window, plan_edition
+from .publisher import format_telegram_delivery_messages, format_telegram_messages, send_telegram_messages
 from .rendering import EditionView, load_edition_view, render_html
 from .repository import create_reader_profile, get_or_create_edition
 from .writing import NewsroomWritingError, TemplateDraftingAgent, draft_edition, refresh_draft_edition
@@ -79,6 +79,7 @@ def prepare_edition(
     """Idempotently create or load one trial edition; never sends Telegram."""
     settings = get_settings()
     chosen_writer = writer_mode or settings.newsroom_writer
+    planning_error: EditorialPlanningError | None = None
     with session_scope() as session:
         reader = _trial_reader(session)
         window = previous_calendar_day_window(edition_date, timezone_name=reader.timezone)
@@ -91,31 +92,42 @@ def prepare_edition(
         ).edition
         existing_view = load_edition_view(session, edition=edition)
         if not existing_view.items:
-            planning = plan_edition(session, edition=edition)
-            writer_used = chosen_writer
             try:
-                if chosen_writer == "gemini":
+                planning = plan_edition(session, edition=edition)
+            except EditorialPlanningError as exc:
+                # Keep the failed assignment run and its preceding inspectable
+                # artifacts.  Raising inside ``session_scope`` would roll all of
+                # them back and leave the dashboard unable to explain a missed
+                # edition.
+                edition.status = "planning_failed"
+                edition.editor_summary = f"選題未完成：{exc}"
+                session.flush()
+                planning_error = exc
+            else:
+                writer_used = chosen_writer
+                try:
+                    if chosen_writer == "gemini":
+                        draft_edition(
+                            session,
+                            edition=edition,
+                            plan=planning.plan,
+                            drafting_agent=GeminiNewsroomWriter(),
+                        )
+                    elif chosen_writer == "template":
+                        draft_edition(session, edition=edition, plan=planning.plan)
+                    else:
+                        raise RuntimeError(f"unknown newsroom writer: {chosen_writer}")
+                except NewsroomWritingError:
+                    if chosen_writer != "gemini" or not settings.newsroom_template_fallback:
+                        raise
+                    logger.exception("Gemini writing failed; using source-transparent template fallback")
                     draft_edition(
                         session,
                         edition=edition,
                         plan=planning.plan,
-                        drafting_agent=GeminiNewsroomWriter(),
+                        drafting_agent=TemplateDraftingAgent(),
                     )
-                elif chosen_writer == "template":
-                    draft_edition(session, edition=edition, plan=planning.plan)
-                else:
-                    raise RuntimeError(f"unknown newsroom writer: {chosen_writer}")
-            except NewsroomWritingError:
-                if chosen_writer != "gemini" or not settings.newsroom_template_fallback:
-                    raise
-                logger.exception("Gemini writing failed; using source-transparent template fallback")
-                draft_edition(
-                    session,
-                    edition=edition,
-                    plan=planning.plan,
-                    drafting_agent=TemplateDraftingAgent(),
-                )
-                writer_used = "template_fallback"
+                    writer_used = "template_fallback"
         elif refresh_existing:
             drafting_agent = GeminiNewsroomWriter() if chosen_writer == "gemini" else TemplateDraftingAgent()
             refresh_draft_edition(
@@ -127,17 +139,21 @@ def prepare_edition(
             writer_used = f"{chosen_writer}_refresh"
         else:
             writer_used = "existing_draft"
-        view = load_edition_view(session, edition=edition)
-        if not view.items:
-            raise RuntimeError("edition was prepared without any items")
-        if reader.telegram_chat_id is None:
-            raise RuntimeError("trial reader has no Telegram chat id")
-        return PreparedEdition(
-            edition_id=edition.id,
-            chat_id=reader.telegram_chat_id,
-            view=view,
-            writer_used=writer_used,
-        )
+        if planning_error is None:
+            view = load_edition_view(session, edition=edition)
+            if not view.items:
+                raise RuntimeError("edition was prepared without any items")
+            if reader.telegram_chat_id is None:
+                raise RuntimeError("trial reader has no Telegram chat id")
+            return PreparedEdition(
+                edition_id=edition.id,
+                chat_id=reader.telegram_chat_id,
+                view=view,
+                writer_used=writer_used,
+            )
+    if planning_error is not None:
+        raise planning_error
+    raise RuntimeError("edition preparation ended without a result")
 
 
 def publish_edition(*, edition_date: date) -> PreparedEdition:
@@ -159,7 +175,7 @@ def publish_edition(*, edition_date: date) -> PreparedEdition:
             raise RuntimeError(f"edition is not publishable: {edition.status}")
         edition.status = "publishing"
 
-    messages = format_telegram_messages(prepared.view)
+    messages = format_telegram_delivery_messages(prepared.view)
     try:
         message_ids = asyncio.run(send_telegram_messages(
             token=settings.telegram_bot_token,
@@ -170,7 +186,14 @@ def publish_edition(*, edition_date: date) -> PreparedEdition:
         with session_scope() as session:
             edition = session.get(NewsroomEdition, prepared.edition_id)
             if edition is not None and edition.status == "publishing":
-                edition.status = "drafted"
+                # Telegram has no transaction spanning a multi-message edition.
+                # A failure may therefore follow a successful earlier message.
+                # Do not make a scheduler retry resend an unknown partial delivery.
+                edition.status = "delivery_failed"
+        logger.exception(
+            "newsroom edition=%s delivery interrupted; marked delivery_failed to prevent duplicate retry",
+            prepared.edition_id,
+        )
         raise
     with session_scope() as session:
         edition = session.get(NewsroomEdition, prepared.edition_id)

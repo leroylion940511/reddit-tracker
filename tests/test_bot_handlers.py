@@ -19,6 +19,7 @@ from reddit_tracker.bot.formatter import (
     ACTION_MUTE,
     encode_callback,
 )
+from reddit_tracker.newsroom.publisher import encode_newsroom_callback
 from reddit_tracker.models import CandidatePost, Feedback
 from reddit_tracker.services.feedback import FeedbackOutcome, record_feedback
 
@@ -118,6 +119,8 @@ def _make_update(callback_data: str | None, user_id: int = 123, message_text: st
         update.callback_query.message.text = message_text
     update.effective_user = MagicMock()
     update.effective_user.id = user_id
+    update.effective_chat = MagicMock()
+    update.effective_chat.id = 456
     return update
 
 
@@ -193,3 +196,15 @@ async def test_feedback_callback_no_callback_query():
     with patch.object(handlers, "_record_feedback_sync") as wr:
         await handlers.feedback_callback(update, None)
     wr.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_newsroom_feedback_callback_records_reader_action_and_removes_keyboard():
+    update = _make_update(encode_newsroom_callback("m", 42))
+    update.callback_query.edit_message_reply_markup = AsyncMock()
+    with patch.object(handlers, "_record_newsroom_feedback_sync", return_value="ok") as record:
+        await handlers.newsroom_feedback_callback(update, None)
+
+    record.assert_called_once_with(456, 42, "more")
+    update.callback_query.answer.assert_awaited_once()
+    update.callback_query.edit_message_reply_markup.assert_awaited_once_with(reply_markup=None)

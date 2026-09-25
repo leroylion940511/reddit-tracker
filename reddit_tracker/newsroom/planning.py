@@ -16,7 +16,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from ..models import CandidatePost, NewsroomEdition, ReaderProfile
+from ..models import CandidatePost, EditionItem, EditionItemSource, NewsroomEdition, ReaderFeedback, ReaderProfile
 from .contracts import (
     AgentStage,
     Confidence,
@@ -55,6 +55,17 @@ class PlanningResult:
     reader_brief: ReaderBrief
     plan: EditionPlan
     candidate_count: int
+
+
+@dataclass(frozen=True)
+class LearningResult:
+    priority_topics: list[str]
+    source_candidate_ids: list[int]
+    summary: str
+
+
+BREAKING_MIN_SCORE = 150
+BREAKING_MIN_COMMENTS = 25
 
 
 BEAT_LABELS = {
@@ -112,8 +123,38 @@ def fetch_window_candidates(session: Session, window: CandidateWindow) -> list[C
     return list(session.scalars(statement).all())
 
 
+def fetch_breaking_candidates(
+    session: Session,
+    *,
+    edition_date: date,
+    timezone_name: str,
+    now: datetime,
+) -> list[CandidatePost]:
+    """Load only same-morning candidates for an optional early brief.
+
+    Historical previews deliberately receive no breaking insert: a fast item
+    has editorial value only while that edition date is still today locally.
+    """
+    local_timezone = ZoneInfo(timezone_name)
+    local_now = now.astimezone(local_timezone)
+    if local_now.date() != edition_date:
+        return []
+    local_start = datetime.combine(edition_date, time.min, tzinfo=local_timezone)
+    reference_time = func.coalesce(CandidatePost.posted_at, CandidatePost.discovered_at)
+    statement = (
+        select(CandidatePost)
+        .where(reference_time >= local_start.astimezone(UTC), reference_time <= now)
+        .order_by(reference_time.desc(), CandidatePost.id.desc())
+    )
+    return list(session.scalars(statement).all())
+
+
 def _normalise_topic(value: str) -> str:
     return value.strip().lower().replace(" ", "_")
+
+
+def _normalise_keyword(value: str) -> str:
+    return " ".join(value.strip().casefold().split())
 
 
 def _profile_tokens(profile: ReaderProfile) -> set[str]:
@@ -165,21 +206,73 @@ def _source_ref(candidate: CandidatePost) -> SourceRef:
     )
 
 
+class LearningAgent:
+    """Convert repeated edition feedback into a small, inspectable nudge."""
+
+    def build(self, session: Session, *, reader: ReaderProfile) -> LearningResult:
+        rows = session.execute(
+            select(ReaderFeedback.action, CandidatePost)
+            .join(EditionItem, ReaderFeedback.edition_item_id == EditionItem.id)
+            .join(EditionItemSource, EditionItemSource.edition_item_id == EditionItem.id)
+            .join(CandidatePost, CandidatePost.id == EditionItemSource.candidate_post_id)
+            .where(ReaderFeedback.reader_profile_id == reader.id)
+        ).all()
+        scores: dict[str, int] = defaultdict(int)
+        source_ids: list[int] = []
+        for action, candidate in rows:
+            if action not in {"more", "less"}:
+                continue
+            scores[_classify_beat(candidate)] += 1 if action == "more" else -1
+            source_ids.append(candidate.id)
+        # One click is a signal, not a mandate. Only repeated net-positive
+        # feedback promotes a beat into the next edition's soft priorities.
+        priorities = sorted(topic for topic, score in scores.items() if score >= 2)
+        if not rows:
+            summary = "尚無讀者回饋；維持明示的讀者設定。"
+        elif priorities:
+            summary = f"根據重複正向回饋，下一期額外優先：{', '.join(priorities)}。"
+        else:
+            summary = "已有回饋，但樣本不足以調整偏好；維持明示的讀者設定。"
+        return LearningResult(
+            priority_topics=priorities,
+            source_candidate_ids=list(dict.fromkeys(source_ids)),
+            summary=summary,
+        )
+
+
 class ReaderProfileAgent:
     """Turns explicit profile settings into an inspectable daily brief."""
 
-    def build(self, profile: ReaderProfile, *, edition_date: date) -> ReaderBrief:
+    def build(
+        self,
+        profile: ReaderProfile,
+        *,
+        edition_date: date,
+        learned_priority_topics: list[str] | None = None,
+    ) -> ReaderBrief:
         priority_topics = [_normalise_topic(topic) for topic in profile.included_topics or []]
+        priority_topics = list(dict.fromkeys([*priority_topics, *(learned_priority_topics or [])]))
         excluded_topics = [_normalise_topic(topic) for topic in profile.excluded_topics or []]
+        priority_subreddits = [_normalise_topic(value) for value in profile.included_subreddits or []]
+        excluded_subreddits = [_normalise_topic(value) for value in profile.excluded_subreddits or []]
+        priority_keywords = [_normalise_keyword(value) for value in profile.included_keywords or []]
+        excluded_keywords = [_normalise_keyword(value) for value in profile.excluded_keywords or []]
         prompt = profile.preference_prompt or "尚未設定自然語言偏好。"
         return ReaderBrief(
             reader_id=profile.id,
             edition_date=edition_date,
             priority_topics=priority_topics,
             excluded_topics=excluded_topics,
+            priority_subreddits=priority_subreddits,
+            excluded_subreddits=excluded_subreddits,
+            priority_keywords=priority_keywords,
+            excluded_keywords=excluded_keywords,
             summary=(
                 f"本期優先主題：{', '.join(priority_topics) or '依預設綜合版面'}；"
-                f"排除：{', '.join(excluded_topics) or '無'}。讀者設定：{prompt}"
+                f"優先來源：{', '.join(priority_subreddits) or '無'}；"
+                f"優先關鍵字：{', '.join(priority_keywords) or '無'}；"
+                f"排除：{', '.join([*excluded_topics, *excluded_subreddits, *excluded_keywords]) or '無'}。"
+                f"讀者設定：{prompt}"
             )[:500],
         )
 
@@ -189,13 +282,17 @@ class ScoutAgent:
 
     def scout(self, candidates: list[CandidatePost], brief: ReaderBrief, profile: ReaderProfile) -> list[ScoutedPitch]:
         excluded_topics = set(brief.excluded_topics)
-        excluded_subreddits = {
-            subreddit.lower() for subreddit in (profile.excluded_subreddits or [])
-        }
+        excluded_subreddits = set(brief.excluded_subreddits)
+        excluded_keywords = set(brief.excluded_keywords)
         preference_tokens = _profile_tokens(profile)
         scouted: list[ScoutedPitch] = []
         for candidate in candidates:
-            if not candidate.title or candidate.subreddit.lower() in excluded_subreddits:
+            searchable = " ".join(filter(None, [candidate.subreddit, candidate.title, candidate.selftext])).casefold()
+            if (
+                not candidate.title
+                or candidate.subreddit.lower() in excluded_subreddits
+                or any(keyword in searchable for keyword in excluded_keywords)
+            ):
                 continue
             beat = _classify_beat(candidate)
             if beat in excluded_topics:
@@ -243,7 +340,10 @@ class ScoutAgent:
         score = 1.0
         if beat in brief.priority_topics:
             score += 100.0
-        searchable = " ".join(filter(None, [candidate.subreddit, candidate.title, candidate.selftext])).lower()
+        if candidate.subreddit.lower() in brief.priority_subreddits:
+            score += 50.0
+        searchable = " ".join(filter(None, [candidate.subreddit, candidate.title, candidate.selftext])).casefold()
+        score += sum(30.0 for keyword in brief.priority_keywords if keyword in searchable)
         score += sum(5.0 for token in preference_tokens if len(token) > 1 and token in searchable)
         score += min(float(candidate.initial_num_comments or 0), 50.0) / 100.0
         return score
@@ -252,7 +352,14 @@ class ScoutAgent:
 class AssignmentEditorAgent:
     """Builds the required mixed newspaper shape with source diversity."""
 
-    def create_plan(self, *, reader: ReaderProfile, edition_date: date, scouted: list[ScoutedPitch]) -> EditionPlan:
+    def create_plan(
+        self,
+        *,
+        reader: ReaderProfile,
+        edition_date: date,
+        scouted: list[ScoutedPitch],
+        breaking: StoryPitch | None = None,
+    ) -> EditionPlan:
         by_beat: dict[str, list[ScoutedPitch]] = defaultdict(list)
         for item in scouted:
             by_beat[item.pitch.beat].append(item)
@@ -277,11 +384,47 @@ class AssignmentEditorAgent:
             reader_id=reader.id,
             briefs=[item.pitch for item in briefs],
             features=features,
+            breaking=breaking,
             editor_summary=(
                 f"本期以 {len(briefs)} 則短報和 {len(features)} 篇專題組成；"
+                f"{'另附 1 則早報快訊；' if breaking else ''}"
                 f"優先照顧 {', '.join(reader.included_topics or []) or '綜合'} 偏好並避免重複來源。"
             )[:500],
         )
+
+    @staticmethod
+    def select_breaking(
+        scouted: list[ScoutedPitch],
+        *,
+        candidates_by_id: dict[int, CandidatePost],
+    ) -> StoryPitch | None:
+        """Select at most one same-morning story with a visible activity bar."""
+        eligible = [
+            item for item in scouted
+            if (candidate := candidates_by_id.get(item.candidate_ids[0])) is not None
+            and (candidate.initial_score or 0) >= BREAKING_MIN_SCORE
+            and (candidate.initial_num_comments or 0) >= BREAKING_MIN_COMMENTS
+        ]
+        if not eligible:
+            return None
+        chosen = max(
+            eligible,
+            key=lambda item: (
+                item.relevance,
+                candidates_by_id[item.candidate_ids[0]].initial_score or 0,
+                candidates_by_id[item.candidate_ids[0]].initial_num_comments or 0,
+            ),
+        )
+        return chosen.pitch.model_copy(update={
+            "kind": StoryKind.BREAKING,
+            "headline_zh": f"早報快訊｜{chosen.pitch.headline_zh}"[:120],
+            "angle": f"同日早晨的高互動公開討論：{chosen.pitch.angle}",
+            "why_for_reader": "這則貼文在早晨已出現明確互動訊號，供讀者快速掌握；完整脈絡仍應回到原帖。",
+            "warnings": [
+                *chosen.pitch.warnings,
+                "早報快訊依貼文初始互動訊號選取，並非獨立事實驗證。",
+            ],
+        })
 
     @staticmethod
     def _select_features(by_beat: dict[str, list[ScoutedPitch]]) -> tuple[list[StoryPitch], set[int]]:
@@ -344,10 +487,31 @@ class AssignmentEditorAgent:
         return selected
 
 
-def plan_edition(session: Session, *, edition: NewsroomEdition) -> PlanningResult:
+def plan_edition(
+    session: Session,
+    *,
+    edition: NewsroomEdition,
+    now: datetime | None = None,
+) -> PlanningResult:
     """Run N2's three visible planning stages and persist their artifacts."""
     reader = edition.reader
     window = previous_calendar_day_window(edition.edition_date, timezone_name=reader.timezone)
+
+    learning_run = start_agent_run(
+        session,
+        edition=edition,
+        stage=AgentStage.LEARNING.value,
+        input_snapshot={"reader_profile_id": reader.id},
+    )
+    learning = LearningAgent().build(session, reader=reader)
+    complete_agent_run(
+        session,
+        run=learning_run,
+        artifact_kind="profile_adjustment",
+        summary=learning.summary,
+        payload={"priority_topics": learning.priority_topics},
+        source_candidate_ids=learning.source_candidate_ids,
+    )
 
     profile_run = start_agent_run(
         session,
@@ -355,7 +519,11 @@ def plan_edition(session: Session, *, edition: NewsroomEdition) -> PlanningResul
         stage=AgentStage.READER_PROFILE.value,
         input_snapshot={"reader_profile_id": reader.id},
     )
-    reader_brief = ReaderProfileAgent().build(reader, edition_date=edition.edition_date)
+    reader_brief = ReaderProfileAgent().build(
+        reader,
+        edition_date=edition.edition_date,
+        learned_priority_topics=learning.priority_topics,
+    )
     complete_agent_run(
         session,
         run=profile_run,
@@ -365,6 +533,13 @@ def plan_edition(session: Session, *, edition: NewsroomEdition) -> PlanningResul
     )
 
     candidates = fetch_window_candidates(session, window)
+    run_now = now or datetime.now(UTC)
+    breaking_candidates = fetch_breaking_candidates(
+        session,
+        edition_date=edition.edition_date,
+        timezone_name=reader.timezone,
+        now=run_now,
+    )
     scout_run = start_agent_run(
         session,
         edition=edition,
@@ -373,28 +548,42 @@ def plan_edition(session: Session, *, edition: NewsroomEdition) -> PlanningResul
             "window_start": window.start_utc.isoformat(),
             "window_end": window.end_utc.isoformat(),
             "candidate_count": len(candidates),
+            "breaking_candidate_count": len(breaking_candidates),
         },
     )
     scouted = ScoutAgent().scout(candidates, reader_brief, reader)
+    scouted_breaking = ScoutAgent().scout(breaking_candidates, reader_brief, reader)
+    all_scouted = [*scouted, *scouted_breaking]
     complete_agent_run(
         session,
         run=scout_run,
         artifact_kind="story_pitches",
-        summary=f"從 {len(candidates)} 則候選產生 {len(scouted)} 個可追溯選題。",
-        payload={"pitches": [item.pitch.model_dump(mode="json") for item in scouted]},
-        source_candidate_ids=[candidate_id for item in scouted for candidate_id in item.candidate_ids],
+        summary=(
+            f"從前日 {len(candidates)} 則候選產生 {len(scouted)} 個選題；"
+            f"另檢視今晨 {len(breaking_candidates)} 則候選作早報快訊判定。"
+        ),
+        payload={
+            "pitches": [item.pitch.model_dump(mode="json") for item in scouted],
+            "breaking_pitches": [item.pitch.model_dump(mode="json") for item in scouted_breaking],
+        },
+        source_candidate_ids=[candidate_id for item in all_scouted for candidate_id in item.candidate_ids],
     )
     assignment_run = start_agent_run(
         session,
         edition=edition,
         stage=AgentStage.ASSIGNMENT.value,
-        input_snapshot={"pitch_count": len(scouted)},
+        input_snapshot={"pitch_count": len(scouted), "breaking_pitch_count": len(scouted_breaking)},
     )
     try:
+        breaking = AssignmentEditorAgent.select_breaking(
+            scouted_breaking,
+            candidates_by_id={candidate.id: candidate for candidate in breaking_candidates},
+        )
         plan = AssignmentEditorAgent().create_plan(
             reader=reader,
             edition_date=edition.edition_date,
             scouted=scouted,
+            breaking=breaking,
         )
     except EditorialPlanningError as exc:
         fail_agent_run(session, run=assignment_run, error_message=str(exc))
@@ -402,8 +591,8 @@ def plan_edition(session: Session, *, edition: NewsroomEdition) -> PlanningResul
 
     source_ids = [
         source_candidate_id
-        for pitch in [*plan.briefs, *plan.features]
-        for source_candidate_id in _candidate_ids_for_pitch(scouted, pitch)
+        for pitch in [*plan.briefs, *plan.features, *([plan.breaking] if plan.breaking else [])]
+        for source_candidate_id in _candidate_ids_for_pitch(all_scouted, pitch)
     ]
     complete_agent_run(
         session,
@@ -437,9 +626,12 @@ __all__ = [
     "AssignmentEditorAgent",
     "CandidateWindow",
     "EditorialPlanningError",
+    "LearningAgent",
+    "LearningResult",
     "PlanningResult",
     "ReaderProfileAgent",
     "ScoutAgent",
+    "fetch_breaking_candidates",
     "fetch_window_candidates",
     "plan_edition",
     "previous_calendar_day_window",

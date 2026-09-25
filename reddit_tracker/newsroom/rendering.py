@@ -34,6 +34,7 @@ STAGE_LABELS = {
     "learning": "學習 agent",
 }
 KIND_LABELS = {"brief": "短報", "feature": "專題", "breaking": "早報快訊"}
+ARTIFACT_SOURCE_DISPLAY_LIMIT = 12
 
 
 @dataclass(frozen=True)
@@ -53,6 +54,7 @@ class ItemView:
     confidence: str | None
     warnings: list[str]
     sources: list[SourceView]
+    id: int | None = None
 
 
 @dataclass(frozen=True)
@@ -63,6 +65,7 @@ class ArtifactView:
     summary: str | None
     error_message: str | None
     sources: list[SourceView]
+    source_count: int = 0
 
 
 @dataclass(frozen=True)
@@ -127,6 +130,7 @@ def load_edition_view(session: Session, *, edition: NewsroomEdition) -> EditionV
                 confidence=item.confidence,
                 warnings=list(item.warnings or []),
                 sources=sources_by_item[item.id],
+                id=item.id,
             )
             for item in items
         ],
@@ -137,7 +141,14 @@ def load_edition_view(session: Session, *, edition: NewsroomEdition) -> EditionV
                 attempt=run.attempt,
                 summary=artifact_by_run[run.id].summary if run.id in artifact_by_run else None,
                 error_message=run.error_message,
-                sources=sources_by_artifact.get(artifact_by_run[run.id].id, []) if run.id in artifact_by_run else [],
+                sources=(
+                    sources_by_artifact.get(artifact_by_run[run.id].id, [])[:ARTIFACT_SOURCE_DISPLAY_LIMIT]
+                    if run.id in artifact_by_run else []
+                ),
+                source_count=(
+                    len(sources_by_artifact.get(artifact_by_run[run.id].id, []))
+                    if run.id in artifact_by_run else 0
+                ),
             )
             for run in runs
         ],
@@ -213,8 +224,12 @@ def _render_artifact(artifact: ArtifactView) -> str:
     label = STAGE_LABELS.get(artifact.stage, artifact.stage)
     status = "failed" if artifact.status == "failed" else ""
     summary = artifact.error_message or artifact.summary or "此 stage 未產生可展示 artifact。"
+    source_note = (
+        f"<p><small>顯示 {len(artifact.sources)} / {artifact.source_count} 個來源</small></p>"
+        if artifact.source_count > len(artifact.sources) else ""
+    )
     return f"""<section class="card agent {status}"><strong>{escape(label)}</strong><small> · {escape(artifact.status)} · attempt {artifact.attempt}</small>
-  <p>{escape(summary)}</p>{_render_sources(artifact.sources)}</section>"""
+  <p>{escape(summary)}</p>{source_note}{_render_sources(artifact.sources)}</section>"""
 
 
 def _render_sources(sources: list[SourceView]) -> str:

@@ -51,6 +51,8 @@ def create_reader_profile(
     excluded_topics: list[str] | None = None,
     included_subreddits: list[str] | None = None,
     excluded_subreddits: list[str] | None = None,
+    included_keywords: list[str] | None = None,
+    excluded_keywords: list[str] | None = None,
     timezone_name: str = "Asia/Taipei",
     delivery_time: str = "08:30",
 ) -> ReaderProfile:
@@ -62,6 +64,8 @@ def create_reader_profile(
         excluded_topics=excluded_topics or [],
         included_subreddits=included_subreddits or [],
         excluded_subreddits=excluded_subreddits or [],
+        included_keywords=included_keywords or [],
+        excluded_keywords=excluded_keywords or [],
         timezone=timezone_name,
         delivery_time=delivery_time,
     )

@@ -5,6 +5,8 @@
 #   deploy/install_launchd.sh install    # 第一次安裝 + 啟動
 #   deploy/install_launchd.sh reload     # 改完 plist 後重新載入
 #   deploy/install_launchd.sh uninstall  # 停止 + 移除
+#   deploy/install_launchd.sh newsroom-reload  # 只重載 v5 新聞室，不啟用舊 v4
+#   deploy/install_launchd.sh newsroom-deploy  # 備份 SQLite、migration 後只重載 v5 新聞室
 #   deploy/install_launchd.sh status     # 查看是否在跑
 #
 # 設計理由 (為何要 launchd 而非 nohup): 看任一支 plist 開頭的註解
@@ -12,24 +14,63 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 USER_AGENTS="$HOME/Library/LaunchAgents"
-LABELS=(com.leroy.reddit-tracker.scheduler com.leroy.reddit-tracker.bot)
+LEGACY_LABELS=(
+    com.leroy.reddit-tracker.scheduler
+    com.leroy.reddit-tracker.bot
+)
+NEWSROOM_LABELS=(
+    com.leroy.reddit-tracker.newsroom
+)
 UID_NUM="$(id -u)"
 
 cmd="${1:-status}"
 
-_kill_legacy() {
-    # 把之前 nohup / 前景跑的 process 收掉, 避免 telegram bot 雙開搶 long polling
-    local pids
-    pids="$(pgrep -f "python.*-m reddit_tracker\.(scheduler|bot)" || true)"
+_kill_matching() {
+    # 收掉同一種舊的 nohup / 前景 Python process，避免重載後重複排程或 bot
+    # 搶 long polling。不可同時 kill uv/caffeinate wrapper：它們與 Python
+    # 子程序各送一次 SIGTERM 會讓 scheduler 的 signal handler 重入。
+    local pattern="$1"
+    local candidates pids pid executable
+    candidates="$(pgrep -f "$pattern" || true)"
+    pids=""
+    for pid in $candidates; do
+        executable="$(ps -o comm= -p "$pid" 2>/dev/null || true)"
+        case "$executable" in
+            *python|*python[0-9]*)
+                pids+="${pids:+ }$pid"
+                ;;
+        esac
+    done
     if [[ -n "$pids" ]]; then
-        echo "→ killing legacy reddit_tracker processes: $pids"
+        echo "→ killing orphaned reddit_tracker Python processes: $pids"
         echo "$pids" | xargs kill 2>/dev/null || true
         sleep 1
-        # 還賴著就 SIGKILL
-        pids="$(pgrep -f "python.*-m reddit_tracker\.(scheduler|bot)" || true)"
+        # 還賴著才 SIGKILL；再次只取 Python child，不碰 launchd wrapper。
+        candidates="$(pgrep -f "$pattern" || true)"
+        pids=""
+        for pid in $candidates; do
+            executable="$(ps -o comm= -p "$pid" 2>/dev/null || true)"
+            case "$executable" in
+                *python|*python[0-9]*)
+                    pids+="${pids:+ }$pid"
+                    ;;
+            esac
+        done
         [[ -n "$pids" ]] && echo "$pids" | xargs kill -9 2>/dev/null || true
     fi
+}
+
+_quiesce_loaded() {
+    # Stop launchd before killing a child.  KeepAlive=true would otherwise
+    # race with pgrep/kill and briefly start a second scheduler, which can
+    # duplicate the first RSS discovery request after a reload.
+    local label
+    for label in "$@"; do
+        launchctl bootout "gui/$UID_NUM/$label" 2>/dev/null || true
+    done
+    sleep 1
 }
 
 _install_one() {
@@ -61,8 +102,8 @@ _uninstall_one() {
 
 case "$cmd" in
     install)
-        _kill_legacy
-        for l in "${LABELS[@]}"; do _install_one "$l"; done
+        _kill_matching "python.*-m reddit_tracker\.(scheduler|bot)"
+        for l in "${LEGACY_LABELS[@]}"; do _install_one "$l"; done
         echo
         echo "完成. 用以下指令查狀態 / log:"
         echo "  deploy/install_launchd.sh status"
@@ -72,26 +113,47 @@ case "$cmd" in
         # launchd bootout occasionally leaves a caffeinate/uv child orphaned.
         # Remove any old process before reloading so there is never a duplicate
         # scheduler (which would otherwise double RSS and LLM traffic).
-        _kill_legacy
-        for l in "${LABELS[@]}"; do _install_one "$l"; done
+        _kill_matching "python.*-m reddit_tracker\.(scheduler|bot)"
+        for l in "${LEGACY_LABELS[@]}"; do _install_one "$l"; done
         ;;
     uninstall)
-        for l in "${LABELS[@]}"; do _uninstall_one "$l"; done
+        for l in "${LEGACY_LABELS[@]}"; do _uninstall_one "$l"; done
+        ;;
+    newsroom-install|newsroom-reload)
+        # Isolated v5 deployment: never revives the retired v4 scheduler/bot.
+        _quiesce_loaded "${NEWSROOM_LABELS[@]}"
+        _kill_matching "python.*-m reddit_tracker\.newsroom\.scheduler"
+        for l in "${NEWSROOM_LABELS[@]}"; do _install_one "$l"; done
+        ;;
+    newsroom-deploy)
+        # Upgrade before stopping the old service.  If backup or migration
+        # fails, the currently running newsroom keeps serving its old schema.
+        (
+            cd "$PROJECT_ROOT"
+            uv run python -m reddit_tracker.newsroom.deploy
+            uv run python -m alembic upgrade head
+        )
+        _quiesce_loaded "${NEWSROOM_LABELS[@]}"
+        _kill_matching "python.*-m reddit_tracker\.newsroom\.scheduler"
+        for l in "${NEWSROOM_LABELS[@]}"; do _install_one "$l"; done
+        ;;
+    newsroom-uninstall)
+        for l in "${NEWSROOM_LABELS[@]}"; do _uninstall_one "$l"; done
         ;;
     status)
         echo "=== launchctl list (僅 reddit-tracker) ==="
         launchctl list | grep -E "reddit-tracker" || echo "(沒有 service 在跑)"
         echo
         echo "=== process tree ==="
-        pgrep -lf "python.*reddit_tracker\.(scheduler|bot)" || echo "(沒有 python process)"
+        pgrep -lf "python.*reddit_tracker\.(scheduler|bot|newsroom\.scheduler)" || echo "(沒有 python process)"
         echo
         echo "=== log mtime (越接近 now 越好) ==="
-        for f in scheduler.log bot.log; do
+        for f in newsroom.log scheduler.log bot.log; do
             [[ -f "$f" ]] && stat -f "%N: mtime=%Sm size=%z" "$f"
         done
         ;;
     *)
-        echo "用法: $0 {install|reload|uninstall|status}"
+        echo "用法: $0 {install|reload|uninstall|newsroom-install|newsroom-reload|newsroom-deploy|newsroom-uninstall|status}"
         exit 1
         ;;
 esac

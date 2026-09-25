@@ -80,6 +80,9 @@ def build_application() -> Application:
     app.add_handler(
         CallbackQueryHandler(handlers.feedback_callback, pattern=r"^fb:")
     )
+    app.add_handler(
+        CallbackQueryHandler(handlers.newsroom_feedback_callback, pattern=r"^nr:")
+    )
 
     # M6 — active QA session 中的自由文字走 chat handler
     app.add_handler(
