@@ -12,6 +12,7 @@ v5 將 v4 的「Reddit 候選 → 單篇通知」轉為「Reddit 候選 → 多 
 6. [離線 Demo](DEMO.md)
 7. [來源登錄表規格](SOURCE_REGISTRY.md)（v2.0 多來源綜合日報）
 8. [多來源收集層規格](COLLECTION.md)
+9. [事件聚合規格](CLUSTERING.md)
 
 ## 已確認的產品決策
 

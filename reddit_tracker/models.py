@@ -386,6 +386,35 @@ class SourceItem(Base):
         index=True,
     )
     meta_json: Mapped[dict | None] = mapped_column("metadata", JSON)
+    cluster_id: Mapped[int | None] = mapped_column(
+        BigInteger().with_variant(Integer(), "sqlite"),
+        ForeignKey("story_clusters.id"),
+        index=True,
+    )
+
+
+class StoryCluster(Base):
+    """不同媒體報導同一件事的事件（規格見 docs/v5/CLUSTERING.md）。"""
+
+    __tablename__ = "story_clusters"
+
+    id: Mapped[int] = big_pk()
+    lang_group: Mapped[str] = mapped_column(String(8))
+    section: Mapped[str] = mapped_column(String(32), index=True)
+    title: Mapped[str | None] = mapped_column(Text)
+    # 刻意不加 FK：source_items.cluster_id 已指向本表，雙向 FK 在 SQLite 會形成循環。
+    representative_item_id: Mapped[int | None] = mapped_column(
+        BigInteger().with_variant(Integer(), "sqlite")
+    )
+    item_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    outlet_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    t1_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    t2_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    t4_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    first_published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    last_published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
 class SourceFetchRun(Base):
@@ -537,6 +566,7 @@ __all__ = [
     "ScoringRecord",
     "SourceFetchRun",
     "SourceItem",
+    "StoryCluster",
     "SubredditSource",
     "TrackedPost",
     "NewsroomEdition",

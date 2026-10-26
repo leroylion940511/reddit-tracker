@@ -12,6 +12,7 @@ from zoneinfo import ZoneInfo
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 
+from ..collection.clustering import cluster_recent_items
 from ..collection.collector import collect_due_sources
 from ..config import get_settings
 from ..db import session_scope
@@ -61,6 +62,10 @@ def _run_source_collection() -> None:
         sum(stat.new for stat in stats),
         sum(stat.duplicate for stat in stats),
     )
+    # 聚合獨立 commit：失敗只影響本輪事件，不會讓已收的素材回滾。
+    with session_scope() as session:
+        clustered = cluster_recent_items(session, general_sources=registry.general_source_ids())
+    logger.info("story clustering done: %s", clustered)
 
 
 def _publish_today() -> None:

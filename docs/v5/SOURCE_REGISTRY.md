@@ -28,6 +28,7 @@ sources:
 | `enabled` | bool | | 預設 true；停用時必須在 `notes` 寫原因與日期 |
 | `requires_key` | str | | 需要的 `.env` 變數名（只寫名稱，不寫值） |
 | `time_offset_hours` | float | | 修正已知時區錯誤，加到解析出的發布時間上；預設 0 |
+| `general_feed` | bool | | 綜合 feed（各類新聞混在一起）；`section` 只是預設值，不參與事件板塊投票。預設 false |
 | `notes` | str | | 停用原因、資料品質備註 |
 
 ## Loader 介面
@@ -35,6 +36,7 @@ sources:
 ```python
 load_registry(path=DEFAULT_REGISTRY_PATH) -> SourceRegistry
 SourceRegistry.enabled() -> list[NewsSource]
+SourceRegistry.general_source_ids() -> frozenset[str]
 NewsSource.request_url(rsshub_base_url: str, rsshub_access_key: str | None) -> str
 ```
 

@@ -31,7 +31,9 @@ def test_v5_newsroom_migration_up_and_down(tmp_path, monkeypatch):
             } <= tables
             reader_columns = {column["name"] for column in inspect(engine).get_columns("reader_profiles")}
             assert {"included_keywords", "excluded_keywords"} <= reader_columns
-            assert {"source_items", "source_fetch_runs"} <= tables
+            assert {"source_items", "source_fetch_runs", "story_clusters"} <= tables
+            item_columns = {column["name"] for column in inspect(engine).get_columns("source_items")}
+            assert "cluster_id" in item_columns
         finally:
             engine.dispose()
 

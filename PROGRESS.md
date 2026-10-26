@@ -4,7 +4,26 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-10-26（收集層完成並在 DB 複本試跑；尚未部署 production）
+**Last updated:** 2026-10-26（事件聚合完成並在 DB 複本調參；尚未部署）
+
+## 本次變更（2026-10-26 — 事件聚合）
+
+- ✅ 規格 [CLUSTERING.md](docs/v5/CLUSTERING.md)；實作 `reddit_tracker/collection/clustering.py`：TF-IDF（中文字元 bigram、英文單字、zhconv 簡轉繁、去網址／電頭樣板）＋餘弦相似度增量指派，門檻 0.28＋事件重心 0.20 防串錯；只在同語言群組、發布時間差 48 小時內合併；既有歸屬不變。
+- ✅ 新 migration `f4b2d8e61c07`：`story_clusters` 表、`source_items.cluster_id`。事件訊號由程式算：`outlet_count`（可註冊網域、中央社轉載歸中央社、社群不計）、T1／T2／T4 數、首末發布時間、代表標題（層級高者優先）、板塊（綜合 feed 不投票）。
+- ✅ 登錄表加 `general_feed`（14 個綜合 feed）；新依賴 `zhconv`。CLI：`python -m reddit_tracker.collection cluster`／`clusters --top 30`。排程：收集後立即聚合（獨立 commit）。
+- ✅ production DB 複本：2,436 篇 → 2,009 個事件，176 個 ≥2 家出處、58 個 ≥3 家；約 1 秒；重跑無變動。抽查最大事件皆正確。全套 354 passed。
+- ⚠️ 未部署：production 仍在 `e3a7c1f09b52`。部署需再跑 `newsroom-deploy`（備份→migration→重載 newsroom）。跨語言合併（中英文同事件）尚未做，留給選題階段 LLM。
+- ➡️ 下一步：部署聚合 → 程式評分（獨立出處數、層級、時效、升溫）與各版選題。
+
+## 本次變更（2026-10-26 22:42 — 收集層上線）
+
+- ✅ 依使用者同意：commit `9ada3af` → `newsroom-deploy`（備份 `reddit_tracker.backup-20261026-224201.db`，integrity ok）→ Alembic 升至 `e3a7c1f09b52` → 只重載 newsroom；之後 `.env` 加 `NEWS_COLLECTION_ENABLED=true` 並 `newsroom-reload`。bot、rsshub 未動，v4 scheduler 仍 disabled。
+- ✅ 線上 `newsroom_source_collection` 已註冊（每 15 分鐘 tick），首輪 22:43：107 個來源 106 成功（cw-today 503）、新增 4,525 筆、唯一 4,290 筆。Reddit 候選收集、05:30 編採、08:30 發報不受影響。
+- ⚠️ 10/26 是首日回補，不計入驗收。**七天收集驗收期間：10/27–11/02（Asia/Taipei）**，11/03 用 `uv run python -m reddit_tracker.collection report --days 7 --out docs/collection_acceptance_2026-11-03.md` 出報告，對照企劃附錄 B 門檻。比原企劃（10/29–11/04）提早兩天。
+- ℹ️ 重載時 log 會出現 `SystemExit: 0` 的 threading Traceback，是舊 process 在 signal handler 中 `sys.exit` 的關機雜訊，部署前就存在，不影響運作。
+- ➡️ 下一步：驗收期間做事件聚合（跨媒體同一事件），並每天看一次報表的來源健康。
+
+**更早（同日）：** 收集層完成並在 DB 複本試跑
 
 ## 本次變更（2026-10-26 — 多來源收集層）
 

@@ -32,6 +32,8 @@ class NewsSource(BaseModel):
     requires_key: str | None = None
     # 修正已知的來源時區錯誤；例如三立把台灣時間標成 UTC，填 -8。
     time_offset_hours: float = 0
+    # 綜合 feed（各類新聞混在一起）：section 只是預設值，不參與事件板塊投票。
+    general_feed: bool = False
     notes: str | None = None
 
     @model_validator(mode="after")
@@ -74,6 +76,9 @@ class SourceRegistry(BaseModel):
 
     def enabled(self) -> list[NewsSource]:
         return [s for s in self.sources if s.enabled]
+
+    def general_source_ids(self) -> frozenset[str]:
+        return frozenset(s.id for s in self.sources if s.general_feed)
 
 
 def load_registry(path: str | Path = DEFAULT_REGISTRY_PATH) -> SourceRegistry:
