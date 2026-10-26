@@ -12,6 +12,7 @@
 - ✅ migration `a6c9e2f31d84`：`daily_editions`、`daily_articles`。設定：`DAILY_EDITION_ENABLED`、06:00 準備、08:35 發行（與 v5 08:30 錯開）、`GEMINI_DAILY_LIMIT=60`（太平洋時間換日）。控制台新路由 `/daily/`、`/daily/{date}`；產出在 `site/daily/`（不進版控）。
 - ✅ 在 production DB 複本試編 10/27 一期：42 則（頭版 6），Gemini 37、模板 5，合併 8 組重複事件。全套 366 passed。
 - ⚠️ 已知限制：只用標題＋摘要撰稿（未讀全文）；匯率／天氣數據欄未接（登錄表停用）；Gemini 免費層偶爾 503 或格式錯，靠重試與模板稿兜底。
+- ✅ 已部署（commit `84b6c5a`）：`newsroom-deploy` 備份後升至 `a6c9e2f31d84`，`.env` 設 `DAILY_EDITION_ENABLED=true` 並重載；`daily_prepare_edition`／`daily_publish_edition` 已註冊。刻意未在 production 試編（會佔用 10/27 版次或把事件標為已刊登）。今晚測試已用 Gemini daily 額度 40/60（太平洋時間 10/26），06:00 那期在同一額度日，約需 12–16 次。
 - ➡️ 試刊：10/27 06:00 首期準備、08:35 發 Telegram（文字精選＋完整 HTML 檔）。每天看報紙內容與 `daily_articles.review_notes`；11/13 Reddit RSS 停止後，社群觀察版仍有 PTT／Threads。
 
 ## 本次變更（2026-10-26 22:53 — 事件聚合上線）
