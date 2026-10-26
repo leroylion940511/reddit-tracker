@@ -1,0 +1,204 @@
+# 多來源綜合日報 — 來源登錄表（v2.0 企劃附錄 A 的實作）
+#
+# 欄位定義見 docs/v5/SOURCE_REGISTRY.md。
+# method:
+#   rss     — 網站原生 RSS／Atom，url 為完整網址
+#   rsshub  — 本機 RSSHub 路由，url 為路由路徑（以 / 開頭），base 與 key 由 .env 提供
+#   json    — JSON API／開放資料
+#   csv     — CSV 開放資料
+#   reddit  — 既有 Reddit 管道，url 為 subreddit 名稱
+# enabled=false 表示保留紀錄但不收集（實測失敗、需金鑰或待決定）。
+
+version: 1
+
+sections:
+  taiwan: 台灣
+  world: 國際
+  cross_strait: 兩岸與亞太
+  finance: 財經
+  tech: 科技
+  science_health: 科學與健康
+  life_env: 生活與環境
+  culture: 文化娛樂
+  sports: 體育
+  social: 社群觀察
+  data: 數據欄
+
+sources:
+  # ── 台灣 ─────────────────────────────────────────────
+  - {id: cna-politics, name: 中央社 政治, section: taiwan, tier: T2, method: rsshub, url: /cna/aipl, lang: zh-Hant}
+  - {id: cna-society, name: 中央社 社會, section: taiwan, tier: T2, method: rsshub, url: /cna/asoc, lang: zh-Hant}
+  - {id: cna-local, name: 中央社 地方, section: taiwan, tier: T2, method: rsshub, url: /cna/aloc, lang: zh-Hant}
+  - {id: cna-headlines, name: 中央社 聚焦, section: taiwan, tier: T2, method: rsshub, url: /cna/headlines, lang: zh-Hant}
+  - {id: pts-news, name: 公視新聞網, section: taiwan, tier: T2, method: rss, url: "https://news.pts.org.tw/xml/newsfeed.xml", lang: zh-Hant}
+  - {id: pts-dailynews, name: 公視 即時, section: taiwan, tier: T2, method: rsshub, url: /pts/dailynews, lang: zh-Hant}
+  - {id: twreporter, name: 報導者, section: taiwan, tier: T2, method: rss, url: "https://www.twreporter.org/a/rss2.xml", lang: zh-Hant}
+  - {id: twreporter-hub, name: 報導者（RSSHub）, section: taiwan, tier: T2, method: rsshub, url: /twreporter/newest, lang: zh-Hant}
+  - {id: ltn-politics, name: 自由時報 政治, section: taiwan, tier: T2, method: rss, url: "https://news.ltn.com.tw/rss/politics.xml", lang: zh-Hant}
+  - {id: ltn-society, name: 自由時報 社會, section: taiwan, tier: T2, method: rss, url: "https://news.ltn.com.tw/rss/society.xml", lang: zh-Hant}
+  - {id: ltn-local, name: 自由時報 地方, section: taiwan, tier: T2, method: rss, url: "https://news.ltn.com.tw/rss/local.xml", lang: zh-Hant}
+  - {id: ltn-breaking, name: 自由時報 即時, section: taiwan, tier: T2, method: rsshub, url: /ltn/def/breakingnewslist, lang: zh-Hant, enabled: false, notes: "RSSHub 路由解析錯誤（2026-10-26）；自由各分類原生 RSS 可用"}
+  - {id: udn-headline, name: 聯合新聞網 要聞, section: taiwan, tier: T2, method: rss, url: "https://udn.com/rssfeed/news/2/6638?ch=news", lang: zh-Hant}
+  - {id: udn-society, name: 聯合新聞網 社會, section: taiwan, tier: T2, method: rss, url: "https://udn.com/rssfeed/news/2/6639?ch=news", lang: zh-Hant}
+  - {id: chinatimes-realtime, name: 中時 即時, section: taiwan, tier: T2, method: rss, url: "https://www.chinatimes.com/rss/realtimenews.xml", lang: zh-Hant, enabled: false, notes: "原生 RSS 404，未找到替代網址（2026-10-26）"}
+  - {id: chinatimes-hub, name: 中時 即時（RSSHub）, section: taiwan, tier: T2, method: rsshub, url: /chinatimes/realtimenews, lang: zh-Hant, enabled: false, notes: "RSSHub 路由需 headless Chromium，未安裝"}
+  - {id: storm, name: 風傳媒, section: taiwan, tier: T2, method: rsshub, url: /storm, lang: zh-Hant}
+  - {id: thenewslens-news, name: 關鍵評論網 新聞, section: taiwan, tier: T2, method: rsshub, url: /thenewslens/news, lang: zh-Hant, enabled: false, notes: "RSSHub 路由回傳空白（2026-10-26）；改用 thenewslens-feed"}
+  - {id: thenewslens-feed, name: 關鍵評論網, section: taiwan, tier: T2, method: rss, url: "https://feeds.feedburner.com/TheNewsLens", lang: zh-Hant}
+  - {id: cw-today, name: 天下雜誌 今日, section: taiwan, tier: T2, method: rsshub, url: /cw/today, lang: zh-Hant}
+  - {id: ettoday-realtime, name: ETtoday 即時, section: taiwan, tier: T2, method: rss, url: "https://feeds.feedburner.com/ettoday/realtime", lang: zh-Hant}
+  - {id: setn, name: 三立新聞, section: taiwan, tier: T2, method: rsshub, url: /setn, lang: zh-Hant}
+  - {id: mirrormedia-political, name: 鏡週刊 政治, section: taiwan, tier: T2, method: rsshub, url: /mirrormedia/category/political, lang: zh-Hant}
+  - {id: rti-news, name: 中央廣播電台, section: taiwan, tier: T2, method: rss, url: "https://www.rti.org.tw/rss", lang: zh-Hant}
+  - {id: ey-news, name: 行政院 新聞稿, section: taiwan, tier: T1, method: rss, url: "https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=7", lang: zh-Hant}
+  - {id: president-news, name: 總統府 新聞, section: taiwan, tier: T1, method: rss, url: "https://www.president.gov.tw/RSS/NewsRss.aspx", lang: zh-Hant, enabled: false, notes: "XML 格式錯誤，feedparser 無法解析（2026-10-26）"}
+  - {id: moe-news, name: 教育部 即時新聞, section: taiwan, tier: T1, method: rss, url: "https://www.edu.tw/Rss_News.aspx?n=9E7AC85F1954DDA8", lang: zh-Hant}
+  - {id: taiwannews-hot, name: Taiwan News 熱門, section: taiwan, tier: T2, method: rsshub, url: /taiwannews/hot, lang: en, enabled: false, notes: "RSSHub 路由回傳空白（2026-10-26）"}
+  - {id: focustaiwan, name: Focus Taiwan, section: taiwan, tier: T2, method: rss, url: "https://feeds.feedburner.com/rsscna/engnews/", lang: en}
+
+  # ── 國際 ─────────────────────────────────────────────
+  - {id: cna-world, name: 中央社 國際, section: world, tier: T2, method: rsshub, url: /cna/aopl, lang: zh-Hant}
+  - {id: ltn-world, name: 自由時報 國際, section: world, tier: T2, method: rss, url: "https://news.ltn.com.tw/rss/world.xml", lang: zh-Hant}
+  - {id: udn-world, name: 聯合新聞網 全球, section: world, tier: T2, method: rss, url: "https://udn.com/rssfeed/news/2/6809?ch=news", lang: zh-Hant, enabled: false, notes: "回傳 200 但沒有項目（2026-10-26）"}
+  - {id: bbc-zhongwen, name: BBC 中文, section: world, tier: T2, method: rss, url: "https://feeds.bbci.co.uk/zhongwen/trad/rss.xml", lang: zh-Hant}
+  - {id: dw-chinese, name: DW 中文, section: world, tier: T2, method: rss, url: "https://rss.dw.com/rdf/rss-chi-all", lang: zh}
+  - {id: rfi-chinese, name: RFI 中文, section: world, tier: T2, method: rss, url: "https://www.rfi.fr/cn/rss", lang: zh}
+  - {id: nytimes-cn, name: 紐約時報中文網, section: world, tier: T2, method: rss, url: "https://cn.nytimes.com/rss/zh-hant/", lang: zh-Hant}
+  - {id: voa-chinese, name: 美國之音 中文, section: world, tier: T2, method: rss, url: "https://www.voachinese.com/api/zm_yql-vomx-tpeybti", lang: zh}
+  - {id: un-news-zh, name: 聯合國新聞 中文, section: world, tier: T1, method: rss, url: "https://news.un.org/feed/subscribe/zh/news/all/rss.xml", lang: zh}
+  - {id: bbc-world, name: BBC World, section: world, tier: T2, method: rss, url: "https://feeds.bbci.co.uk/news/world/rss.xml", lang: en}
+  - {id: reuters-world, name: Reuters World, section: world, tier: T2, method: rsshub, url: /reuters/world, lang: en}
+  - {id: apnews-top, name: AP Top News, section: world, tier: T2, method: rsshub, url: /apnews/topics/apf-topnews, lang: en}
+  - {id: apnews-world, name: AP World, section: world, tier: T2, method: rsshub, url: /apnews/rss/world-news, lang: en, enabled: false, notes: "上游 403（2026-10-26）"}
+  - {id: guardian-world, name: The Guardian World, section: world, tier: T2, method: rss, url: "https://www.theguardian.com/world/rss", lang: en}
+  - {id: aljazeera, name: Al Jazeera, section: world, tier: T2, method: rss, url: "https://www.aljazeera.com/xml/rss/all.xml", lang: en}
+  - {id: npr-news, name: NPR News, section: world, tier: T2, method: rss, url: "https://feeds.npr.org/1001/rss.xml", lang: en}
+  - {id: nytimes-home, name: NYT Home, section: world, tier: T2, method: rss, url: "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml", lang: en}
+  - {id: dw-en, name: DW English, section: world, tier: T2, method: rss, url: "https://rss.dw.com/rdf/rss-en-all", lang: en}
+
+  # ── 兩岸與亞太 ────────────────────────────────────────
+  - {id: cna-cross-strait, name: 中央社 兩岸, section: cross_strait, tier: T2, method: rsshub, url: /cna/acn, lang: zh-Hant}
+  - {id: mac-news, name: 陸委會 新聞稿, section: cross_strait, tier: T1, method: rss, url: "https://www.mac.gov.tw/rss.aspx?n=CB9B5A1AE3A2D3FF", lang: zh-Hant, enabled: false, notes: "403 Forbidden（2026-10-26）"}
+  - {id: bbc-zhongwen-china, name: BBC 中文 中國, section: cross_strait, tier: T2, method: rsshub, url: /bbc/zhongwen/topics/ckr7mn6r003t, lang: zh, enabled: false, notes: "RSSHub 路由解析錯誤（2026-10-26）"}
+  - {id: zaobao-china, name: 聯合早報 中國即時, section: cross_strait, tier: T2, method: rsshub, url: /zaobao/realtime/china, lang: zh}
+  - {id: zaobao-world, name: 聯合早報 國際即時, section: cross_strait, tier: T2, method: rsshub, url: /zaobao/realtime/world, lang: zh}
+  - {id: nikkei-cn, name: 日經中文網, section: cross_strait, tier: T2, method: rsshub, url: /nikkei/cn, lang: zh, enabled: false, notes: "RSSHub 抓全文時上游 403（2026-10-26）"}
+  - {id: nikkei-asia, name: Nikkei Asia, section: cross_strait, tier: T2, method: rsshub, url: /nikkei/asia, lang: en}
+  - {id: rfa-chinese, name: 自由亞洲電台 中文, section: cross_strait, tier: T2, method: rss, url: "https://www.rfa.org/mandarin/RSS", lang: zh}
+  - {id: hkfp, name: Hong Kong Free Press, section: cross_strait, tier: T2, method: rss, url: "https://hongkongfp.com/feed/", lang: en}
+  - {id: scmp-china, name: SCMP China, section: cross_strait, tier: T2, method: rss, url: "https://www.scmp.com/rss/4/feed", lang: en}
+  - {id: thediplomat, name: The Diplomat, section: cross_strait, tier: T2, method: rss, url: "https://thediplomat.com/feed/", lang: en}
+  - {id: nhk-zh, name: NHK 中文, section: cross_strait, tier: T2, method: rss, url: "https://www3.nhk.or.jp/rss/news/cat0.xml", lang: ja, enabled: false, notes: "此網址為 NHK 日文 cat0，最新一筆已 79 天前，需另找中文 feed"}
+
+  # ── 財經 ─────────────────────────────────────────────
+  - {id: cna-economy, name: 中央社 產經, section: finance, tier: T2, method: rsshub, url: /cna/aie, lang: zh-Hant}
+  - {id: cna-stock, name: 中央社 證券, section: finance, tier: T2, method: rsshub, url: /cna/asc, lang: zh-Hant}
+  - {id: ltn-business, name: 自由時報 財經, section: finance, tier: T2, method: rss, url: "https://news.ltn.com.tw/rss/business.xml", lang: zh-Hant}
+  - {id: udn-money, name: 經濟日報, section: finance, tier: T2, method: rss, url: "https://money.udn.com/rssfeed/news/1001/5591?ch=money", lang: zh-Hant}
+  - {id: yahoo-tw-stock, name: Yahoo 股市新聞, section: finance, tier: T2, method: rss, url: "https://tw.stock.yahoo.com/rss?category=news", lang: zh-Hant}
+  - {id: cbc-news, name: 中央銀行 新聞稿, section: finance, tier: T1, method: rss, url: "https://www.cbc.gov.tw/tw/rss-302-1.xml", lang: zh-Hant}
+  - {id: cnbc-top, name: CNBC Top News, section: finance, tier: T2, method: rss, url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114", lang: en}
+  - {id: cnbc-hub, name: CNBC（RSSHub）, section: finance, tier: T2, method: rsshub, url: /cnbc/rss, lang: en}
+  - {id: reuters-business, name: Reuters Business, section: finance, tier: T2, method: rsshub, url: /reuters/business, lang: en}
+  - {id: ft-home, name: Financial Times, section: finance, tier: T2, method: rss, url: "https://www.ft.com/rss/home", lang: en}
+  - {id: economist-finance, name: The Economist 財經, section: finance, tier: T2, method: rss, url: "https://www.economist.com/finance-and-economics/rss.xml", lang: en}
+  - {id: economist-latest, name: The Economist 最新, section: finance, tier: T2, method: rsshub, url: /economist/latest, lang: en, enabled: false, notes: "RSSHub 抓全文時上游 403（2026-10-26）"}
+  - {id: marketwatch-top, name: MarketWatch, section: finance, tier: T2, method: rss, url: "https://feeds.content.dowjones.io/public/rss/mw_topstories", lang: en}
+  - {id: apnews-business, name: AP Business, section: finance, tier: T2, method: rsshub, url: /apnews/rss/business, lang: en, enabled: false, notes: "上游 403（2026-10-26）"}
+  - {id: yahoo-finance, name: Yahoo Finance, section: finance, tier: T2, method: rsshub, url: /yahoo/finance/latest-news, lang: en}
+
+  # ── 科技 ─────────────────────────────────────────────
+  - {id: cna-tech, name: 中央社 科技, section: tech, tier: T2, method: rsshub, url: /cna/ait, lang: zh-Hant}
+  - {id: ithome-tw, name: iThome, section: tech, tier: T2, method: rss, url: "https://www.ithome.com.tw/rss", lang: zh-Hant}
+  - {id: technews-tw, name: 科技新報, section: tech, tier: T2, method: rss, url: "https://technews.tw/feed/", lang: zh-Hant}
+  - {id: bnext, name: 數位時代, section: tech, tier: T2, method: rss, url: "https://www.bnext.com.tw/rss", lang: zh-Hant, enabled: false, notes: "原生 RSS 404，首頁未提供 feed 連結（2026-10-26）"}
+  - {id: inside-tw, name: INSIDE, section: tech, tier: T2, method: rss, url: "https://www.inside.com.tw/feed/rss", lang: zh-Hant}
+  - {id: 36kr-hot, name: 36Kr 熱榜, section: tech, tier: T2, method: rsshub, url: /36kr/hot-list, lang: zh}
+  - {id: theverge, name: The Verge, section: tech, tier: T2, method: rss, url: "https://www.theverge.com/rss/index.xml", lang: en}
+  - {id: arstechnica, name: Ars Technica, section: tech, tier: T2, method: rss, url: "https://feeds.arstechnica.com/arstechnica/index", lang: en}
+  - {id: techcrunch, name: TechCrunch, section: tech, tier: T2, method: rss, url: "https://techcrunch.com/feed/", lang: en}
+  - {id: reuters-tech, name: Reuters Technology, section: tech, tier: T2, method: rsshub, url: /reuters/technology, lang: en}
+  - {id: mit-tech-review, name: MIT Technology Review, section: tech, tier: T2, method: rss, url: "https://www.technologyreview.com/feed/", lang: en}
+  - {id: hn-frontpage, name: Hacker News 首頁, section: tech, tier: T3, method: rss, url: "https://hnrss.org/frontpage?points=100", lang: en}
+  - {id: hn-api-top, name: Hacker News 官方 API, section: tech, tier: T3, method: json, url: "https://hacker-news.firebaseio.com/v0/topstories.json", lang: en}
+  - {id: github-trending, name: GitHub Trending, section: tech, tier: T3, method: rsshub, url: /github/trending/daily/any, lang: en, enabled: false, notes: "RSSHub 需設定 GITHUB_ACCESS_TOKEN"}
+  - {id: hf-daily-papers, name: Hugging Face Daily Papers, section: tech, tier: T3, method: rsshub, url: /huggingface/daily-papers, lang: en}
+  - {id: hf-blog, name: Hugging Face Blog, section: tech, tier: T3, method: rsshub, url: /huggingface/blog, lang: en}
+  - {id: producthunt, name: Product Hunt, section: tech, tier: T3, method: rss, url: "https://www.producthunt.com/feed", lang: en}
+  - {id: moda-news, name: 數位發展部 新聞稿, section: tech, tier: T1, method: rss, url: "https://moda.gov.tw/rss/press-releases.xml", lang: zh-Hant, enabled: false, notes: "RSS 網址 404，首頁未提供 feed 連結（2026-10-26）"}
+
+  # ── 科學與健康 ─────────────────────────────────────────
+  - {id: arxiv-cs-ai, name: arXiv cs.AI, section: science_health, tier: T3, method: rss, url: "https://rss.arxiv.org/rss/cs.AI", lang: en}
+  - {id: arxiv-cs-cl, name: arXiv cs.CL, section: science_health, tier: T3, method: rss, url: "https://rss.arxiv.org/rss/cs.CL", lang: en}
+  - {id: nature-news, name: Nature, section: science_health, tier: T2, method: rss, url: "https://www.nature.com/nature.rss", lang: en}
+  - {id: sciencedaily, name: ScienceDaily, section: science_health, tier: T2, method: rss, url: "https://www.sciencedaily.com/rss/top/science.xml", lang: en}
+  - {id: sciencedaily-health, name: ScienceDaily Health, section: science_health, tier: T2, method: rss, url: "https://www.sciencedaily.com/rss/top/health.xml", lang: en}
+  - {id: who-news, name: WHO News, section: science_health, tier: T1, method: rss, url: "https://www.who.int/rss-feeds/news-english.xml", lang: en}
+  - {id: pansci, name: 泛科學, section: science_health, tier: T2, method: rss, url: "https://pansci.asia/feed", lang: zh-Hant}
+  - {id: mohw-news, name: 衛福部 新聞, section: science_health, tier: T1, method: rss, url: "https://www.mohw.gov.tw/rss-16-1.html", lang: zh-Hant, enabled: false, notes: "XML 格式錯誤（2026-10-26）"}
+  - {id: cdc-tw-news, name: 疾管署 新聞稿, section: science_health, tier: T1, method: rss, url: "https://www.cdc.gov.tw/RSS/RssXml/Hh094B49-DRwe2RR4eFfrQ?type=1", lang: zh-Hant}
+  - {id: ltn-health, name: 自由健康網, section: science_health, tier: T2, method: rss, url: "https://health.ltn.com.tw/rss/news.xml", lang: zh-Hant, enabled: false, notes: "XML 格式錯誤（2026-10-26）"}
+  - {id: statnews, name: STAT News, section: science_health, tier: T2, method: rss, url: "https://www.statnews.com/feed/", lang: en}
+
+  # ── 生活與環境 ─────────────────────────────────────────
+  - {id: cna-life, name: 中央社 生活, section: life_env, tier: T2, method: rsshub, url: /cna/ahel, lang: zh-Hant}
+  - {id: ltn-life, name: 自由時報 生活, section: life_env, tier: T2, method: rss, url: "https://news.ltn.com.tw/rss/life.xml", lang: zh-Hant}
+  - {id: udn-life, name: 聯合新聞網 生活, section: life_env, tier: T2, method: rss, url: "https://udn.com/rssfeed/news/2/6649?ch=news", lang: zh-Hant}
+  - {id: einfo, name: 環境資訊中心, section: life_env, tier: T2, method: rss, url: "https://e-info.org.tw/rss.xml", lang: zh-Hant, enabled: false, notes: "RSS 網址 404／500（2026-10-26）"}
+  - {id: guardian-environment, name: The Guardian Environment, section: life_env, tier: T2, method: rss, url: "https://www.theguardian.com/environment/rss", lang: en}
+  - {id: mirrormedia-life, name: 鏡週刊 生活, section: life_env, tier: T2, method: rsshub, url: /mirrormedia/category/life, lang: zh-Hant, enabled: false, notes: "RSSHub 路由回傳空白（2026-10-26）"}
+  - {id: cwa-warnings, name: 氣象署 警特報, section: life_env, tier: T1, method: json, url: "https://opendata.cwa.gov.tw/api/v1/rest/datastore/W-C0033-001", lang: zh-Hant, requires_key: CWA_API_KEY, enabled: false}
+
+  # ── 文化娛樂 ──────────────────────────────────────────
+  - {id: cna-culture, name: 中央社 文化, section: culture, tier: T2, method: rsshub, url: /cna/acul, lang: zh-Hant}
+  - {id: cna-entertainment, name: 中央社 娛樂, section: culture, tier: T2, method: rsshub, url: /cna/amov, lang: zh-Hant}
+  - {id: ltn-entertainment, name: 自由時報 娛樂, section: culture, tier: T2, method: rss, url: "https://news.ltn.com.tw/rss/entertainment.xml", lang: zh-Hant}
+  - {id: udn-stars, name: 聯合新聞網 娛樂, section: culture, tier: T2, method: rss, url: "https://stars.udn.com/rssfeed/news/1022/10088?ch=stars", lang: zh-Hant, enabled: false, notes: "RSS 網址 404（2026-10-26）"}
+  - {id: openbook, name: Openbook 閱讀誌, section: culture, tier: T2, method: rss, url: "https://www.openbook.org.tw/rss.xml", lang: zh-Hant}
+  - {id: variety, name: Variety, section: culture, tier: T2, method: rss, url: "https://variety.com/feed/", lang: en}
+  - {id: guardian-culture, name: The Guardian Culture, section: culture, tier: T2, method: rss, url: "https://www.theguardian.com/culture/rss", lang: en}
+  - {id: thenewslens-culture, name: 關鍵評論網 藝文, section: culture, tier: T2, method: rsshub, url: /thenewslens/category/culture, lang: zh-Hant, enabled: false, notes: "上游分類頁 404（2026-10-26）"}
+
+  # ── 體育 ─────────────────────────────────────────────
+  - {id: cna-sports, name: 中央社 運動, section: sports, tier: T2, method: rsshub, url: /cna/aspt, lang: zh-Hant}
+  - {id: ltn-sports, name: 自由時報 體育, section: sports, tier: T2, method: rss, url: "https://news.ltn.com.tw/rss/sports.xml", lang: zh-Hant}
+  - {id: udn-sports, name: 聯合新聞網 運動, section: sports, tier: T2, method: rss, url: "https://udn.com/rssfeed/news/2/7227?ch=news", lang: zh-Hant}
+  - {id: bbc-sport, name: BBC Sport, section: sports, tier: T2, method: rss, url: "https://feeds.bbci.co.uk/sport/rss.xml", lang: en}
+  - {id: espn-news, name: ESPN, section: sports, tier: T2, method: rss, url: "https://www.espn.com/espn/rss/news", lang: en}
+  - {id: guardian-sport, name: The Guardian Sport, section: sports, tier: T2, method: rss, url: "https://www.theguardian.com/sport/rss", lang: en}
+  - {id: sportsv, name: 運動視界, section: sports, tier: T2, method: rss, url: "https://www.sportsv.net/feed", lang: zh-Hant}
+
+  # ── 社群觀察 ──────────────────────────────────────────
+  - {id: reddit-taiwan, name: r/taiwan, section: social, tier: T4, method: reddit, url: taiwan, lang: en}
+  - {id: reddit-taipei, name: r/taipei, section: social, tier: T4, method: reddit, url: taipei, lang: en}
+  - {id: reddit-china-irl, name: r/china_irl, section: social, tier: T4, method: reddit, url: china_irl, lang: zh}
+  - {id: reddit-hongkong, name: r/hongkong, section: social, tier: T4, method: reddit, url: hongkong, lang: en}
+  - {id: reddit-chineselanguage, name: r/ChineseLanguage, section: social, tier: T4, method: reddit, url: chineselanguage, lang: en}
+  - {id: reddit-askreddit, name: r/AskReddit, section: social, tier: T4, method: reddit, url: askreddit, lang: en}
+  - {id: reddit-amitheasshole, name: r/AmItheAsshole, section: social, tier: T4, method: reddit, url: amitheasshole, lang: en}
+  - {id: reddit-relationship-advice, name: r/relationship_advice, section: social, tier: T4, method: reddit, url: relationship_advice, lang: en}
+  - {id: reddit-offmychest, name: r/offmychest, section: social, tier: T4, method: reddit, url: offmychest, lang: en}
+  - {id: reddit-legaladvice, name: r/legaladvice, section: social, tier: T4, method: reddit, url: legaladvice, lang: en}
+  - {id: reddit-tifu, name: r/tifu, section: social, tier: T4, method: reddit, url: tifu, lang: en}
+  - {id: reddit-confession, name: r/confession, section: social, tier: T4, method: reddit, url: confession, lang: en}
+  - {id: reddit-bestofredditorupdates, name: r/BestofRedditorUpdates, section: social, tier: T4, method: reddit, url: bestofredditorupdates, lang: en}
+  - {id: reddit-maliciouscompliance, name: r/MaliciousCompliance, section: social, tier: T4, method: reddit, url: maliciouscompliance, lang: en}
+  - {id: reddit-updateme, name: r/UpdateMe, section: social, tier: T4, method: reddit, url: updateme, lang: en}
+  - {id: reddit-worldnews, name: r/worldnews, section: social, tier: T4, method: reddit, url: worldnews, lang: en}
+  - {id: reddit-technology, name: r/technology, section: social, tier: T4, method: reddit, url: technology, lang: en}
+  - {id: ptt-gossiping, name: PTT 八卦板, section: social, tier: T4, method: rss, url: "https://www.ptt.cc/atom/Gossiping.xml", lang: zh-Hant}
+  - {id: ptt-hatepolitics, name: PTT 政黑板, section: social, tier: T4, method: rss, url: "https://www.ptt.cc/atom/HatePolitics.xml", lang: zh-Hant}
+  - {id: ptt-stock, name: PTT 股票板, section: social, tier: T4, method: rss, url: "https://www.ptt.cc/atom/Stock.xml", lang: zh-Hant}
+  - {id: ptt-tech-job, name: PTT 科技業板, section: social, tier: T4, method: rss, url: "https://www.ptt.cc/atom/Tech_Job.xml", lang: zh-Hant}
+  - {id: ptt-womentalk, name: PTT 女孩板, section: social, tier: T4, method: rss, url: "https://www.ptt.cc/atom/WomenTalk.xml", lang: zh-Hant}
+  - {id: ptt-baseball, name: PTT 棒球板, section: social, tier: T4, method: rss, url: "https://www.ptt.cc/atom/Baseball.xml", lang: zh-Hant}
+  - {id: dcard-trending, name: Dcard 熱門, section: social, tier: T4, method: rsshub, url: /dcard/trending/popular, lang: zh-Hant, enabled: false, notes: "RSSHub 路由需 headless Chromium，且 Dcard 有反爬蟲"}
+  - {id: dcard-funny, name: Dcard 有趣, section: social, tier: T4, method: rsshub, url: /dcard/funny/popular, lang: zh-Hant, enabled: false, notes: "RSSHub 路由需 headless Chromium，且 Dcard 有反爬蟲"}
+  - {id: threads-search-taiwan, name: Threads 搜尋 台灣, section: social, tier: T4, method: rsshub, url: /threads/search/台灣, lang: zh-Hant}
+
+  # ── 數據欄 ───────────────────────────────────────────
+  - {id: twse-index, name: 證交所 每日市場成交, section: data, tier: T1, method: json, url: "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK", lang: zh-Hant}
+  - {id: twse-mi-index, name: 證交所 每日收盤指數, section: data, tier: T1, method: json, url: "https://openapi.twse.com.tw/v1/exchangeReport/MI_INDEX", lang: zh-Hant}
+  - {id: bot-fx, name: 臺灣銀行 牌告匯率, section: data, tier: T1, method: csv, url: "https://rate.bot.com.tw/xrt/flcsv/0/day", lang: zh-Hant, enabled: false, notes: "回傳 HTML 而非 CSV（2026-10-26），需另找匯率來源"}
+  - {id: cwa-forecast, name: 氣象署 36 小時預報, section: data, tier: T1, method: json, url: "https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001", lang: zh-Hant, requires_key: CWA_API_KEY, enabled: false}
+  - {id: moenv-aqi, name: 環境部 空氣品質, section: data, tier: T1, method: json, url: "https://data.moenv.gov.tw/api/v2/aqx_p_432", lang: zh-Hant, requires_key: MOENV_API_KEY, enabled: false}

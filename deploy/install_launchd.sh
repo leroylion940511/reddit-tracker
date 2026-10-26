@@ -7,6 +7,8 @@
 #   deploy/install_launchd.sh uninstall  # 停止 + 移除
 #   deploy/install_launchd.sh newsroom-reload  # 只重載 v5 新聞室，不啟用舊 v4
 #   deploy/install_launchd.sh newsroom-deploy  # 備份 SQLite、migration 後只重載 v5 新聞室
+#   deploy/install_launchd.sh rsshub-install    # 安裝/重載本機 RSSHub（只綁 127.0.0.1）
+#   deploy/install_launchd.sh rsshub-uninstall  # 停止 + 移除本機 RSSHub
 #   deploy/install_launchd.sh status     # 查看是否在跑
 #
 # 設計理由 (為何要 launchd 而非 nohup): 看任一支 plist 開頭的註解
@@ -23,6 +25,7 @@ LEGACY_LABELS=(
 NEWSROOM_LABELS=(
     com.leroy.reddit-tracker.newsroom
 )
+RSSHUB_LABEL=com.leroy.reddit-tracker.rsshub
 UID_NUM="$(id -u)"
 
 cmd="${1:-status}"
@@ -140,12 +143,21 @@ case "$cmd" in
     newsroom-uninstall)
         for l in "${NEWSROOM_LABELS[@]}"; do _uninstall_one "$l"; done
         ;;
+    rsshub-install|rsshub-reload)
+        [[ -f "$HOME/rsshub/dist/index.mjs" ]] || { echo "ERROR: ~/rsshub 尚未 build"; exit 1; }
+        grep -q '^ACCESS_KEY=.' "$HOME/rsshub/.env" || { echo "ERROR: ~/rsshub/.env 缺 ACCESS_KEY"; exit 1; }
+        _install_one "$RSSHUB_LABEL"
+        ;;
+    rsshub-uninstall)
+        _uninstall_one "$RSSHUB_LABEL"
+        ;;
     status)
         echo "=== launchctl list (僅 reddit-tracker) ==="
         launchctl list | grep -E "reddit-tracker" || echo "(沒有 service 在跑)"
         echo
         echo "=== process tree ==="
         pgrep -lf "python.*reddit_tracker\.(scheduler|bot|newsroom\.scheduler)" || echo "(沒有 python process)"
+        lsof -nP -iTCP:1200 -sTCP:LISTEN 2>/dev/null | tail -n +2 || true
         echo
         echo "=== log mtime (越接近 now 越好) ==="
         for f in newsroom.log scheduler.log bot.log; do
@@ -153,7 +165,7 @@ case "$cmd" in
         done
         ;;
     *)
-        echo "用法: $0 {install|reload|uninstall|newsroom-install|newsroom-reload|newsroom-deploy|newsroom-uninstall|status}"
+        echo "用法: $0 {install|reload|uninstall|newsroom-install|newsroom-reload|newsroom-deploy|newsroom-uninstall|rsshub-install|rsshub-uninstall|status}"
         exit 1
         ;;
 esac

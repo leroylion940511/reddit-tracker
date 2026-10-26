@@ -4,7 +4,18 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-10-26（企劃改為多來源綜合日報 v2.0）
+**Last updated:** 2026-10-26（來源登錄表初版 + 本機 RSSHub + 逐一探測）
+
+## 本次變更（2026-10-26 — 來源登錄表與 RSSHub 探測）
+
+- ✅ 新增 [來源登錄表](reddit_tracker/seeds/news_sources.yaml)：156 個來源、11 個板塊，啟用 127 個；格式與介面見 [SOURCE_REGISTRY.md](docs/v5/SOURCE_REGISTRY.md)。loader `reddit_tracker/seeds/news_sources.py`，新增依賴 `pyyaml`、`feedparser`，`config.py` 加 `rsshub_base_url`／`rsshub_access_key`／`news_sources_path`。
+- ✅ RSSHub 裝在 `~/rsshub`（`fb2ce11`），只綁 127.0.0.1:1200、需 ACCESS_KEY（存在 `~/rsshub/.env` 與專案 `.env` 的 `RSSHUB_ACCESS_KEY`）。Homebrew Node 26 可跑（官方標 22／24）；pnpm 需用 `npx -y pnpm@12.15.0`（全域 pnpm 10 切版本會失敗）；啟動必須 `NODE_ENV=production`。
+- ✅ `scripts/probe_news_sources.py` 實測：非 Reddit 啟用來源 109/110 成功（cw-today 間歇 503），單次快照 5,386 筆、24h 內 2,054 筆。報告：[docs/sources_probe_2026-10-26.md](docs/sources_probe_2026-10-26.md)。新增 `tests/test_news_sources.py`，全套 329 passed。
+- ✅ 依使用者同意，RSSHub 已加入 launchd：`com.leroy.reddit-tracker.rsshub`（`deploy/install_launchd.sh rsshub-install`／`rsshub-uninstall`），已確認只 LISTEN 127.0.0.1:1200、無 key 回 403、被 kill 後 21 秒自動重啟、探測經 launchd 版 RSSHub 成功。log：`~/rsshub/rsshub.log`。
+- ⚠️ Gotchas：Reddit RSS 對探測限速很嚴（7–30 秒間隔仍 429），探測 Reddit 會搶線上 newsroom 額度，改用 DB 佐證；聯合新聞網每則 pubDate 都是 1970（要用首次取得時間代替）；三立時區偏 +8h；`.venv/bin/pytest` shebang 仍指向搬家前的 `~/Documents/...` 路徑，請用 `uv run python -m pytest`。
+- ➡️ 下一步：收集層（`source_items` migration、通用 RSS 收集器、去重、來源健康紀錄）→ 10/29 開始七天收集驗收。
+
+**2026-10-26 稍早：** 企劃改為多來源綜合日報 v2.0
 
 ## 本次變更（2026-10-26 — 企劃轉向多來源綜合日報）
 

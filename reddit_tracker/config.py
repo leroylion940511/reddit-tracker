@@ -79,6 +79,12 @@ class Settings(BaseSettings):
     # scoring, Top-5, polling, or bot jobs.
     newsroom_discovery_interval_minutes: int = 90
 
+    # --- 多來源收集（v2.0 綜合日報）---
+    # RSSHub 為本機獨立服務，只綁 127.0.0.1；key 只放 .env，不寫進登錄表或 DB。
+    rsshub_base_url: str = "http://127.0.0.1:1200"
+    rsshub_access_key: str | None = None
+    news_sources_path: str = "reddit_tracker/seeds/news_sources.yaml"
+
     # --- Discovery 排程 ---
     # 預設值對 public JSON (~10 QPM) 已校準；OAuth 過了可手動下調 interval。
     poll_subreddit_minutes: int = 90

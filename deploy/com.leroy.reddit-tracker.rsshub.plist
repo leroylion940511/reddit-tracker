@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  本機 RSSHub — launchd LaunchAgent（v2.0 多來源收集）
+
+  RSSHub 是獨立的 AGPL 專案，裝在 ~/rsshub（不放 ~/Documents，避開 TCC），
+  不併入本 repo。ACCESS_KEY 等設定讀 ~/rsshub/.env；LISTEN_INADDR_ANY 在這裡
+  再釘一次為 0，確保即使 .env 被改動也只綁 127.0.0.1。
+  NODE_ENV=production 必填，否則會去讀不存在的 dist/routes 而立即退出。
+
+  安裝/移除/查看: 看 deploy/install_launchd.sh
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.leroy.reddit-tracker.rsshub</string>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/leroy/rsshub</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/node</string>
+        <string>dist/index.mjs</string>
+    </array>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>HOME</key>
+        <string>/Users/leroy</string>
+        <key>NODE_ENV</key>
+        <string>production</string>
+        <key>NODE_OPTIONS</key>
+        <string>--max-http-header-size=32768</string>
+        <key>LISTEN_INADDR_ANY</key>
+        <string>0</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+
+    <key>StandardOutPath</key>
+    <string>/Users/leroy/rsshub/rsshub.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/leroy/rsshub/rsshub.log</string>
+</dict>
+</plist>
