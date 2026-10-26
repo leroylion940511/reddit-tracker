@@ -4,7 +4,22 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-10-26（事件聚合完成並在 DB 複本調參；尚未部署）
+**Last updated:** 2026-10-26（綜合日報編採與發行完成，試刊排程啟用）
+
+## 本次變更（2026-10-26 深夜 — 綜合日報上線試刊）
+
+- ✅ 規格 [DAILY_EDITION.md](docs/v5/DAILY_EDITION.md)；新套件 `reddit_tracker/daily/`：`scoring.py`（程式評分、報導類型 report／single_source／social、選題時依登錄表重新投票板塊、頭版 6 則每版最多 2、各版配額寧缺勿濫）、`evidence.py`（每事件最多 6 家出處、至少保留一篇中文）、`writer.py`（Gemini 編輯會議合併跨語言同一事件＋每版一次撰稿、數字核對審稿關卡、模板稿後備）、`market.py`（證交所指數）、`render.py`（自含 HTML 報紙＋Telegram 精選）、`run.py`（LLM 呼叫不在 DB 交易內、冪等、發行失敗標 `delivery_failed` 不重送）。
+- ✅ migration `a6c9e2f31d84`：`daily_editions`、`daily_articles`。設定：`DAILY_EDITION_ENABLED`、06:00 準備、08:35 發行（與 v5 08:30 錯開）、`GEMINI_DAILY_LIMIT=60`（太平洋時間換日）。控制台新路由 `/daily/`、`/daily/{date}`；產出在 `site/daily/`（不進版控）。
+- ✅ 在 production DB 複本試編 10/27 一期：42 則（頭版 6），Gemini 37、模板 5，合併 8 組重複事件。全套 366 passed。
+- ⚠️ 已知限制：只用標題＋摘要撰稿（未讀全文）；匯率／天氣數據欄未接（登錄表停用）；Gemini 免費層偶爾 503 或格式錯，靠重試與模板稿兜底。
+- ➡️ 試刊：10/27 06:00 首期準備、08:35 發 Telegram（文字精選＋完整 HTML 檔）。每天看報紙內容與 `daily_articles.review_notes`；11/13 Reddit RSS 停止後，社群觀察版仍有 PTT／Threads。
+
+## 本次變更（2026-10-26 22:53 — 事件聚合上線）
+
+- ✅ 依使用者同意：commit `4eee6b9` → `newsroom-deploy`（備份 `reddit_tracker.backup-20261026-225347.db`）→ Alembic 升至 `f4b2d8e61c07` → 只重載 newsroom。bot、rsshub 未動。
+- ✅ 線上首輪聚合 22:53：2,436 篇 → 2,009 個事件（176 個 ≥2 家出處、58 個 ≥3 家），與複本試跑一致。4,525 篇中 2,637 篇已歸事件；其餘 1,888 篇是首日回補、超出 72 小時窗的舊稿，依規格不聚合。
+- ℹ️ 22:53 那輪 `sources=0` 是正常的（22:43 剛抓過，未到 60 分鐘間隔）；第一輪「新素材＋增量聚合」約在 23:53 的 tick。科學與健康版事件多為單篇 arXiv，屬預期。
+- ➡️ 下一步：程式評分（獨立出處數、層級、時效、升溫）與各版選題；驗收期間每天看 `report --days 1` 與 `clusters --top 30`。
 
 ## 本次變更（2026-10-26 — 事件聚合）
 

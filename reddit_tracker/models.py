@@ -417,6 +417,56 @@ class StoryCluster(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
+class DailyEdition(Base):
+    """多來源綜合日報的一期（規格見 docs/v5/DAILY_EDITION.md）。"""
+
+    __tablename__ = "daily_editions"
+
+    id: Mapped[int] = big_pk()
+    edition_date: Mapped[date] = mapped_column(Date, unique=True, index=True)
+    status: Mapped[str] = mapped_column(String(24), default="drafting", nullable=False)
+    window_start: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    prepared_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    writer: Mapped[str | None] = mapped_column(String(32))
+    stats: Mapped[dict | None] = mapped_column(JSON)
+    html_path: Mapped[str | None] = mapped_column(Text)
+    telegram_message_ids: Mapped[list | None] = mapped_column(JSON)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+    articles: Mapped[list[DailyArticle]] = relationship(
+        back_populates="edition", cascade="all, delete-orphan", order_by="DailyArticle.id"
+    )
+
+
+class DailyArticle(Base):
+    __tablename__ = "daily_articles"
+
+    id: Mapped[int] = big_pk()
+    edition_id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer(), "sqlite"), ForeignKey("daily_editions.id"), index=True
+    )
+    cluster_id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer(), "sqlite"), ForeignKey("story_clusters.id"), index=True
+    )
+    section: Mapped[str] = mapped_column(String(32))
+    position: Mapped[int] = mapped_column(Integer)
+    is_front: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    kind: Mapped[str] = mapped_column(String(16))
+    score: Mapped[float] = mapped_column(Float)
+    signals: Mapped[dict | None] = mapped_column(JSON)
+    headline: Mapped[str] = mapped_column(Text)
+    deck: Mapped[str | None] = mapped_column(Text)
+    body: Mapped[str] = mapped_column(Text)
+    why_it_matters: Mapped[str | None] = mapped_column(Text)
+    sources: Mapped[list] = mapped_column(JSON)
+    writer: Mapped[str] = mapped_column(String(16))
+    review_notes: Mapped[list | None] = mapped_column(JSON)
+
+    edition: Mapped[DailyEdition] = relationship(back_populates="articles")
+
+
 class SourceFetchRun(Base):
     __tablename__ = "source_fetch_runs"
 
@@ -551,6 +601,8 @@ __all__ = [
     "AgentArtifactSource",
     "AgentRun",
     "CandidatePost",
+    "DailyArticle",
+    "DailyEdition",
     "DailyPush",
     "EditionItem",
     "EditionItemSource",

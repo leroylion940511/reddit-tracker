@@ -15,6 +15,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from ..collection.clustering import cluster_recent_items
 from ..collection.collector import collect_due_sources
 from ..config import get_settings
+from ..daily.run import prepare_daily, publish_daily
 from ..db import session_scope
 from ..scheduler import _PollingBackgroundScheduler
 from ..scrapers.factory import build_scraper
@@ -68,6 +69,20 @@ def _run_source_collection() -> None:
     logger.info("story clustering done: %s", clustered)
 
 
+def _prepare_daily_today() -> None:
+    settings = get_settings()
+    today = datetime.now(ZoneInfo(settings.newsroom_delivery_timezone)).date()
+    edition_id = prepare_daily(today)
+    logger.info("daily edition prepared: date=%s id=%s", today, edition_id)
+
+
+def _publish_daily_today() -> None:
+    settings = get_settings()
+    today = datetime.now(ZoneInfo(settings.newsroom_delivery_timezone)).date()
+    edition_id = publish_daily(today)
+    logger.info("daily edition published: date=%s id=%s", today, edition_id)
+
+
 def _publish_today() -> None:
     settings = get_settings()
     today = datetime.now(ZoneInfo(settings.newsroom_delivery_timezone)).date()
@@ -108,6 +123,26 @@ def build_scheduler() -> _PollingBackgroundScheduler:
             max_instances=1,
             coalesce=True,
             next_run_time=datetime.now(ZoneInfo(settings.newsroom_delivery_timezone)),
+        )
+    if getattr(settings, "daily_edition_enabled", False):
+        tz = ZoneInfo(settings.newsroom_delivery_timezone)
+        scheduler.add_job(
+            _prepare_daily_today,
+            CronTrigger(hour=settings.daily_prepare_hour, minute=settings.daily_prepare_minute, timezone=tz),
+            id="daily_prepare_edition",
+            name="daily_prepare_edition",
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=60 * 60,
+        )
+        scheduler.add_job(
+            _publish_daily_today,
+            CronTrigger(hour=settings.daily_delivery_hour, minute=settings.daily_delivery_minute, timezone=tz),
+            id="daily_publish_edition",
+            name="daily_publish_edition",
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=60 * 60,
         )
     scheduler.add_job(
         _prepare_today,

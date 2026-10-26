@@ -88,6 +88,18 @@ class Settings(BaseSettings):
     news_collection_enabled: bool = False
     news_collection_tick_minutes: int = 15
 
+    # --- v2.0 綜合日報（規格見 docs/v5/DAILY_EDITION.md）---
+    daily_edition_enabled: bool = False
+    daily_writer: str = "gemini"                # gemini / template
+    daily_prepare_hour: int = 6
+    daily_prepare_minute: int = 0
+    daily_delivery_hour: int = 8
+    daily_delivery_minute: int = 35
+    daily_site_dir: str = "site/daily"
+    gemini_daily_model: str = "gemini-3.5-flash-lite"
+    # 每天約 12 次（編輯會議 1＋頭版 1＋10 版）；留給重試與重編。實際免費額度以 AI Studio 為準。
+    gemini_daily_limit: int = 60
+
     # --- Discovery 排程 ---
     # 預設值對 public JSON (~10 QPM) 已校準；OAuth 過了可手動下調 interval。
     poll_subreddit_minutes: int = 90

@@ -70,3 +70,6 @@ alembic/.cache/
 *.bak
 *.tmp
 .local/
+
+# v2.0 綜合日報產出的網頁報紙
+site/

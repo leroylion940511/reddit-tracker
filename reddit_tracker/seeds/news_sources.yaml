@@ -95,7 +95,7 @@ sources:
   - {id: cna-stock, name: 中央社 證券, section: finance, tier: T2, method: rsshub, url: /cna/asc, lang: zh-Hant}
   - {id: ltn-business, name: 自由時報 財經, section: finance, tier: T2, method: rss, url: "https://news.ltn.com.tw/rss/business.xml", lang: zh-Hant}
   - {id: udn-money, name: 經濟日報, section: finance, tier: T2, method: rss, url: "https://money.udn.com/rssfeed/news/1001/5591?ch=money", lang: zh-Hant}
-  - {id: yahoo-tw-stock, name: Yahoo 股市新聞, section: finance, tier: T2, method: rss, url: "https://tw.stock.yahoo.com/rss?category=news", lang: zh-Hant}
+  - {id: yahoo-tw-stock, name: Yahoo 股市新聞, section: finance, tier: T2, method: rss, url: "https://tw.stock.yahoo.com/rss?category=news", lang: zh-Hant, general_feed: true, notes: "Yahoo 股市新聞也收娛樂、社會等一般新聞（2026-10-26 金鐘獎被歸入財經）"}
   - {id: cbc-news, name: 中央銀行 新聞稿, section: finance, tier: T1, method: rss, url: "https://www.cbc.gov.tw/tw/rss-302-1.xml", lang: zh-Hant}
   - {id: cnbc-top, name: CNBC Top News, section: finance, tier: T2, method: rss, url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114", lang: en}
   - {id: cnbc-hub, name: CNBC（RSSHub）, section: finance, tier: T2, method: rsshub, url: /cnbc/rss, lang: en}

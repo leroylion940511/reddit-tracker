@@ -634,6 +634,22 @@ def dashboard() -> FileResponse:
     return FileResponse(STATIC_ROOT / "dashboard.html")
 
 
+@app.get("/daily/", include_in_schema=False)
+@app.get("/daily/{edition_date}", include_in_schema=False)
+def daily_edition_page(edition_date: date | None = None) -> FileResponse:
+    """v2.0 綜合日報的網頁版；不帶日期時開最新一期。"""
+    site = Path(get_settings().daily_site_dir)
+    if edition_date is None:
+        pages = sorted(site.glob("*.html"))
+        if not pages:
+            raise HTTPException(status_code=404, detail="尚未產生任何日報")
+        return FileResponse(pages[-1])
+    page = site / f"{edition_date.isoformat()}.html"
+    if not page.is_file():
+        raise HTTPException(status_code=404, detail="這一天沒有日報")
+    return FileResponse(page)
+
+
 @app.get("/api/overview")
 def overview() -> dict[str, Any]:
     return _overview()
