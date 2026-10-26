@@ -2,8 +2,7 @@
 
 The Gemini API's published free-tier request limits are project-specific.  This
 module therefore applies conservative, cross-process local limits before a
-request is made, retries temporary 429 responses, and can fall back to the
-already-supported browser provider when the API quota is exhausted.
+request is made and retries temporary 429 responses.
 """
 
 from __future__ import annotations
@@ -22,10 +21,6 @@ from zoneinfo import ZoneInfo
 import requests
 
 from ..config import get_settings
-from ..models import CandidatePost
-from .base import HaikuVerdict, LLMScorer
-from .haiku import SYSTEM_PROMPT, build_user_prompt, parse_haiku_response, verdict_from_payload
-from .minimax_chat import ChatClient, ChatResult
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +45,7 @@ class GeminiResult:
 
 
 class GeminiQuotaGuard:
-    """Small file-backed quota guard shared by scheduler and Telegram processes."""
+    """Small file-backed quota guard shared by every process that calls Gemini."""
 
     def __init__(self, *, state_path: str, daily_limit: int, requests_per_minute: int) -> None:
         if daily_limit < 1 or requests_per_minute < 1:
@@ -147,19 +142,10 @@ class GeminiClient:
         if not self.api_key:
             raise RuntimeError("GEMINI_API_KEY 未設定")
         self.purpose = purpose
-        self.model = model or (
-            settings.gemini_scoring_model if purpose == "scoring" else settings.gemini_qa_model
-        )
+        self.model = model or settings.gemini_daily_model
         self.timeout = timeout if timeout is not None else settings.gemini_timeout_seconds
         self.max_retries = max_retries if max_retries is not None else settings.gemini_max_429_retries
-        if daily_limit is not None:
-            limit = daily_limit
-        elif purpose == "scoring":
-            limit = settings.gemini_scoring_daily_limit
-        elif purpose == "newsroom":
-            limit = settings.gemini_newsroom_daily_limit
-        else:
-            limit = settings.gemini_qa_daily_limit
+        limit = daily_limit if daily_limit is not None else settings.gemini_daily_limit
         self.guard = GeminiQuotaGuard(
             state_path=state_path or settings.gemini_quota_state_path,
             daily_limit=limit,
@@ -260,79 +246,10 @@ class GeminiClient:
         self._session.close()
 
 
-class GeminiScorer(LLMScorer):
-    """M3 scorer using Gemini JSON mode, with optional browser fallback on quota."""
-
-    def __init__(self, *, fallback: LLMScorer | None = None, **kwargs: Any) -> None:
-        self._client = GeminiClient(purpose="scoring", **kwargs)
-        self.fallback = fallback
-
-    def score(self, post: CandidatePost) -> HaikuVerdict:
-        try:
-            result = self._client.complete(
-                system=SYSTEM_PROMPT,
-                messages=[{"role": "user", "content": build_user_prompt(post)}],
-                max_output_tokens=400,
-                temperature=0.1,
-                json_mode=True,
-            )
-        except GeminiQuotaExhausted:
-            if self.fallback is None:
-                raise
-            logger.warning("Gemini scoring quota exhausted; using configured fallback")
-            return self.fallback.score(post)
-        return verdict_from_payload(
-            parse_haiku_response(result.content),
-            input_tokens=result.input_tokens,
-            output_tokens=result.output_tokens,
-            cost_usd=0.0,
-        )
-
-    def close(self) -> None:
-        self._client.close()
-
-
-class GeminiChat(ChatClient):
-    """M6 chat using Gemini; quota exhaustion may delegate to a browser client."""
-
-    provider = "gemini_api"
-
-    def __init__(self, *, fallback: ChatClient | None = None, **kwargs: Any) -> None:
-        self._client = GeminiClient(purpose="qa", **kwargs)
-        self.model = self._client.model
-        self.fallback = fallback
-
-    def complete(self, *, system: str, messages: list[dict]) -> ChatResult:
-        try:
-            result = self._client.complete(
-                system=system,
-                messages=messages,
-                max_output_tokens=1024,
-                temperature=0.3,
-            )
-        except GeminiQuotaExhausted:
-            if self.fallback is None:
-                raise
-            logger.warning("Gemini QA quota exhausted; using configured fallback")
-            return self.fallback.complete(system=system, messages=messages)
-        return ChatResult(
-            content=result.content,
-            input_tokens=result.input_tokens,
-            output_tokens=result.output_tokens,
-            cached_tokens=result.cached_tokens,
-            cost_usd=0.0,
-        )
-
-    def close(self) -> None:
-        self._client.close()
-
-
 __all__ = [
     "GeminiAPIError",
-    "GeminiChat",
     "GeminiClient",
     "GeminiQuotaExhausted",
     "GeminiQuotaGuard",
     "GeminiResult",
-    "GeminiScorer",
 ]

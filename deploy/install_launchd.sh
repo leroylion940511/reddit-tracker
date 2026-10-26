@@ -2,11 +2,10 @@
 # Install / reload / uninstall reddit_tracker launchd agents on macOS.
 #
 # 用法:
-#   deploy/install_launchd.sh install    # 第一次安裝 + 啟動
-#   deploy/install_launchd.sh reload     # 改完 plist 後重新載入
-#   deploy/install_launchd.sh uninstall  # 停止 + 移除
-#   deploy/install_launchd.sh newsroom-reload  # 只重載 v5 新聞室，不啟用舊 v4
-#   deploy/install_launchd.sh newsroom-deploy  # 備份 SQLite、migration 後只重載 v5 新聞室
+#   deploy/install_launchd.sh newsroom-reload  # 重載收集＋綜合日報 scheduler
+#   deploy/install_launchd.sh newsroom-deploy  # 備份 SQLite、migration 後重載 scheduler
+#   deploy/install_launchd.sh newsroom-uninstall
+#   deploy/install_launchd.sh legacy-uninstall  # 停止並移除已退役的 v4 scheduler／Telegram bot
 #   deploy/install_launchd.sh rsshub-install    # 安裝/重載本機 RSSHub（只綁 127.0.0.1）
 #   deploy/install_launchd.sh rsshub-uninstall  # 停止 + 移除本機 RSSHub
 #   deploy/install_launchd.sh status     # 查看是否在跑
@@ -18,6 +17,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 USER_AGENTS="$HOME/Library/LaunchAgents"
+# 已退役，只保留給 legacy-uninstall 清掉舊 LaunchAgent。
 LEGACY_LABELS=(
     com.leroy.reddit-tracker.scheduler
     com.leroy.reddit-tracker.bot
@@ -31,8 +31,7 @@ UID_NUM="$(id -u)"
 cmd="${1:-status}"
 
 _kill_matching() {
-    # 收掉同一種舊的 nohup / 前景 Python process，避免重載後重複排程或 bot
-    # 搶 long polling。不可同時 kill uv/caffeinate wrapper：它們與 Python
+    # 收掉同一種舊的 nohup / 前景 Python process，避免重載後重複排程。不可同時 kill uv/caffeinate wrapper：它們與 Python
     # 子程序各送一次 SIGTERM 會讓 scheduler 的 signal handler 重入。
     local pattern="$1"
     local candidates pids pid executable
@@ -104,26 +103,14 @@ _uninstall_one() {
 }
 
 case "$cmd" in
-    install)
-        _kill_matching "python.*-m reddit_tracker\.(scheduler|bot)"
-        for l in "${LEGACY_LABELS[@]}"; do _install_one "$l"; done
-        echo
-        echo "完成. 用以下指令查狀態 / log:"
-        echo "  deploy/install_launchd.sh status"
-        echo "  tail -f scheduler.log bot.log"
-        ;;
-    reload)
-        # launchd bootout occasionally leaves a caffeinate/uv child orphaned.
-        # Remove any old process before reloading so there is never a duplicate
-        # scheduler (which would otherwise double RSS and LLM traffic).
-        _kill_matching "python.*-m reddit_tracker\.(scheduler|bot)"
-        for l in "${LEGACY_LABELS[@]}"; do _install_one "$l"; done
-        ;;
-    uninstall)
+    legacy-uninstall)
+        # v4 scheduler and the Telegram bot were removed from the codebase.
         for l in "${LEGACY_LABELS[@]}"; do _uninstall_one "$l"; done
+        _kill_matching "python.*-m reddit_tracker\.(scheduler|bot)"
         ;;
     newsroom-install|newsroom-reload)
-        # Isolated v5 deployment: never revives the retired v4 scheduler/bot.
+        # launchd bootout occasionally leaves a caffeinate/uv child orphaned;
+        # kill it so there is never a duplicate scheduler.
         _quiesce_loaded "${NEWSROOM_LABELS[@]}"
         _kill_matching "python.*-m reddit_tracker\.newsroom\.scheduler"
         for l in "${NEWSROOM_LABELS[@]}"; do _install_one "$l"; done
@@ -156,16 +143,16 @@ case "$cmd" in
         launchctl list | grep -E "reddit-tracker" || echo "(沒有 service 在跑)"
         echo
         echo "=== process tree ==="
-        pgrep -lf "python.*reddit_tracker\.(scheduler|bot|newsroom\.scheduler)" || echo "(沒有 python process)"
+        pgrep -lf "python.*reddit_tracker\.newsroom\.scheduler" || echo "(沒有 python process)"
         lsof -nP -iTCP:1200 -sTCP:LISTEN 2>/dev/null | tail -n +2 || true
         echo
         echo "=== log mtime (越接近 now 越好) ==="
-        for f in newsroom.log scheduler.log bot.log; do
+        for f in newsroom.log; do
             [[ -f "$f" ]] && stat -f "%N: mtime=%Sm size=%z" "$f"
         done
         ;;
     *)
-        echo "用法: $0 {install|reload|uninstall|newsroom-install|newsroom-reload|newsroom-deploy|newsroom-uninstall|rsshub-install|rsshub-uninstall|status}"
+        echo "用法: $0 {newsroom-install|newsroom-reload|newsroom-deploy|newsroom-uninstall|legacy-uninstall|rsshub-install|rsshub-uninstall|status}"
         exit 1
         ;;
 esac

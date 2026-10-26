@@ -1,33 +1,23 @@
-# v5 AI Newsroom
+# v5 AI Newsroom → v2.0 綜合日報
 
-v5 將 v4 的「Reddit 候選 → 單篇通知」轉為「Reddit 候選 → 多 agent 編採 → 個人化每日報紙」。
+**2026-10-27 起只剩 v2.0 綜合日報在運作。** v4 與 v5 Reddit 早報的程式已從程式庫移除（最後保留於 commit `ff15181`），資料表與 Alembic migration 不動。
 
-這些文件是 v5 的實作契約；開始任何 v5 程式變更前，先依序閱讀：
+開始程式變更前，先讀現行規格：
 
-1. [產品定義](PRODUCT_BRIEF.md)
-2. [Agent 契約](AGENT_CONTRACTS.md)
-3. [架構與資料遷移](ARCHITECTURE.md)
-4. [里程碑](ROADMAP.md)
+1. [來源登錄表規格](SOURCE_REGISTRY.md)
+2. [多來源收集層規格](COLLECTION.md)
+3. [事件聚合規格](CLUSTERING.md)
+4. [綜合日報編採與發行規格](DAILY_EDITION.md)
 5. [協作準則](WORKING_AGREEMENT.md)
-6. [離線 Demo](DEMO.md)
-7. [來源登錄表規格](SOURCE_REGISTRY.md)（v2.0 多來源綜合日報）
-8. [多來源收集層規格](COLLECTION.md)
-9. [事件聚合規格](CLUSTERING.md)
-10. [綜合日報編採與發行規格](DAILY_EDITION.md)
 
-## 已確認的產品決策
+產品方向見 [企劃書](../AI_NEWS_COMPANY_PROPOSAL.md)。
 
-- 試刊讀者只有專案擁有者；資料模型仍須支援未來多使用者。
-- 來源為中英文 Reddit；所有成品為繁體中文，且保留原帖標題與連結。
-- 每天 08:30 Asia/Taipei 發 Telegram 報紙。
-- 主體採前一個日曆日（00:00–23:59 Asia/Taipei）候選，可插入當日早晨的重要快訊。
-- 每期 8–10 則：6–8 則單帖短報、1–2 篇多帖專題。
-- 網頁是偏好設定、歷史報紙與編輯室看板；Telegram 是主要閱讀介面。
+## 歷史文件（v5 Reddit 早報，程式已移除）
+
+[產品定義](PRODUCT_BRIEF.md)、[Agent 契約](AGENT_CONTRACTS.md)、[架構與資料遷移](ARCHITECTURE.md)、[里程碑](ROADMAP.md)、[離線 Demo](DEMO.md)。v5 曾於 2026-09-19 至 2026-09-25 通過七日試刊 gate，之後每天 08:30 發行，2026-10-27 停刊。
 
 ## 現階段邊界
 
-**v2.0 綜合日報（2026-10-26 起）：** 多來源收集、事件聚合與綜合日報已部署並與下方 v5 Reddit 日報並行；規格見第 7–10 項文件，產品方向見 [企劃書](../AI_NEWS_COMPANY_PROPOSAL.md)。下方「已確認的產品決策」只適用於 v5 Reddit 日報。
-
-v5 已部署至 production SQLite，並在 2026-09-19 至 2026-09-25 完成七日試刊 gate：每天 08:30 實際發行 8 則、每則均有來源。日常運作維持 candidate discovery（90 分鐘）、05:30 編採與 08:30 Telegram 發行；控制台會保留試刊通過紀錄，並顯示近七日營運狀態。
-
-日後若有 schema 變更，使用 `deploy/install_launchd.sh newsroom-deploy` 會建立 online backup、執行 Alembic upgrade 並只重載 newsroom；它不會重新啟用舊 v4 scheduler。Telegram callback receiver 已於 2026-09-25 依使用者明確授權啟用，Telegram 與網頁回饋都可正常使用。
+- 線上只有兩個 LaunchAgent：`com.leroy.reddit-tracker.newsroom`（`reddit_tracker.newsroom.scheduler`：每 15 分鐘收集＋聚合、06:00 準備、08:35 發行）與 `com.leroy.reddit-tracker.rsshub`。
+- Telegram 只用來發行，沒有常駐 bot、沒有指令或按鈕回饋。
+- schema 變更使用 `deploy/install_launchd.sh newsroom-deploy`（online backup → Alembic upgrade → 重載 scheduler）。

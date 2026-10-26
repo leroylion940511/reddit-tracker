@@ -235,11 +235,6 @@ def test_report_counts_unique_items_per_section_day_and_source_health(session):
 def _scheduler_settings(enabled):
     return SimpleNamespace(
         newsroom_delivery_timezone="Asia/Taipei",
-        newsroom_preparation_hour=5,
-        newsroom_preparation_minute=30,
-        newsroom_delivery_hour=8,
-        newsroom_delivery_minute=30,
-        newsroom_discovery_interval_minutes=90,
         news_collection_enabled=enabled,
         news_collection_tick_minutes=15,
     )

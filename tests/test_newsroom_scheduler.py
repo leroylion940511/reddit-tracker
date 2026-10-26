@@ -1,8 +1,7 @@
-"""v5 scheduler owns candidate intake without reviving v4 delivery jobs."""
+"""Scheduler registers only collection and v2.0 daily jobs."""
 
 from __future__ import annotations
 
-from contextlib import contextmanager
 from datetime import datetime, timedelta
 from types import SimpleNamespace
 from zoneinfo import ZoneInfo
@@ -10,69 +9,53 @@ from zoneinfo import ZoneInfo
 from reddit_tracker.newsroom import scheduler
 
 
-def test_build_scheduler_registers_discovery_prepare_and_only_newsroom_delivery(monkeypatch):
-    settings = SimpleNamespace(
+def _settings(**overrides):
+    values = dict(
         newsroom_delivery_timezone="Asia/Taipei",
-        newsroom_preparation_hour=5,
-        newsroom_preparation_minute=30,
-        newsroom_delivery_hour=8,
-        newsroom_delivery_minute=30,
-        newsroom_discovery_interval_minutes=90,
+        news_collection_enabled=True,
+        news_collection_tick_minutes=15,
+        daily_edition_enabled=True,
+        daily_prepare_hour=6,
+        daily_prepare_minute=0,
+        daily_delivery_hour=8,
+        daily_delivery_minute=35,
     )
-    monkeypatch.setattr(scheduler, "get_settings", lambda: settings)
+    values.update(overrides)
+    return SimpleNamespace(**values)
+
+
+def test_build_scheduler_registers_collection_and_daily_jobs(monkeypatch):
+    monkeypatch.setattr(scheduler, "get_settings", lambda: _settings())
 
     built = scheduler.build_scheduler()
 
     jobs = {job.id: job for job in built.get_jobs()}
-    assert set(jobs) == {"newsroom_candidate_discovery", "newsroom_prepare_edition", "newsroom_daily_edition"}
-    assert jobs["newsroom_candidate_discovery"].trigger.interval.total_seconds() == 90 * 60
+    assert set(jobs) == {"newsroom_source_collection", "daily_prepare_edition", "daily_publish_edition"}
+    assert jobs["newsroom_source_collection"].trigger.interval.total_seconds() == 15 * 60
     built.start(paused=True)
-    assert jobs["newsroom_candidate_discovery"].next_run_time is not None
-    assert jobs["newsroom_candidate_discovery"].next_run_time <= datetime.now(ZoneInfo("Asia/Taipei")) + timedelta(seconds=1)
+    assert jobs["newsroom_source_collection"].next_run_time <= datetime.now(ZoneInfo("Asia/Taipei")) + timedelta(seconds=1)
     built.shutdown()
-    assert "hour='5'" in str(jobs["newsroom_prepare_edition"].trigger)
-    assert "minute='30'" in str(jobs["newsroom_prepare_edition"].trigger)
+    assert "hour='6'" in str(jobs["daily_prepare_edition"].trigger)
+    assert "minute='35'" in str(jobs["daily_publish_edition"].trigger)
 
 
-def test_candidate_discovery_uses_existing_source_intake_and_closes_scraper(monkeypatch):
-    events: list[object] = []
-    scraper = SimpleNamespace(close=lambda: events.append("closed"))
-    settings = SimpleNamespace(discovery_per_sub_limit=30)
-
-    @contextmanager
-    def fake_scope():
-        events.append("scope_open")
-        yield object()
-        events.append("scope_closed")
-
-    def discover(session, scraper_arg, *, per_sub_limit, commit_each_source):
-        events.append((session, scraper_arg, per_sub_limit, commit_each_source))
-        return [SimpleNamespace(inserted=2, skipped_dupe=5)]
-
-    monkeypatch.setattr(scheduler, "get_settings", lambda: settings)
-    monkeypatch.setattr(scheduler, "build_scraper", lambda: scraper)
-    monkeypatch.setattr(scheduler, "session_scope", fake_scope)
-    monkeypatch.setattr(scheduler, "discover_from_subreddits", discover)
-
-    scheduler._run_candidate_discovery()
-
-    assert events[0] == "scope_open"
-    assert events[1][1:] == (scraper, 30, True)
-    assert events[-2:] == ["scope_closed", "closed"]
-
-
-def test_prepare_today_builds_a_draft_without_publishing(monkeypatch):
-    settings = SimpleNamespace(newsroom_delivery_timezone="Asia/Taipei")
-    calls: list[object] = []
-    prepared = SimpleNamespace(edition_id=4, view=SimpleNamespace(items=[object()] * 8), writer_used="gemini")
-
-    monkeypatch.setattr(scheduler, "get_settings", lambda: settings)
+def test_build_scheduler_respects_disabled_flags(monkeypatch):
     monkeypatch.setattr(
-        scheduler,
-        "prepare_edition",
-        lambda *, edition_date: calls.append(edition_date) or prepared,
+        scheduler, "get_settings",
+        lambda: _settings(news_collection_enabled=False, daily_edition_enabled=False),
     )
 
-    scheduler._prepare_today()
+    assert scheduler.build_scheduler().get_jobs() == []
 
-    assert calls == [datetime.now(ZoneInfo("Asia/Taipei")).date()]
+
+def test_daily_jobs_use_delivery_timezone_date(monkeypatch):
+    calls: list[tuple[str, object]] = []
+    monkeypatch.setattr(scheduler, "get_settings", lambda: _settings())
+    monkeypatch.setattr(scheduler, "prepare_daily", lambda day: calls.append(("prepare", day)) or 1)
+    monkeypatch.setattr(scheduler, "publish_daily", lambda day: calls.append(("publish", day)) or 1)
+
+    scheduler._prepare_daily_today()
+    scheduler._publish_daily_today()
+
+    today = datetime.now(ZoneInfo("Asia/Taipei")).date()
+    assert calls == [("prepare", today), ("publish", today)]

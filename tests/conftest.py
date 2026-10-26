@@ -1,4 +1,4 @@
-"""共用 fixtures — in-memory SQLite + seeded session。"""
+"""共用 fixtures — in-memory SQLite session。"""
 
 from __future__ import annotations
 
@@ -7,7 +7,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from reddit_tracker.models import Base
-from reddit_tracker.seeds.loader import load_all
 
 
 @pytest.fixture()
@@ -34,11 +33,3 @@ def session(engine) -> Session:
         s.rollback()
     finally:
         s.close()
-
-
-@pytest.fixture()
-def seeded_session(session) -> Session:
-    """已 load 完 subreddit + keyword seeds 的 session。"""
-    load_all(session)
-    session.commit()
-    return session

@@ -241,8 +241,7 @@ def test_daily_jobs_registered_only_when_enabled(monkeypatch, enabled):
     from reddit_tracker.newsroom import scheduler
 
     settings = SimpleNamespace(
-        newsroom_delivery_timezone="Asia/Taipei", newsroom_preparation_hour=5, newsroom_preparation_minute=30,
-        newsroom_delivery_hour=8, newsroom_delivery_minute=30, newsroom_discovery_interval_minutes=90,
+        newsroom_delivery_timezone="Asia/Taipei",
         news_collection_enabled=False, daily_edition_enabled=enabled,
         daily_prepare_hour=6, daily_prepare_minute=0, daily_delivery_hour=8, daily_delivery_minute=35,
     )

@@ -1,10 +1,24 @@
-# Reddit Tracker — 專案進度（v4 / Reddit pivot 起始）
+# Reddit Tracker — 專案進度（現為 v2.0 AI 綜合日報）
 
 > 跨 session 的單一狀態真相。每次有實質進展就更新。
-> 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
-> 進度以里程碑（M1–M8）追蹤，不用週數。
+> 現行企劃見 `docs/AI_NEWS_COMPANY_PROPOSAL.md`、規格入口見 `docs/v5/README.md`。
+> 2026-10-27 以前的段落是 v4／v5 歷史紀錄，裡面提到的 bot、scrapers、services、v5 newsroom 模組都已移除。
 
-**Last updated:** 2026-10-27（新增遊戲新聞來源）
+**Last updated:** 2026-10-27（精簡為只剩綜合日報）
+
+## 目前狀態（2026-10-27 起）
+
+- **線上只跑 v2.0 綜合日報。** LaunchAgent 只剩 `newsroom`（`reddit_tracker.newsroom.scheduler`：收集＋聚合每 15 分鐘、06:00 準備、08:35 發 Telegram）與 `rsshub`。
+- **程式結構：** `collection/`（收集、聚合、報表）、`daily/`（評分、撰稿、渲染、發行）、`llm/gemini.py`、`newsroom/{scheduler,deploy}.py`、`web.py`（只看日報）、`seeds/news_sources.*`、`scripts/probe_news_sources.py`。
+- **驗收：** 收集七天驗收 10/27–11/02，11/03 用 `uv run python -m reddit_tracker.collection report --days 7 --out docs/collection_acceptance_2026-11-03.md` 出報告；11/30 交付。
+- ➡️ **下一步：** 看 10/27 首期（06:00 準備、08:35 發行）的內容與 `daily_articles.review_notes`，有問題就修日報的評分或撰稿。
+
+## 本次變更（2026-10-27 — 精簡為綜合日報）
+
+- ✅ 依使用者決定移除 v4 全部程式（Reddit scrapers、評分、Top-5 推送、收藏追蹤、偵測、問答、Telegram bot 指令與 `fb:` 按鈕）以及 v5 Reddit 早報（候選探索、編採 agent、05:30／08:30 排程、`nr:` 回饋按鈕）。v2.0 日報本來就不依賴這些：收集層只抓 rss／rsshub，發行直接用 `telegram.Bot` 送到 `TELEGRAM_CHAT_ID`。
+- ✅ `newsroom/scheduler.py` 只註冊 `newsroom_source_collection`、`daily_prepare_edition`、`daily_publish_edition`；`_PollingBackgroundScheduler` 從已刪的 v4 `scheduler.py` 移過來。`llm/gemini.py` 只留 `GeminiClient`。`web.py` 只剩 `/daily/` 檢視器。`config.py` 刪掉 38 個沒在用的設定（`.env` 裡的舊鍵會被忽略）。拿掉 `anthropic`、`praw`、`websocket-client` 依賴。刪掉 m1–m7／eval 腳本與對應測試；全套 55 passed。
+- ✅ 線上：`legacy-uninstall` 停掉並移除 bot 與 v4 scheduler 的 LaunchAgent；`newsroom-reload` 後 log 確認只有上述三個 job。
+- ℹ️ DB models、資料表與 Alembic migration 都不動（不寫 drop migration）。舊程式碼查 commit `ff15181` 或更早。
 
 ## 本次變更（2026-10-27 — 遊戲新聞來源）
 
