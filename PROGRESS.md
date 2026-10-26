@@ -4,7 +4,33 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-09-25（Telegram callback receiver 已啟用，v5 日常運作中）
+**Last updated:** 2026-10-26（企劃改為多來源綜合日報 v2.0）
+
+## 本次變更（2026-10-26 — 企劃轉向多來源綜合日報）
+
+- ✅ [AI 新聞公司企劃書](docs/AI_NEWS_COMPANY_PROPOSAL.md) 改版為 v2.0：從 Reddit-only 社群報改為多來源綜合日報（頭版＋10 版＋數據欄），來源分 T1 官方／T2 媒體／T3 專業資料／T4 社群四層；Reddit 降為社群觀察版來源之一。
+- ✅ 參考 intel-radar（程式計分、雙訊號分級、預算上限、冪等補跑、靜態日報）與 RSSHub（本機自架、只綁 127.0.0.1、作為無原生 RSS 網站的第二順位管道）。已用 GitHub 原始碼確認 RSSHub 有 cna／pts／ltn／udn／twreporter／cw／storm 等台灣媒體路由，但**沒有 Reddit 路由**；需 Node 22/24 + pnpm。
+- ⚠️ v1.1 排定的 10/15–10/21 第三方 Reddit 供應商驗收**未執行**（未建帳號）；候選仍只靠 Reddit RSS（15 個 subreddit，每日約 1,300–1,600 篇），11/13 RSS 停止後 Reddit 斷料。v5 日報仍每天 08:30 發 8 則。
+- ⚠️ 僅改文件；未改程式、schema、排程或 production。新企劃待教授確認後才更新 `docs/v5/` 實作契約。
+- ➡️ 下一步：建立來源登錄表（YAML，首批 120+ 來源）並本機架設 RSSHub，逐一實測可用性；10/29 起收集層（`source_items`、去重、事件聚合、來源健康）與七天收集驗收。時程：11/12 前不依賴 Reddit 完成端到端出刊、11/13–11/19 七天試刊、11/30 交付。
+
+## 本次變更（2026-10-14 — 資料取得與交付驗收規劃）
+
+- ✅ [AI 新聞公司企劃書](docs/AI_NEWS_COMPANY_PROPOSAL.md) 更新至 v1.1：Reddit 優先，RSS 僅為過渡管道；加入 ScrapeCreators／Apify 與 X／Threads 備選、資料量與費用假設、七天資料驗收、停用 RSS 的端到端最終測試。
+- ✅ 排定計畫決策點：10/15–10/21 預定資料驗收、10/22 選型、11/06–11/10 無 RSS 連續測試、11/12 最終驗收、11/30 前交付；帳號或測試未就緒須重排並揭露影響，不得算成通過。
+- ⚠️ 使用者確認尚未建立供應商帳號，先完成企劃與測試安排。沒有開始供應商實測、購買額度、建立自動排程或變更 production；價格文件與本機憑證存在性檢查不等於資料取得驗收。
+- ➡️ 當前優先下一步：準備測試帳號／金鑰與額度，先做小樣本，再完成七天資料驗收；通過後擴建三版示範與七版產品。X／Threads 仍為備選，未納入正式素材範圍。
+
+## 本次變更（2026-10-14 — AI 新聞公司企劃討論稿）
+
+- ✅ 依教授對內容過於 raw data、需要完整新聞板塊的回饋，新增 [AI 新聞公司企劃書](docs/AI_NEWS_COMPANY_PROPOSAL.md)，以非技術說明呈現七大板塊、編採流程、AI／人工分工、讀者體驗與品質驗收。
+- ✅ 文件清楚區分現有 v5 基礎與提案中的能力，並以虛構事件說明線索如何轉為完整報導；本次僅更新文件，未變更程式、production 資料或服務。
+- ➡️ 下一步：與教授討論企劃，優先確認報導深度與產品方向，再製作台灣、國際、科技三版的示範報紙。新企劃尚未取代既有 v5 實作契約。
+
+## 本次變更（2026-09-30 — 重開機後恢復）
+
+- ✅ 已確認 launchd 自動恢復 v5 `com.leroy.reddit-tracker.newsroom` 與 Telegram callback receiver `com.leroy.reddit-tracker.bot`；兩者皆為 `running`，舊 v4 scheduler 維持 disabled。
+- ✅ 已啟動本機 FastAPI 控制台，僅綁定 `127.0.0.1:8765`；`GET /` 回傳 HTTP 200。
 
 ## 本次變更（2026-09-25 — Telegram 回饋 receiver 上線）
 
