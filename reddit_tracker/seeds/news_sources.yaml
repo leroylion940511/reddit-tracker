@@ -157,6 +157,8 @@ sources:
   - {id: openbook, name: Openbook 閱讀誌, section: culture, tier: T2, method: rss, url: "https://www.openbook.org.tw/rss.xml", lang: zh-Hant}
   - {id: variety, name: Variety, section: culture, tier: T2, method: rss, url: "https://variety.com/feed/", lang: en}
   - {id: guardian-culture, name: The Guardian Culture, section: culture, tier: T2, method: rss, url: "https://www.theguardian.com/culture/rss", lang: en}
+  - {id: gnn-gamer, name: 巴哈姆特 GNN, section: culture, tier: T2, method: rss, url: "https://gnn.gamer.com.tw/rss.xml", lang: zh-Hant, notes: "遊戲新聞"}
+  - {id: 4gamers, name: 4Gamers, section: culture, tier: T2, method: rss, url: "https://www.4gamers.com.tw/rss/latest-news", lang: zh-Hant, notes: "遊戲新聞；也收動漫、資安等泛 ACG 新聞"}
   - {id: thenewslens-culture, name: 關鍵評論網 藝文, section: culture, tier: T2, method: rsshub, url: /thenewslens/category/culture, lang: zh-Hant, enabled: false, notes: "上游分類頁 404（2026-10-26）"}
 
   # ── 體育 ─────────────────────────────────────────────
