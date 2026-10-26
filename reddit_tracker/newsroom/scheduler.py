@@ -12,10 +12,12 @@ from zoneinfo import ZoneInfo
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 
+from ..collection.collector import collect_due_sources
 from ..config import get_settings
 from ..db import session_scope
 from ..scheduler import _PollingBackgroundScheduler
 from ..scrapers.factory import build_scraper
+from ..seeds.news_sources import load_registry
 from ..services.discovery import discover_from_subreddits
 from .run import prepare_edition, publish_edition
 
@@ -43,6 +45,21 @@ def _run_candidate_discovery() -> None:
         len(stats),
         sum(stat.inserted for stat in stats),
         sum(stat.skipped_dupe for stat in stats),
+    )
+
+
+def _run_source_collection() -> None:
+    """Collect due multi-source feeds into source_items (v2.0 daily)."""
+    settings = get_settings()
+    registry = load_registry(settings.news_sources_path)
+    with session_scope() as session:
+        stats = collect_due_sources(session, registry)
+    logger.info(
+        "source collection done: sources=%d ok=%d new=%d duplicate=%d",
+        len(stats),
+        sum(stat.ok for stat in stats),
+        sum(stat.new for stat in stats),
+        sum(stat.duplicate for stat in stats),
     )
 
 
@@ -77,6 +94,16 @@ def build_scheduler() -> _PollingBackgroundScheduler:
         # used to defer every other job until the round was complete.
         next_run_time=datetime.now(ZoneInfo(settings.newsroom_delivery_timezone)),
     )
+    if getattr(settings, "news_collection_enabled", False):
+        scheduler.add_job(
+            _run_source_collection,
+            IntervalTrigger(minutes=settings.news_collection_tick_minutes),
+            id="newsroom_source_collection",
+            name="newsroom_source_collection",
+            max_instances=1,
+            coalesce=True,
+            next_run_time=datetime.now(ZoneInfo(settings.newsroom_delivery_timezone)),
+        )
     scheduler.add_job(
         _prepare_today,
         CronTrigger(

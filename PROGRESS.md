@@ -4,7 +4,18 @@
 > 完整企劃見 `reddit_tracker_proposal.md`、任務級里程碑見 `SCHEDULE.md`。
 > 進度以里程碑（M1–M8）追蹤，不用週數。
 
-**Last updated:** 2026-10-26（來源登錄表初版 + 本機 RSSHub + 逐一探測）
+**Last updated:** 2026-10-26（收集層完成並在 DB 複本試跑；尚未部署 production）
+
+## 本次變更（2026-10-26 — 多來源收集層）
+
+- ✅ 重開機後確認 newsroom／bot／rsshub 自動恢復（rsshub 只綁 127.0.0.1:1200），v4 scheduler 維持 disabled。
+- ✅ 收集層 `reddit_tracker/collection/`：`normalize.py`（網址正規化、標題指紋、發布時間判斷）、`collector.py`（到期判斷、8 thread 抓取、ETag／Last-Modified、單一 writer 寫入、去重、失敗也記健康紀錄）、`report.py`（七天驗收報表）、CLI `python -m reddit_tracker.collection run|report`。規格：[COLLECTION.md](docs/v5/COLLECTION.md)。
+- ✅ 新 migration `e3a7c1f09b52`：`source_items`、`source_fetch_runs`。登錄表加 `time_offset_hours`（三立 -8），逐篇抓全文的 RSSHub 路由調為 120–240 分鐘一次（天下被 429）。
+- ✅ newsroom scheduler 新增 `newsroom_source_collection`（每 15 分鐘 tick），**只有 `NEWS_COLLECTION_ENABLED=true` 才註冊，預設關閉**。
+- ✅ 在 production DB 複本試跑：首輪 106/107 成功、新增 4,525 筆（重複 233）約 100 秒；立即重抓只新增 20 筆、23 個來源回 304、無重複寫入。全套 347 passed。
+- ⚠️ 未部署：production DB 仍在 `d68a592f6d22`，`.env` 未開啟收集。部署需 `deploy/install_launchd.sh newsroom-deploy`（備份→migration→只重載 newsroom）＋ `.env` 設 `NEWS_COLLECTION_ENABLED=true`，需使用者同意。
+- ⚠️ 首次啟用當天會回補大量舊稿（央行一次 500 筆），七天驗收從啟用後第一個完整日起算。標題去重必須搭配發布時間相近（機關會重用同一標題）。
+- ➡️ 下一步：使用者同意後部署並啟用收集 → 開始七天收集驗收 → 同時做事件聚合（跨媒體同一事件）。
 
 ## 本次變更（2026-10-26 — 來源登錄表與 RSSHub 探測）
 
@@ -12,7 +23,9 @@
 - ✅ RSSHub 裝在 `~/rsshub`（`fb2ce11`），只綁 127.0.0.1:1200、需 ACCESS_KEY（存在 `~/rsshub/.env` 與專案 `.env` 的 `RSSHUB_ACCESS_KEY`）。Homebrew Node 26 可跑（官方標 22／24）；pnpm 需用 `npx -y pnpm@12.15.0`（全域 pnpm 10 切版本會失敗）；啟動必須 `NODE_ENV=production`。
 - ✅ `scripts/probe_news_sources.py` 實測：非 Reddit 啟用來源 109/110 成功（cw-today 間歇 503），單次快照 5,386 筆、24h 內 2,054 筆。報告：[docs/sources_probe_2026-10-26.md](docs/sources_probe_2026-10-26.md)。新增 `tests/test_news_sources.py`，全套 329 passed。
 - ✅ 依使用者同意，RSSHub 已加入 launchd：`com.leroy.reddit-tracker.rsshub`（`deploy/install_launchd.sh rsshub-install`／`rsshub-uninstall`），已確認只 LISTEN 127.0.0.1:1200、無 key 回 403、被 kill 後 21 秒自動重啟、探測經 launchd 版 RSSHub 成功。log：`~/rsshub/rsshub.log`。
-- ⚠️ Gotchas：Reddit RSS 對探測限速很嚴（7–30 秒間隔仍 429），探測 Reddit 會搶線上 newsroom 額度，改用 DB 佐證；聯合新聞網每則 pubDate 都是 1970（要用首次取得時間代替）；三立時區偏 +8h；`.venv/bin/pytest` shebang 仍指向搬家前的 `~/Documents/...` 路徑，請用 `uv run python -m pytest`。
+- ⚠️ Gotchas：Reddit RSS 對探測限速很嚴（7–30 秒間隔仍 429），探測 Reddit 會搶線上 newsroom 額度，改用 DB 佐證；聯合新聞網每則 pubDate 都是 1970（要用首次取得時間代替）；三立時區偏 +8h。
+- ✅ 已修正 `.venv/bin` 內 15 個 entry script／activate 檔仍指向搬家前 `~/Documents/Developer/Project/reddit_tracker` 的路徑（只改文字，不重建 venv，不影響線上服務）；`.venv/bin/pytest`、`uv run pytest`、`.venv/bin/alembic` 皆可直接執行，329 passed。之後若再搬專案，用 `rm -rf .venv && uv sync` 重建。
+- ℹ️ 2026-10-26 使用者準備重開機。預期登入後 newsroom／bot／rsshub 自動恢復（皆 enabled），v4 scheduler 維持 disabled；重開機後先跑 `deploy/install_launchd.sh status` 確認。
 - ➡️ 下一步：收集層（`source_items` migration、通用 RSS 收集器、去重、來源健康紀錄）→ 10/29 開始七天收集驗收。
 
 **2026-10-26 稍早：** 企劃改為多來源綜合日報 v2.0

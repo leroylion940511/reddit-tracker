@@ -31,7 +31,7 @@ sources:
   - {id: cna-local, name: 中央社 地方, section: taiwan, tier: T2, method: rsshub, url: /cna/aloc, lang: zh-Hant}
   - {id: cna-headlines, name: 中央社 聚焦, section: taiwan, tier: T2, method: rsshub, url: /cna/headlines, lang: zh-Hant}
   - {id: pts-news, name: 公視新聞網, section: taiwan, tier: T2, method: rss, url: "https://news.pts.org.tw/xml/newsfeed.xml", lang: zh-Hant}
-  - {id: pts-dailynews, name: 公視 即時, section: taiwan, tier: T2, method: rsshub, url: /pts/dailynews, lang: zh-Hant}
+  - {id: pts-dailynews, name: 公視 即時, section: taiwan, tier: T2, method: rsshub, url: /pts/dailynews, lang: zh-Hant, interval_min: 120}
   - {id: twreporter, name: 報導者, section: taiwan, tier: T2, method: rss, url: "https://www.twreporter.org/a/rss2.xml", lang: zh-Hant}
   - {id: twreporter-hub, name: 報導者（RSSHub）, section: taiwan, tier: T2, method: rsshub, url: /twreporter/newest, lang: zh-Hant}
   - {id: ltn-politics, name: 自由時報 政治, section: taiwan, tier: T2, method: rss, url: "https://news.ltn.com.tw/rss/politics.xml", lang: zh-Hant}
@@ -42,13 +42,13 @@ sources:
   - {id: udn-society, name: 聯合新聞網 社會, section: taiwan, tier: T2, method: rss, url: "https://udn.com/rssfeed/news/2/6639?ch=news", lang: zh-Hant}
   - {id: chinatimes-realtime, name: 中時 即時, section: taiwan, tier: T2, method: rss, url: "https://www.chinatimes.com/rss/realtimenews.xml", lang: zh-Hant, enabled: false, notes: "原生 RSS 404，未找到替代網址（2026-10-26）"}
   - {id: chinatimes-hub, name: 中時 即時（RSSHub）, section: taiwan, tier: T2, method: rsshub, url: /chinatimes/realtimenews, lang: zh-Hant, enabled: false, notes: "RSSHub 路由需 headless Chromium，未安裝"}
-  - {id: storm, name: 風傳媒, section: taiwan, tier: T2, method: rsshub, url: /storm, lang: zh-Hant}
+  - {id: storm, name: 風傳媒, section: taiwan, tier: T2, method: rsshub, url: /storm, lang: zh-Hant, interval_min: 120}
   - {id: thenewslens-news, name: 關鍵評論網 新聞, section: taiwan, tier: T2, method: rsshub, url: /thenewslens/news, lang: zh-Hant, enabled: false, notes: "RSSHub 路由回傳空白（2026-10-26）；改用 thenewslens-feed"}
   - {id: thenewslens-feed, name: 關鍵評論網, section: taiwan, tier: T2, method: rss, url: "https://feeds.feedburner.com/TheNewsLens", lang: zh-Hant}
-  - {id: cw-today, name: 天下雜誌 今日, section: taiwan, tier: T2, method: rsshub, url: /cw/today, lang: zh-Hant}
+  - {id: cw-today, name: 天下雜誌 今日, section: taiwan, tier: T2, method: rsshub, url: /cw/today, lang: zh-Hant, interval_min: 240, notes: "RSSHub 逐篇抓文章頁，上游會回 429（2026-10-26），降低頻率"}
   - {id: ettoday-realtime, name: ETtoday 即時, section: taiwan, tier: T2, method: rss, url: "https://feeds.feedburner.com/ettoday/realtime", lang: zh-Hant}
-  - {id: setn, name: 三立新聞, section: taiwan, tier: T2, method: rsshub, url: /setn, lang: zh-Hant}
-  - {id: mirrormedia-political, name: 鏡週刊 政治, section: taiwan, tier: T2, method: rsshub, url: /mirrormedia/category/political, lang: zh-Hant}
+  - {id: setn, name: 三立新聞, section: taiwan, tier: T2, method: rsshub, url: /setn, lang: zh-Hant, time_offset_hours: -8, notes: "發布時間把台灣時間標成 UTC（2026-10-26 探測偏 +7.8h）", interval_min: 120}
+  - {id: mirrormedia-political, name: 鏡週刊 政治, section: taiwan, tier: T2, method: rsshub, url: /mirrormedia/category/political, lang: zh-Hant, interval_min: 120}
   - {id: rti-news, name: 中央廣播電台, section: taiwan, tier: T2, method: rss, url: "https://www.rti.org.tw/rss", lang: zh-Hant}
   - {id: ey-news, name: 行政院 新聞稿, section: taiwan, tier: T1, method: rss, url: "https://www.ey.gov.tw/RSS_Content.aspx?ModuleType=7", lang: zh-Hant}
   - {id: president-news, name: 總統府 新聞, section: taiwan, tier: T1, method: rss, url: "https://www.president.gov.tw/RSS/NewsRss.aspx", lang: zh-Hant, enabled: false, notes: "XML 格式錯誤，feedparser 無法解析（2026-10-26）"}
@@ -80,10 +80,10 @@ sources:
   - {id: cna-cross-strait, name: 中央社 兩岸, section: cross_strait, tier: T2, method: rsshub, url: /cna/acn, lang: zh-Hant}
   - {id: mac-news, name: 陸委會 新聞稿, section: cross_strait, tier: T1, method: rss, url: "https://www.mac.gov.tw/rss.aspx?n=CB9B5A1AE3A2D3FF", lang: zh-Hant, enabled: false, notes: "403 Forbidden（2026-10-26）"}
   - {id: bbc-zhongwen-china, name: BBC 中文 中國, section: cross_strait, tier: T2, method: rsshub, url: /bbc/zhongwen/topics/ckr7mn6r003t, lang: zh, enabled: false, notes: "RSSHub 路由解析錯誤（2026-10-26）"}
-  - {id: zaobao-china, name: 聯合早報 中國即時, section: cross_strait, tier: T2, method: rsshub, url: /zaobao/realtime/china, lang: zh}
-  - {id: zaobao-world, name: 聯合早報 國際即時, section: cross_strait, tier: T2, method: rsshub, url: /zaobao/realtime/world, lang: zh}
+  - {id: zaobao-china, name: 聯合早報 中國即時, section: cross_strait, tier: T2, method: rsshub, url: /zaobao/realtime/china, lang: zh, interval_min: 120}
+  - {id: zaobao-world, name: 聯合早報 國際即時, section: cross_strait, tier: T2, method: rsshub, url: /zaobao/realtime/world, lang: zh, interval_min: 120}
   - {id: nikkei-cn, name: 日經中文網, section: cross_strait, tier: T2, method: rsshub, url: /nikkei/cn, lang: zh, enabled: false, notes: "RSSHub 抓全文時上游 403（2026-10-26）"}
-  - {id: nikkei-asia, name: Nikkei Asia, section: cross_strait, tier: T2, method: rsshub, url: /nikkei/asia, lang: en}
+  - {id: nikkei-asia, name: Nikkei Asia, section: cross_strait, tier: T2, method: rsshub, url: /nikkei/asia, lang: en, interval_min: 120}
   - {id: rfa-chinese, name: 自由亞洲電台 中文, section: cross_strait, tier: T2, method: rss, url: "https://www.rfa.org/mandarin/RSS", lang: zh}
   - {id: hkfp, name: Hong Kong Free Press, section: cross_strait, tier: T2, method: rss, url: "https://hongkongfp.com/feed/", lang: en}
   - {id: scmp-china, name: SCMP China, section: cross_strait, tier: T2, method: rss, url: "https://www.scmp.com/rss/4/feed", lang: en}
@@ -113,7 +113,7 @@ sources:
   - {id: technews-tw, name: 科技新報, section: tech, tier: T2, method: rss, url: "https://technews.tw/feed/", lang: zh-Hant}
   - {id: bnext, name: 數位時代, section: tech, tier: T2, method: rss, url: "https://www.bnext.com.tw/rss", lang: zh-Hant, enabled: false, notes: "原生 RSS 404，首頁未提供 feed 連結（2026-10-26）"}
   - {id: inside-tw, name: INSIDE, section: tech, tier: T2, method: rss, url: "https://www.inside.com.tw/feed/rss", lang: zh-Hant}
-  - {id: 36kr-hot, name: 36Kr 熱榜, section: tech, tier: T2, method: rsshub, url: /36kr/hot-list, lang: zh}
+  - {id: 36kr-hot, name: 36Kr 熱榜, section: tech, tier: T2, method: rsshub, url: /36kr/hot-list, lang: zh, interval_min: 120}
   - {id: theverge, name: The Verge, section: tech, tier: T2, method: rss, url: "https://www.theverge.com/rss/index.xml", lang: en}
   - {id: arstechnica, name: Ars Technica, section: tech, tier: T2, method: rss, url: "https://feeds.arstechnica.com/arstechnica/index", lang: en}
   - {id: techcrunch, name: TechCrunch, section: tech, tier: T2, method: rss, url: "https://techcrunch.com/feed/", lang: en}

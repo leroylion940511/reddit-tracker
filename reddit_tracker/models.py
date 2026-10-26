@@ -358,6 +358,56 @@ class ReaderFeedback(Base):
 
 
 # ---------------------------------------------------------------------------
+# 多來源收集（v2.0 綜合日報，規格見 docs/v5/COLLECTION.md）
+# ---------------------------------------------------------------------------
+
+
+class SourceItem(Base):
+    __tablename__ = "source_items"
+    __table_args__ = (UniqueConstraint("source_id", "item_key", name="uq_source_item_key"),)
+
+    id: Mapped[int] = big_pk()
+    source_id: Mapped[str] = mapped_column(String(64), index=True)
+    section: Mapped[str] = mapped_column(String(32), index=True)
+    tier: Mapped[str] = mapped_column(String(2))
+    item_key: Mapped[str] = mapped_column(String(40))
+    url: Mapped[str] = mapped_column(Text)
+    canonical_url: Mapped[str] = mapped_column(Text, index=True)
+    title: Mapped[str | None] = mapped_column(Text)
+    summary: Mapped[str | None] = mapped_column(Text)
+    lang: Mapped[str | None] = mapped_column(String(8))
+    published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    published_at_estimated: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    title_fingerprint: Mapped[str | None] = mapped_column(String(40), index=True)
+    duplicate_of_id: Mapped[int | None] = mapped_column(
+        BigInteger().with_variant(Integer(), "sqlite"),
+        ForeignKey("source_items.id"),
+        index=True,
+    )
+    meta_json: Mapped[dict | None] = mapped_column("metadata", JSON)
+
+
+class SourceFetchRun(Base):
+    __tablename__ = "source_fetch_runs"
+
+    id: Mapped[int] = big_pk()
+    source_id: Mapped[str] = mapped_column(String(64), index=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    finished_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    ok: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    http_status: Mapped[int | None] = mapped_column(Integer)
+    not_modified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    items_returned: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    items_new: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    items_duplicate: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    etag: Mapped[str | None] = mapped_column(String(255))
+    last_modified: Mapped[str | None] = mapped_column(String(64))
+    error: Mapped[str | None] = mapped_column(Text)
+    elapsed_ms: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+
+# ---------------------------------------------------------------------------
 # 收藏追蹤
 # ---------------------------------------------------------------------------
 
@@ -485,6 +535,8 @@ __all__ = [
     "ReaderProfile",
     "RelatedPost",
     "ScoringRecord",
+    "SourceFetchRun",
+    "SourceItem",
     "SubredditSource",
     "TrackedPost",
     "NewsroomEdition",

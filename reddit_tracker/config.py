@@ -84,6 +84,9 @@ class Settings(BaseSettings):
     rsshub_base_url: str = "http://127.0.0.1:1200"
     rsshub_access_key: str | None = None
     news_sources_path: str = "reddit_tracker/seeds/news_sources.yaml"
+    # 預設關閉：部署收集層程式與 migration 不會自動改變線上 newsroom 行為。
+    news_collection_enabled: bool = False
+    news_collection_tick_minutes: int = 15
 
     # --- Discovery 排程 ---
     # 預設值對 public JSON (~10 QPM) 已校準；OAuth 過了可手動下調 interval。

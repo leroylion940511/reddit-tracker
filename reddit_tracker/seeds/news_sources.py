@@ -30,6 +30,8 @@ class NewsSource(BaseModel):
     interval_min: int = 60
     enabled: bool = True
     requires_key: str | None = None
+    # 修正已知的來源時區錯誤；例如三立把台灣時間標成 UTC，填 -8。
+    time_offset_hours: float = 0
     notes: str | None = None
 
     @model_validator(mode="after")

@@ -27,6 +27,7 @@ sources:
 | `interval_min` | int | | 抓取間隔（分鐘），預設 60 |
 | `enabled` | bool | | 預設 true；停用時必須在 `notes` 寫原因與日期 |
 | `requires_key` | str | | 需要的 `.env` 變數名（只寫名稱，不寫值） |
+| `time_offset_hours` | float | | 修正已知時區錯誤，加到解析出的發布時間上；預設 0 |
 | `notes` | str | | 停用原因、資料品質備註 |
 
 ## Loader 介面
