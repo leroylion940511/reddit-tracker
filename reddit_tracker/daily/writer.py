@@ -1,4 +1,4 @@
-"""日報撰稿：Gemini 每版一次請求；失敗或未過審稿關卡的稿件改用模板稿。
+"""日報撰稿：LLM（預設 Codex，可切 Gemini）每版一次請求；失敗或未過審稿關卡的稿件改用模板稿。
 
 LLM 只負責文字。順序、板塊、報導類型、來源與所有評分數字都由程式決定。
 """
@@ -13,7 +13,6 @@ from typing import Protocol
 from pydantic import BaseModel, Field, ValidationError
 
 from ..config import get_settings
-from ..llm.gemini import GeminiClient, GeminiResult
 from .evidence import EvidenceItem
 
 HEADLINE_RANGE = (4, 60)
@@ -33,11 +32,15 @@ SYSTEM_PROMPT = """你是台灣綜合日報的資深編輯，替繁體中文讀�
 _NUMBER = re.compile(r"\d+(?:[.,]\d+)*")
 
 
+class _Result(Protocol):
+    content: str
+
+
 class _CompletionClient(Protocol):
     def complete(
         self, *, system: str, messages: list[dict], max_output_tokens: int, temperature: float,
-        json_mode: bool = False,
-    ) -> GeminiResult: ...
+        json_mode: bool = False, json_schema: dict | None = None,
+    ) -> _Result: ...
 
 
 @dataclass
@@ -66,13 +69,39 @@ class _SameEventGroups(BaseModel):
     groups: list[list[int]]
 
 
+# 手寫成 strict structured output 的形狀（全部 required、不允許多餘欄位）；Gemini 會忽略。
+_STORY_FIELDS = ("headline", "deck", "body", "why_it_matters")
+STORIES_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "stories": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"id": {"type": "integer"}, **{k: {"type": "string"} for k in _STORY_FIELDS}},
+                "required": ["id", *_STORY_FIELDS],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["stories"],
+    "additionalProperties": False,
+}
+GROUPS_SCHEMA = {
+    "type": "object",
+    "properties": {"groups": {"type": "array", "items": {"type": "array", "items": {"type": "integer"}}}},
+    "required": ["groups"],
+    "additionalProperties": False,
+}
+
+
 DESK_SYSTEM_PROMPT = """你是新聞編輯會議的主持人。給你一批候選新聞的標題（中英文混合），
 找出「報導同一件具體事件」的標題組，例如同一場選舉結果的中文與英文報導。
 只是同一主題但不同事件（例如同一場選戰中的兩個不同活動）不算同一事件。輸出純 JSON。"""
 
 
 def _wrap_list(content: str, key: str) -> dict:
-    """Gemini 偶爾省略外層物件、直接回傳陣列；兩種形狀都接受。"""
+    """LLM 偶爾省略外層物件、直接回傳陣列；兩種形狀都接受。"""
     data = json.loads(content)
     return {key: data} if isinstance(data, list) else data
 
@@ -149,16 +178,25 @@ def review_story(story: WrittenStory, evidence: list[EvidenceItem]) -> list[str]
     return problems
 
 
-class GeminiDailyWriter:
-    """一次請求寫完一個板塊的所有稿件。"""
+def _default_client(name: str) -> _CompletionClient:
+    settings = get_settings()
+    if name == "codex":
+        from ..llm.codex import CodexClient
 
-    def __init__(self, *, client: _CompletionClient | None = None) -> None:
-        settings = get_settings()
-        self.client = client or GeminiClient(
-            purpose="daily",
-            model=settings.gemini_daily_model,
-            daily_limit=settings.gemini_daily_limit,
-        )
+        return CodexClient()
+    if name == "gemini":
+        from ..llm.gemini import GeminiClient
+
+        return GeminiClient(purpose="daily", model=settings.gemini_daily_model, daily_limit=settings.gemini_daily_limit)
+    raise ValueError(f"未知的撰稿 provider：{name}")
+
+
+class DailyWriter:
+    """一次請求寫完一個板塊的所有稿件；`name` 寫進每則稿件的 writer 欄位。"""
+
+    def __init__(self, name: str = "codex", *, client: _CompletionClient | None = None) -> None:
+        self.name = name
+        self.client = client or _default_client(name)
         self.requests = 0
 
     def find_same_events(self, candidates: list[tuple[int, str]]) -> list[list[int]]:
@@ -174,6 +212,7 @@ class GeminiDailyWriter:
             max_output_tokens=2_000,
             temperature=0.0,
             json_mode=True,
+            json_schema=GROUPS_SCHEMA,
         )
         known = {i for i, _ in candidates}
         groups = _SameEventGroups.model_validate(_wrap_list(result.content, "groups")).groups
@@ -204,11 +243,12 @@ class GeminiDailyWriter:
             max_output_tokens=8_000,
             temperature=0.3,
             json_mode=True,
+            json_schema=STORIES_SCHEMA,
         )
         try:
             batch = _GeneratedBatch.model_validate(_wrap_list(result.content, "stories"))
         except (ValidationError, ValueError) as exc:
-            raise ValueError(f"Gemini JSON 驗證失敗：{exc}") from exc
+            raise ValueError(f"{self.name} JSON 驗證失敗：{exc}") from exc
         expected = {story_id for story_id, _, _ in stories}
         return {
             item.id: WrittenStory(
@@ -216,7 +256,7 @@ class GeminiDailyWriter:
                 deck=item.deck.strip(),
                 body=item.body.strip(),
                 why_it_matters=item.why_it_matters.strip(),
-                writer="gemini",
+                writer=self.name,
             )
             for item in batch.stories
             if item.id in expected

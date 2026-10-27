@@ -104,7 +104,7 @@ def render_html(edition: DailyEdition, sections: dict[str, str]) -> str:
 <footer>
 <p>本報由 AI 協作編採：程式依獨立出處數、官方來源、時效與升溫速度選題，AI 依各家媒體的標題與摘要撰稿，未讀取全文、未做現場採訪。每則附原始來源，請以原文為準。</p>
 <p>標示「單一來源」者目前僅一家媒體報導；「社群觀察」為網路討論，不代表整體民意，亦非已證實的事實；「摘要整理」為未經 AI 改寫的來源摘要。</p>
-<p>素材收集 {escape(str(stats.get("candidate_clusters", "—")))} 個事件｜AI 撰稿 {escape(str(stats.get("gemini_articles", 0)))} 則｜摘要整理 {escape(str(stats.get("template_articles", 0)))} 則</p>
+<p>素材收集 {escape(str(stats.get("candidate_clusters", "—")))} 個事件｜AI 撰稿 {escape(str(stats.get("ai_articles", stats.get("gemini_articles", 0))))} 則｜摘要整理 {escape(str(stats.get("template_articles", 0)))} 則</p>
 </footer></div></body></html>
 """
 

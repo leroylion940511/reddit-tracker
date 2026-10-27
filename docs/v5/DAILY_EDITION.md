@@ -49,7 +49,7 @@ score = 10·log2(1 + outlet_count)
 | 社群觀察 | 3 | social |
 
 - 各版依分數取前 N，`report` 優先於 `single_source`；不足時寧缺勿濫，該版顯示「本版今日無新稿」。
-- **編輯會議**（一次 LLM 請求）：各版取配額兩倍的候選，請 Gemini 找出報導同一具體事件的組（通常是中英文各一），合併為一則，證據取兩邊聯集。失敗就略過。
+- **編輯會議**（一次 LLM 請求）：各版取配額兩倍的候選，請 LLM 找出報導同一具體事件的組（通常是中英文各一），合併為一則，證據取兩邊聯集。失敗就略過。
 - **頭版**：所有 `report` 中分數最高的 6 則，每版最多 2 則；頭版刊全文，對應板塊不重複刊登。
 - 同一事件只會出現一次。
 
@@ -59,7 +59,10 @@ score = 10·log2(1 + outlet_count)
 
 ## 4. 撰稿
 
-- Gemini（`purpose="daily"`，`GEMINI_DAILY_LIMIT` 預設 60 次／日，以太平洋時間換日），每個板塊一次請求、頭版一次請求，約 11 次／日。
+- Provider 由 `DAILY_WRITER` 決定，預設 `codex`；`gemini`、`template` 可切換。每個板塊一次請求、頭版一次請求，加上編輯會議約 12 次／日。
+- **Codex**（`reddit_tracker/llm/codex.py`）：subprocess 呼叫 ChatGPT.app 內建的 `codex exec`，吃本機 ChatGPT 訂閱登入（`~/.codex/auth.json`），不用 API key。模型 `CODEX_MODEL`（預設 `gpt-6.1-sol`、reasoning `low`），逾時 `CODEX_TIMEOUT_SECONDS`=300。輸出用 `--output-schema` 強制 JSON 形狀（`writer.STORIES_SCHEMA`／`GROUPS_SCHEMA`）。每次固定約 16k input tokens 的 agent 開銷，與使用者自己互動用 Codex 共用額度。
+- **Codex 安全邊界**：證據是外部不可信內容，Codex 又是 agent，所以每次都在空暫存目錄、`-s read-only`、`--ephemeral --ignore-user-config --ignore-rules` 下執行，關掉 shell／code mode／子 agent／外掛／瀏覽器等工具（`_DISABLED_FEATURES`；CLI 升版新增工具類 feature 要補關），並丟棄含 Telegram token、Gemini／RSSHub key 的輸出。找不到 `CODEX_BIN` 時整期改用模板稿。
+- **Gemini**（備用，`purpose="daily"`，`GEMINI_DAILY_LIMIT` 預設 60 次／日，以太平洋時間換日）。
 - 指令：繁體中文、只能使用證據包內容、以「據某某報導」歸因、來源說法不一致時並陳、英文與簡體素材要轉為台灣用語、不得補造數字或引述。
 - 產出 JSON：`headline`（≤40 字）、`deck`（一句話重點）、`body`（150–400 字）、`why_it_matters`。
 - 每組請求失敗（JSON 格式錯、503 過載等）最多重試 2 次，間隔 15 秒。
@@ -95,8 +98,8 @@ score = 10·log2(1 + outlet_count)
 | `edition_date` | date, unique | |
 | `status` | str(24) | 見上 |
 | `window_start` / `prepared_at` | datetime(tz) | 事件範圍 |
-| `writer` | str(32) | `gemini`／`template`／`mixed` |
-| `stats` | JSON | 各版篇數、模板稿數、Gemini 請求數、數據欄 |
+| `writer` | str(32) | `codex`／`gemini`／`template`／`mixed` |
+| `stats` | JSON | 各版篇數、`ai_articles`、`template_articles`、`llm_requests`、數據欄（10/27 首期為舊鍵 `gemini_articles`／`gemini_requests`） |
 | `html_path` | text | |
 | `telegram_message_ids` | JSON | |
 | `published_at` | datetime(tz) | |
@@ -117,7 +120,7 @@ score = 10·log2(1 + outlet_count)
 | `signals` | JSON | 評分各項與原始計數 |
 | `headline` / `deck` / `body` / `why_it_matters` | text | |
 | `sources` | JSON | `[{outlet, source_id, tier, title, url, published_at}]` |
-| `writer` | str(16) | `gemini`／`template` |
+| `writer` | str(16) | `codex`／`gemini`／`template` |
 | `review_notes` | JSON | 審稿關卡結果 |
 
 ## 介面
@@ -129,7 +132,11 @@ select_articles(scored) -> list[Selection]
 # reddit_tracker/daily/evidence.py
 build_evidence(session, cluster_id, source_names) -> list[EvidenceItem]
 # reddit_tracker/daily/writer.py
-GeminiDailyWriter.write(section, stories) -> dict[int, WrittenStory]
+DailyWriter(name="codex", *, client=None)   # name: codex / gemini
+DailyWriter.find_same_events(candidates) -> list[list[int]]
+DailyWriter.write(section, stories) -> dict[int, WrittenStory]
+# reddit_tracker/llm/codex.py、llm/gemini.py：兩者介面相同
+client.complete(*, system, messages, max_output_tokens, temperature, json_mode=False, json_schema=None) -> result(.content, .input_tokens, .output_tokens, .cached_tokens)
 template_story(evidence, kind) -> WrittenStory
 review_story(story, evidence) -> list[str]   # 空 list 代表通過
 # reddit_tracker/daily/run.py
@@ -140,7 +147,7 @@ publish_daily(edition_date) -> DailyEdition
 CLI：
 
 ```bash
-uv run python -m reddit_tracker.daily prepare [--date YYYY-MM-DD] [--writer gemini|template] [--refresh]
+uv run python -m reddit_tracker.daily prepare [--date YYYY-MM-DD] [--writer codex|gemini|template] [--refresh]
 uv run python -m reddit_tracker.daily publish [--date YYYY-MM-DD]
 ```
 

@@ -33,6 +33,12 @@ class Settings(BaseSettings):
     gemini_max_429_retries: int = 2
     gemini_quota_state_path: str = "/tmp/reddit-tracker-gemini-quota.json"
 
+    # --- Codex CLI（綜合日報撰稿預設 provider；吃本機 ChatGPT 訂閱登入，不用 API key）---
+    codex_bin: str = "/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex"
+    codex_model: str = "gpt-6.1-sol"
+    codex_reasoning_effort: str = "low"
+    codex_timeout_seconds: float = 300.0
+
     # --- Telegram（綜合日報發行）---
     telegram_bot_token: str | None = None
     telegram_chat_id: str | None = None
@@ -51,7 +57,7 @@ class Settings(BaseSettings):
 
     # --- v2.0 綜合日報（規格見 docs/v5/DAILY_EDITION.md）---
     daily_edition_enabled: bool = False
-    daily_writer: str = "gemini"                # gemini / template
+    daily_writer: str = "codex"                 # codex / gemini / template
     daily_prepare_hour: int = 6
     daily_prepare_minute: int = 0
     daily_delivery_hour: int = 8

@@ -4,16 +4,24 @@
 > 現行企劃見 `docs/AI_NEWS_COMPANY_PROPOSAL.md`、規格入口見 `docs/v5/README.md`。
 > 2026-10-27 以前的段落是 v4／v5 歷史紀錄，裡面提到的 bot、scrapers、services、v5 newsroom 模組都已移除。
 
-**Last updated:** 2026-10-27（精簡為只剩綜合日報）
+**Last updated:** 2026-10-27（日報撰稿改用 Codex）
 
 ## 目前狀態（2026-10-27 起）
 
 - **線上只跑 v2.0 綜合日報。** LaunchAgent 只剩 `newsroom`（`reddit_tracker.newsroom.scheduler`：收集＋聚合每 15 分鐘、06:00 準備、08:35 發 Telegram）與 `rsshub`。
-- **程式結構：** `collection/`（收集、聚合、報表）、`daily/`（評分、撰稿、渲染、發行）、`llm/gemini.py`、`newsroom/{scheduler,deploy}.py`、`web.py`（只看日報）、`seeds/news_sources.*`、`scripts/probe_news_sources.py`。
+- **程式結構：** `collection/`（收集、聚合、報表）、`daily/`（評分、撰稿、渲染、發行）、`llm/{codex,gemini}.py`、`newsroom/{scheduler,deploy}.py`、`web.py`（只看日報）、`seeds/news_sources.*`、`scripts/probe_news_sources.py`。
 - **驗收：** 收集七天驗收 10/27–11/02，11/03 用 `uv run python -m reddit_tracker.collection report --days 7 --out docs/collection_acceptance_2026-11-03.md` 出報告；11/30 交付。
 - ✅ 10/27 首期正常發行：42 則（Gemini 40／模板 2，12 次 request），Telegram message 499、500。
 - ⚠️ 首期觀察到的問題（使用者決定先多跑幾天再修）：① 同事件重複見報——巴西大選 cluster 472／453、塞爾維亞 405／410，`find_same_events` 一次丟整個候選池漏併；② 模板稿照搬英文原標題（Vucic）；③ 柯米起訴被投到財經版（cluster 2154）；④ 社群版有無內容稿、科學版單篇 arXiv、文化版三則都是金鐘；⑤ 數據欄停在 10/22——證交所 OpenAPI `MI_INDEX` 本身落後，非程式錯。建議修正順序 1→2→5→3→4。
 - ➡️ **下一步：** 再觀察幾期，看上述問題是否每期都出現，再一起修。
+
+## 本次變更（2026-10-27 — 日報撰稿改用 Codex）
+
+- ✅ 撰稿 provider 改為 Codex CLI（`reddit_tracker/llm/codex.py`）：subprocess 呼叫 ChatGPT.app 內建的 `codex exec`，吃本機 ChatGPT 訂閱登入，模型 `gpt-6.1-sol`／reasoning low。`DAILY_WRITER` 預設 `codex`，`gemini`、`template` 仍可切；找不到 codex binary 整期退模板稿。`GeminiDailyWriter` → `DailyWriter(name)`；stats 鍵改 `ai_articles`／`llm_requests`（render 相容 10/27 舊鍵）。
+- ✅ 安全：空暫存目錄＋read-only sandbox＋忽略使用者 config／rules，關掉 shell／code mode／子 agent 等工具（實測叫它讀 `/etc/hosts` 失敗），輸出含本機機密就丟棄。
+- ✅ production DB 複本試編 10/28：42 則（Codex 39／模板 3，模板都是數字關卡擋下），12 次請求、約 6 分鐘，合併 4 組重複事件。全套 59 passed。
+- ⚠️ 每次呼叫固定約 16k input tokens 的 agent 開銷，與使用者互動用 Codex 共用額度；ChatGPT.app 更新會換 CLI 版本（alpha），若新增工具類 feature 要補進 `_DISABLED_FEATURES`。
+- ➡️ 10/28 06:00 是第一期 Codex 撰稿，看 `newsroom.log` 的 `codex completion` 行與 `daily_articles.review_notes`。首期觀察到的 5 個問題（重複見報、英文標題等）要以 Codex 版重新觀察。
 
 ## 本次變更（2026-10-27 — 精簡為綜合日報）
 

@@ -123,6 +123,8 @@ def _add(session, source_id, host, title, summary, *, section, tier="T2", hours_
 
 
 class FakeWriter:
+    name = "codex"
+
     def __init__(self, fail_times=0):
         self.requests = 0
         self.fail_times = fail_times
@@ -137,7 +139,7 @@ class FakeWriter:
             self.fail_times -= 1
             raise ValueError("broken JSON")
         return {
-            key: WrittenStory(f"{label}稿件{key}號標題", "一句話重點", "據中央社報導，這是一則測試正文。" * 6, "影響", "gemini")
+            key: WrittenStory(f"{label}稿件{key}號標題", "一句話重點", "據中央社報導，這是一則測試正文。" * 6, "影響", "codex")
             for key, _, _ in stories
         }
 
@@ -159,14 +161,14 @@ def daily_env(session, monkeypatch, tmp_path):
 
     writer = FakeWriter()
     settings = SimpleNamespace(
-        daily_writer="gemini", gemini_api_key="x", news_sources_path="unused", daily_site_dir=str(tmp_path),
+        daily_writer="codex", codex_bin="/bin/sh", gemini_api_key="x", news_sources_path="unused", daily_site_dir=str(tmp_path),
         newsroom_delivery_timezone="Asia/Taipei", telegram_bot_token="t", telegram_chat_id="42",
     )
     monkeypatch.setattr(run_module, "session_scope", scope)
     monkeypatch.setattr(run_module, "get_settings", lambda: settings)
     monkeypatch.setattr(run_module, "load_registry", lambda path: REGISTRY)
     monkeypatch.setattr(run_module, "fetch_market_box", lambda: None)
-    monkeypatch.setattr(run_module, "GeminiDailyWriter", lambda: writer)
+    monkeypatch.setattr(run_module, "DailyWriter", lambda name: writer)
     monkeypatch.setattr(run_module, "RETRY_DELAY_SECONDS", 0)
     return SimpleNamespace(session=session, writer=writer, tmp_path=tmp_path)
 
@@ -175,7 +177,7 @@ def test_prepare_builds_edition_with_front_page_social_and_html(daily_env):
     edition_id = run_module.prepare_daily(EDITION, now=NOW)
 
     edition = daily_env.session.get(DailyEdition, edition_id)
-    assert edition.status == "drafted" and edition.writer == "gemini"
+    assert edition.status == "drafted" and edition.writer == "codex"
     articles = {a.section: a for a in edition.articles}
     serbia = articles["world"]
     assert serbia.is_front and serbia.kind == "report"
@@ -183,7 +185,7 @@ def test_prepare_builds_edition_with_front_page_social_and_html(daily_env):
     assert articles["social"].kind == "social" and not articles["social"].is_front
     html = (daily_env.tmp_path / "2026-10-28.html").read_text(encoding="utf-8")
     assert "頭版" in html and "社群觀察" in html and "本版今日無新稿" in html
-    assert edition.stats["gemini_requests"] == 3  # 編輯會議＋頭版＋社群版
+    assert edition.stats["llm_requests"] == 3  # 編輯會議＋頭版＋社群版
 
     # 已有 draft 時再次 prepare 不重寫、不再呼叫 LLM
     assert run_module.prepare_daily(EDITION, now=NOW) == edition_id
@@ -253,8 +255,8 @@ def test_daily_jobs_registered_only_when_enabled(monkeypatch, enabled):
         assert "minute='35'" in str(jobs["daily_publish_edition"].trigger)
 
 
-def test_gemini_writer_accepts_bare_list_responses():
-    from reddit_tracker.daily.writer import GeminiDailyWriter
+def test_writer_accepts_bare_list_responses():
+    from reddit_tracker.daily.writer import DailyWriter
     from reddit_tracker.llm.gemini import GeminiResult
 
     class Client:
@@ -264,7 +266,14 @@ def test_gemini_writer_accepts_bare_list_responses():
         def complete(self, **kwargs):
             return GeminiResult(content=self.content, input_tokens=0, output_tokens=0, cached_tokens=0)
 
-    writer = GeminiDailyWriter(client=Client('[{"id":7,"headline":"標題標題","body":"正文","deck":"","why_it_matters":""}]'))
+    writer = DailyWriter(client=Client('[{"id":7,"headline":"標題標題","body":"正文","deck":"","why_it_matters":""}]'))
     assert writer.write("台灣", [(7, "report", [_ev()])])[7].headline == "標題標題"
-    writer = GeminiDailyWriter(client=Client('[[1,2],[3]]'))
+    writer = DailyWriter(client=Client('[[1,2],[3]]'))
     assert writer.find_same_events([(1, "a"), (2, "b"), (3, "c")]) == [[1, 2]]
+
+
+def test_prepare_falls_back_to_template_when_codex_missing(daily_env, monkeypatch):
+    settings = run_module.get_settings()
+    settings.codex_bin = "/nonexistent/codex"
+    edition = daily_env.session.get(DailyEdition, run_module.prepare_daily(EDITION, now=NOW))
+    assert edition.writer == "template" and daily_env.writer.requests == 0

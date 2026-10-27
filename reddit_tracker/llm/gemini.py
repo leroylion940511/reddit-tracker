@@ -189,6 +189,7 @@ class GeminiClient:
         max_output_tokens: int,
         temperature: float,
         json_mode: bool = False,
+        json_schema: dict | None = None,  # 介面與 CodexClient 一致；Gemini 只用 json_mode
     ) -> GeminiResult:
         generation_config: dict[str, Any] = {
             "maxOutputTokens": max_output_tokens,

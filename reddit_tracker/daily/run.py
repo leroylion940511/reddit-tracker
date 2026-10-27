@@ -1,7 +1,7 @@
 """準備與發行綜合日報。
 
 準備分三段：先在一個 session 讀資料、評分、選題、組證據；接著在任何 DB
-交易之外呼叫 Gemini（可能要幾分鐘，不能讓每 15 分鐘的收集等鎖）；最後
+交易之外呼叫 LLM（可能要幾分鐘，不能讓每 15 分鐘的收集等鎖）；最後
 在另一個 session 一次寫入整期。發行只送已準備好的版次，且不重送。
 """
 
@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import logging
+import shutil
 import time
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
@@ -26,11 +27,12 @@ from .evidence import EvidenceItem, build_evidence
 from .market import fetch_market_box
 from .render import render_html, telegram_digest
 from .scoring import Selection, apply_merges, desk_pool, score_candidates, select_articles, window_start_for
-from .writer import GeminiDailyWriter, WrittenStory, review_story, template_story
+from .writer import DailyWriter, WrittenStory, review_story, template_story
 
 logger = logging.getLogger(__name__)
 
 FRONT_GROUP = "front"
+LLM_WRITERS = ("codex", "gemini")
 WRITE_ATTEMPTS = 3
 RETRY_DELAY_SECONDS = 15.0
 
@@ -50,7 +52,7 @@ def _today() -> date:
     return datetime.now(ZoneInfo(get_settings().newsroom_delivery_timezone)).date()
 
 
-def _editorial_meeting(session, scored, writer: GeminiDailyWriter | None) -> tuple[list, list[list[int]]]:
+def _editorial_meeting(session, scored, writer: DailyWriter | None) -> tuple[list, list[list[int]]]:
     """用一次 LLM 請求找出跨語言的同一事件並合併；失敗就照原樣繼續。"""
     if writer is None:
         return scored, []
@@ -69,7 +71,7 @@ def _editorial_meeting(session, scored, writer: GeminiDailyWriter | None) -> tup
 
 
 def _write_all(
-    planned: list[_Planned], sections: dict[str, str], writer: GeminiDailyWriter | None
+    planned: list[_Planned], sections: dict[str, str], writer: DailyWriter | None
 ) -> dict[int, WrittenStory]:
     groups: dict[str, list[_Planned]] = {}
     for item in planned:
@@ -90,7 +92,7 @@ def _write_all(
                     failure = None
                     break
                 except Exception as exc:  # noqa: BLE001 — JSON 壞掉、503 過載都值得重試；最後才退模板稿
-                    failure = f"Gemini 撰稿失敗（{attempt} 次）：{type(exc).__name__}: {str(exc)[:160]}"
+                    failure = f"{writer.name} 撰稿失敗（{attempt} 次）：{type(exc).__name__}: {str(exc)[:160]}"
                     logger.warning("daily writer failed for %s: %s", group, failure)
                     if attempt < WRITE_ATTEMPTS:
                         time.sleep(RETRY_DELAY_SECONDS)
@@ -103,7 +105,7 @@ def _write_all(
                     notes += problems
                     story = None
             elif writer is not None and not failure:
-                notes.append("Gemini 回應缺少這則")
+                notes.append(f"{writer.name} 回應缺少這則")
             if story is None:
                 story = template_story(p.evidence, p.selection.cluster.kind)
             story.review_notes = notes
@@ -120,6 +122,9 @@ def prepare_daily(
     writer_mode = writer_mode or settings.daily_writer
     if writer_mode == "gemini" and not settings.gemini_api_key:
         writer_mode = "template"
+    if writer_mode == "codex" and shutil.which(settings.codex_bin) is None:
+        logger.warning("codex binary not found at %s; falling back to template", settings.codex_bin)
+        writer_mode = "template"
     registry = load_registry(settings.news_sources_path)
     sections = registry.sections
     source_names = {s.id: s.name for s in registry.sources}
@@ -131,7 +136,7 @@ def prepare_daily(
                 return existing.id
             if existing.status == "drafted" and not refresh:
                 return existing.id
-        writer = GeminiDailyWriter() if writer_mode == "gemini" else None
+        writer = DailyWriter(writer_mode) if writer_mode in LLM_WRITERS else None
         scored = score_candidates(
             session, edition_date=edition_date, now=now, general_sources=registry.general_source_ids()
         )
@@ -146,7 +151,7 @@ def prepare_daily(
         raise DailyEditionError("沒有可刊登的事件；請確認收集與聚合是否正常")
 
     written = _write_all(planned, sections, writer)
-    gemini_requests = writer.requests if writer else 0
+    llm_requests = writer.requests if writer else 0
     market = fetch_market_box()
 
     with session_scope() as session:
@@ -182,16 +187,18 @@ def prepare_daily(
                     review_notes=story.review_notes,
                 )
             )
-        gemini_count = sum(1 for s in written.values() if s.writer == "gemini")
+        ai_count = sum(1 for s in written.values() if s.writer != "template")
         edition.status = "drafted"
-        edition.writer = "gemini" if gemini_count == len(written) else ("template" if not gemini_count else "mixed")
+        edition.writer = (writer.name if writer else "template") if ai_count == len(written) else (
+            "template" if not ai_count else "mixed"
+        )
         edition.stats = {
             "candidate_clusters": candidate_count,
             "merged_groups": merged_groups,
             "articles": len(written),
-            "gemini_articles": gemini_count,
-            "template_articles": len(written) - gemini_count,
-            "gemini_requests": gemini_requests,
+            "ai_articles": ai_count,
+            "template_articles": len(written) - ai_count,
+            "llm_requests": llm_requests,
             "sections": {k: sum(1 for p in planned if p.selection.section == k) for k in sections},
             "market": market,
         }
@@ -202,8 +209,8 @@ def prepare_daily(
         path.write_text(render_html(edition, sections), encoding="utf-8")
         edition.html_path = str(path)
         logger.info(
-            "daily edition %s drafted: articles=%d gemini=%d template=%d",
-            edition_date, len(written), gemini_count, len(written) - gemini_count,
+            "daily edition %s drafted: articles=%d ai=%d template=%d",
+            edition_date, len(written), ai_count, len(written) - ai_count,
         )
         return edition.id
 
@@ -258,7 +265,7 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
     prepare = sub.add_parser("prepare", help="準備一期（不發送）")
     prepare.add_argument("--date", type=date.fromisoformat, default=None)
-    prepare.add_argument("--writer", choices=("gemini", "template"))
+    prepare.add_argument("--writer", choices=(*LLM_WRITERS, "template"))
     prepare.add_argument("--refresh", action="store_true", help="重寫尚未發行的 draft")
     publish = sub.add_parser("publish", help="發行已準備的版次到 Telegram")
     publish.add_argument("--date", type=date.fromisoformat, default=None)
