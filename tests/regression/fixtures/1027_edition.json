@@ -1,0 +1,1959 @@
+{
+ "edition_date": "2026-10-27",
+ "market": [
+  {
+   "name": "發行量加權股價指數",
+   "close": "46041.43",
+   "change": "-846.34",
+   "change_pct": "-1.81%",
+   "date": "2026-10-22"
+  },
+  {
+   "name": "臺灣50指數",
+   "close": "42466.00",
+   "change": "-743.23",
+   "change_pct": "-1.72%",
+   "date": "2026-10-22"
+  }
+ ],
+ "articles": [
+  {
+   "cluster_id": 472,
+   "section": "world",
+   "position": 1,
+   "is_front": true,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "巴西總統大選露拉勝選第四任 預測市場翻車、對手拒不承認",
+   "deck": "巴西總統大選結果出爐，由左翼現任總統露拉擊敗右翼挑戰者、前總統波索納洛之子弗拉維奧·波索納洛，贏得第四任期。",
+   "body": "據 Al Jazeera、Reuters World 與 DW English 等外媒報導，巴西總統大選結果揭曉，左翼現任總統 Luiz Inácio Lula da Silva（露拉）在激烈的決選中擊敗遠右翼挑戰者 Flavio Bolsonaro（弗拉維奧·波索納洛），贏得其第四個總統任期。然而，敗選的弗拉維奧·波索納洛目前拒絕承認選舉結果，據 Reuters World 指出，他隨後表示巴西聯邦警察已要求他在探望身陷囹圄的前總統父親 Jair Bolsonaro（賈伊爾·波索納洛）後交出護照。\n\n另一方面，Yahoo Finance 與 CNBC Top News 報導指出，此次選舉讓各大預測市場狠狠「翻車」。在投票前，如 Polymarket 等平台曾將露拉的勝率極度看低，僅給出約 20% 的機率。專家分析，這項失準是由於巴西國內禁止預測市場，加上大量散戶投資人湧入，稀釋了專業資金的準確度。The Guardian World 的報導則提到，選戰期間，一則廣泛流傳的 WhatsApp 頻道與學生領導的抗議活動，在露拉這場被形容為歷史性捲土重來的選戰中，發揮了關鍵作用。",
+   "why_it_matters": "巴西作為南美洲最大民主國家，其政權延續與選舉預測市場失準的現象，對國際政治與金融市場具有高度觀察指標意義。",
+   "sources": [
+    {
+     "outlet": "Al Jazeera",
+     "source_id": "aljazeera",
+     "tier": "T2",
+     "title": "What will Lula’s fourth term mean for Brazil?",
+     "url": "https://www.aljazeera.com/video/inside-story/2026/10/26/what-will-lulas-fourth-term-mean-for-brazil?traffic_source=rss",
+     "published_at": "2026-10-27T04:55+08:00"
+    },
+    {
+     "outlet": "Reuters World",
+     "source_id": "reuters-world",
+     "tier": "T2",
+     "title": "Flavio Bolsonaro says Brazil federal police asked for his passports",
+     "url": "https://www.reuters.com/world/americas/flavio-bolsonaro-says-brazil-federal-police-asked-his-passports-2026-10-26/",
+     "published_at": "2026-10-27T04:37+08:00"
+    },
+    {
+     "outlet": "Yahoo Finance",
+     "source_id": "yahoo-finance",
+     "tier": "T2",
+     "title": "Why Prediction Markets Got the Brazilian Election So Wrong",
+     "url": "https://finance.yahoo.com/markets/crypto/articles/why-prediction-markets-got-brazilian-184603622.html",
+     "published_at": "2026-10-27T02:46+08:00"
+    },
+    {
+     "outlet": "The Guardian World",
+     "source_id": "guardian-world",
+     "tier": "T2",
+     "title": "How the streets and social media drove Lula to a historic comeback in Brazil",
+     "url": "https://www.theguardian.com/world/2026/oct/26/lula-victory-brazil-bolsonaro-analysis",
+     "published_at": "2026-10-27T01:56+08:00"
+    },
+    {
+     "outlet": "CNBC Top News",
+     "source_id": "cnbc-top",
+     "tier": "T2",
+     "title": "Lula wins Brazil runoff after prediction markets favored Bolsonaro",
+     "url": "https://www.cnbc.com/2026/10/26/lula-brazil-election-prediction-markets.html",
+     "published_at": "2026-10-27T01:29+08:00"
+    },
+    {
+     "outlet": "DW English",
+     "source_id": "dw-en",
+     "tier": "T2",
+     "title": "Brazil elections: Merz, world leaders congratulate Lula on his win",
+     "url": "https://www.dw.com/en/brazil-elections-merz-world-leaders-congratulate-lula-on-his-win/live-79755630?maca=en-rss-en-all-1573-rdf",
+     "published_at": "2026-10-26T23:08+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 2157,
+   "section": "finance",
+   "position": 2,
+   "is_front": true,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "微軟全球推員工自願優離方案 傳為加速投入龐大AI基礎設施",
+   "deck": "美國科技巨擘微軟宣布向全球約六萬名員工提供自願優離方案，此舉正值其今年度計畫投入高達1750億美元於AI基礎設施之際。",
+   "body": "據 Yahoo Finance、Financial Times 與 AP Top News 綜合報導，美國科技巨擘微軟（Microsoft）於週一宣布，將向全球約 60,000 名員工提供自願離職優離方案（Voluntary Buyout）。微軟首席人資長 Amy Coleman 在發給員工的備忘錄中將此稱為「自願退出方案」，並表示這是公司應對變革策略的重要部分，旨在創造更大的彈性，並為員工開創下一個職涯階段提供更多可能。Financial Times 指出，這項舉措是微軟在今年投入高達 1,750 億美元於人工智慧（AI）基礎設施的同時，採取控制成本的行動。\n\n同時，根據 Reuters Business 與 Variety 報導，在媒體產業方面，Skydance 在完成收購規模更大的對手華納兄弟探索（Warner Bros. Discovery）並承擔其龐大債務後，也向部分員工提供一次性自願優離方案，並宣布實施每週五天進辦公室的政策，藉此進行人事整合與降低成本。",
+   "why_it_matters": "科技與傳媒巨頭相繼推出大規模自願離職優離方案，反映出企業在重金押注AI建設與大型併購後，正積極重組人力結構與控制成本。",
+   "sources": [
+    {
+     "outlet": "Yahoo Finance",
+     "source_id": "yahoo-finance",
+     "tier": "T2",
+     "title": "Microsoft offers around 60,000 employees voluntary buyouts",
+     "url": "https://finance.yahoo.com/markets/stocks/articles/microsoft-offers-around-60-000-202521367.html",
+     "published_at": "2026-10-27T04:25+08:00"
+    },
+    {
+     "outlet": "Financial Times",
+     "source_id": "ft-home",
+     "tier": "T2",
+     "title": "Microsoft offers buyouts to 60,000 staff",
+     "url": "https://www.ft.com/content/2ef29406-f2f8-413f-81f6-5ae098c97569?syn-25a6b1a6=1",
+     "published_at": "2026-10-27T04:22+08:00"
+    },
+    {
+     "outlet": "Reuters Business",
+     "source_id": "reuters-business",
+     "tier": "T2",
+     "title": "Skydance offers buyouts to some employees to cut costs after Warner Bros merger",
+     "url": "https://www.reuters.com/legal/transactional/skydance-offers-buyouts-some-employees-cut-costs-after-warner-bros-merger-2026-10-26/",
+     "published_at": "2026-10-27T03:30+08:00"
+    },
+    {
+     "outlet": "CNBC Top News",
+     "source_id": "cnbc-top",
+     "tier": "T2",
+     "title": "J&J's potential 'game-changer' drug — plus, what Microsoft's mass buyouts mean",
+     "url": "https://www.cnbc.com/investingclub/2026/10/26/jjs-potential-game-changer-drug-plus-what-microsofts-buyouts-mean.html",
+     "published_at": "2026-10-27T02:45+08:00"
+    },
+    {
+     "outlet": "AP Top News",
+     "source_id": "apnews-top",
+     "tier": "T2",
+     "title": "Microsoft offers a quarter of its global workforce voluntary buyouts as AI spending accelerates",
+     "url": "https://apnews.com/article/microsoft-buyout-ai-layoff-xbox-c5a639f53615be198db1799adf6837e1",
+     "published_at": "2026-10-27T02:13+08:00"
+    },
+    {
+     "outlet": "Variety",
+     "source_id": "variety",
+     "tier": "T2",
+     "title": "Skydance Is Offering Employees Voluntary Buyouts Ahead of Layoffs, Adopts 5-Days-per-Week In-Office Policy",
+     "url": "https://variety.com/2026/film/news/skydance-voluntary-buyouts-layoffs-5-days-per-week-in-office-policy-1236931402/",
+     "published_at": "2026-10-27T01:45+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 2154,
+   "section": "finance",
+   "position": 3,
+   "is_front": true,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "美國司法部再度起訴前聯調局長柯米 控其涉嫌洩漏國防資訊",
+   "deck": "川普政府再度對前聯調局長詹姆斯·柯米發動法律行動，以洩漏國防資訊罪名起訴，同時法院裁定其女兒遭違法開除。",
+   "body": "據 AP Top News、CNBC Top News 與 Financial Times 報導，美國司法部（DOJ）再度對前聯調局（FBI）局長 James Comey（詹姆斯·柯米）展開刑事起訴，指控其涉嫌洩漏國家防禦資訊。這是自現任總統唐納·川普（Donald Trump）上台以來，柯米第三度面臨來自川普政府的刑事指控。柯米多年來一直是川普的眼中釘，川普曾在 2017 年將其免職。\n\n在相關司法進展方面，Al Jazeera、BBC World 與 NPR News 報導指出，美國法院同日作出裁決，認定柯米的女兒 Maurene Comey（莫倫·柯米）遭違法開除。莫倫·柯米曾在曼哈頓擔任長達十年的聯邦檢察官，她先前主張自己是因為父親成為川普打壓目標而遭解雇。此項司法裁決再度引發外界對司法部內部政治動機開除潮的疑慮。",
+   "why_it_matters": "美國前FBI局長面臨再度起訴與其家屬遭違法解職的法院裁決，凸顯出美國政壇與司法系統間持續且激烈的政治角力。",
+   "sources": [
+    {
+     "outlet": "AP Top News",
+     "source_id": "apnews-top",
+     "tier": "T2",
+     "title": "Trump administration attempting to prosecute former FBI Director James Comey again",
+     "url": "https://apnews.com/article/comey-trump-fbi-director-prosecution-8479bdbf1bcdeeae313b453a3cd0c544",
+     "published_at": "2026-10-27T05:58+08:00"
+    },
+    {
+     "outlet": "CNBC Top News",
+     "source_id": "cnbc-top",
+     "tier": "T2",
+     "title": "DOJ charges ex-FBI Director James Comey in new case",
+     "url": "https://www.cnbc.com/2026/10/26/james-comey-indictment-national-defense-doj-trump.html",
+     "published_at": "2026-10-27T05:57+08:00"
+    },
+    {
+     "outlet": "Financial Times",
+     "source_id": "ft-home",
+     "tier": "T2",
+     "title": "US charges ex-FBI chief James Comey with leaking national defence information",
+     "url": "https://www.ft.com/content/6b669a41-b629-47ce-8f68-c1ab1bd1320b?syn-25a6b1a6=1",
+     "published_at": "2026-10-27T05:42+08:00"
+    },
+    {
+     "outlet": "Al Jazeera",
+     "source_id": "aljazeera",
+     "tier": "T2",
+     "title": "US court rules daughter of Trump critic James Comey was illegally fired",
+     "url": "https://www.aljazeera.com/news/2026/10/26/us-court-rules-daughter-of-trump-critic-james-comey-was-illegally-fired?traffic_source=rss",
+     "published_at": "2026-10-27T04:55+08:00"
+    },
+    {
+     "outlet": "BBC World",
+     "source_id": "bbc-world",
+     "tier": "T2",
+     "title": "Trump administration illegally fired James Comey's daughter, judge rules",
+     "url": "https://www.bbc.co.uk/news/articles/ck78px6glw3lo?at_medium=RSS&at_campaign=rss",
+     "published_at": "2026-10-27T03:27+08:00"
+    },
+    {
+     "outlet": "NPR News",
+     "source_id": "npr-news",
+     "tier": "T2",
+     "title": "Judge says DOJ illegally fired the daughter of former FBI director Comey",
+     "url": "https://www.npr.org/2026/10/26/g-s1-149960/judge-maurene-comey-illegal-dismissal",
+     "published_at": "2026-10-27T02:38+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 1052,
+   "section": "world",
+   "position": 4,
+   "is_front": true,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "委內瑞拉反對派領袖馬查多結束流亡返國 臨時總統表態願對話",
+   "deck": "諾貝爾和平獎得主、委內瑞拉反對派領袖馬查多流亡近一年後返國，臨時總統羅德裡格斯表示期望對話包容各方聲音。",
+   "body": "據聯合早報、公視新聞網、NYT Home 與 Al Jazeera 等綜合報導，委內瑞拉反對派領袖、諾貝爾和平獎得主 María Corina Machado（馬查多）在經歷近一年的流亡與隱匿後，已於星期天返回委內瑞拉首都卡拉卡斯，吸引數千名支持者湧上街頭夾道歡迎。馬查多的發言人表示，她已準備好與委內瑞拉臨時總統 Delcy Rodriguez（羅德裡格斯）及任何人進行完全透明的全國公開會談。此前她因遭馬杜羅政府禁止出境而秘密離境領獎。\n\n針對馬查多的返國，Reuters World 報導指出，委內瑞拉臨時總統德爾茜·羅德裡格斯（Delcy Rodriguez）於週一表示，希望與反對派的談判能為所有聲音提供對話空間。公視新聞網引述知情人士指出，美國總統川普對此雖對外宣稱「毫不知情」，但實際上早已批准；美國官方先前也曾向委內瑞拉當局表示應允許馬查多返國。歐盟則發聲明認為，反對派領導人回歸有助於推動當地局勢。",
+   "why_it_matters": "委內瑞拉反對派領袖結束流亡返國並尋求與過渡政權對話，可能對當地政權轉型、大選進程及美委之間的石油利益帶來關鍵衝擊。",
+   "sources": [
+    {
+     "outlet": "AP Top News",
+     "source_id": "apnews-top",
+     "tier": "T2",
+     "title": "US told Venezuelan authorities that opposition leader Machado should be allowed to return",
+     "url": "https://apnews.com/article/rubio-venezuela-machado-rodriguez-elections-0b50a710b3f1d85d07800a96dda4375e",
+     "published_at": "2026-10-27T05:58+08:00"
+    },
+    {
+     "outlet": "Reuters World",
+     "source_id": "reuters-world",
+     "tier": "T2",
+     "title": "After return of opposition leader, Venezuela's acting president says hopes dialogue will offer space for all voices",
+     "url": "https://www.reuters.com/world/americas/after-return-opposition-leader-venezuelas-acting-president-says-hopes-dialogue-2026-10-26/",
+     "published_at": "2026-10-27T02:20+08:00"
+    },
+    {
+     "outlet": "聯合早報 國際即時",
+     "source_id": "zaobao-world",
+     "tier": "T2",
+     "title": "流亡回國的委反對派領袖馬查多 準備好與臨時總統會面",
+     "url": "https://www.zaobao.com.sg/news/world/story20261026-9899285",
+     "published_at": "2026-10-26T23:32+08:00"
+    },
+    {
+     "outlet": "公視新聞網",
+     "source_id": "pts-news",
+     "tier": "T2",
+     "title": "馬查多結束流亡返回委內瑞拉 川普稱「毫不知情」",
+     "url": "https://news.pts.org.tw/article/833030",
+     "published_at": "2026-10-26T20:50+08:00"
+    },
+    {
+     "outlet": "NYT Home",
+     "source_id": "nytimes-home",
+     "tier": "T2",
+     "title": "María Corina Machado Returns to Venezuela",
+     "url": "https://www.nytimes.com/2026/10/25/world/americas/machado-venezuela-return.html",
+     "published_at": "2026-10-26T19:56+08:00"
+    },
+    {
+     "outlet": "Al Jazeera",
+     "source_id": "aljazeera",
+     "tier": "T2",
+     "title": "Thousands greet opposition leader Maria Machado upon return to Caracas",
+     "url": "https://www.aljazeera.com/video/newsfeed/2026/10/26/thousands-greet-opposition-leader-maria-machado-upon-return-to-caracas?traffic_source=rss",
+     "published_at": "2026-10-26T18:14+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 496,
+   "section": "taiwan",
+   "position": 5,
+   "is_front": true,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "失言稱周春米「沒小孩很可憐」惹議 蘇清泉二度發文致歉",
+   "deck": "國民黨屏東縣長候選人蘇清泉因公開言論批評對手周春米沒小孩「不知養育辛苦」引發性別歧視爭議，兩度發文認錯致歉。",
+   "body": "根據 ETtoday 即時、三立新聞與鏡週刊政治報導，國民黨屏東縣長候選人蘇清泉日前在枋寮鄉廟口開講時，公開批評民進黨屏東縣長周春米「縣長沒有小孩，可憐，不知道養孩子及教育小孩的辛苦」，此番言論隨即遭到周春米競選辦公室嚴正譴責，痛批其言論逾越政見討論分際、將生育問題當作政治攻擊工具，涉及嚴重歧視。\n\n面對輿論抨擊，蘇清泉在第一時間透過社群平台道歉後，於26日晚間再度發布第二次道歉聲明。據 ETtoday 即時與三立新聞報導，蘇清泉坦言先前的說明未能充分回應外界疑慮，並承認當天談及少子化與偏鄉教育時，以任何人是否擁有子女、是否具有養育經驗來評價其公共政策理解能力的言語與舉例「確實不妥」，無論原意為何，都不該忽略每個人的生命經歷與選擇，再次向受到影響的當事人及社會大眾致歉。",
+   "why_it_matters": "地方選戰倒數之際，候選人因生育與家庭狀態的失言爭議引發社會對性別與隱私權討論，也成為選情攻防焦點。",
+   "sources": [
+    {
+     "outlet": "ETtoday 即時",
+     "source_id": "ettoday-realtime",
+     "tier": "T2",
+     "title": "酸周春米「沒小孩很可憐」引眾怒！蘇清泉二度道歉：表達確實不妥",
+     "url": "https://www.ettoday.net/news/20261026/3261231.htm",
+     "published_at": "2026-10-26T23:55+08:00"
+    },
+    {
+     "outlet": "公視新聞網",
+     "source_id": "pts-news",
+     "tier": "T2",
+     "title": "蔣萬安辦競總成立大會 沈伯洋成立女力後援會",
+     "url": "https://news.pts.org.tw/article/833052",
+     "published_at": "2026-10-26T21:09+08:00"
+    },
+    {
+     "outlet": "中央廣播電台",
+     "source_id": "rti-news",
+     "tier": "T2",
+     "title": "[政治] 台北市長選戰／沈伯洋女力後援會成立 蕭美琴籲支持者「戒慎恐懼」",
+     "url": "https://www.rti.org.tw/news?uid=3&pid=239901",
+     "published_at": "2026-10-26T17:51+08:00"
+    },
+    {
+     "outlet": "中央社 政治",
+     "source_id": "cna-politics",
+     "tier": "T2",
+     "title": "沈伯洋女力後援會成立 蕭美琴讚具備5心特質",
+     "url": "https://www.cna.com.tw/news/aipl/202610260182.aspx",
+     "published_at": "2026-10-26T17:26+08:00"
+    },
+    {
+     "outlet": "三立新聞",
+     "source_id": "setn",
+     "tier": "T2",
+     "title": "批周春米「沒小孩可憐」！蘇清泉二度道歉認使用不當言語",
+     "url": "https://www.setn.com/news/1928941",
+     "published_at": "2026-10-26T15:06+08:00"
+    },
+    {
+     "outlet": "鏡週刊 政治",
+     "source_id": "mirrormedia-political",
+     "tier": "T2",
+     "title": "蘇清泉批周春米「沒小孩，可憐，不知養育辛苦」 遭轟歧視深夜道歉了",
+     "url": "https://www.mirrormedia.mg/story/20261026edi040",
+     "published_at": "2026-10-26T11:28+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 1322,
+   "section": "taiwan",
+   "position": 6,
+   "is_front": true,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "蔣萬安舉辦競總成立大會喊破5萬人 韓國瑜直言九成五媒體打他如政治謀殺",
+   "deck": "爭取連任的台北市長蔣萬安舉辦競總成立大會，藍白要角齊聚造勢，韓國瑜助講時批評媒體圍剿形同政治謀殺。",
+   "body": "據聯合早報、自由時報、鏡週刊與中央社等綜合報導，尋求連任的台北市長蔣萬安於26日下午在敦化國中舉辦競選總部成立大會，主辦單位估計現場湧入突破5萬人。現場藍營大咖「三子合體」，包括立法院長韓國瑜、台中市長盧秀燕及新北市長侯友宜均到場助講；國民黨主席鄭麗文與民眾黨主席黃國昌也以神秘嘉賓身分現身致詞。此前因出席對手沈伯洋競總成立引發討論的知名主持人蔡康永也現身台下聆聽。\n\n針對選情，立法院長韓國瑜在致詞時為蔣萬安抱不平，據鏡週刊與自由時報報導，韓國瑜直言目前全國高達 95% 的媒體與網路集中火力攻擊蔣萬安一人，這絕非民主，而是「政治謀殺」，並稱這樣的鋪天蓋地抹黑會讓「天使變成魔鬼」。對此，民進黨台北市長參選人沈伯洋則回應表示不知道韓國瑜為何有此感覺。蔣萬安本人則強調自己腳踏實地、專注市政，呼籲市民做出最智慧的選擇。",
+   "why_it_matters": "台北市長選戰藍白陣營大動作集結造勢，並伴隨媒體輿論與藍綠陣營間的強烈攻防，反映出首都選情的高度白熱化。",
+   "sources": [
+    {
+     "outlet": "聯合早報 中國即時",
+     "source_id": "zaobao-china",
+     "tier": "T2",
+     "title": "暗批沈伯洋為選舉換人設 蔣萬安自稱不詭辯不包裝不表演",
+     "url": "https://www.zaobao.com.sg/news/china/story20261026-9898389",
+     "published_at": "2026-10-26T22:29+08:00"
+    },
+    {
+     "outlet": "自由時報 政治",
+     "source_id": "ltn-politics",
+     "tier": "T2",
+     "title": "韓國瑜：鋪天蓋地攻擊蔣萬安「政治謀殺」 沈伯洋：不知道韓為何有此感覺",
+     "url": "https://news.ltn.com.tw/news/politics/breakingnews/5619461",
+     "published_at": "2026-10-26T21:38+08:00"
+    },
+    {
+     "outlet": "風傳媒",
+     "source_id": "storm",
+     "tier": "T2",
+     "title": "大讚蔣萬安競總演講是「選舉宣戰範文」 沈政男幫畫4大重點：郭靖對上韋小寶",
+     "url": "https://www.storm.mg/article/11175818",
+     "published_at": "2026-10-26T19:00+08:00"
+    },
+    {
+     "outlet": "鏡週刊 政治",
+     "source_id": "mirrormedia-political",
+     "tier": "T2",
+     "title": "禿子、漢子、燕子合體力挺 韓國瑜稱95%媒體都在打蔣萬安「天使也能變魔鬼」",
+     "url": "https://www.mirrormedia.mg/story/20261026edi046",
+     "published_at": "2026-10-26T18:48+08:00"
+    },
+    {
+     "outlet": "中央社 地方",
+     "source_id": "cna-local",
+     "tier": "T2",
+     "title": "蔣萬安競總成立 呼籲市民做出最智慧選擇",
+     "url": "https://www.cna.com.tw/news/aloc/202610260196.aspx",
+     "published_at": "2026-10-26T18:23+08:00"
+    },
+    {
+     "outlet": "中央廣播電台",
+     "source_id": "rti-news",
+     "tier": "T2",
+     "title": "[政治] 台北市長選戰／蔣萬安競總成立喊破5萬人 藍白要角齊聚",
+     "url": "https://www.rti.org.tw/news?uid=3&pid=239910",
+     "published_at": "2026-10-26T18:20+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 344,
+   "section": "taiwan",
+   "position": 1,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "蔡康永表態未挺台獨後現身蔣萬安競選活動 藍綠同聲挺參與自由",
+   "deck": "主持人蔡康永發表未支持台獨言論後，出席國民黨台北市長參選人蔣萬安競總成立大會。",
+   "body": "據聯合早報、風傳媒、自由時報、RFI中文與中央廣播電台報導，知名主持人蔡康永於25日深夜在社群媒體發文表態「未支持台獨」，並稱希望兩岸友好來往，隔天（26日）下午現身爭取連任的國民黨台北市長參選人蔣萬安競選總部成立大會。蔡康永先前因現身民進黨台北市長參選人沈伯洋競選活動，引發大陸網民抵制與國台辦批評，隨後在微博清空帳號並發文致歉。針對蔡康永出席活動，蔣萬安表示在台灣不應因主張不同而被出征。受訪學者認為，此事件凸顯兩岸壓力與政治包容度的考驗。目前僅有一家媒體報導指出受訪學者的看法。",
+   "why_it_matters": "反映出藝人政治表態在兩岸互動及選戰中的張力，引發各界對政治包容與言論自由的討論。",
+   "sources": [
+    {
+     "outlet": "聯合早報 中國即時",
+     "source_id": "zaobao-china",
+     "tier": "T2",
+     "title": "蔡康永表態「未支持臺獨」後 現身蔣萬安競選活動",
+     "url": "https://www.zaobao.com.sg/news/china/story20261026-9898511",
+     "published_at": "2026-10-26T22:33+08:00"
+    },
+    {
+     "outlet": "風傳媒",
+     "source_id": "storm",
+     "tier": "T2",
+     "title": "一文看懂》蔡康永到底是不是洋流？強調「我沒有支持過台獨」後，依約現身蔣萬安競總",
+     "url": "https://www.storm.mg/article/11175730",
+     "published_at": "2026-10-26T19:29+08:00"
+    },
+    {
+     "outlet": "自由時報 政治",
+     "source_id": "ltn-politics",
+     "tier": "T2",
+     "title": "蔡康永現身蔣萬安總部成立大會 蔣：在台不應因主張不同被出征",
+     "url": "https://news.ltn.com.tw/news/politics/breakingnews/5619413",
+     "published_at": "2026-10-26T19:16+08:00"
+    },
+    {
+     "outlet": "RFI 中文",
+     "source_id": "rfi-chinese",
+     "tier": "T2",
+     "title": "蔡康永昨稱望兩岸友好來往 沒支持過臺獨 今現身蔣萬安競總成立大會觀摩",
+     "url": "https://www.rfi.fr/cn/%E6%94%BF%E6%B2%BB/20261026-%E8%94%A1%E5%BA%B7%E6%B0%B8%E5%8F%91%E6%96%87%E7%A7%B0%E6%9C%9B%E4%B8%A4%E5%B2%B8%E5%8F%8B%E5%A5%BD%E6%9D%A5%E5%BE%80-%E6%B2%A1%E6%94%AF%E6%8C%81%E8%BF%87%E5%8F%B0%E7%8B%AC%E5%90%8E-%E7%8E%B0%E8%BA%AB%E8%92%8B%E4%B8%87%E5%AE%89%E7%AB%9E%E6%80%BB%E6%88%90%E7%AB%8B%E5%A4%A7%E4%BC%9A%E8%A7%82%E6%91%A9",
+     "published_at": "2026-10-26T17:42+08:00"
+    },
+    {
+     "outlet": "中央廣播電台",
+     "source_id": "rti-news",
+     "tier": "T2",
+     "title": "[政治] 蔡康永微博突發文「從沒有支持台獨」  盼兩岸友好",
+     "url": "https://www.rti.org.tw/news?uid=3&pid=239759",
+     "published_at": "2026-10-25T23:27+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 1644,
+   "section": "taiwan",
+   "position": 2,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "前台東縣長吳俊立心肌炎住院遭檢調拘提 律師團發聲質疑程序",
+   "deck": "前台東縣長吳俊立因病住院待開刀，仍遭檢調拘提，律師團質疑執法程序並聲請提審。",
+   "body": "據ETtoday、自由時報、中央社與三立新聞報導，前台東縣長吳俊立因涉及東映渡假村聯外農路拓寬疑似圖利案，原獲台東地院裁定500萬元交保，經檢方抗告成功後，台東地院原訂於26日上午重開羈押庭。吳俊立因心肌炎在高雄榮民總醫院住院治療等待手術而未出庭，檢調仍於26日下午前往病房將其拘提到案，晚間帶回台東地檢署。對此，吳俊立的法律團隊發表聲明，質疑法院已同意請假，檢方卻仍執意拘提，質疑是否製造未到案假象，並已向法院聲請提審。目前僅有一家媒體報導指出吳俊立法律團隊要求檢方對執法程序及醫療風險作出說明的訴求。",
+   "why_it_matters": "涉及司法程序、被告健康權與檢調執法尺度的衝突，受到社會高度關注。",
+   "sources": [
+    {
+     "outlet": "ETtoday 即時",
+     "source_id": "ettoday-realtime",
+     "tier": "T2",
+     "title": "吳俊立心肌炎住院待開刀仍遭拘提！律師團深夜發聲：法院已准假",
+     "url": "https://www.ettoday.net/news/20261027/3261252.htm",
+     "published_at": "2026-10-27T03:13+08:00"
+    },
+    {
+     "outlet": "自由時報 政治",
+     "source_id": "ltn-politics",
+     "tier": "T2",
+     "title": "吳俊立律師稱法院羈押庭已准假  質疑檢仍強制拘提",
+     "url": "https://news.ltn.com.tw/news/politics/breakingnews/5619595",
+     "published_at": "2026-10-26T23:18+08:00"
+    },
+    {
+     "outlet": "中央社 社會",
+     "source_id": "cna-society",
+     "tier": "T2",
+     "title": "吳俊立交保後檢方抗告成功 下午遭拘提律師聲請提審",
+     "url": "https://www.cna.com.tw/news/asoc/202610260229.aspx",
+     "published_at": "2026-10-26T21:13+08:00"
+    },
+    {
+     "outlet": "三立新聞",
+     "source_id": "setn",
+     "tier": "T2",
+     "title": "法院准假仍拘提！吳俊立「心肌炎」等開刀被帶走 律師：製造未到案假象",
+     "url": "https://www.setn.com/news/1928932",
+     "published_at": "2026-10-26T15:21+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 1568,
+   "section": "taiwan",
+   "position": 3,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "民進黨代表赴歐洲民主黨大會 分享台灣防衛韌性與防範威權擴張",
+   "deck": "民進黨國際部主任陳文昊赴希臘出席歐洲民主黨年度大會，分享台灣全社會防衛韌性經驗。",
+   "body": "據自由時報、中央社與中央廣播電台報導，民進黨國際事務部主任陳文昊代表民進黨前往希臘雅典，出席歐洲民主黨年度大會，並受邀參與由歐洲議會議員斯皮爾（Lukas Sieper）主持的「捍衛民主：全球民主人士聯盟」專題論壇。陳文昊在會中發表演說指出，台灣站在防衛威權擴張最前線，面對傳統軍事威脅以及灰色地帶作戰、經濟壓力與政治恫嚇等挑戰。他並剖析中國利用長臂管轄打壓台灣公民、企業與政治人物的情形，分享台灣建構全社會防衛韌性與推動非紅色供應鏈的經驗，呼籲深化台歐政黨外交與制度化合作。",
+   "why_it_matters": "有助於向國際社會傳達台灣面對區域安全挑戰的立場，並推進台灣與歐洲政黨間的實質外交。",
+   "sources": [
+    {
+     "outlet": "自由時報 政治",
+     "source_id": "ltn-politics",
+     "tier": "T2",
+     "title": "打壓沈伯洋、黃逸豪！民進黨赴歐洲民主黨大會 剖析中共「長臂管轄」",
+     "url": "https://news.ltn.com.tw/news/politics/breakingnews/5619447",
+     "published_at": "2026-10-26T21:43+08:00"
+    },
+    {
+     "outlet": "中央社 政治",
+     "source_id": "cna-politics",
+     "tier": "T2",
+     "title": "民進黨拚政黨外交 歐洲民主黨大會分享台灣防衛韌性",
+     "url": "https://www.cna.com.tw/news/aipl/202610260235.aspx",
+     "published_at": "2026-10-26T21:25+08:00"
+    },
+    {
+     "outlet": "中央廣播電台",
+     "source_id": "rti-news",
+     "tier": "T2",
+     "title": "[政治] 拚政黨外交 民進黨赴歐洲民主黨大會分享台灣防衛韌性經驗",
+     "url": "https://www.rti.org.tw/news?uid=3&pid=239936",
+     "published_at": "2026-10-26T20:25+08:00"
+    },
+    {
+     "outlet": "Yahoo 股市新聞",
+     "source_id": "yahoo-tw-stock",
+     "tier": "T2",
+     "title": "拚政黨外交 民進黨赴歐洲民主黨大會分享台灣防衛韌性經驗",
+     "url": "https://tw.news.yahoo.com/%E6%8B%9A%E6%94%BF%E9%BB%A8%E5%A4%96%E4%BA%A4-%E6%B0%91%E9%80%B2%E9%BB%A8%E8%B5%B4%E6%AD%90%E6%B4%B2%E6%B0%91%E4%B8%BB%E9%BB%A8%E5%A4%A7%E6%9C%83%E5%88%86%E4%BA%AB%E5%8F%B0%E7%81%A3%E9%98%B2%E8%A1%9B%E9%9F%8C%E6%80%A7%E7%B6%93%E9%A9%97-122507518.html",
+     "published_at": "2026-10-26T20:25+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 1332,
+   "section": "taiwan",
+   "position": 4,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "沈伯洋童子瑋基隆合體造勢 聚焦交通合作與產業分工",
+   "deck": "民進黨台北市長參選人沈伯洋與基隆市長參選人童子瑋合體開講，強調交通為優先合作議題。",
+   "body": "據自由時報、中央社與鏡週刊報導，民進黨基隆市長參選人童子瑋於26日傍晚邀請同黨台北市長參選人沈伯洋到基隆海洋廣場同台造勢，吸引大批支持者聚集，並進行港口開講與車隊掃街。雙方在活動中聚焦交通合作，童子瑋提出短中長期3大交通政見，沈伯洋則表示交通順暢能讓大家省出時間，並指出未來產業分工也是重要課題。童子瑋表示感謝沈伯洋與支持者的相挺，期盼未來能透過合作改變基隆。",
+   "why_it_matters": "展現綠營跨區域選戰的串聯，並針對雙北與基隆的交通及產業合作提出政見願景。",
+   "sources": [
+    {
+     "outlet": "自由時報 政治",
+     "source_id": "ltn-politics",
+     "tier": "T2",
+     "title": "洋流匯聚陪沈伯洋基隆慶安宮參拜 阿公阿嬤看傻眼 直呼有史以來人最多",
+     "url": "https://news.ltn.com.tw/news/politics/breakingnews/5619608",
+     "published_at": "2026-10-26T23:50+08:00"
+    },
+    {
+     "outlet": "中央社 政治",
+     "source_id": "cna-politics",
+     "tier": "T2",
+     "title": "沈伯洋童子瑋基隆合體開講 聚焦交通合作",
+     "url": "https://www.cna.com.tw/news/aipl/202610260221.aspx",
+     "published_at": "2026-10-26T20:36+08:00"
+    },
+    {
+     "outlet": "鏡週刊 政治",
+     "source_id": "mirrormedia-political",
+     "tier": "T2",
+     "title": "沈伯洋現身基隆！海洋廣場合體童子瑋 談逆風局出現希望「盼延續到11/28」",
+     "url": "https://www.mirrormedia.mg/story/20261026edi072",
+     "published_at": "2026-10-26T18:36+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 1270,
+   "section": "taiwan",
+   "position": 5,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "川普接受電視訪問再指台灣偷走晶片 稱價格離譜推升市場",
+   "deck": "美國總統川普受訪再度談及台灣與中國，指控台灣偷走美國全部的晶片生意。",
+   "body": "據自由時報、中央廣播電台與中央社報導，美國總統川普接受福斯新聞節目訪問時，談及關稅政策、台灣、中國與晶片議題。川普表示，若美國過去有聰明的總統，台灣與中國的問題就不會存在。他隨後指稱「他們」偷走美國100%的晶片生意，並批評其以離譜的價格生產晶片並推進市場。外交部長林佳龍先前曾對此回應，重申台灣與美國是共生夥伴關係，並無所謂的偷竊與傷害。",
+   "why_it_matters": "美國領導人對台灣半導體產業的持續表態，牽動台美經貿關係與全球供應鏈的動向。",
+   "sources": [
+    {
+     "outlet": "自由時報 財經",
+     "source_id": "ltn-business",
+     "tier": "T2",
+     "title": "又點名台灣偷走晶片！川普直指「價格低得離譜」 還嗆美歷任總統",
+     "url": "https://ec.ltn.com.tw/article/breakingnews/5619309",
+     "published_at": "2026-10-26T17:57+08:00"
+    },
+    {
+     "outlet": "中央廣播電台",
+     "source_id": "rti-news",
+     "tier": "T2",
+     "title": "[國際] 川普接受福斯新聞節目訪問 再稱台灣偷走美國晶片生意",
+     "url": "https://www.rti.org.tw/news?uid=3&pid=239892",
+     "published_at": "2026-10-26T17:18+08:00"
+    },
+    {
+     "outlet": "中央社 政治",
+     "source_id": "cna-politics",
+     "tier": "T2",
+     "title": "川普接受福斯新聞節目訪問提台灣 再稱美國晶片生意遭竊",
+     "url": "https://www.cna.com.tw/news/aipl/202610260165.aspx",
+     "published_at": "2026-10-26T17:00+08:00"
+    },
+    {
+     "outlet": "PTT 八卦板",
+     "source_id": "ptt-gossiping",
+     "tier": "T4",
+     "title": "[新聞] 要講幾次？川普又點名台灣偷晶片：他們的",
+     "url": "https://www.ptt.cc/bbs/Gossiping/M.1793051416.A.E3F.html",
+     "published_at": "2026-10-27T05:50+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 405,
+   "section": "world",
+   "position": 1,
+   "is_front": false,
+   "kind": "report",
+   "writer": "template",
+   "headline": "What Vucic’s defeat means for Serbia’s foreign policy",
+   "deck": "",
+   "body": "據Al Jazeera報導：Those expecting Belgrade to tilt towards the West may need patience while the new government deals with domestic issues.\n\n另有Reuters World、AP Top News、BBC World、The Guardian World、Financial Times報導此事。",
+   "why_it_matters": "",
+   "sources": [
+    {
+     "outlet": "Al Jazeera",
+     "source_id": "aljazeera",
+     "tier": "T2",
+     "title": "What Vucic’s defeat means for Serbia’s foreign policy",
+     "url": "https://www.aljazeera.com/news/2026/10/26/what-vucics-defeat-means-for-serbias-foreign-policy?traffic_source=rss",
+     "published_at": "2026-10-27T04:38+08:00"
+    },
+    {
+     "outlet": "Reuters World",
+     "source_id": "reuters-world",
+     "tier": "T2",
+     "title": "Serbia's student movement toppled a political giant. Can it now govern the country?",
+     "url": "https://www.reuters.com/world/serbias-student-movement-toppled-political-giant-can-it-now-govern-country-2026-10-26/",
+     "published_at": "2026-10-27T00:31+08:00"
+    },
+    {
+     "outlet": "AP Top News",
+     "source_id": "apnews-top",
+     "tier": "T2",
+     "title": "Photos of Serbia’s election and celebrations as student-led opposition defeats long-serving strongman",
+     "url": "https://apnews.com/photo-gallery/photos-serbia-s-election-celebrations-student-led-opposition-defeats-long-serving-strongman-cf8bf7e86340439ca7cabdccb47a7606",
+     "published_at": "2026-10-26T22:42+08:00"
+    },
+    {
+     "outlet": "BBC World",
+     "source_id": "bbc-world",
+     "tier": "T2",
+     "title": "Celebrations in Serbia after veteran ruler Vučić loses election to student-led protest movement",
+     "url": "https://www.bbc.co.uk/news/articles/cw5yn3xlprpmo?at_medium=RSS&at_campaign=rss",
+     "published_at": "2026-10-26T22:34+08:00"
+    },
+    {
+     "outlet": "The Guardian World",
+     "source_id": "guardian-world",
+     "tier": "T2",
+     "title": "Serbia wakes up to new reality after student-led movement ousts Vučić – Europe live",
+     "url": "https://www.theguardian.com/world/live/2026/oct/26/serbia-vucic-elections-students-bulgaria-france-urkaine-russia-latest-news-updates",
+     "published_at": "2026-10-26T22:25+08:00"
+    },
+    {
+     "outlet": "Financial Times",
+     "source_id": "ft-home",
+     "tier": "T2",
+     "title": "Who are the students set to govern Serbia?",
+     "url": "https://www.ft.com/content/c3f29989-747e-4734-a29b-568b3c5e488a?syn-25a6b1a6=1",
+     "published_at": "2026-10-26T22:06+08:00"
+    }
+   ],
+   "review_notes": [
+    "證據中找不到的數字：14, 140"
+   ]
+  },
+  {
+   "cluster_id": 410,
+   "section": "world",
+   "position": 2,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "塞爾維亞學生聯盟國會大選過半，克里姆林宮盼維持對俄合作",
+   "deck": "學生主導的反貪腐聯盟在國會大選中勝出，俄國期盼新領袖維持與俄合作。",
+   "body": "據自由時報、中央廣播電台與中央社等媒體指出，巴爾幹半島國家塞爾維亞國會大選結果出爐，草根政治聯盟「學生名單」（Students' List）在經歷約兩年抗爭後，贏得超過五成選票成為國會最大勢力，一舉終結執政14年的右翼民粹政黨「塞爾維亞進步黨」（SNS）。選舉監督團體指出，在已完成計票的選票中，「學生名單」獲得53%選票，預計在250席國會中取得140席；原領導人武契奇（Aleksandar Vučić）則承認敗選。公視新聞網指出，這場選舉導因於諾維薩德火車站雨棚倒塌事故引發民眾對政府貪腐與疏失的不滿，點燃近兩年學生抗議浪潮。在選舉結果底定後，俄羅斯克里姆林宮表示，希望塞爾維亞新的政治領袖能認可與俄國合作帶來的好處。",
+   "why_it_matters": "塞爾維亞學生運動扳倒長期強人政權，其未來外交走向將影響區域局勢。",
+   "sources": [
+    {
+     "outlet": "自由時報 國際",
+     "source_id": "ltn-world",
+     "tier": "T2",
+     "title": "塞爾維亞學運開花結果 國會大選席次過半",
+     "url": "https://news.ltn.com.tw/news/world/paper/1776091",
+     "published_at": "2026-10-27T05:30+08:00"
+    },
+    {
+     "outlet": "AP Top News",
+     "source_id": "apnews-top",
+     "tier": "T2",
+     "title": "Jaxon Smith-Njigba has big night in Seahawks’ 20-3 win over Chiefs",
+     "url": "https://apnews.com/article/chiefs-seahawks-score-ccabc2df2c0a181dcbdcf1d8b25f96cf",
+     "published_at": "2026-10-26T22:42+08:00"
+    },
+    {
+     "outlet": "中央廣播電台",
+     "source_id": "rti-news",
+     "tier": "T2",
+     "title": "[國際] 塞爾維亞親俄強人敗選  克宮：盼新領袖願與俄合作",
+     "url": "https://www.rti.org.tw/news?uid=3&pid=239952",
+     "published_at": "2026-10-26T22:05+08:00"
+    },
+    {
+     "outlet": "中央社 國際",
+     "source_id": "cna-world",
+     "tier": "T2",
+     "title": "塞爾維亞親俄強人敗選 克宮：盼新領袖認可與俄合作好處",
+     "url": "https://www.cna.com.tw/news/aopl/202610260240.aspx",
+     "published_at": "2026-10-26T21:46+08:00"
+    },
+    {
+     "outlet": "DW 中文",
+     "source_id": "dw-chinese",
+     "tier": "T2",
+     "title": "武契奇承認敗選　塞爾維亞學生運動贏得議會選舉",
+     "url": "https://www.dw.com/zh/武契奇承认败选　塞尔维亚学生运动赢得议会选举/a-79760776?maca=chi-rss-chi-all-1127-rdf",
+     "published_at": "2026-10-26T18:32+08:00"
+    },
+    {
+     "outlet": "公視新聞網",
+     "source_id": "pts-news",
+     "tier": "T2",
+     "title": "塞爾維亞國會大選變天 學生主導反貪聯盟勝選",
+     "url": "https://news.pts.org.tw/article/832946",
+     "published_at": "2026-10-26T17:24+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 1348,
+   "section": "world",
+   "position": 3,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "奧迪執行長現身川普造勢大會惹議，德國國內批評違反公司規範",
+   "deck": "奧迪執行長杜爾納現身美國總統川普的競選集會，宣布重大投資計畫引發德國各界批評。",
+   "body": "據路透社、DW English與衛報等媒體報導，德國豪華車廠奧迪（Audi）執行長吉諾特·杜爾納（Gernot Döllner）因現身美國總統川普在搖擺州喬治亞州培瑞（Perry）舉行的競選集會，遭到德國國內強烈批評。杜爾納在集會中登臺，宣布奧迪將在當地建立美國首座汽車工廠，川普則將此歸功於其關稅政策。德國頂尖工會負責人公開批評此舉違反了車廠的公司指南，在美國期中選舉前夕及德國國內汽車產業面臨裁員之際，這項美國投資與公開站臺舉動引發了高度爭議。",
+   "why_it_matters": "跨國企業領袖在敏感政治時刻公開現身政治集會並宣佈重大投資，引發跨國勞資與政策爭議。",
+   "sources": [
+    {
+     "outlet": "Yahoo Finance",
+     "source_id": "yahoo-finance",
+     "tier": "T2",
+     "title": "Audi CEO faces backlash after joining Trump at midterm campaign rally",
+     "url": "https://finance.yahoo.com/news/audi-ceos-appearance-trump-rally-073150220.html",
+     "published_at": "2026-10-27T01:07+08:00"
+    },
+    {
+     "outlet": "DW English",
+     "source_id": "dw-en",
+     "tier": "T2",
+     "title": "What Germany thinks of carmaker Audi's $4 billion deal with Trump",
+     "url": "https://www.dw.com/en/what-germany-thinks-of-carmaker-audi-s-4-billion-deal-with-trump/a-79760479?maca=en-rss-en-all-1573-rdf",
+     "published_at": "2026-10-26T23:16+08:00"
+    },
+    {
+     "outlet": "The Guardian World",
+     "source_id": "guardian-world",
+     "tier": "T2",
+     "title": "Audi boss under fire in Germany for Trump rally appearance",
+     "url": "https://www.theguardian.com/world/2026/oct/26/audi-boss-under-fire-in-germany-for-trump-rally-appearance",
+     "published_at": "2026-10-26T22:42+08:00"
+    },
+    {
+     "outlet": "AP Top News",
+     "source_id": "apnews-top",
+     "tier": "T2",
+     "title": "Trump announces at a Georgia campaign rally that Audi will build a new auto factory in the state",
+     "url": "https://apnews.com/article/audi-georgia-trump-manufacturing-auto-plant-c1d49f2437c1d9cf349af399b8abe3a3",
+     "published_at": "2026-10-26T22:42+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 1307,
+   "section": "world",
+   "position": 4,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "美國歌手克里斯小子英國夜店襲擊案獲判緩刑，免去牢獄之災",
+   "deck": "美國R&B歌手克里斯小子因2023年倫敦夜店酒瓶攻擊案，被判處8個月徒刑、緩刑12個月。",
+   "body": "據BBC、衛報、Variety與路透社等外媒報導，美國R&B知名歌手克里斯小子（Chris Brown）因於2023年在倫敦梅菲爾（Mayfair）一間私人夜店的舞池中，持重型龍舌蘭酒瓶攻擊一名音樂製作人兼前友人，此前已承認涉及擾亂公共秩序罪（affray）。倫敦法院法官東尼·鮑姆加特納（Tony Baumgartner）考量其就業狀況與長期演藝生涯，判處其8個月有期徒刑、緩刑12個月，使他得以免受立即的牢獄之災，並在支持者的歡呼聲中離開法院。",
+   "why_it_matters": "知名藝人的海外涉訟與司法判決結果，常引發大眾對名人司法特權與暴力行為的討論。",
+   "sources": [
+    {
+     "outlet": "AP Top News",
+     "source_id": "apnews-top",
+     "tier": "T2",
+     "title": "Chris Brown avoids prison as UK court gives him suspended sentence for nightclub assault",
+     "url": "https://apnews.com/video/chris-brown-avoids-prison-time-390a2ec0d9914ec4a2b0c289b3cf7cd2",
+     "published_at": "2026-10-26T22:42+08:00"
+    },
+    {
+     "outlet": "BBC World",
+     "source_id": "bbc-world",
+     "tier": "T2",
+     "title": "Chris Brown given suspended eight-month prison sentence over nightclub attack",
+     "url": "https://www.bbc.co.uk/news/articles/cq3dje4g4d5jo?at_medium=RSS&at_campaign=rss",
+     "published_at": "2026-10-26T22:16+08:00"
+    },
+    {
+     "outlet": "The Guardian World",
+     "source_id": "guardian-world",
+     "tier": "T2",
+     "title": "Chris Brown given suspended sentence over bottle attack at London club",
+     "url": "https://www.theguardian.com/music/2026/oct/26/chris-brown-suspended-sentence-bottle-attack-london-club",
+     "published_at": "2026-10-26T20:28+08:00"
+    },
+    {
+     "outlet": "Variety",
+     "source_id": "variety",
+     "tier": "T2",
+     "title": "Chris Brown Sentenced to Eight Months in Prison, Suspended for 12 Months, for ‘Vicious and Unprovoked’ Attack at U.K. Nightclub",
+     "url": "https://variety.com/2026/music/global/chris-brown-sentenced-attack-london-nightclub-1236931029/",
+     "published_at": "2026-10-26T20:16+08:00"
+    },
+    {
+     "outlet": "Reuters World",
+     "source_id": "reuters-world",
+     "tier": "T2",
+     "title": "US singer Chris Brown spared jail for UK nightclub attack",
+     "url": "https://www.reuters.com/business/media-telecom/us-singer-chris-brown-arrives-uk-court-sentencing-over-nightclub-incident-2026-10-26/",
+     "published_at": "2026-10-26T17:18+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 453,
+   "section": "world",
+   "position": 5,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "巴西總統大選魯拉逆轉勝連任，對手陣營拒絕承認結果並引發股市重挫",
+   "deck": "現任總統魯拉在決選中逆轉勝取得第四個任期，右翼對手拒絕認輸，市場擔憂財政壓力致使股市大跌。",
+   "body": "據自由時報、中央社、聯合早報與公視新聞網報導，巴西總統大選第二輪投票結果出爐，現任左翼總統魯拉（Luiz Inácio Lula da Silva）獲得51.8%的選票，擊敗獲得48.2%選票的右翼前總統波索納洛之子佛拉維歐．波索納洛（Flavio Bolsonaro），逆轉首輪劣勢成功連任，成為巴西史上首位四度執政的領袖。然而，敗選的佛拉維歐拒絕承認敗選，質疑最高法院裁定延長投票時間2小時的措施，並要求宣告選舉結果無效及採取法律行動。聯合早報與中央社指出，由於投資人擔憂魯拉連任可能增加政府開支、加重國家債務壓力，巴西聖保羅證交所（Bovespa）股市指數在選舉結果出爐後盤中大跌，一度觸發熔斷機制，終場重挫將近14%。",
+   "why_it_matters": "巴西大選結果牽動拉丁美洲政經走向，選舉爭議與市場劇烈震盪引發國際金融高度關注。",
+   "sources": [
+    {
+     "outlet": "自由時報 國際",
+     "source_id": "ltn-world",
+     "tier": "T2",
+     "title": "巴西總統大選 魯拉逆轉勝連任",
+     "url": "https://news.ltn.com.tw/news/world/paper/1776089",
+     "published_at": "2026-10-27T05:30+08:00"
+    },
+    {
+     "outlet": "中央社 證券",
+     "source_id": "cna-stock",
+     "tier": "T2",
+     "title": "魯拉連任總統引投資人擔憂 巴西股市收盤暴跌近14%",
+     "url": "https://www.cna.com.tw/news/afe/202610270008.aspx",
+     "published_at": "2026-10-27T05:16+08:00"
+    },
+    {
+     "outlet": "聯合早報 國際即時",
+     "source_id": "zaobao-world",
+     "tier": "T2",
+     "title": "巴西總統盧拉連任引發市場震蕩 股市開盤暴跌近17%",
+     "url": "https://www.zaobao.com.sg/news/world/story20261026-9899226",
+     "published_at": "2026-10-26T23:18+08:00"
+    },
+    {
+     "outlet": "公視新聞網",
+     "source_id": "pts-news",
+     "tier": "T2",
+     "title": "魯拉逆轉連任巴西總統 小波索納洛不認敗選",
+     "url": "https://news.pts.org.tw/article/833034",
+     "published_at": "2026-10-26T20:56+08:00"
+    },
+    {
+     "outlet": "關鍵評論網",
+     "source_id": "thenewslens-feed",
+     "tier": "T2",
+     "title": "巴西總統決選：魯拉擊敗波索納洛之子連任！佛拉維歐拒認結果，政見、支持基礎與爭議一次看",
+     "url": "https://www.thenewslens.com/article/270732",
+     "published_at": "2026-10-26T18:36+08:00"
+    },
+    {
+     "outlet": "中央廣播電台",
+     "source_id": "rti-news",
+     "tier": "T2",
+     "title": "[國際] 佛拉維歐拒認敗選 要求宣告巴西決選結果無效",
+     "url": "https://www.rti.org.tw/news?uid=3&pid=239802",
+     "published_at": "2026-10-26T10:59+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 232,
+   "section": "cross_strait",
+   "position": 1,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "中共二十屆五中全會北京開幕 聚焦全面從嚴治黨",
+   "deck": "中共五中全會在北京舉行，為期四天，外界關注反腐行動與人事布局。",
+   "body": "據《聯合早報》、《自由亞洲電台》、《SCMP China》等多家媒體報導，中共二十屆中央委員會第五次全體會議於星期一（10月26日）在北京開幕，為期四天。會議聚焦全面從嚴治黨，外界關注反腐行動會否進一步擴大，以及中共如何加強幹部監督、問責和人事管理，為明年的中共二十一大作準備。\n\n據新華社報導，中共總書記習近平代表政治局向全會作工作報告，並就《中共中央關於持之以恆推進全面從嚴治黨若干重大問題的決定（討論稿）》作說明。《人民日報》則發表署名文章強調「全面從嚴治黨永遠在路上」。綜合各家外媒指出，這場閉門會議是在習近平預計取得第四任期約一年前夕舉行，會議如何處理反腐與政治忠誠，將成為觀察其下一階段執政的重要風向標。",
+   "why_it_matters": "有助於觀察中共政治走向及未來高層人事安排。",
+   "sources": [
+    {
+     "outlet": "AP Top News",
+     "source_id": "apnews-top",
+     "tier": "T2",
+     "title": "What to know about China’s plenum as Xi seeks stronger Communist Party discipline",
+     "url": "https://apnews.com/article/china-plenum-xi-jinping-communist-party-328a5ecc91ce19ff98c7f437341e0f3a",
+     "published_at": "2026-10-26T22:42+08:00"
+    },
+    {
+     "outlet": "NPR News",
+     "source_id": "npr-news",
+     "tier": "T2",
+     "title": "What to know about China's plenum as Xi seeks stronger party discipline",
+     "url": "https://www.npr.org/2026/10/26/g-s1-149918/what-to-know-about-chinas-plenum-as-xi-seeks-stronger-party-discipline",
+     "published_at": "2026-10-26T21:20+08:00"
+    },
+    {
+     "outlet": "聯合早報 中國即時",
+     "source_id": "zaobao-china",
+     "tier": "T2",
+     "title": "中共五中全會聚焦治黨 為明年二十一大布局",
+     "url": "https://www.zaobao.com.sg/news/china/story20261026-9896961",
+     "published_at": "2026-10-26T19:18+08:00"
+    },
+    {
+     "outlet": "BBC World",
+     "source_id": "bbc-world",
+     "tier": "T2",
+     "title": "China's big political meeting could see Xi 'tighten discipline' in party",
+     "url": "https://www.bbc.co.uk/news/articles/c6n8djd1078ro?at_medium=RSS&at_campaign=rss",
+     "published_at": "2026-10-26T15:40+08:00"
+    },
+    {
+     "outlet": "自由亞洲電台 中文",
+     "source_id": "rfa-chinese",
+     "tier": "T2",
+     "title": "中共五中全會聚焦「治黨」 絕對忠誠陷困局",
+     "url": "https://rfa.org/mandarin/zhengzhi/2026/10/26/ccp-fifth-plenary-session-xi-jinping-anti-corruption-political-loyalty/",
+     "published_at": "2026-10-26T14:45+08:00"
+    },
+    {
+     "outlet": "SCMP China",
+     "source_id": "scmp-china",
+     "tier": "T2",
+     "title": "China’s Communist Party opens fifth plenum with focus on discipline and loyalty to Xi",
+     "url": "https://www.scmp.com/news/china/politics/article/3372134/chinas-communist-party-opens-fifth-plenum-focus-discipline-and-loyalty-xi",
+     "published_at": "2026-10-26T14:18+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 1208,
+   "section": "cross_strait",
+   "position": 2,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "洪秀柱赴中稱台灣少數人認賊作父 陸委會回應勿貶低國家",
+   "deck": "洪秀柱在福建出席座談會批評皇民化遺毒，陸委會重申自由民主是台灣共識。",
+   "body": "據中央社、公視新聞網、中央廣播電台與聯合早報等媒體報導，前國民黨主席洪秀柱於25日赴中國福建福州出席「紀念台灣光復81周年座談會」，會中指稱日本軍國主義與皇民化運動企圖抽離台灣人的中華血脈，導致如今台灣內部有少數人迷失方向、「認賊作父」，甚至把昔日的殖民侵略者當成祖宗。\n\n針對此言論，陸委會於26日回應表示，堅持自由民主、不受中國共產黨統治，這是台灣2300萬人共同的追求，與日本無關，並敦促洪秀柱不要貶低自己的國家。同時，網紅館長陳之漢也在台灣光復節當天赴廈門「一國兩制」標語下拍片，引發各界關注。",
+   "why_it_matters": "反映兩岸歷史話語權與統戰活動的政治爭論。",
+   "sources": [
+    {
+     "outlet": "公視新聞網",
+     "source_id": "pts-news",
+     "tier": "T2",
+     "title": "洪秀柱稱台灣少數人認賊作父 陸委會：勿貶低自己國家",
+     "url": "https://news.pts.org.tw/article/833046",
+     "published_at": "2026-10-26T21:05+08:00"
+    },
+    {
+     "outlet": "聯合早報 中國即時",
+     "source_id": "zaobao-china",
+     "tier": "T2",
+     "title": "臺陸委會促洪秀柱勿貶低臺灣",
+     "url": "https://www.zaobao.com.sg/news/china/story20261026-9897016",
+     "published_at": "2026-10-26T16:30+08:00"
+    },
+    {
+     "outlet": "中央廣播電台",
+     "source_id": "rti-news",
+     "tier": "T2",
+     "title": "[兩岸] 洪秀柱赴中稱台灣少數人認賊作父 陸委會：勿貶低自己國家",
+     "url": "https://www.rti.org.tw/news?uid=3&pid=239871",
+     "published_at": "2026-10-26T16:11+08:00"
+    },
+    {
+     "outlet": "中央社 兩岸",
+     "source_id": "cna-cross-strait",
+     "tier": "T2",
+     "title": "洪秀柱赴中稱台灣少數人認賊作父 陸委會：勿貶低自己國家",
+     "url": "https://www.cna.com.tw/news/acn/202610260150.aspx",
+     "published_at": "2026-10-26T15:59+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 1318,
+   "section": "cross_strait",
+   "position": 3,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "中國擬發布特別規定防範外國實體侵害商業秘密",
+   "deck": "中國商務部推出新規徵求意見稿，若外企侵害商業秘密並危害國家安全將受罰。",
+   "body": "據中央社、中央廣播電台與聯合早報報導，中國商務部於星期一（10月26日）發布《保護中國商業秘密特別規定（徵求意見稿）》。根據規定內容，若外國實體在國際經貿活動中有侵害中國商業秘密的行為，且同時危害或對中國國家主權、安全、發展利益構成現實威脅，商務部可以採取相應制裁與限制措施。\n\n這些擬議措施包括：限制或禁止該外國實體從事與中國有關的貨物、技術進出口以及國際服務貿易活動；禁止向其出口相關物項；限制或禁止其在中國境內新增投資；限制或禁止相關人員入境；限制或取消其在中國境內停留、工作或居留資格；並可視情節輕重給予相應數額的罰款。該徵求意見稿的意見反饋截止日期為11月24日。",
+   "why_it_matters": "對台商及外商在中國大陸的投資與經貿活動可能帶來新規範與風險。",
+   "sources": [
+    {
+     "outlet": "中央廣播電台",
+     "source_id": "rti-news",
+     "tier": "T2",
+     "title": "[兩岸] 中國擬加強保護商業秘密 可禁外資進出口技術",
+     "url": "https://www.rti.org.tw/news?uid=3&pid=239943",
+     "published_at": "2026-10-26T21:03+08:00"
+    },
+    {
+     "outlet": "中央社 兩岸",
+     "source_id": "cna-cross-strait",
+     "tier": "T2",
+     "title": "中國擬加強保護商業秘密 可禁外資進出口技術",
+     "url": "https://www.cna.com.tw/news/acn/202610260224.aspx",
+     "published_at": "2026-10-26T20:46+08:00"
+    },
+    {
+     "outlet": "聯合早報 中國即時",
+     "source_id": "zaobao-china",
+     "tier": "T2",
+     "title": "中國擬採取措施應對外國實體侵犯商業秘密行為",
+     "url": "https://www.zaobao.com.sg/news/china/story20261026-9897468",
+     "published_at": "2026-10-26T17:28+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 2422,
+   "section": "finance",
+   "position": 1,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "蘋果首款摺疊機iPhone Duo傳螢幕災情 官方承諾將提供更換",
+   "deck": "蘋果坦承iPhone Duo內部顯示器有瑕疵，將透過保固替用戶更換受影響的手機。",
+   "body": "據彭博與9to5Mac等外媒引述，蘋果公司於週一證實，其剛推出不久的首款摺疊手機iPhone Duo出現螢幕碎裂等災情。多名早期買家在Reddit與社群平台上反映，手機使用數小時或數天後，內部顯示器便出現裂痕，甚至從中央向右側延伸出明亮的線條。科技新聞網站The Verge與路透社等報導指出，蘋果坦承有「極少數」的iPhone Duo單位受到內部顯示器問題影響，並表示將根據AppleCare保固條款替消費者更換這些受影響的裝置。CNBC等媒體也指出，蘋果已對此做出回應並了解該狀況。",
+   "why_it_matters": "對台灣關注蘋果新品及高階智慧型手機市場的消費者與供應鏈而言，首款摺疊機的初期品質穩定度備受矚目。",
+   "sources": [
+    {
+     "outlet": "Reuters Business",
+     "source_id": "reuters-business",
+     "tier": "T2",
+     "title": "Apple says it will replace iPhone Duo units showing screen problems",
+     "url": "https://www.reuters.com/business/media-telecom/apple-says-it-will-replace-iphone-duo-units-showing-screen-problems-2026-10-26/",
+     "published_at": "2026-10-27T04:43+08:00"
+    },
+    {
+     "outlet": "TechCrunch",
+     "source_id": "techcrunch",
+     "tier": "T2",
+     "title": "Uh oh, it sounds like the iPhone Duo keeps cracking and users aren’t happy about it",
+     "url": "https://techcrunch.com/2026/10/26/uh-oh-it-sounds-like-the-iphone-duo-keeps-cracking-and-users-arent-happy-about-it/",
+     "published_at": "2026-10-27T03:22+08:00"
+    },
+    {
+     "outlet": "The Guardian World",
+     "source_id": "guardian-world",
+     "tier": "T2",
+     "title": "iPhone Duo owners report cracks in Apple’s first foldable handset",
+     "url": "https://www.theguardian.com/technology/2026/oct/26/iphone-duo-owners-cracks-apple-first-foldable-handset",
+     "published_at": "2026-10-27T03:15+08:00"
+    },
+    {
+     "outlet": "CNBC Top News",
+     "source_id": "cnbc-top",
+     "tier": "T2",
+     "title": "Apple responds to user reports of broken iPhone Duo screens on new foldable phone",
+     "url": "https://www.cnbc.com/2026/10/26/apple-responds-to-user-reports-of-broken-iphone-duo-screens.html",
+     "published_at": "2026-10-27T02:43+08:00"
+    },
+    {
+     "outlet": "The Verge",
+     "source_id": "theverge",
+     "tier": "T2",
+     "title": "Apple acknowledges iPhone Duo display &#8216;issue&#8217; after reports of cracked screens",
+     "url": "https://www.theverge.com/tech/1018760/iphone-duo-crackgate-inside-screen-hinge-crack",
+     "published_at": "2026-10-27T01:28+08:00"
+    },
+    {
+     "outlet": "Yahoo Finance",
+     "source_id": "yahoo-finance",
+     "tier": "T2",
+     "title": "Apple’s Foldable iPhone Duo Draws Early Complaints of the Screen Cracking",
+     "url": "https://finance.yahoo.com/technology/articles/apple-foldable-iphone-duo-draws-171331167.html",
+     "published_at": "2026-10-27T01:13+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 1707,
+   "section": "finance",
+   "position": 2,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "人工智慧新創Anthropic正式提交IPO申請 尋求上市集資",
+   "deck": "AI聊天機器人Claude開發商Anthropic正式提交S-1註冊聲明，邁向公開市場上市。",
+   "body": "據《Yahoo Finance》與DW English等外媒報導，開發AI聊天機器人Claude的美國人工智慧公司Anthropic於週一正式提交首次公開募股（IPO）的相關文件，跨出邁向公開市場上市的關鍵一步。此前該公司已向美國證券交易委員會（SEC）祕密提交S-1表格草案。MarketWatch與《金融時報》等報導指出，這份長達數百頁的招股說明書揭露了該公司的營運細節、使命、龐大的資料中心承諾及治理結構。DW English指出，該公司目前尚未實現獲利，此次IPO集資規模可能成為歷史上最大規模之一。",
+   "why_it_matters": "Anthropic的上市進展牽動全球人工智慧產業的資金動能與市場對AI商業化前景的評估。",
+   "sources": [
+    {
+     "outlet": "MarketWatch",
+     "source_id": "marketwatch-top",
+     "tier": "T2",
+     "title": "With the Anthropic IPO, the devil is in the details",
+     "url": "https://www.marketwatch.com/story/with-the-anthropic-ipo-the-devil-is-in-the-details-239d571d?mod=mw_rss_topstories",
+     "published_at": "2026-10-27T04:50+08:00"
+    },
+    {
+     "outlet": "Yahoo Finance",
+     "source_id": "yahoo-finance",
+     "tier": "T2",
+     "title": "Anthropic preps for IPO in major step for AI company",
+     "url": "https://finance.yahoo.com/technology/ai/articles/anthropic-formally-files-ipo-major-134000221.html",
+     "published_at": "2026-10-27T02:50+08:00"
+    },
+    {
+     "outlet": "DW English",
+     "source_id": "dw-en",
+     "tier": "T2",
+     "title": "AI company Anthropic files its IPO in hopes of raising $100 billion",
+     "url": "https://www.dw.com/en/ai-company-anthropic-files-its-ipo-in-hopes-of-raising-100-billion/a-79768876?maca=en-rss-en-all-1573-rdf",
+     "published_at": "2026-10-27T02:22+08:00"
+    },
+    {
+     "outlet": "AP Top News",
+     "source_id": "apnews-top",
+     "tier": "T2",
+     "title": "Anthropic expands AI support for nonprofits as it files to sell shares to the public",
+     "url": "https://apnews.com/article/anthropic-claude-nonprofits-ai-e4db0d624495c8224187b3227939dd27",
+     "published_at": "2026-10-27T02:13+08:00"
+    },
+    {
+     "outlet": "Financial Times",
+     "source_id": "ft-home",
+     "tier": "T2",
+     "title": "‘Bold but sane’: what we learnt from Anthropic’s 240,000-word IPO filing",
+     "url": "https://www.ft.com/content/a6c43402-719e-4295-ae5f-541edb0aeb29?syn-25a6b1a6=1",
+     "published_at": "2026-10-27T01:45+08:00"
+    },
+    {
+     "outlet": "The Verge",
+     "source_id": "theverge",
+     "tier": "T2",
+     "title": "Five weird details from Anthropic’s IPO filing",
+     "url": "https://www.theverge.com/ai-artificial-intelligence/1018738/anthropic-ipo-s1-filing-weird-details",
+     "published_at": "2026-10-27T01:10+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 2425,
+   "section": "finance",
+   "position": 3,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "美聯邦貿易委員會與20州聯合起訴 控告Dollar General標價不實",
+   "deck": "折扣零售商Dollar General被控多次未按廣告價格收費，遭美FTC及20州提告。",
+   "body": "據路透社與《Yahoo Finance》等外媒體報導，美國聯邦貿易委員會（FTC）與全美20個州於週一聯合對大型折扣零售商Dollar General提起訴訟。起訴內容指出，該公司在收到數萬起消費者投訴後，仍反覆向顧客收取高於宣傳傳單及貨架標示的價格，藉此獲利數百萬美元。AP Top News與CNBC等外媒也指出，這起訴訟主要針對該零售商長期針對低收入消費者販售、卻涉及欺騙性定價與未妥善處理問題的行為。",
+   "why_it_matters": "此案凸顯美國對大型零售商定價透明度與消費者權益保護的執法力道，對跨國零售業者的法遵成本具參考意義。",
+   "sources": [
+    {
+     "outlet": "AP Top News",
+     "source_id": "apnews-top",
+     "tier": "T2",
+     "title": "Dollar General is sued by the FTC and 20 states for what’s being described as deceptive pricing",
+     "url": "https://apnews.com/article/federal-trade-commission-dollar-general-prices-1b572418c750c6abe491166fc1ba7480",
+     "published_at": "2026-10-27T04:43+08:00"
+    },
+    {
+     "outlet": "Yahoo Finance",
+     "source_id": "yahoo-finance",
+     "tier": "T2",
+     "title": "Dollar General overcharged shoppers, FTC and states allege in lawsuit",
+     "url": "https://finance.yahoo.com/news/us-20-states-sue-dollar-174735286.html",
+     "published_at": "2026-10-27T02:51+08:00"
+    },
+    {
+     "outlet": "CNBC Top News",
+     "source_id": "cnbc-top",
+     "tier": "T2",
+     "title": "FTC and 20 states sue Dollar General, alleging retailer overcharged shoppers",
+     "url": "https://www.cnbc.com/2026/10/26/ftc-dollar-general-lawsuit.html",
+     "published_at": "2026-10-27T02:37+08:00"
+    },
+    {
+     "outlet": "Reuters Business",
+     "source_id": "reuters-business",
+     "tier": "T2",
+     "title": "US, 20 states sue Dollar General for alleged overcharges",
+     "url": "https://www.reuters.com/world/us-20-states-sue-dollar-general-alleged-overcharges-2026-10-26/",
+     "published_at": "2026-10-27T01:14+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 1460,
+   "section": "finance",
+   "position": 4,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "Meta宣布募資高達950億美元 擴大投資人工智慧基礎設施",
+   "deck": "Meta計畫透過股權融資籌集高達950億美元，輝達、AMD與博通等晶片商表達認購意願。",
+   "body": "據路透社與《Yahoo Finance》報導，社群媒體巨頭Meta Platforms於週一宣布，計畫透過股權融資籌集高達950億美元的資金，這將是該公司規模最大的股權募資行動，旨在積極擴大其人工智慧（AI）基礎設施與超智慧的發展。CNBC等媒體指出，Meta計畫先進行35億美元的普通股與優先股籌資，而其主要晶片供應商輝達（Nvidia）、超微（AMD）與博通（Broadcom）皆已表達興趣，計畫合計認購高達50億美元的股份。受此募資計畫影響，Meta股價在週一早盤微幅下跌2%。",
+   "why_it_matters": "Meta大規模的資金投入與主要半導體廠的參股，直接牽動台灣伺服器與晶片供應鏈未來的AI硬體拉貨動能。",
+   "sources": [
+    {
+     "outlet": "CNBC Top News",
+     "source_id": "cnbc-top",
+     "tier": "T2",
+     "title": "Meta announces $95 billion stock offering to fund AI expansion",
+     "url": "https://www.cnbc.com/2026/10/26/meta-stock-offering-ai.html",
+     "published_at": "2026-10-26T22:05+08:00"
+    },
+    {
+     "outlet": "Yahoo Finance",
+     "source_id": "yahoo-finance",
+     "tier": "T2",
+     "title": "Meta announces plans to raise up to $95 billion for AI build-out",
+     "url": "https://finance.yahoo.com/markets/article/meta-announces-plans-to-raise-up-to-95-billion-for-ai-buildout-140141962.html",
+     "published_at": "2026-10-26T22:01+08:00"
+    },
+    {
+     "outlet": "Reuters Business",
+     "source_id": "reuters-business",
+     "tier": "T2",
+     "title": "Meta eyes record $95 billion equity raise to fund AI expansion",
+     "url": "https://www.reuters.com/legal/transactional/meta-launches-35-billion-stock-offering-fund-ai-expansion-2026-10-26/",
+     "published_at": "2026-10-26T19:07+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 1630,
+   "section": "tech",
+   "position": 1,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "蘋果推出搭載OLED螢幕與A20 Pro晶片的新款iPad mini",
+   "deck": "蘋果發表全新iPad mini，換上更大的OLED螢幕並搭載更快的A20 Pro晶片，售價由699美元起。",
+   "body": "綜合Ars Technica、TechCrunch與The Verge等外媒報導，蘋果（Apple）近日發表了全新改款的iPad mini，這是該產品線歷來最顯著的一次更新。據報導指出，新款iPad mini配備了更大的8.5吋OLED顯示器，機身厚度僅5.4毫米，較前代更薄且更輕。在效能方面，該裝置搭載了更快的A20 Pro晶片。售價部分，純Wi-Fi型號從699美元起跳，Wi-Fi與行動網路機型則從849美元起。蘋果是在其「Pro and tell」活動登場前夕公布這款新產品，官方更聲稱這是iPad mini系列有史以來最重大的一次升級。",
+   "why_it_matters": "新款iPad mini迎來歷來最大幅度的OLED螢幕與晶片升級，牽動全球平板電腦市場的規格走向。",
+   "sources": [
+    {
+     "outlet": "Ars Technica",
+     "source_id": "arstechnica",
+     "tier": "T2",
+     "title": "Apple reveals updated iPad mini with a bigger OLED screen for $700",
+     "url": "https://arstechnica.com/apple/2026/10/apple-reveals-updated-ipad-mini-with-a-bigger-oled-screen-for-700/",
+     "published_at": "2026-10-27T03:04+08:00"
+    },
+    {
+     "outlet": "TechCrunch",
+     "source_id": "techcrunch",
+     "tier": "T2",
+     "title": "Apple unveils new iPad mini with OLED display and faster A20 Pro chip",
+     "url": "https://techcrunch.com/2026/10/26/apple-unveils-new-ipad-mini-with-oled-display-and-faster-a20-pro-chip/",
+     "published_at": "2026-10-26T22:25+08:00"
+    },
+    {
+     "outlet": "The Verge",
+     "source_id": "theverge",
+     "tier": "T2",
+     "title": "Apple updates the iPad Mini with a larger OLED display",
+     "url": "https://www.theverge.com/tech/1017801/ipad-mini-oled-display-apple-announce",
+     "published_at": "2026-10-26T21:05+08:00"
+    },
+    {
+     "outlet": "Hacker News 首頁",
+     "source_id": "hn-frontpage",
+     "tier": "T3",
+     "title": "OLED iPad Mini",
+     "url": "https://www.apple.com/shop/buy-ipad/ipad-mini",
+     "published_at": "2026-10-26T21:47+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 1624,
+   "section": "tech",
+   "position": 2,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "T-Mobile推出「T-Mix」方案，主打可自由更換的訂閱福利",
+   "deck": "T-Mobile打破傳統固定方案模式，推出允許用戶自由搭配與替換串流、外送等福利的新資費。",
+   "body": "據Reuters Technology與The Verge報導，美國電信商T-Mobile於週一推出名為「T-Mix」的全新無線通訊方案。報導指出，該方案打破了以往將福利鎖死在特定資費等級的傳統策略，轉而讓客戶能夠自由選擇並替換各種訂閱優惠，範圍涵蓋Netflix、Apple TV、YouTube Premium、Xbox Game Pass Ultimate、餐點外送服務如DoorDash以及裝置促銷等。據The Verge與Fierce Network報導，標準方案的單門號含自動扣款月費自55美元起，包含一項可隨時更換的「Pick」福利。",
+   "why_it_matters": "電信業者資費方案結合可自由更換的串流與外送等多元訂閱服務，為消費者帶來更高的自主性。",
+   "sources": [
+    {
+     "outlet": "The Verge",
+     "source_id": "theverge",
+     "tier": "T2",
+     "title": "T-Mobile’s new plans include swappable subscription perks",
+     "url": "https://www.theverge.com/tech/1018624/t-mobile-mix-plans-streaming-picks",
+     "published_at": "2026-10-26T23:39+08:00"
+    },
+    {
+     "outlet": "Reuters Technology",
+     "source_id": "reuters-tech",
+     "tier": "T2",
+     "title": "T-Mobile debuts wireless plans with customizable perks from streaming to food delivery",
+     "url": "https://www.reuters.com/business/media-telecom/t-mobile-debuts-wireless-plans-with-customizable-perks-streaming-food-delivery-2026-10-26/",
+     "published_at": "2026-10-26T21:03+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 154,
+   "section": "tech",
+   "position": 3,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "Block發表具備擬真語音的模型，可在MacBook M4 Max上運行",
+   "deck": "Block推出聽起來極度逼真的全新語音模型，並表示該模型能夠在MacBook M4 Max上進行本地端運行。",
+   "body": "據TechCrunch報導，Block發表了一款全新的語音模型，其聲音聽起來與人類極為相似。報導指出，該公司表示這款語音模型可以直接在MacBook M4 Max裝置上以本地端方式運行。此外，Hacker News首頁亦有相關的討論串關注瑞士3D地圖專案。",
+   "why_it_matters": "具備高度擬真且能在個人電腦本地端執行的語音模型，展現了終端裝置AI運算能力的提升。",
+   "sources": [
+    {
+     "outlet": "TechCrunch",
+     "source_id": "techcrunch",
+     "tier": "T2",
+     "title": "Block’s new voice model sounds eerily human",
+     "url": "https://techcrunch.com/2026/10/24/blocks-new-voice-model-sounds-eerily-human/",
+     "published_at": "2026-10-25T00:00+08:00"
+    },
+    {
+     "outlet": "Hacker News 首頁",
+     "source_id": "hn-frontpage",
+     "tier": "T3",
+     "title": "Switzerland. Block by block. At 1:1 scale",
+     "url": "https://blocks.manifold3d.ch/",
+     "published_at": "2026-10-26T16:46+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 498,
+   "section": "tech",
+   "position": 4,
+   "is_front": false,
+   "kind": "single_source",
+   "writer": "gemini",
+   "headline": "馬斯克稱SpaceX籌得400億美元買晶片，目前僅有一家媒體報導",
+   "deck": "科技新報報導馬斯克指SpaceX籌得400億美元採購輝達晶片並稱新雲端將被淘汰，目前僅單一媒體報導。",
+   "body": "據科技新報報導，特斯拉執行長馬斯克（Elon Musk）於週日正式宣布，旗下SpaceX已完成籌資，將投入400億美元購買輝達晶片，並嗆聲指新雲端將被淘汰。本則新聞目前僅有科技新報一家媒體報導。同時，PTT股票板亦有網友轉貼AI新創Anthropic遞交IPO申請、估值達1.5兆美元的相關新聞資訊。",
+   "why_it_matters": "此為單一媒體報導內容，顯示AI晶片搶購潮與大型科技企業融資動向備受市場關注。",
+   "sources": [
+    {
+     "outlet": "科技新報",
+     "source_id": "technews-tw",
+     "tier": "T2",
+     "title": "馬斯克喊 SpaceX 籌得 400 億美元買輝達晶片！嗆新雲端將被淘汰",
+     "url": "https://finance.technews.tw/2026/10/26/predicts-neocloud-shakeout/",
+     "published_at": "2026-10-26T09:03+08:00"
+    },
+    {
+     "outlet": "PTT 股票板",
+     "source_id": "ptt-stock",
+     "tier": "T4",
+     "title": "[新聞] AI新創Anthropic遞交IPO申請　估值達1.5",
+     "url": "https://www.ptt.cc/bbs/Stock/M.1793021600.A.400.html",
+     "published_at": "2026-10-26T21:33+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 262,
+   "section": "science_health",
+   "position": 1,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "莫德納癌症疫苗熱度降溫 拼2027年申請FDA批准",
+   "deck": "投資人高度期待的莫德納實驗性癌症治療數據，市場熱度近期出現降溫。",
+   "body": "據MarketWatch與STAT News報導，投資人原本對莫德納（Moderna）實驗性癌症治療的第三階段數據抱持「極高」期待，但近期市場熱度有所降溫。另一方面，STAT News指出，莫德納與默沙東（Merck）正競相提交其個人化癌症疫苗以獲得美國食品藥物管理局（FDA）批准。莫德納執行長史蒂芬·班塞爾（Stéphane Bancel）預估，相關審查有望於2027年進行。",
+   "why_it_matters": "此發展牽動全球生技產業與新一代癌症免疫療法的未來審查進度。",
+   "sources": [
+    {
+     "outlet": "MarketWatch",
+     "source_id": "marketwatch-top",
+     "tier": "T2",
+     "title": "The excitement around Moderna’s cancer vaccine is cooling. Here’s why.",
+     "url": "https://www.marketwatch.com/story/the-excitement-around-modernas-cancer-vaccine-is-cooling-heres-why-994b205f?mod=mw_rss_topstories",
+     "published_at": "2026-10-26T21:50+08:00"
+    },
+    {
+     "outlet": "STAT News",
+     "source_id": "statnews",
+     "tier": "T2",
+     "title": "STAT+: Five biotech updates to read after ESMO this weekend",
+     "url": "https://www.statnews.com/2026/10/26/biotech-news-moderna-ceo-on-whats-next-after-intismeran-success/?utm_campaign=rss",
+     "published_at": "2026-10-26T21:38+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 614,
+   "section": "science_health",
+   "position": 2,
+   "is_front": false,
+   "kind": "single_source",
+   "writer": "gemini",
+   "headline": "評估動態工作環境中編程代理之新基準SWE-Shift",
+   "deck": "研究人員推出名為SWE-Shift的新基準，旨在評估軟體工程代理在執行過程中遭遇環境變更的表現。",
+   "body": "據arXiv cs.AI獨家報導，目前僅有一家媒體關注此項研究。報導指出，程式庫層級的編程基準測試通常假設任務與環境在執行期間保持不變；然而在實際軟體開發中，程式碼、相依性、執行階段狀態與需求可能在代理工作期間隨之改變。為此，研究團隊推出了名為「SWE-Shift」的基準，用於評估編程代理在此類執行中期發生變更時的應對能力。",
+   "why_it_matters": "這有助於提升人工智慧在真實且多變的軟體開發工作環境中的實際應用效能。",
+   "sources": [
+    {
+     "outlet": "arXiv cs.AI",
+     "source_id": "arxiv-cs-ai",
+     "tier": "T3",
+     "title": "SWE-Shift: Evaluating Coding Agents in Evolving Workspaces",
+     "url": "https://arxiv.org/abs/2610.32196",
+     "published_at": "2026-10-26T12:00+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 641,
+   "section": "science_health",
+   "position": 3,
+   "is_front": false,
+   "kind": "single_source",
+   "writer": "gemini",
+   "headline": "針對凍結多模態情感模型之混淆感知技能演進研究",
+   "deck": "科學界發表名為CASE的新方法，探討如何改善多模態大型語言模型在情感辨識上的語義混淆問題。",
+   "body": "據arXiv cs.AI獨家報導，目前僅有一家媒體報導此項研究。內容指出，多模態大型語言模型（MLLMs）透過對多模態證據進行推理，大幅推進了多模態情感辨識（MER）的細緻情感理解。然而，這些模型在語義相近且具有高度重疊多模態線索的情感之間，仍展現出系統性的混淆現象。現有方法通常難以克服此一瓶頸，相關研究持續尋求突破。",
+   "why_it_matters": "這項研究有助於提升人工智慧對人類複雜情緒理解的準確度與細緻度。",
+   "sources": [
+    {
+     "outlet": "arXiv cs.AI",
+     "source_id": "arxiv-cs-ai",
+     "tier": "T3",
+     "title": "CASE: Confusion-Aware Skill Evolution for Frozen Multimodal Emotion Models",
+     "url": "https://arxiv.org/abs/2610.32481",
+     "published_at": "2026-10-26T12:00+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 1301,
+   "section": "life_env",
+   "position": 1,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "傳台灣高等研究學院籌設延宕 教育部澄清無延宕並將提前試辦",
+   "deck": "教育部說明台灣高等研究學院無延宕，將採跨校際與跨系所試辦模式招收全國科研潛力學生。",
+   "body": "針對媒體報導指出台灣高等研究學院（TAAS）原定明年9月招生恐延後1年，綜合教育部即時新聞、中央社與自由時報報導，教育部回應表示該學院目前依進度籌設，並無延宕，且將提前啟動試辦。\n\n教育部指出，TAAS為跨校際的科研人才培育創新規劃，不採取傳統獨立實體學院或單一專班模式，而是透過校級或跨系所試辦模式，運用合作大學及學研機構現有資源，協助具科研潛質的學生設計學士班彈性修課、參與前瞻研究及國際交流，並銜接國內外碩博士班。自由時報指出，該計畫將透過大學現有「特殊選才」管道，招收全國具有科學潛質的高中生。",
+   "why_it_matters": "釐清國家前瞻科研人才培育計畫的最新進度與實際招生規劃。",
+   "sources": [
+    {
+     "outlet": "教育部 即時新聞",
+     "source_id": "moe-news",
+     "tier": "T1",
+     "title": "臺灣高等研究學院目前仍依進度籌設中，以串聯參與高中、頂尖大學及研究機構資源",
+     "url": "https://www.edu.tw/News_Content.aspx?n=9E7AC85F1954DDA8&s=F2FE4C5A771CEF0E",
+     "published_at": "2026-10-26T17:14+08:00"
+    },
+    {
+     "outlet": "中央社 生活",
+     "source_id": "cna-life",
+     "tier": "T2",
+     "title": "教育部：台灣高等研究學院無延宕 提前啟動試辦",
+     "url": "https://www.cna.com.tw/news/ahel/202610260194.aspx",
+     "published_at": "2026-10-26T18:05+08:00"
+    },
+    {
+     "outlet": "自由時報 生活",
+     "source_id": "ltn-life",
+     "tier": "T2",
+     "title": "台灣高等研究學院依進度籌設 教育部：將招收全國科研潛力學生",
+     "url": "https://news.ltn.com.tw/news/life/breakingnews/5619300",
+     "published_at": "2026-10-26T17:38+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 1014,
+   "section": "life_env",
+   "position": 2,
+   "is_front": false,
+   "kind": "report",
+   "writer": "template",
+   "headline": "野放國寶魚 11月可望自然產卵／存活率逾5成 出現配對繁衍",
+   "deck": "",
+   "body": "據自由時報報導：〔記者彭健禮／苗栗報導〕雪霸國家公園管理處致力復育國寶魚「台灣櫻花鉤吻鮭」，去年以直升機吊掛於司界蘭溪上游放流。今年十月初，研究團隊徒步六小時挺進深山調查，於六百公尺樣區內目視到一百一十七尾健康成魚，存活與擴散率突破五成，且已出現配對繁衍行…\n\n另有公視新聞網、中央社 生活報導此事。",
+   "why_it_matters": "",
+   "sources": [
+    {
+     "outlet": "自由時報 生活",
+     "source_id": "ltn-life",
+     "tier": "T2",
+     "title": "野放國寶魚 11月可望自然產卵／存活率逾5成 出現配對繁衍",
+     "url": "https://news.ltn.com.tw/news/life/paper/1776050",
+     "published_at": "2026-10-27T05:30+08:00"
+    },
+    {
+     "outlet": "公視新聞網",
+     "source_id": "pts-news",
+     "tier": "T2",
+     "title": "直升機放流魚苗存活近5成 櫻花鉤吻鮭重返司界蘭溪",
+     "url": "https://news.pts.org.tw/article/833026",
+     "published_at": "2026-10-26T21:19+08:00"
+    },
+    {
+     "outlet": "中央社 生活",
+     "source_id": "cna-life",
+     "tier": "T2",
+     "title": "台灣櫻花鉤吻鮭重返司界蘭溪 調查發現117尾",
+     "url": "https://www.cna.com.tw/news/ahel/202610260093.aspx",
+     "published_at": "2026-10-26T12:49+08:00"
+    }
+   ],
+   "review_notes": [
+    "證據中找不到的數字：600"
+   ]
+  },
+  {
+   "cluster_id": 451,
+   "section": "life_env",
+   "position": 3,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "未來一週三波東北季風接力報到 迎風面北部東半部迎短暫雨",
+   "deck": "交通部中央氣象署預報未來一週將有三波東北季風影響，北部與東半部地區高溫略降並有局部短暫雨。",
+   "body": "綜合中央廣播電台、自由時報與中央社報導，交通部中央氣象署表示，未來一週預計有3波東北季風接力影響台灣。首波自27日起影響至28日，桃園以北、東半部地區及恆春半島有局部短暫雨，其中明天晚間至28日清晨東北部地區須注意局部較大雨勢，午後南部山區也有零星短暫陣雨。\n\n氣象署指出，29日至30日東北季風減弱轉為偏東風；第二波東北季風預計於31日短暫影響1天；11月1日短暫減弱後，第3波東北季風將於11月2日增強。在氣溫方面，首波東北季風影響期間北台灣高溫將略為下降，迎風面地區維持陰雨天氣。",
+   "why_it_matters": "提醒通勤族與民眾注意未來一週氣溫變化及迎風面的降雨情況。",
+   "sources": [
+    {
+     "outlet": "中央廣播電台",
+     "source_id": "rti-news",
+     "tier": "T2",
+     "title": "[生活] 未來一週3波東北季風接力 迎風面易有短暫雨",
+     "url": "https://www.rti.org.tw/news?uid=3&pid=239903",
+     "published_at": "2026-10-26T17:58+08:00"
+    },
+    {
+     "outlet": "自由時報 生活",
+     "source_id": "ltn-life",
+     "tier": "T2",
+     "title": "開工日北部轉濕涼！連3波東北季風報到  煙花最快明升級強颱",
+     "url": "https://news.ltn.com.tw/news/life/breakingnews/5619272",
+     "published_at": "2026-10-26T17:35+08:00"
+    },
+    {
+     "outlet": "中央社 聚焦",
+     "source_id": "cna-headlines",
+     "tier": "T2",
+     "title": "未來一週3波東北季風接力 迎風面易有短暫雨",
+     "url": "https://www.cna.com.tw/news/ahel/202610260185.aspx",
+     "published_at": "2026-10-26T17:35+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 1290,
+   "section": "culture",
+   "position": 1,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "第61屆金鐘獎戲劇類揭曉 莊凱勛、楊貴媚奪下帝后",
+   "deck": "《我們與惡的距離II》奪下四座金鐘成為焦點之一，莊凱勛與楊貴媚分別拿下戲劇節目男、女主角獎。",
+   "body": "第61屆電視金鐘獎戲劇類頒獎典禮於台北流行音樂中心舉行，因薔琵颱風影響延期至26日登場。據風傳媒與中央廣播電台等媒體報導，本屆戲劇節目男主角獎由莊凱勛憑《都市開基祖》拿下，戲劇節目女主角獎則由楊貴媚以《我們與惡的距離II》奪下。 《我們與惡的距離II》共獲得戲劇節目獎等四座獎項，而《忘了我記得》則囊括六個獎項成為本屆最大贏家。楊貴媚受訪時坦言，這次角色的情緒非常困難且孤單，自己改變了以往萬全準備的習慣，將一半的表演空間交給對手演員。 另一方面，據自由時報報導，迷你劇集與戲劇節目最具潛力新人獎分別由《客家電影院－屋下無人》的龍步晞與《如果我不曾見過太陽》的蔡喬菲奪得。",
+   "why_it_matters": "金鐘獎作為台灣年度電視影視盛事，得獎名單反映了當年度戲劇創作的趨勢與演員表現，備受影視產業與觀眾關注。",
+   "sources": [
+    {
+     "outlet": "自由時報 娛樂",
+     "source_id": "ltn-entertainment",
+     "tier": "T2",
+     "title": "最具潛力新人獎-龍步晞披毛毯領獎 蔡喬菲感謝製作人慧眼",
+     "url": "https://ent.ltn.com.tw/news/paper/1776045",
+     "published_at": "2026-10-27T05:30+08:00"
+    },
+    {
+     "outlet": "三立新聞",
+     "source_id": "setn",
+     "tier": "T2",
+     "title": "金鐘61／三度封后哽咽！楊貴媚嘆《與惡II》角色太難演 吐心聲：很孤單",
+     "url": "https://star.setn.com/news/1928972",
+     "published_at": "2026-10-27T01:18+08:00"
+    },
+    {
+     "outlet": "風傳媒",
+     "source_id": "storm",
+     "tier": "T2",
+     "title": "第61屆金鐘獎大贏家揭曉！莊凱勛封帝、楊貴媚二度奪后，完整得獎名單一次看",
+     "url": "https://www.storm.mg/article/11175874",
+     "published_at": "2026-10-27T00:28+08:00"
+    },
+    {
+     "outlet": "中央廣播電台",
+     "source_id": "rti-news",
+     "tier": "T2",
+     "title": "[生活] 《與惡2》奪金鐘大獎！莊凱勛、楊貴媚封帝后 《忘了我記得》6獎稱霸",
+     "url": "https://www.rti.org.tw/news?uid=3&pid=239963",
+     "published_at": "2026-10-26T23:22+08:00"
+    },
+    {
+     "outlet": "Yahoo 股市新聞",
+     "source_id": "yahoo-tw-stock",
+     "tier": "T2",
+     "title": "《與惡2》奪金鐘大獎！莊凱勛、楊貴媚封帝后 《忘了我記得》6獎稱霸",
+     "url": "https://tw.news.yahoo.com/%E8%88%87%E6%83%A12-%E5%A5%AA%E9%87%91%E9%90%98%E5%A4%A7%E7%8D%8E-%E8%8E%8A%E5%87%B1%E5%8B%9B-%E6%A5%8A%E8%B2%B4%E5%AA%9A%E5%B0%81%E5%B8%9D%E5%90%8E-%E5%BF%98%E4%BA%86%E6%88%91%E8%A8%98%E5%BE%97-152247120.html",
+     "published_at": "2026-10-26T23:22+08:00"
+    },
+    {
+     "outlet": "PTT 八卦板",
+     "source_id": "ptt-gossiping",
+     "tier": "T4",
+     "title": "[問卦] 楊貴媚會不會和二姊一樣,宣佈不參加",
+     "url": "https://www.ptt.cc/bbs/Gossiping/M.1793025469.A.4EA.html",
+     "published_at": "2026-10-26T22:37+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 338,
+   "section": "culture",
+   "position": 2,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "金鐘61節目類落幕 沈玉琳抗癌重生奪綜藝主持人獎",
+   "deck": "沈玉琳與Melody以《11點熱吵店》奪下綜藝節目主持人獎，孫協志與王仁甫等人則抱回實境節目主持人獎。",
+   "body": "第61屆金鐘獎節目類頒獎典禮於台北流行音樂中心舉行，各獎項陸續揭曉。據中央社與中央廣播電台報導，去年曾罹患血癌的沈玉琳與搭檔Melody（殷悅）憑《11點熱吵店》拿下「綜藝節目主持人獎」。沈玉琳在致詞時特別感謝照顧他的醫護團隊，並感性表示原以為人生即將謝幕，能重返舞台奪金如同撿回一條命。 在其他獎項方面，壓軸的「綜藝節目獎」由《週末最強大》奪下；開播十週年的《飢餓遊戲》則由孫協志、王仁甫等五位主持人抱回「實境節目主持人獎」。此外，曾寶儀也憑《我們回家吧3》相隔13年再度敲響金鐘。",
+   "why_it_matters": "沈玉琳走過重病後重返舞台並奪下主持大獎，其經歷與綜藝圈競爭結果，成為金鐘獎典禮的一大話題。",
+   "sources": [
+    {
+     "outlet": "自由時報 娛樂",
+     "source_id": "ltn-entertainment",
+     "tier": "T2",
+     "title": "沈玉琳抗癌重生奪金感悟多 陳漢典逗趣主持Lulu給滿分",
+     "url": "https://ent.ltn.com.tw/news/paper/1776041",
+     "published_at": "2026-10-27T05:30+08:00"
+    },
+    {
+     "outlet": "中央社 娛樂",
+     "source_id": "cna-entertainment",
+     "tier": "T2",
+     "title": "沈玉琳走過重病奪金鐘 謝醫護團隊守住台灣綜藝「最吵的嘴」",
+     "url": "https://www.cna.com.tw/news/amov/202610250201.aspx",
+     "published_at": "2026-10-25T23:33+08:00"
+    },
+    {
+     "outlet": "中央廣播電台",
+     "source_id": "rti-news",
+     "tier": "T2",
+     "title": "[生活] 金鐘61／沈玉琳抗癌重生奪金鐘！《飢餓遊戲》10週年終圓夢",
+     "url": "https://www.rti.org.tw/news?uid=3&pid=239758",
+     "published_at": "2026-10-25T23:08+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 1673,
+   "section": "culture",
+   "position": 3,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "金鐘獎頒獎插曲 婁峻碩伸手致意遭張詩盈無視",
+   "deck": "張詩盈奪下迷你劇集女配角獎上台領獎時，因過於緊張未注意到頒獎人婁峻碩的握手，引發討論。",
+   "body": "第61屆金鐘獎戲劇類頒獎典禮日前舉行，張詩盈憑藉《成功路上》獲得「迷你劇集／電視電影女配角獎」。據ETtoday與三立新聞報導，當晚由金屬影帝李銘順與歌手婁峻碩共同擔任頒獎嘉賓。張詩盈上台後先與李銘順熱情擁抱，隨後直接走向麥克風準備致詞。 由於過程太過緊張，張詩盈完全沒有注意到一旁的婁峻碩正禮貌性伸出右手準備握手致意，導致婁峻碩當場尷尬地將手收回。這段過程透過電視轉播實況記錄下來，隨後在網路與社群上掀起討論。",
+   "why_it_matters": "典禮上的意外插曲往往成為觀眾與網路社群關注的焦點，也增添了大型頒獎典禮的現場討論度。",
+   "sources": [
+    {
+     "outlet": "ETtoday 即時",
+     "source_id": "ettoday-realtime",
+     "tier": "T2",
+     "title": "金鐘獎／婁峻碩頒獎握手被無視！　「尬笑急縮手」過程全播出",
+     "url": "https://star.ettoday.net/news/3261032",
+     "published_at": "2026-10-26T23:55+08:00"
+    },
+    {
+     "outlet": "三立新聞",
+     "source_id": "setn",
+     "tier": "T2",
+     "title": "金鐘61／張詩盈奪女配太緊張！婁峻碩握手慘遭無視急縮手 尷尬畫面曝",
+     "url": "https://star.setn.com/news/1928906",
+     "published_at": "2026-10-26T21:49+08:00"
+    },
+    {
+     "outlet": "自由時報 娛樂",
+     "source_id": "ltn-entertainment",
+     "tier": "T2",
+     "title": "金鐘61》尷尬了！婁峻碩握手迷你劇女配角張詩盈被無視  老婆一句話給安慰",
+     "url": "https://ent.ltn.com.tw/news/breakingnews/5619523",
+     "published_at": "2026-10-26T21:28+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 1325,
+   "section": "sports",
+   "position": 1,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "味全龍台灣大賽封王 奪隊史第6冠與大巨蛋首冠",
+   "deck": "味全龍在台灣大賽第6戰擊敗中信兄弟，奪下隊史第6冠與復出後第2冠。",
+   "body": "據自由時報、中央社與中央廣播電台等報導，2026中華職棒總冠軍賽（台灣大賽）於26日在台北大巨蛋落幕，味全龍以6比0完封中信兄弟，在系列賽以4勝2敗之姿奪下總冠軍。龍隊洋投梅賽鍶（Cristopher Mercedes）在第6戰繳出8局無失分的好投，助隊封王，這也是味全龍隊史第6冠、復出後第2冠，並成為首支在台北大巨蛋拋下封王彩帶的球隊。\n\n賽後總統賴清德透過社群平台發文恭喜味全龍，指出等了37年中職史上首次龍象大賽終於在台灣大賽上演，並感謝兩隊帶來難忘的對決，同時期盼球迷明年繼續進場支持，讓台灣棒球越來越好。",
+   "why_it_matters": "味全龍拿下復出後第2冠並成為大巨蛋首支拋彩帶球隊，寫下中職歷史新頁。",
+   "sources": [
+    {
+     "outlet": "自由時報 體育",
+     "source_id": "ltn-sports",
+     "tier": "T2",
+     "title": "台灣大賽》梅賽鍶「封印」兄弟 味全龍奪第6冠",
+     "url": "https://sports.ltn.com.tw/news/paper/1776137",
+     "published_at": "2026-10-27T05:30+08:00"
+    },
+    {
+     "outlet": "中央廣播電台",
+     "source_id": "rti-news",
+     "tier": "T2",
+     "title": "[政治] 總統恭喜味全龍拿下中職總冠軍 盼台灣棒球越來越好",
+     "url": "https://www.rti.org.tw/news?uid=3&pid=239923",
+     "published_at": "2026-10-26T18:56+08:00"
+    },
+    {
+     "outlet": "中央社 運動",
+     "source_id": "cna-sports",
+     "tier": "T2",
+     "title": "總統恭喜味全龍拿下中職總冠軍 盼台灣棒球越來越好",
+     "url": "https://www.cna.com.tw/news/aspt/202610260198.aspx",
+     "published_at": "2026-10-26T18:37+08:00"
+    },
+    {
+     "outlet": "PTT 棒球板",
+     "source_id": "ptt-baseball",
+     "tier": "T4",
+     "title": "[新聞] 等了37年終於龍象大戰！賴清德恭喜味全",
+     "url": "https://www.ptt.cc/bbs/Baseball/M.1793028627.A.9EB.html",
+     "published_at": "2026-10-26T23:30+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 163,
+   "section": "sports",
+   "position": 2,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "拜仁前鋒凱恩成金球獎熱門人選 外界關注其表現",
+   "deck": "效力拜仁慕尼黑的英格蘭前鋒凱恩成為金球獎呼聲極高的領跑者。",
+   "body": "據BBC Sport、DW English與The Guardian Sport報導，隨著金球獎頒獎日期將至，效力德國甲級聯賽拜仁慕尼黑的英格蘭前鋒凱恩（Harry Kane）被視為足球界最具聲望個人獎項的明確領跑者。媒體指出，儘管聯賽局勢不均，凱恩在拜仁慕尼黑的表現仍持續進化，其展現出的個人意志力也讓人聯想起過去的傳奇球星。",
+   "why_it_matters": "英格蘭前鋒凱恩在歐洲足壇的傑出表現與金球獎動向備受國際足壇矚目。",
+   "sources": [
+    {
+     "outlet": "BBC Sport",
+     "source_id": "bbc-sport",
+     "tier": "T2",
+     "title": "Ballon d'Or winner? Kane's best Bundesliga goals",
+     "url": "https://www.bbc.co.uk/sport/football/videos/cmd93gqn8119o?at_medium=RSS&at_campaign=rss",
+     "published_at": "2026-10-27T03:29+08:00"
+    },
+    {
+     "outlet": "DW English",
+     "source_id": "dw-en",
+     "tier": "T2",
+     "title": "Harry Kane: Ballon d’Or for Bayern Munich striker?",
+     "url": "https://www.dw.com/en/harry-kane-ballon-d-or-for-bayern-munich-striker/a-79723299?maca=en-rss-en-all-1573-rdf",
+     "published_at": "2026-10-25T21:20+08:00"
+    },
+    {
+     "outlet": "The Guardian Sport",
+     "source_id": "guardian-sport",
+     "tier": "T2",
+     "title": "Why Stanley Matthews’ Ballon d’Or triumph echoes down the years for Harry Kane | Jonathan Wilson",
+     "url": "https://www.theguardian.com/football/2026/oct/24/why-stanley-matthews-ballon-dor-triumph-echoes-for-harry-kane",
+     "published_at": "2026-10-25T03:00+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 459,
+   "section": "sports",
+   "position": 3,
+   "is_front": false,
+   "kind": "report",
+   "writer": "gemini",
+   "headline": "唐嘉鴻體操世錦賽單槓摘金 寫下台灣歷史新紀錄",
+   "deck": "「世界貓王」唐嘉鴻在世錦賽單槓決賽奪金，成為台灣史上第一人。",
+   "body": "據自由時報、公視新聞網與中央廣播電台報導，有「世界貓王」之稱的台灣男子競技體操好手唐嘉鴻，遠征荷蘭鹿特丹參加世界競技體操錦標賽。他在男子單槓決賽中，以難度分6.600分、執行分8.366分、總分14.966分勇奪金牌，揮別名古屋亞運掉槓陰霾，創下台灣競技體操選手在世界錦標賽首度奪金的歷史紀錄。\n\n運動部表示，台灣體操今年相繼在亞運與世錦賽奪牌，寫下運動發展的重要里程碑，未來將強化選手訓練並深化基層人才培育。總統賴清德與副總統蕭美琴也在獲知喜訊後，第一時間發特電肯定選手優異表現。",
+   "why_it_matters": "唐嘉鴻奪下台灣首面體操世錦賽金牌，締造我國競技體操發展的重要里程碑。",
+   "sources": [
+    {
+     "outlet": "自由時報 體育",
+     "source_id": "ltn-sports",
+     "tier": "T2",
+     "title": "台灣第1人！ 唐嘉鴻體操世錦賽摘金",
+     "url": "https://sports.ltn.com.tw/news/paper/1776141",
+     "published_at": "2026-10-27T05:30+08:00"
+    },
+    {
+     "outlet": "公視新聞網",
+     "source_id": "pts-news",
+     "tier": "T2",
+     "title": "貓王唐嘉鴻體操世錦賽單槓摘金 成台灣史上第一人",
+     "url": "https://news.pts.org.tw/article/832949",
+     "published_at": "2026-10-26T21:00+08:00"
+    },
+    {
+     "outlet": "中央廣播電台",
+     "source_id": "rti-news",
+     "tier": "T2",
+     "title": "[生活] 唐嘉鴻奪世錦賽單槓金牌 運動部：台灣競技體操里程碑",
+     "url": "https://www.rti.org.tw/news?uid=3&pid=239815",
+     "published_at": "2026-10-26T12:25+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 2436,
+   "section": "social",
+   "position": 1,
+   "is_front": false,
+   "kind": "social",
+   "writer": "gemini",
+   "headline": "學士工程師40歲會被裁員？PTT網友熱議桃竹苗勞動市場現況",
+   "deck": "網路社群討論工程師職涯與外籍勞動力替代性問題。",
+   "body": "針對學士學位工程師到了40歲是否容易面臨裁員的網路討論，據PTT八卦板指出，實際走訪桃園、新竹、苗栗地區，會發現當地有許多來自印尼、越南、馬來西亞、泰國與菲律賓等國的外籍移工。該網友認為，即便面臨職場變動，在薪資考量下雇主仍會優先選擇台灣勞工。需要注意的是，此為網路社群上的討論與個人觀察，不代表整體民意，亦非已經證實的事實。",
+   "why_it_matters": "反映了台灣大眾對科技業職涯年齡危機與基層勞動市場結構的網路觀點。",
+   "sources": [
+    {
+     "outlet": "PTT 八卦板",
+     "source_id": "ptt-gossiping",
+     "tier": "T4",
+     "title": "Re: [問卦] 只有學士學位的工程師40歲就會被裁員？",
+     "url": "https://www.ptt.cc/bbs/Gossiping/M.1793042828.A.1B1.html",
+     "published_at": "2026-10-27T03:27+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 2097,
+   "section": "social",
+   "position": 2,
+   "is_front": false,
+   "kind": "social",
+   "writer": "gemini",
+   "headline": "深夜社群發文打招呼 脆平台用戶凌晨發布台灣相關動態",
+   "deck": "社群平台出現深夜打招呼與約訪的發文內容。",
+   "body": "據Threads搜尋台灣的資料顯示，有帳號在凌晨02時57分發文，內容提及「#台灣 現在已經是凌晨02:57⏰了 打個招呼約啊」。此篇貼文展現了深夜時段社群平台上使用者的互動情況。需要說明的是，這僅屬於網路社群上的發文與討論，並不代表整體民意，也非經過證實的事實。",
+   "why_it_matters": "呈現了台灣網路社群在深夜時段的用戶活動與互動樣貌。",
+   "sources": [
+    {
+     "outlet": "Threads 搜尋 台灣",
+     "source_id": "threads-search-taiwan",
+     "tier": "T4",
+     "title": "@chipmunk.80249524: #台灣 現在已經是凌晨02:57⏰了 打個招呼約啊￼",
+     "url": "https://www.threads.com/t/De9-q4ck-RO",
+     "published_at": "2026-10-27T02:57+08:00"
+    }
+   ],
+   "review_notes": []
+  },
+  {
+   "cluster_id": 2485,
+   "section": "social",
+   "position": 3,
+   "is_front": false,
+   "kind": "social",
+   "writer": "gemini",
+   "headline": "政壇動態引發討論 蔡壁如分析政治局勢與過往經驗",
+   "deck": "網路討論政治局勢與政黨介入相關議題。",
+   "body": "針對政治局勢與過往發展的相關討論，據PTT八卦板指出，蔡壁如揭示了最大差異，提到過去沒有寒流後來掛掉的原因，與現在新竹縣出問題的原因一模一樣。文中指出國民黨誤判情勢，以為氣勢旺盛是由於韓國瑜而開始介入，例如透過王金平助力三山大造勢形成寒流，隨後開始搶攻並介入韓國瑜身邊，將真正推動起來的人全部趕跑，導致實情被戳破。必須強調的是，這是網路社群中的討論內容，不代表整體民意，亦非已證實的事實。",
+   "why_it_matters": "記錄了網路社群對台灣政治人物言論與政黨發展的討論與解讀。",
+   "sources": [
+    {
+     "outlet": "PTT 八卦板",
+     "source_id": "ptt-gossiping",
+     "tier": "T4",
+     "title": "Re: [新聞] 「洋流」像極2014柯文哲？蔡壁如揭最大差",
+     "url": "https://www.ptt.cc/bbs/Gossiping/M.1793038366.A.62B.html",
+     "published_at": "2026-10-27T02:12+08:00"
+    }
+   ],
+   "review_notes": []
+  }
+ ]
+}

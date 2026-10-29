@@ -1,0 +1,33 @@
+{
+  "case_id": "E08",
+  "edition": "2026-10-27",
+  "is_error": true,
+  "event_hint": "巴西大選",
+  "error": "同一份報紙「露拉／魯拉」「弗拉維奧／佛拉維歐」兩種譯名",
+  "stage": "撰稿",
+  "fix": "譯名表（seeds/name_glossary.yaml，中央社譯名）＋文稿編輯",
+  "event_titles": [
+    "Lula wins Brazil runoff after prediction markets favored Bolsonaro",
+    "巴西總統大選 魯拉逆轉勝連任"
+  ],
+  "name_glossary": [
+    {
+      "preferred": "魯拉",
+      "variants": [
+        "露拉",
+        "盧拉"
+      ]
+    },
+    {
+      "preferred": "佛拉維歐",
+      "variants": [
+        "弗拉維奧"
+      ]
+    }
+  ],
+  "expected": "整份報紙的人名只用譯名表的中央社譯名（魯拉、佛拉維歐）",
+  "due": "2026-11-15",
+  "xfail": {
+    "name_glossary": "譯名表與文稿編輯尚未實作（步驟 3／9）；尚無錄好的 LLM 回應（步驟 7 建 llm_records 後錄製 fixtures/1027_llm_records.json）"
+  }
+}

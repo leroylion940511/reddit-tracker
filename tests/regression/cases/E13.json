@@ -1,0 +1,14 @@
+{
+  "case_id": "E13",
+  "edition": "2026-10-27",
+  "is_error": true,
+  "event_hint": "Threads「凌晨 02:57 打個招呼約啊」",
+  "error": "垃圾貼文被當新聞刊出",
+  "stage": "篩選",
+  "fix": "步驟 1 關社群來源（已完成：停用來源的舊素材不進聚合與選題）",
+  "must_not_publish_titles": [
+    "@chipmunk.80249524: #台灣 現在已經是凌晨02:57⏰了 打個招呼約啊￼"
+  ],
+  "expected": "這則 Threads 貼文不得出現在任何刊出稿的來源",
+  "due": "2026-11-04"
+}

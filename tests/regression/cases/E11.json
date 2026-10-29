@@ -1,0 +1,20 @@
+{
+  "case_id": "E11",
+  "edition": "2026-10-27",
+  "is_error": true,
+  "event_hint": "莫德納癌症疫苗",
+  "error": "標題「拼 2027 年申請 FDA」，內文「審查有望 2027 年進行」",
+  "stage": "撰稿",
+  "fix": "文稿編輯",
+  "event_titles": [
+    "The excitement around Moderna’s cancer vaccine is cooling. Here’s why."
+  ],
+  "headline_must_not_match": [
+    "2027\\s*年?\\s*(提出|遞交|送件)?\\s*申請"
+  ],
+  "expected": "標題不得把「2027 年審查」寫成「2027 年申請 FDA」",
+  "due": "2026-11-15",
+  "xfail": {
+    "headline_must_not_match": "文稿編輯尚未實作（步驟 9）；尚無錄好的 LLM 回應（步驟 7 建 llm_records 後錄製 fixtures/1027_llm_records.json）"
+  }
+}

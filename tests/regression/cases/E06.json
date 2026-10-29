@@ -1,0 +1,24 @@
+{
+  "case_id": "E06",
+  "edition": "2026-10-27",
+  "is_error": true,
+  "event_hint": "巴西大選",
+  "error": "頭版一篇（外媒）、國際版又一篇（中文），是同一件事",
+  "stage": "跨語言沒合併",
+  "fix": "步驟 3 合併；T1 決定誰寫主稿",
+  "event_titles": [
+    "Lula wins Brazil runoff after prediction markets favored Bolsonaro",
+    "巴西總統大選 魯拉逆轉勝連任"
+  ],
+  "must_merge_titles": [
+    [
+      "Lula wins Brazil runoff after prediction markets favored Bolsonaro",
+      "巴西總統大選 魯拉逆轉勝連任"
+    ]
+  ],
+  "expected": "中英文巴西大選報導併成同一則，只見報一次",
+  "due": "2026-11-08",
+  "xfail": {
+    "must_merge_titles": "步驟 3 尚未實作（譯名表＋共同實體的跨語言合併）"
+  }
+}

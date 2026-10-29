@@ -1,0 +1,23 @@
+{
+  "case_id": "E05",
+  "edition": "2026-10-27",
+  "is_error": true,
+  "event_hint": "SpaceX 400 億（單一來源）",
+  "error": "附了不相關的 PTT「Anthropic 遞交 IPO」，正文也寫進去",
+  "stage": "聚合＋撰稿",
+  "fix": "步驟 3（本例的 PTT 素材已因步驟 1 停用社群來源而不再進聚合）",
+  "event_titles": [
+    "馬斯克喊 SpaceX 籌得 400 億美元買輝達晶片！嗆新雲端將被淘汰"
+  ],
+  "must_not_contain_titles": [
+    "[新聞] AI新創Anthropic遞交IPO申請　估值達1.5"
+  ],
+  "text_must_not_contain": [
+    "Anthropic"
+  ],
+  "expected": "SpaceX 事件不得含 PTT Anthropic IPO 貼文，稿件不得提到 Anthropic",
+  "due": "2026-11-04",
+  "xfail": {
+    "text_must_not_contain": "尚無錄好的 LLM 回應（步驟 7 建 llm_records 後錄製 fixtures/1027_llm_records.json）"
+  }
+}

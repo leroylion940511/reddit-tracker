@@ -1,0 +1,26 @@
+{
+  "case_id": "E12",
+  "edition": "2026-10-27",
+  "is_error": true,
+  "event_hint": "arXiv 兩篇論文",
+  "error": "寫成「據 arXiv 獨家報導，目前僅有一家媒體」；arXiv 不是媒體",
+  "stage": "規則",
+  "fix": "程式：寫「一篇發表於 arXiv 的預印本論文指出」",
+  "event_titles": [
+    "SWE-Shift: Evaluating Coding Agents in Evolving Workspaces",
+    "CASE: Confusion-Aware Skill Evolution for Frozen Multimodal Emotion Models"
+  ],
+  "arxiv_rules": {
+    "must_not_match": [
+      "獨家",
+      "(僅有|只有|僅)\\s*(一|1|單一)\\s*家?\\s*媒體",
+      "一家媒體"
+    ],
+    "body_must_contain": "預印本"
+  },
+  "expected": "只來自 arXiv 的稿件不得寫「獨家」「一家媒體」，正文要寫明是預印本",
+  "due": "2026-11-04",
+  "xfail": {
+    "arxiv_rules": "步驟 3 尚未實作（arXiv 措辭規則）；尚無錄好的 LLM 回應（步驟 7 建 llm_records 後錄製 fixtures/1027_llm_records.json）"
+  }
+}

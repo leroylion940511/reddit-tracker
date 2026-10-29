@@ -1,0 +1,19 @@
+{
+  "case_id": "E14",
+  "edition": "2026-10-27",
+  "is_error": true,
+  "event_hint": "教育部 TAAS",
+  "error": "放在生活與環境版，應屬台灣版",
+  "stage": "分版",
+  "fix": "步驟 4 改寫分版",
+  "event_titles": [
+    "臺灣高等研究學院目前仍依進度籌設中，以串聯參與高中、頂尖大學及研究機構資源",
+    "教育部：台灣高等研究學院無延宕 提前啟動試辦"
+  ],
+  "expected_section": "taiwan",
+  "expected": "台灣高等研究學院事件放在台灣版",
+  "due": "2026-11-15",
+  "xfail": {
+    "expected_section": "步驟 4 併版與改寫分版尚未實作"
+  }
+}

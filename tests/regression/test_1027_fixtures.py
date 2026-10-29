@@ -64,3 +64,26 @@ def test_e01_football_item_came_from_cross_language_merge(groups, meta):
     assert item["published_in_articles"][0]["cluster_id"] == 410
     serbia = next(a for a in meta["articles"] if a["cluster_id"] == 410)
     assert serbia["merged_cluster_ids"] == [403]
+
+
+SNAPSHOT = Path(__file__).resolve().parents[2] / "data" / "snapshots" / "2026-10-27.db"
+
+
+@pytest.mark.skipif(not SNAPSHOT.exists(), reason="本機沒有唯讀母本（只有開發者機器有）")
+def test_fixtures_match_snapshot():
+    """母本在本機時，重新從母本（唯讀）匯出，必須和 commit 的 fixture 一致。"""
+    import importlib.util
+
+    from .rebuild import load_items
+
+    spec = importlib.util.spec_from_file_location(
+        "export_1027_fixtures", Path(__file__).resolve().parents[2] / "scripts" / "export_1027_fixtures.py"
+    )
+    export = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(export)
+    groups, merges, meta = export.export(SNAPSHOT)
+    assert groups == _load("1027_groups.json")
+    assert merges == _load("1027_merges.json")
+    assert meta["snapshot_sha256"] == _load("1027_meta.json")["snapshot_sha256"]
+    assert export.export_items(SNAPSHOT) == load_items()
+    assert export.export_edition(SNAPSHOT) == _load("1027_edition.json")

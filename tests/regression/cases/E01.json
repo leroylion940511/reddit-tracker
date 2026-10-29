@@ -1,0 +1,21 @@
+{
+  "case_id": "E01",
+  "edition": "2026-10-27",
+  "is_error": true,
+  "event_hint": "塞爾維亞國會大選",
+  "error": "來源混進 AP 美式足球報導（Seahawks 20-3 win）",
+  "stage": "跨語言合併（步驟 0 已查證：find_same_events 把英文 NFL cluster 403 併進中文塞爾維亞 cluster 410）",
+  "fix": "步驟 3 證據包相關性過濾；MAS 後再由 T2 擋",
+  "event_titles": [
+    "塞爾維亞學運開花結果 國會大選席次過半",
+    "武契奇承認敗選　塞爾維亞學生運動贏得議會選舉"
+  ],
+  "must_not_contain_titles": [
+    "Jaxon Smith-Njigba has big night in Seahawks’ 20-3 win over Chiefs"
+  ],
+  "expected": "這則素材不得出現在塞爾維亞事件的來源裡",
+  "due": "2026-11-04",
+  "xfail": {
+    "must_not_contain_titles": "步驟 3 尚未實作（證據包相關性過濾、跨語言合併需共同實體）"
+  }
+}

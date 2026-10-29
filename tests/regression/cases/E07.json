@@ -1,0 +1,24 @@
+{
+  "case_id": "E07",
+  "edition": "2026-10-27",
+  "is_error": true,
+  "event_hint": "塞爾維亞",
+  "error": "國際版出現兩次：英文摘要一篇＋中文報導一篇",
+  "stage": "跨語言沒合併",
+  "fix": "步驟 3",
+  "event_titles": [
+    "What Vucic’s defeat means for Serbia’s foreign policy",
+    "塞爾維亞學運開花結果 國會大選席次過半"
+  ],
+  "must_merge_titles": [
+    [
+      "What Vucic’s defeat means for Serbia’s foreign policy",
+      "塞爾維亞學運開花結果 國會大選席次過半"
+    ]
+  ],
+  "expected": "中英文塞爾維亞大選報導併成同一則，只見報一次",
+  "due": "2026-11-08",
+  "xfail": {
+    "must_merge_titles": "步驟 3 尚未實作（譯名表＋共同實體的跨語言合併）"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "case_id": "E04",
+  "edition": "2026-10-27",
+  "is_error": true,
+  "event_hint": "微軟優離方案",
+  "error": "併入 Skydance 優離：都有 buyout，但是兩件事",
+  "stage": "聚合",
+  "fix": "步驟 3",
+  "event_titles": [
+    "Microsoft offers around 60,000 employees voluntary buyouts",
+    "Microsoft offers buyouts to 60,000 staff"
+  ],
+  "must_not_contain_titles": [
+    "Skydance offers buyouts to some employees to cut costs after Warner Bros merger",
+    "Skydance Is Offering Employees Voluntary Buyouts Ahead of Layoffs, Adopts 5-Days-per-Week In-Office Policy"
+  ],
+  "text_must_not_contain": [
+    "Skydance"
+  ],
+  "expected": "微軟優離事件不得含 Skydance 優離的素材，稿件不得寫到 Skydance",
+  "due": "2026-11-04",
+  "xfail": {
+    "must_not_contain_titles": "步驟 3 尚未實作（兩段門檻＋共同實體）",
+    "text_must_not_contain": "步驟 3 尚未實作；尚無錄好的 LLM 回應（步驟 7 建 llm_records 後錄製 fixtures/1027_llm_records.json）"
+  }
+}
