@@ -9,8 +9,9 @@
 3. `prepare_daily(now=…, writer=…)` 評分、編輯會議、選題、證據包、撰稿、審稿、渲染。
    - 編輯會議（`find_same_events`）用 `1027_merges.json` 重播：素材 id 對回新的 cluster id。
    - 撰稿等其他 LLM 請求走 `ReplayClient`（request_hash 查錄好的回應）；錄音檔
-     `fixtures/1027_llm_records.json` 在步驟 7 之後才會有，找不到就記在 `replay_misses`，
-     需要稿件文字的案例一律判失敗（不會改呼叫真模型）。
+     `fixtures/1027_llm_records.json` 由 `scripts/record_regression_1027.py` 在 `data/work`
+     複本用真 Codex 錄（步驟 3 第 8 點）。找不到就記在 `replay_misses`，需要稿件文字的案例
+     一律判失敗（不會改呼叫真模型）；改到證據包或提示詞後要重錄。
    - 數據欄用 10/27 當期記錄的證交所數值重播（不連網）。
 4. 另外替案例提到的每個事件（不論有沒有見報）用同一個 `story_evidence` 組證據包。
 """
@@ -48,7 +49,7 @@ from reddit_tracker.seeds.news_sources import load_registry
 FIXTURES = Path(__file__).parent / "fixtures"
 CASES_DIR = Path(__file__).parent / "cases"
 EDITION_DATE = date(2026, 10, 27)
-RECORDINGS = FIXTURES / "1027_llm_records.json"  # 步驟 7 之後才有
+RECORDINGS = FIXTURES / "1027_llm_records.json"  # scripts/record_regression_1027.py 產生
 
 _SPACE = re.compile(r"\s+")
 

@@ -220,7 +220,7 @@ def require_written(view: EditionView) -> None:
         unique = list(dict.fromkeys(view.replay_misses))
         pytest.fail(
             f"找不到錄好的 LLM 回應（{len(unique)} 個 request_hash，例如 {unique[0]}）；"
-            "要先在 data/work 複本錄製並匯出 fixtures/1027_llm_records.json（步驟 7）"
+            "提示詞或證據包改了就要重錄：uv run python scripts/record_regression_1027.py（在 data/work 複本呼叫真 Codex）"
         )
 
 

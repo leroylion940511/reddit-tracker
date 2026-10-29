@@ -29,7 +29,9 @@
 - ⚠️ 聚合變嚴格：10/27 重編事件數 2,539 → 2,822、≥2 家出處 264 → 220；英文 Title Case 標題與只共有一個名字的中段配對會被拆開（刻意，11/07 dev 標註後重調）。`cluster_recent_items(threshold=)` 改為 `rules=`／`lexicon=`；`apply_merges` 修正重疊組遺失事件的 bug。
 - ✅ 步驟 3 第 5–7 點：`build_evidence` 相關性過濾（與代表標題無共同實體就剔除，記進 `review_notes`）；轉載辨識（指紋去開頭 `[..]`／`【..】`、`recompute_duplicates`、`mark_reprints`、`outlet_count` 排除重複稿與轉載、來源列「中央社（中央廣播電台轉載）」）；arXiv 預印本措辭、數據欄「資料更新延遲」、單一來源警語改由程式 `finalize_story` 加在文末（提示詞第 4 條刪除）。E10、E15 拿掉 xfail；E12、E16 規則用單元測試驗證，文字條件等錄音。全套 202 passed／4 skipped／4 xfailed。詳見 ADAPTATION。
 - ⚠️ 轉載不算多來源後，10/27 重編 ≥2 家出處事件 222 → 156（主要是排除重複稿）；相似度轉載只套中文標題（英文獨立報導標題常 >0.8）。數據欄交易日只排除週末，連假後會多標一次延遲。
-- ➡️ 下一步：步驟 3 第 8 點（`data/work/1027_rebuild.db` 前後對照週報，重聚前先 `recompute_duplicates`）；E04／E05／E12／E16 文字條件 11/04 到期前要由協調者在 `data/work` 複本用 Codex 錄音。
+- ✅ 步驟 3 第 8 點（10/30）：`scripts/rebuild_1027.py` 在 `data/work/1027_rebuild.db` 重聚＋重編 10/27（39 則，Codex 38／模板 1）；`run.py prepare --now ISO [--recluster]`；`scripts/compare_1027.py` → `docs/weekly/1027_compare.md`（週報已連結）。真 Codex 16 次（上限 60），每次嘗試記進複本 `llm_records`（`scripts/llm_recorder.py`，不動 models／migration）；錄音 `tests/regression/fixtures/1027_llm_records.json`（16 筆、67 KB）。步驟 3 四項標準全過；全套 213 passed／4 skipped／1 xfailed（E14）。
+- ⚠️ 錄音只對當下的提示詞與證據包有效：改到撰稿提示、譯名表、證據包就要重跑 `scripts/record_regression_1027.py`（會呼叫 Codex，`LLM_QUOTA_STATE_PATH` 腳本已指到 `data/work`）。E03／E05 正文、E12 在重編版沒見報，回歸是 skip；E12 由 `tests/test_step3_rules.py` 把關。
+- ➡️ 下一步：步驟 4（併版與配額，E14 11/15 到期）；E11 等步驟 9 文稿編輯。
 
 ## 本次變更（2026-10-27 — 日報撰稿改用 Codex）
 

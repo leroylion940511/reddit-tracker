@@ -98,3 +98,33 @@
   - ✅ **不依賴選題結果的單元測試**（`tests/test_step3_rules.py`，18 個）：直接拿回歸案例的同一個條件函式（`checks.arxiv_rules`、`checks.single_source_notice`）檢查合成稿件——arXiv 稿 LLM 寫「據 arXiv 獨家報導，目前僅有一家媒體」→ 改模板稿、以預印本句開頭、E12／E16 條件通過，而原始錯誤文字在同條件下會被抓到；單一來源稿 LLM 沒寫警語 → 程式加在最後一段；把警語塞在段落中間 → 不過審；多來源稿不加；E16 條件通過、原始錯誤抓得到。另含轉載（指紋去標籤、`recompute_duplicates`、`mark_reprints` 中文相似度／中央社電頭／2 小時、英文不套相似度、`outlet_count`＝1、來源列「中央社（中央廣播電台轉載）」）、相關性過濾（剔除格式、notes 進 `review_notes`）、交易日計算與延遲標示（網頁＋Telegram）、預印本標籤。
 - ℹ️ 介面變更（規格已同步 `docs/v5/CLUSTERING.md`「轉載辨識」、`docs/v5/DAILY_EDITION.md` 證據包／撰稿／審稿／數據欄／介面）：`build_evidence` 與 `story_evidence` 回傳 `EvidencePack`；`Planned` 多 `notes`、`EditionPlan` 多 `context`；`EvidenceItem` 多 `reprinted_by`、`display_name`；`writer._short_outlet` 移到 `evidence.short_outlet`。全套 202 passed、4 skipped、4 xfailed。
 - ➡️ 下一步：步驟 3 第 8 點（`cp` 母本到 `data/work/1027_rebuild.db`，刪 10/27 06:00 後素材、清空聚合與所有期數、`recompute_duplicates`、`run.py --now`，前後來源清單並排附週報）。E04／E05／E12／E16 的文字條件要等協調者用真 Codex 在 `data/work` 複本錄音；11/04 到期前沒錄就會被 `test_overdue_cases_are_not_xfail` 擋下。
+
+### 步驟 3｜修事件聚合 — 第 8 點＋步驟 3 做完的標準（2026-10-30 完成）
+
+本次做手冊 3.8「重編 10/27 做前後對照」，並錄製回歸集需要的 LLM 回應。依協調者指示，這次允許**只在 `data/work` 複本**上呼叫真 Codex。
+
+- ✅ **重編腳本** `scripts/rebuild_1027.py`（可重跑）：`cp` 母本 → `data/work/1027_rebuild.db`，照 3.8 子步驟：
+  1. 刪 `first_seen_at > 2026-10-26 22:00`（UTC naive＝10/27 06:00 台北）的素材 18,774 篇，剩 5,865 篇。外鍵：先把 `cluster_id`、`duplicate_of_id`（自我參照）清成 NULL 再刪，刪完跑 `PRAGMA foreign_key_check`；其他參照 `source_items` 的表不存在。
+  2. 清 `source_items.cluster_id` 與 `story_clusters`（13,023 個）。
+  3. 刪**所有** `daily_articles`（126）與 `daily_editions`（3）；兩者沒有其他子表。之後 `collector.recompute_duplicates` 重算指紋：重複稿 437 篇。
+  4. `daily/run.py` 新增 `--now`（`parse_now`：ISO，不帶時區＝台北，回傳 UTC）與 `--recluster`（`recluster(now)`：用同一個 `now` 呼叫 `cluster_recent_items`）。`prepare_daily(now=)` 本來就把 `now` 傳給評分、選題時間窗、證據包的當天素材與 `prepared_at`；沒給 `--date` 時出刊日＝`now` 的台北日期。單元測試 3 個（`tests/test_daily.py`：時區解析、CLI 的 `now` 同時到達聚合與評分、`now` 決定選題時間窗）。規格 `docs/v5/DAILY_EDITION.md` 已補。
+  5. 一次重聚（3,180 篇在窗內 → 2,783 個事件，被實體條件擋下 503 次）→ 重編：39 則（Codex 38、模板 1；模板稿是審稿關卡擋下「證據中找不到的數字：23, 26」）。編輯會議程式合併 3 組，LLM 第二意見也是同樣 3 組，沒有被剔除的。
+  - 🔁 數據欄：重編時不連網抓今天的證交所，改用母本 10/27 那期 `stats.market` 的數值（否則數據欄會是 10/30 的資料）。
+  - 🔁 腳本直接呼叫 `run.recluster`／`run.prepare_daily(writer=…)`，而不是跑 CLI：撰稿要注入下面的錄音 client。CLI 的等價寫法記在規格裡。
+- ✅ **真 Codex 與 `llm_records`**（強制指令 3）：
+  - 新增 `scripts/llm_recorder.py`（不碰 `models.py`、migration、`llm/codex.py`，避免和步驟 6–7 的 `cursor/mas-steps-6-11-cc77` 分支衝突）：`RecordingCodexClient` 包住 `CodexClient`，自己做重試迴圈，**每一次 subprocess 嘗試**（含失敗、重試）寫一列；`request_hash` 用 `llm/replay.request_hash`；`model_version`＝`gpt-6.1-sol | codex-cli 0.164.0-alpha.11.1 | reasoning_effort=low`；`find_same_events` 記成 `role=desk`、撰稿記成 `writer`。同一個 hash 在任何一本帳已有 ok 就重用不呼叫。
+  - 🔁 母本已經有一張舊版 `llm_records`（v4 時代，1 筆，沒有 request_hash 等欄位），所以 `CREATE TABLE IF NOT EXISTS` 之後會用 `ALTER TABLE ADD COLUMN` 補齊欄位（欄位名稱、型別與那個分支的 migration `b8d4f0a17c33` 一致）；只發生在複本。舊的那 1 筆不算本任務的呼叫。
+  - 額度：`LLM_QUOTA_STATE_PATH=data/work/llm-quota-1027.json`（腳本內強制設定並 assert），`/tmp/reddit-tracker-llm-quota.json` 確認不存在；另有整個任務的硬上限 60（兩本帳加總）。
+  - **實際用量：真 Codex 16 次嘗試、16 次成功、0 次失敗**（1 次試跑＋3.8 重編 11 次〔編輯會議 1＋撰稿 10〕＋回歸 runner 路徑 4 次），遠低於 60。額度 state 檔也記 16。總耗時約 9 分鐘（單次 6–57 秒）。
+  - 帳本：`data/work/1027_rebuild.db` 的 `llm_records` 12 筆、`data/work/1027_regression_record/1027_rebuild.db` 4 筆。
+- ✅ **回歸集錄音**：回歸 runner 是逐輪聚合，和 3.8 一次重聚不同，所以另寫 `scripts/record_regression_1027.py`：走 `tests/regression/rebuild.py` 同一條路徑，錄音檔沒有的 request_hash 才交給 recorder。runner 需要 10 個撰稿 hash，其中 6 個和 3.8 重編**完全相同**（這幾版的證據包一樣）、直接重用，只多呼叫 4 次。匯出 `tests/regression/fixtures/1027_llm_records.json`：16 筆 ok 紀錄、66,967 bytes，欄位為 request_hash、response_text、ok、provider、model、model_version、purpose、role、run_variant、edition_date、latency、tokens、called_at（不放 prompt；Codex client 會丟棄含本機機密的輸出，另外掃過沒有路徑或 key）。`--check` 模式只重播、列出缺的 hash，不呼叫。重播結果：0 miss，39 則中 38 則用錄音、1 則被審稿關卡擋下改模板稿。測試仍由 `llm_guard` 擋 codex subprocess。
+  - ⚠️ 錄音只對當下的提示詞與證據包有效；之後改到撰稿提示、譯名表、證據包規則，回歸集會因 miss 失敗，要重跑 `record_regression_1027.py`（會再呼叫 Codex）。
+- ✅ **前後對照** `scripts/compare_1027.py`（可重跑；母本 `mode=ro&immutable=1`、重編複本 `mode=ro`）→ `docs/weekly/1027_compare.md`，週報已連結。內容：總覽、錯誤案例表（**用 `tests/regression/checks.py` 同一套條件**判斷舊期與新期）、62 列稿件並排（版別、標題、來源「媒體｜標題」，用來源網址配對，「－」移除、「＋」新增）、`llm_records` 明細。註明「重編時不排除前幾期已刊事件」。新期的文字條件用的是 3.8 真 Codex 稿。
+- ✅ **母本完整性**：`tests/test_snapshot_integrity.py` 母本在就驗 sha256 等於 `data/snapshots/2026-10-27.db.sha256`，不在就 skip。最後 `shasum -a 256 -c` OK，權限仍 `r--r--r--`。
+- **步驟 3 做完的標準：**
+  - ✅ **11/04：E01、E03、E04、E05、E10、E12、E13、E15、E16 回歸測試通過**（`tests/regression`，離線錄音重播）。已拿掉 xfail：E04 `text_must_not_contain`、E16 `single_source_notice` 用錄音的 Codex 稿通過；E03、E05 `text_must_not_contain` 與 E12 `arxiv_rules` 也拿掉 xfail，但在重編版是 **skip（不適用）**：Block 稿、SpaceX 單一來源稿、只有 arXiv 來源的稿件在新聚合下都沒見報，所以不會產生撰稿請求，也就沒有東西可錄。🔁 這三條改由其他方式把關：E03／E05 的事件層條件（`must_not_contain_titles`）通過；E12 的規則由 `tests/test_step3_rules.py` 用同一個條件函式測合成稿。3.8 前後對照的判斷結果相同：新期 E01、E03（事件層）、E04（事件＋正文）、E05（事件層）、E10、E13、E15、E16 ✅；E03／E05 正文、E12 —（沒見報）。日後若這些稿件見報，條件會自動生效（有錄音才會通過，沒有就失敗）。
+  - ✅ **母本雜湊值跟複製時一樣**：見上。
+  - ✅ **11/08：E02、E06、E07 回歸測試通過**（步驟 3.1–3.4 已過，3.8 新期也是 ✅）。
+  - ✅ **10/27 前後對照已附在週報**：`docs/weekly/2026-11-03.md` →`docs/weekly/1027_compare.md`。
+  - 附帶：E08（11/15）錄音後通過（巴西稿全用「魯拉／佛拉維歐」），已拿掉 xfail。E11 的莫德納稿在重編版沒見報，維持 xfail。E14（11/15）兩邊都還是 ❌，等步驟 4。
+- 全套 `uv run python -m pytest -q`：213 passed、4 skipped（E03／E05 正文、E11、E12 不適用）、1 xfailed（E14）。

@@ -18,8 +18,5 @@
     "Skydance"
   ],
   "expected": "微軟優離事件不得含 Skydance 優離的素材，稿件不得寫到 Skydance",
-  "due": "2026-11-04",
-  "xfail": {
-    "text_must_not_contain": "聚合已修好（步驟 3：Skydance 不再併入）；正文檢查需要錄好的 LLM 回應（fixtures/1027_llm_records.json，步驟 7 後由協調者錄製）"
-  }
+  "due": "2026-11-04"
 }

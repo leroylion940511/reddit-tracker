@@ -114,7 +114,7 @@ def test_e09_is_not_an_error(published):
 
 
 def test_rebuild_replays_merges_without_real_llm(rebuilt):
-    """重編版有跑到撰稿，而且所有撰稿請求都走 replay（目前沒有錄音，所以全部是 miss）。"""
+    """重編版有跑到撰稿，而且所有撰稿請求都走 replay：有 miss 才會全部是模板稿。"""
     assert rebuilt.published
     assert all(s.writer == "template" for s in rebuilt.published) == bool(rebuilt.replay_misses)
 

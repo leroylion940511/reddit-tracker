@@ -15,8 +15,5 @@
     "exempt_arxiv_only": true
   },
   "expected": "單一來源警語只出現在 single_source 稿正文最後一段；多來源稿與標題、導言不得出現（arXiv 稿依 E12）",
-  "due": "2026-11-04",
-  "xfail": {
-    "single_source_notice": "程式規則已實作（步驟 3.7：提示詞第 4 條已刪、finalize_story 在文末加警語、LLM 自寫警語不過審；tests/test_step3_rules.py 用同一條件驗證，模板稿版面已符合）；重編版的 LLM 文字需要錄好的回應（步驟 7 後錄製）"
-  }
+  "due": "2026-11-04"
 }
