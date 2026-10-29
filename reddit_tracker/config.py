@@ -66,6 +66,17 @@ class Settings(BaseSettings):
     news_collection_enabled: bool = False
     news_collection_tick_minutes: int = 15
 
+    # --- 事件合併（手冊步驟 3；規格 docs/v5/CLUSTERING.md「共同實體與兩段門檻」）---
+    # 實驗一凍結（tag exp1-frozen）時，這些數值與兩個 seeds 檔一起凍結。
+    cluster_high_threshold: float = 0.45       # ≥ 高門檻：≥ high_min_entities 個共同實體就合併
+    cluster_low_threshold: float = 0.28        # 介於兩門檻：≥ mid_min_entities 個；低於低門檻不合併
+    cluster_high_min_entities: int = 1
+    cluster_mid_min_entities: int = 2
+    cluster_cross_lang_min_entities: int = 2   # 編輯會議程式跨語言合併
+    cluster_llm_merge_min_entities: int = 1    # find_same_events 說合併時程式要確認的共同實體數
+    name_glossary_path: str = "reddit_tracker/seeds/name_glossary.yaml"
+    entity_common_words_path: str = "reddit_tracker/seeds/entity_common_words.yaml"
+
     # --- v2.0 綜合日報（規格見 docs/v5/DAILY_EDITION.md）---
     daily_edition_enabled: bool = False
     daily_writer: str = "codex"                 # codex / gemini / template / fake（不得是 web）

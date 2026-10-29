@@ -197,15 +197,21 @@ def apply_merges(scored: list[ScoredCluster], groups: list[list[int]]) -> list[S
     """把同一事件的多個 cluster 併成一則：保留分數最高者，其餘列入 merged_ids。"""
     by_id = {s.cluster_id: s for s in scored}
     absorbed: set[int] = set()
+    owner: dict[int, int] = {}
     for group in groups:
-        members = [by_id[i] for i in dict.fromkeys(group) if i in by_id and i not in absorbed]
+        # 已被吸收的事件改指向吸收它的那一則
+        members = list({id(m): m for m in (by_id[owner.get(i, i)] for i in group if i in by_id)}.values())
         if len(members) < 2:
             continue
         keeper = max(members, key=lambda s: (s.score, -s.cluster_id))
         for other in members:
             if other is keeper:
                 continue
-            keeper.merged_ids.append(other.cluster_id)
+            # 重疊的組（A＋B、B＋C）：被吸收的一方之前併入的事件要一起帶過來，不能遺失。
+            keeper.merged_ids += [other.cluster_id, *other.merged_ids]
+            for moved in (other.cluster_id, *other.merged_ids):
+                owner[moved] = keeper.cluster_id
+            other.merged_ids = []
             absorbed.add(other.cluster_id)
             if other.kind == "report":
                 keeper.kind = "report"

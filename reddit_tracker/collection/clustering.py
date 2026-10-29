@@ -20,8 +20,8 @@ from sqlalchemy.orm import Session
 
 from ..models import SourceItem, StoryCluster
 from .collector import as_utc
+from .entities import EntityContext, EntityLexicon, MergeRules, load_lexicon
 
-CLUSTER_THRESHOLD = 0.28
 # 除了與某一篇夠像，也要與事件整體（成員向量和）夠像，避免單一連結一路串錯。
 CENTROID_MIN = 0.20
 WINDOW = timedelta(hours=72)
@@ -65,6 +65,8 @@ class ClusterRunStats:
     new_clusters: int = 0
     duplicates_assigned: int = 0
     touched_clusters: int = 0
+    # 相似度夠、但共同實體不足而沒合併的次數（不確定就不要合併）
+    rejected_no_entity: int = 0
 
 
 def lang_group(lang: str | None) -> str:
@@ -157,11 +159,15 @@ def cluster_recent_items(
     session: Session,
     *,
     now: datetime | None = None,
-    threshold: float = CLUSTER_THRESHOLD,
+    rules: MergeRules | None = None,
+    lexicon: EntityLexicon | None = None,
     general_sources: frozenset[str] = frozenset(),
     disabled_sources: frozenset[str] = frozenset(),
 ) -> ClusterRunStats:
+    """`rules`／`lexicon` 預設取設定值與 seeds 檔（譯名表、常見字）。"""
     now = now or datetime.now(timezone.utc)
+    rules = rules or MergeRules.from_settings()
+    lexicon = lexicon or load_lexicon()
     stats = ClusterRunStats()
     # 已停用來源（例如 2026-10-28 停用的社群來源）以前抓到的素材不再參與聚合。
     items = session.scalars(
@@ -180,6 +186,10 @@ def cluster_recent_items(
     vectors, df = _vectorize([tokenize(_document_text(item), item.lang) for item in items])
     max_df = max(CANDIDATE_MIN_DF_CAP, int(len(items) * CANDIDATE_MAX_DF_RATIO))
     groups = [lang_group(item.lang) for item in items]
+    entities = [lexicon.entities(item.title or "", group == "zh") for item, group in zip(items, groups)]
+    # 「當天素材」＝這次時間窗內的素材標題：中文片段要在 5% 以下的素材出現才算少見，
+    # 英文句首字要有別篇在句中大寫佐證。
+    context = EntityContext(entities)
     index: dict[str, list[int]] = defaultdict(list)
     centroids: dict[int, Counter] = defaultdict(Counter)
     touched: dict[int, StoryCluster] = {}
@@ -202,26 +212,31 @@ def cluster_recent_items(
         for token, weight in vector.items():
             for other in index.get(token, ()):
                 overlap[other] += weight * vectors[other][token]
-        best_score, best = 0.0, None
         published = as_utc(item.published_at)
+        scored = []
         for other, _ in overlap.most_common(MAX_CANDIDATES):
             if groups[other] != groups[position]:
                 continue
             if abs(as_utc(items[other].published_at) - published) > MAX_PUBLISH_GAP:
                 continue
             score = _cosine(vector, vectors[other])
-            if score > best_score:
-                best_score, best = score, other
+            if rules.required_entities(score) is not None:
+                scored.append((score, other))
 
-        target = items[best].cluster_id if best is not None else None
-        if (
-            target is not None
-            and best_score >= threshold
-            and _centroid_score(vector, centroids[target]) >= CENTROID_MIN
-        ):
+        # 由最像的開始找：相似度過門檻、共同實體夠、和事件整體也夠像，才併入。
+        cluster = None
+        for score, other in sorted(scored, key=lambda pair: (-pair[0], pair[1])):
+            target = items[other].cluster_id
+            if target is None or _centroid_score(vector, centroids[target]) < CENTROID_MIN:
+                continue
+            shared = lexicon.shared(entities[position], entities[other], context)
+            if len(shared) < rules.required_entities(score):
+                stats.rejected_no_entity += 1
+                continue
             cluster = touched.get(target) or session.get(StoryCluster, target)
             stats.joined_existing += 1
-        else:
+            break
+        if cluster is None:
             cluster = StoryCluster(
                 lang_group=groups[position],
                 section=item.section,

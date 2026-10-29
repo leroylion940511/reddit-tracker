@@ -19,11 +19,13 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 
+from ..collection.entities import MergeRules, load_lexicon
 from ..config import LLM_PROVIDERS, get_settings
 from ..db import session_scope
 from ..llm.quota import QuotaExhausted
 from ..models import DailyArticle, DailyEdition, StoryCluster
 from ..seeds.news_sources import SourceRegistry, load_registry
+from .desk import DeskMerges, desk_merges
 from .evidence import EvidenceItem, build_evidence
 from .market import fetch_market_box
 from .render import render_html, telegram_digest
@@ -58,28 +60,42 @@ class EditionPlan:
     candidate_count: int
     merged_groups: list[list[int]]
     planned: list[Planned]
+    desk: DeskMerges | None = None
 
 
 def _today() -> date:
     return datetime.now(ZoneInfo(get_settings().newsroom_delivery_timezone)).date()
 
 
-def _editorial_meeting(session, scored, writer: DailyWriter | None) -> tuple[list, list[list[int]]]:
-    """用一次 LLM 請求找出跨語言的同一事件並合併；失敗就照原樣繼續。"""
-    if writer is None:
-        return scored, []
+def _editorial_meeting(
+    session, scored, writer: DailyWriter | None, disabled_sources: frozenset[str] = frozenset()
+) -> tuple[list, DeskMerges]:
+    """跨語言同一事件：程式用譯名表＋共同實體合併；LLM（find_same_events）只當第二意見，
+    它說合併的組也要程式確認有共同實體（手冊步驟 3 第 4 點）。LLM 失敗不擋出刊。"""
     pool = desk_pool(scored)
-    titles = dict(
-        session.execute(
-            select(StoryCluster.id, StoryCluster.title).where(StoryCluster.id.in_([s.cluster_id for s in pool]))
-        ).all()
+    llm_groups: list[list[int]] = []
+    if writer is not None and pool:
+        titles = dict(
+            session.execute(
+                select(StoryCluster.id, StoryCluster.title).where(StoryCluster.id.in_([s.cluster_id for s in pool]))
+            ).all()
+        )
+        try:
+            llm_groups = writer.find_same_events([(s.cluster_id, titles.get(s.cluster_id) or "") for s in pool])
+        except Exception as exc:  # noqa: BLE001 — 編輯會議失敗不擋出刊，只是可能重複
+            logger.warning("editorial meeting failed: %s", exc)
+    desk = desk_merges(
+        session,
+        pool,
+        llm_groups,
+        lexicon=load_lexicon(),
+        rules=MergeRules.from_settings(),
+        disabled_sources=disabled_sources,
+        context_cluster_ids=[s.cluster_id for s in scored],
     )
-    try:
-        groups = writer.find_same_events([(s.cluster_id, titles.get(s.cluster_id) or "") for s in pool])
-    except Exception as exc:  # noqa: BLE001 — 編輯會議失敗不擋出刊，只是可能重複
-        logger.warning("editorial meeting failed: %s", exc)
-        return scored, []
-    return apply_merges(scored, groups), groups
+    for rejected in desk.rejected:
+        logger.info("editorial meeting rejected merge: %s", rejected)
+    return apply_merges(scored, desk.groups), desk
 
 
 def _write_all(
@@ -149,13 +165,13 @@ def plan_edition(
         disabled_sources=registry.disabled_source_ids(),
     )
     candidate_count = len(scored)
-    scored, merged_groups = _editorial_meeting(session, scored, writer)
+    scored, desk = _editorial_meeting(session, scored, writer, registry.disabled_source_ids())
     planned = []
     for key, selection in enumerate(select_articles(scored), start=1):
         evidence = story_evidence(session, selection.cluster, registry)
         if evidence:
             planned.append(Planned(key, selection, evidence))
-    return EditionPlan(scored, candidate_count, merged_groups, planned)
+    return EditionPlan(scored, candidate_count, desk.groups, planned, desk)
 
 
 def prepare_daily(
@@ -195,6 +211,7 @@ def prepare_daily(
             writer = DailyWriter(writer_mode)
         plan = plan_edition(session, edition_date=edition_date, now=now, writer=writer, registry=registry)
         candidate_count, merged_groups, planned = plan.candidate_count, plan.merged_groups, plan.planned
+        desk = plan.desk
     if not planned:
         raise DailyEditionError("沒有可刊登的事件；請確認收集與聚合是否正常")
 
@@ -243,6 +260,10 @@ def prepare_daily(
         edition.stats = {
             "candidate_clusters": candidate_count,
             "merged_groups": merged_groups,
+            # 合併來源拆開記：程式（譯名表＋共同實體）、LLM 原始回應、LLM 說合併但被程式剔除的
+            "entity_merge_groups": desk.entity_groups if desk else [],
+            "llm_merge_groups": desk.llm_groups if desk else [],
+            "rejected_merges": desk.rejected if desk else [],
             "articles": len(written),
             "ai_articles": ai_count,
             "template_articles": len(written) - ai_count,

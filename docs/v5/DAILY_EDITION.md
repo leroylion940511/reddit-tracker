@@ -50,7 +50,12 @@ score = 10·log2(1 + outlet_count)
 
 - 各版依分數取前 N，`report` 優先於 `single_source`；不足時寧缺勿濫，MVP 版（台灣、國際、科技）顯示「本版今日無新稿」，其他版沒稿時顯示「本版未開放」（`render.MVP_SECTIONS`）。
 - **已停用來源**（登錄表 `enabled: false`，例如 2026-10-28 停用的 24 個社群來源）以前抓到的素材：不進聚合、不算事件訊號、不進證據包；只由它們組成的事件不進選題。
-- **編輯會議**（一次 LLM 請求）：各版取配額兩倍的候選，請 LLM 找出報導同一具體事件的組（通常是中英文各一），合併為一則，證據取兩邊聯集。失敗就略過。
+- **編輯會議**（`daily/desk.py`，手冊步驟 3 第 4 點）：各版取配額兩倍的候選（`desk_pool`），合併報導同一具體事件的組，證據取兩邊聯集。
+  - **程式合併（主要）**：中文事件 × 外文事件，某一對成員標題用譯名表統一成中文後有 ≥ `CLUSTER_CROSS_LANG_MIN_ENTITIES`（預設 2）個共同實體就合併（E06 巴西、E07 塞爾維亞）。不需要 LLM，模板模式也會做。
+  - **LLM 第二意見**：`find_same_events` 一次請求（有 LLM writer 時）。它說要合併的組，程式逐對確認共同實體 ≥ `CLUSTER_LLM_MERGE_MIN_ENTITIES`（預設 1），沒有共同實體的配對剔除並記在 `stats.rejected_merges`（E01：美式足球稿不再被併進塞爾維亞）。LLM 失敗就只用程式合併。
+  - 兩個事件的共同實體＝兩邊成員標題兩兩比對時最多的那一對（共同實體規則見 CLUSTERING.md）。
+  - `apply_merges`：合併組可以重疊（A＋B、A＋C），被吸收的事件之前併入的事件會一起帶過去。
+  - `stats`：`merged_groups`（實際套用）、`entity_merge_groups`（程式）、`llm_merge_groups`（LLM 原始回應）、`rejected_merges`（`{group, cluster_id, title, reason}`）。
 - **頭版**：所有 `report` 中分數最高的 6 則，每版最多 2 則；頭版刊全文，對應板塊不重複刊登。
 - 同一事件只會出現一次。
 
@@ -134,7 +139,7 @@ select_articles(scored) -> list[Selection]
 # reddit_tracker/daily/evidence.py
 build_evidence(session, cluster_ids, source_names, disabled_sources=frozenset()) -> list[EvidenceItem]
 # reddit_tracker/daily/writer.py
-DailyWriter(name="codex", *, client=None)   # name: codex / gemini / fake
+DailyWriter(name="codex", *, client=None, lexicon=None)   # name: codex / gemini / fake；撰稿提示附上證據中出現的譯名表名字
 DailyWriter.find_same_events(candidates) -> list[list[int]]
 DailyWriter.write(section, stories) -> dict[int, WrittenStory]
 # reddit_tracker/llm/codex.py、llm/gemini.py、llm/fake.py、llm/replay.py：介面相同
@@ -153,7 +158,11 @@ template_story(evidence, kind) -> WrittenStory
 review_story(story, evidence) -> list[str]   # 空 list 代表通過
 # reddit_tracker/daily/run.py
 plan_edition(session, *, edition_date, now, writer, registry) -> EditionPlan   # 評分→編輯會議→選題→證據包；不撰稿、不寫 DB
-#   EditionPlan(candidates: list[ScoredCluster], candidate_count, merged_groups, planned: list[Planned(key, selection, evidence)])
+#   EditionPlan(candidates: list[ScoredCluster], candidate_count, merged_groups, planned: list[Planned(key, selection, evidence)], desk: DeskMerges)
+# reddit_tracker/daily/desk.py
+desk_merges(session, pool, llm_groups, *, lexicon, rules, disabled_sources=frozenset(), context_cluster_ids=None) -> DeskMerges
+#   DeskMerges(groups, entity_groups, llm_groups, rejected: list[{group, cluster_id, title, reason}])
+apply_merges(scored, groups) -> list[ScoredCluster]   # scoring.py；重疊的組會把已併入的事件一起帶過去
 story_evidence(session, cluster: ScoredCluster, registry) -> list[EvidenceItem]   # 選題與回歸集共用
 prepare_daily(edition_date, *, writer_mode=None, refresh=False, now=None, writer=None) -> int   # writer：直接指定撰稿者（回歸集 replay），不看 writer_mode
 publish_daily(edition_date) -> DailyEdition

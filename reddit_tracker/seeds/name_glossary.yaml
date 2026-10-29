@@ -1,0 +1,138 @@
+# 譯名對照表（手冊步驟 3 第 3 點）：撰稿與事件合併共用。
+#
+# - 以中央社譯名為準：`zh` 是標準中文譯名，合併前所有 `en`／`also` 都先統一成它。
+# - `en`：英文寫法（比對時不分大小寫、忽略重音符號，Vučić＝Vucic）。
+# - `also`：其他中文譯名或簡體寫法（簡體素材會先轉繁體再比對）。
+# - 只收 2026-10-30（含）以前在素材中出現過的名字（實驗一防偷看，手冊 8.1 第 3 點）；
+#   `tests/test_entities.py` 在本機有母本時會逐筆驗證。實驗一凍結（tag `exp1-frozen`）後不得再改。
+# - 刻意不收美國、中國、台灣、俄羅斯、日本這類幾乎每篇國際新聞都有的國名：
+#   它們會讓不同事件「共有 2 個實體」而被錯合併。
+
+# 巴西大選（E06、E08）
+- en: ["Lula", "Lula da Silva", "Luiz Inácio Lula da Silva"]
+  zh: 魯拉
+  also: ["露拉", "盧拉"]
+- en: ["Flavio Bolsonaro", "Flávio Bolsonaro"]
+  zh: 佛拉維歐
+  also: ["弗拉維奧", "小波索納洛"]
+- en: ["Bolsonaro", "Jair Bolsonaro"]
+  zh: 波索納洛
+- en: ["Brazil", "Brazilian", "Brazil's", "Brazil’s"]
+  zh: 巴西
+
+# 塞爾維亞大選（E01、E07）
+- en: ["Vučić", "Vucic", "Aleksandar Vučić", "Aleksandar Vucic"]
+  zh: 武契奇
+- en: ["Serbia", "Serbian", "Serbia's", "Serbia’s"]
+  zh: 塞爾維亞
+- en: ["Orbán", "Orban", "Viktor Orbán", "Viktor Orban"]
+  zh: 奧班
+  also: ["歐爾班"]
+- en: ["Hungary", "Hungarian"]
+  zh: 匈牙利
+
+# 各國領袖與政要
+- en: ["Trump", "Donald Trump"]
+  zh: 川普
+  also: ["特朗普"]
+- en: ["Xi Jinping", "Xi"]
+  zh: 習近平
+- en: ["Putin", "Vladimir Putin"]
+  zh: 普丁
+  also: ["普京"]
+- en: ["Zelensky", "Zelenskyy", "Volodymyr Zelensky", "Volodymyr Zelenskyy"]
+  zh: 澤倫斯基
+  also: ["澤連斯基"]
+- en: ["Netanyahu", "Benjamin Netanyahu"]
+  zh: 尼坦雅胡
+  also: ["內塔尼亞胡", "納坦雅胡"]
+- en: ["Sanae Takaichi", "Takaichi"]
+  zh: 高市早苗
+- en: ["Lee Jae-myung", "Lee Jae Myung"]
+  zh: 李在明
+- en: ["Kim Jong Un", "Kim Jong-un"]
+  zh: 金正恩
+- en: ["Macron", "Emmanuel Macron"]
+  zh: 馬克宏
+  also: ["馬克龍"]
+- en: ["Merz", "Friedrich Merz"]
+  zh: 梅爾茲
+  also: ["默茨"]
+- en: ["Modi", "Narendra Modi"]
+  zh: 莫迪
+- en: ["Rubio", "Marco Rubio"]
+  zh: 盧比歐
+  also: ["魯比歐"]
+- en: ["JD Vance", "J.D. Vance", "Vance"]
+  zh: 范斯
+  also: ["萬斯"]
+- en: ["Bessent", "Scott Bessent"]
+  zh: 貝森特
+- en: ["Hegseth", "Pete Hegseth"]
+  zh: 赫格塞斯
+- en: ["Mark Carney", "Carney"]
+  zh: 卡尼
+- en: ["Maduro", "Nicolás Maduro", "Nicolas Maduro"]
+  zh: 馬杜洛
+- en: ["Pope Leo", "Pope Leo XIV", "Leo XIV"]
+  zh: 良十四世
+- en: ["James Comey", "Comey"]
+  zh: 柯米
+  also: ["科米"]
+
+# 台灣人物
+- en: ["Lai Ching-te", "William Lai"]
+  zh: 賴清德
+- en: ["Cheng Li-wun"]
+  zh: 鄭麗文
+- en: ["Hung Hsiu-chu"]
+  zh: 洪秀柱
+
+# 企業與人物
+- en: ["Elon Musk", "Musk"]
+  zh: 馬斯克
+- en: ["Jensen Huang"]
+  zh: 黃仁勳
+- en: ["Nvidia", "NVIDIA"]
+  zh: 輝達
+  also: ["英偉達"]
+- en: ["TSMC", "Taiwan Semiconductor"]
+  zh: 台積電
+  also: ["台積公司"]
+- en: ["Microsoft"]
+  zh: 微軟
+- en: ["Intel"]
+  zh: 英特爾
+- en: ["Samsung"]
+  zh: 三星
+- en: ["Alibaba"]
+  zh: 阿里巴巴
+- en: ["Moderna"]
+  zh: 莫德納
+
+# 國家、地區與組織（只收不會每篇都出現的）
+- en: ["Venezuela", "Venezuelan"]
+  zh: 委內瑞拉
+- en: ["Mexico", "Mexican"]
+  zh: 墨西哥
+- en: ["Pakistan", "Pakistani"]
+  zh: 巴基斯坦
+- en: ["Philippines", "Philippine"]
+  zh: 菲律賓
+- en: ["Malaysia", "Malaysian"]
+  zh: 馬來西亞
+- en: ["Cambodia", "Cambodian"]
+  zh: 柬埔寨
+- en: ["ASEAN"]
+  zh: 東協
+- en: ["Hamas"]
+  zh: 哈瑪斯
+- en: ["Gaza"]
+  zh: 加薩
+  also: ["加沙"]
+
+# 體育
+- en: ["World Series"]
+  zh: 世界大賽
+- en: ["Dodgers"]
+  zh: 道奇

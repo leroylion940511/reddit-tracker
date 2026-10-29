@@ -12,6 +12,7 @@ from typing import Protocol
 
 from pydantic import BaseModel, Field, ValidationError
 
+from ..collection.entities import EntityLexicon, load_lexicon
 from ..config import get_settings
 from .evidence import EvidenceItem
 
@@ -199,10 +200,13 @@ def _default_client(name: str) -> _CompletionClient:
 class DailyWriter:
     """一次請求寫完一個板塊的所有稿件；`name` 寫進每則稿件的 writer 欄位。"""
 
-    def __init__(self, name: str = "codex", *, client: _CompletionClient | None = None) -> None:
+    def __init__(
+        self, name: str = "codex", *, client: _CompletionClient | None = None, lexicon: EntityLexicon | None = None
+    ) -> None:
         self.name = name
         self.client = client or _default_client(name)
         self.requests = 0
+        self.lexicon = lexicon
 
     def find_same_events(self, candidates: list[tuple[int, str]]) -> list[list[int]]:
         """回傳報導同一事件的 id 組；只回傳 2 個以上的組，未知 id 會被丟棄。"""
@@ -223,6 +227,16 @@ class DailyWriter:
         groups = _SameEventGroups.model_validate(_wrap_list(result.content, "groups")).groups
         return [[i for i in group if i in known] for group in groups if len({i for i in group if i in known}) >= 2]
 
+    def _glossary_note(self, stories: list[tuple[int, str, list[EvidenceItem]]]) -> str:
+        """證據裡出現的譯名表名字：要求一律用標準譯名（與事件合併共用同一份譯名表）。"""
+        lexicon = self.lexicon or load_lexicon()
+        text = " ".join(f"{e.title} {e.summary}" for _, _, evidence in stories for e in evidence)
+        entries = lexicon.glossary_entries(text)
+        if not entries:
+            return ""
+        pairs = "、".join(f"{e.zh}（{'／'.join([*e.en[:1], *e.also])}）" if e.en or e.also else e.zh for e in entries)
+        return f"譯名一律使用中央社譯名，括號內的寫法都改成括號前的譯名：{pairs}。\n\n"
+
     def write(self, section_label: str, stories: list[tuple[int, str, list[EvidenceItem]]]) -> dict[int, WrittenStory]:
         payload = [
             {
@@ -239,6 +253,7 @@ class DailyWriter:
             f"板塊：{section_label}。替每個 id 各寫一則新聞，回傳 "
             '{"stories":[{"id":1,"headline":"不超過 40 字","deck":"一句話重點",'
             '"body":"150 到 400 字正文，可分段","why_it_matters":"一句話說明對台灣讀者的意義"}]}。\n\n'
+            + self._glossary_note(stories)
             + json.dumps({"stories": payload}, ensure_ascii=False, separators=(",", ":"))
         )
         self.requests += 1
