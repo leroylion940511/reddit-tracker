@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from reddit_tracker.llm.codex import CodexError
+from reddit_tracker.llm.codex import CodexClient, CodexError
 from reddit_tracker.llm.replay import ReplayClient, load_records, request_hash
 
 _SPEC = importlib.util.spec_from_file_location(
@@ -33,7 +33,7 @@ class FakeGuard:
         self.acquired += 1
 
 
-class FakeCodex:
+class FakeCodex(CodexClient):
     model = "gpt-test"
     reasoning_effort = "low"
     purpose = "daily"
@@ -79,7 +79,7 @@ def test_every_attempt_is_recorded_and_hash_matches_replay(tmp_path):
     rows = _rows(tmp_path / "work.db")
     key = request_hash(system="SYS", prompt="板塊：國際。", model="gpt-test", schema=SCHEMA)
     assert [(r["ok"], r["request_hash"]) for r in rows] == [(0, key), (1, key)]
-    assert rows[0]["error"].startswith("CodexError") and rows[1]["response_text"] == '{"stories":[]}'
+    assert "exit 1" in rows[0]["error"] and rows[1]["response_text"] == '{"stories":[]}'
     assert rows[1]["model_version"] == "gpt-test | codex-cli 0.0.0 | reasoning_effort=low"
     assert rows[1]["edition_date"] == "2026-10-27" and rows[1]["role"] == "writer" and rows[1]["provider"] == "codex"
 

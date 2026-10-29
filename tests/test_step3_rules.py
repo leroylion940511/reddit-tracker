@@ -22,6 +22,7 @@ from reddit_tracker.daily import run as run_module
 from reddit_tracker.daily.evidence import EvidenceItem, build_evidence
 from reddit_tracker.daily.market import STALE_LABEL, is_stale, trading_days_between
 from reddit_tracker.daily.render import render_html, telegram_digest
+from reddit_tracker.daily.view import view_from_edition
 from reddit_tracker.daily.scoring import ScoredCluster, Selection
 from reddit_tracker.daily.writer import (
     PREPRINT_LEAD,
@@ -304,8 +305,8 @@ def test_market_box_shows_stale_label():
     for edition in (stale, fresh):
         edition.articles = [DailyArticle(section="taiwan", position=1, is_front=True, kind="report", headline="頭條",
                                          deck="", body="內文", why_it_matters="", sources=[], writer="template")]
-    assert STALE_LABEL in render_html(stale, sections) and STALE_LABEL in telegram_digest(stale, sections)
-    assert STALE_LABEL not in render_html(fresh, sections) and STALE_LABEL not in telegram_digest(fresh, sections)
+    assert STALE_LABEL in render_html(view_from_edition(stale, sections)) and STALE_LABEL in telegram_digest(view_from_edition(stale, sections))
+    assert STALE_LABEL not in render_html(view_from_edition(fresh, sections)) and STALE_LABEL not in telegram_digest(view_from_edition(fresh, sections))
 
 
 def test_render_labels_arxiv_only_story_as_preprint():
@@ -314,5 +315,5 @@ def test_render_labels_arxiv_only_story_as_preprint():
                            sources=[{"outlet": "arXiv cs.AI", "url": "https://arxiv.org/abs/2610.00001", "title": "x"}])
     edition = DailyEdition(edition_date=date(2026, 10, 27), stats={})
     edition.articles = [article]
-    html = render_html(edition, {"tech": "科技"})
+    html = render_html(view_from_edition(edition, {"tech": "科技"}))
     assert '<span class="tag">預印本</span>' in html and '<span class="tag">單一來源</span>' not in html

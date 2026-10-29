@@ -37,7 +37,7 @@ def main(argv: list[str] | None = None) -> int:
 
     os.environ["LLM_QUOTA_STATE_PATH"] = str(rb.QUOTA_STATE)
     os.environ["DATABASE_URL"] = f"sqlite:///{LEDGER_DB}"
-    from llm_recorder import RecordingCodexClient, cli_version, export_ok_records, restore_records, saved_records
+    from reddit_tracker.llm.records import RecordingCodexClient, cli_version, export_ok_records, restore_records, saved_records
 
     from reddit_tracker.config import get_settings
     from reddit_tracker.llm.codex import CodexClient

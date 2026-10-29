@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 
 from pydantic import field_validator
@@ -17,7 +18,7 @@ LLM_PROVIDERS = ("codex", "gemini", "template", "fake")
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=None if os.environ.get("REDDIT_TRACKER_NO_DOTENV") == "1" else ".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -79,7 +80,12 @@ class Settings(BaseSettings):
 
     # --- v2.0 綜合日報（規格見 docs/v5/DAILY_EDITION.md）---
     daily_edition_enabled: bool = False
+    # pipeline＝現有流水線（實驗三對照組）；mas＝六個角色。預設 pipeline，不改線上行為。
+    daily_mode: str = "pipeline"
     daily_writer: str = "codex"                 # codex / gemini / template / fake（不得是 web）
+    # 11/15 定案：P 與 M 共用 Codex CLI 這一個模型字串（不是 Gemini）。之後不換。
+    # PR #1 整合在 Mac 實測的 CLI 版本；11/15 前模型定案。
+    daily_model_version: str = "gpt-6.1-sol | codex-cli 0.164.0-alpha.11.1 | reasoning_effort=low"
     daily_prepare_hour: int = 6
     daily_prepare_minute: int = 0
     daily_delivery_hour: int = 8
@@ -99,6 +105,14 @@ class Settings(BaseSettings):
         value = value.strip().lower()
         if value not in LLM_PROVIDERS:
             raise ValueError(f"LLM provider 只允許 {'/'.join(LLM_PROVIDERS)}，不得是 {value!r}")
+        return value
+
+    @field_validator("daily_mode")
+    @classmethod
+    def _check_mode(cls, value: str) -> str:
+        value = value.strip().lower()
+        if value not in ("pipeline", "mas"):
+            raise ValueError(f"DAILY_MODE 只允許 pipeline / mas：{value!r}")
         return value
 
 

@@ -18,6 +18,7 @@ import requests
 
 from ..config import get_settings
 from .quota import ModelQuotaGuard, QuotaExhausted
+from .records import note_attempt
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +59,8 @@ class GeminiQuotaGuard(ModelQuotaGuard):
 class GeminiClient:
     """Minimal REST client so the project does not need a second vendor SDK."""
 
+    logs_attempts = True
+
     def __init__(
         self,
         *,
@@ -84,6 +87,7 @@ class GeminiClient:
             daily_limit=limit,
             requests_per_minute=requests_per_minute or settings.gemini_requests_per_minute,
         )
+        self.model_version = self.model
         self._session = requests.Session()
         self._session.headers.update({
             "x-goog-api-key": self.api_key,
@@ -139,11 +143,14 @@ class GeminiClient:
 
         for attempt in range(self.max_retries + 1):
             self.guard.acquire(model=self.model, purpose=self.purpose)
+            started = time.perf_counter()
             try:
                 response = self._session.post(url, json=payload, timeout=self.timeout)
             except requests.RequestException as exc:
+                self._note(system, messages, json_schema, ok=False, error="Gemini API network request failed", content=None, started=started)
                 raise GeminiAPIError("Gemini API network request failed") from exc
             if response.status_code == 429:
+                self._note(system, messages, json_schema, ok=False, error="HTTP 429", content=None, started=started)
                 if attempt == self.max_retries:
                     raise GeminiQuotaExhausted("Gemini API returned 429 after retries")
                 delay = self._retry_delay(response, attempt)
@@ -156,18 +163,28 @@ class GeminiClient:
                 except ValueError:
                     error = ""
                 detail = f": {str(error)[:300]}" if error else ""
-                raise GeminiAPIError(f"Gemini API returned HTTP {response.status_code}{detail}")
+                message = f"Gemini API returned HTTP {response.status_code}{detail}"
+                self._note(system, messages, json_schema, ok=False, error=message, content=None, started=started)
+                raise GeminiAPIError(message)
             try:
                 data = response.json()
             except ValueError as exc:
+                self._note(system, messages, json_schema, ok=False, error="invalid JSON", content=None, started=started)
                 raise GeminiAPIError("Gemini API returned invalid JSON") from exc
             candidates = data.get("candidates") or []
             parts = ((candidates[0].get("content") or {}).get("parts") or []) if candidates else []
             text = "".join(str(part.get("text", "")) for part in parts if isinstance(part, dict)).strip()
             if not text:
                 reason = candidates[0].get("finishReason") if candidates else "no candidate"
-                raise GeminiAPIError(f"Gemini API returned no usable text ({reason})")
+                message = f"Gemini API returned no usable text ({reason})"
+                self._note(system, messages, json_schema, ok=False, error=message, content=None, started=started)
+                raise GeminiAPIError(message)
             usage = data.get("usageMetadata") or {}
+            self._note(
+                system, messages, json_schema, ok=True, error=None, content=text, started=started,
+                input_tokens=usage.get("promptTokenCount"), output_tokens=usage.get("candidatesTokenCount"),
+                cached_tokens=usage.get("cachedContentTokenCount"),
+            )
             return GeminiResult(
                 content=text,
                 input_tokens=usage.get("promptTokenCount"),
@@ -175,6 +192,14 @@ class GeminiClient:
                 cached_tokens=usage.get("cachedContentTokenCount"),
             )
         raise AssertionError("unreachable")  # pragma: no cover
+
+    def _note(self, system, messages, json_schema, *, ok, error, content, started, input_tokens=None, output_tokens=None, cached_tokens=None) -> None:
+        note_attempt(
+            provider="gemini", model=self.model, model_version=self.model_version, purpose=self.purpose,
+            system=system, messages=messages, schema=json_schema, ok=ok, response_text=content, error=error,
+            latency_ms=int((time.perf_counter() - started) * 1000),
+            input_tokens=input_tokens, output_tokens=output_tokens, cached_tokens=cached_tokens,
+        )
 
     def close(self) -> None:
         self._session.close()

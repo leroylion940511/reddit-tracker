@@ -551,19 +551,127 @@ class RelatedPost(Base):
 # ---------------------------------------------------------------------------
 
 
+class DailySnapshot(Base):
+    """06:00 凍結的候選事件。P、M 共用同一份（手冊 6.3、步驟 6）。"""
+
+    __tablename__ = "daily_snapshots"
+    __table_args__ = (UniqueConstraint("edition_date", name="uq_daily_snapshot_date"),)
+
+    id: Mapped[int] = big_pk()
+    edition_date: Mapped[date] = mapped_column(Date, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # 每個候選：keeper_cluster_id、merged_cluster_ids、section、kind、score、signals、
+    # anchor_item_id、凍結的 evidence_item_ids
+    candidates: Mapped[list] = mapped_column(JSON, nullable=False)
+
+
+class Story(Base):
+    """快照裡的一個候選事件。P、M 各一列；其他表只存這個整數 id。"""
+
+    __tablename__ = "stories"
+    __table_args__ = (
+        UniqueConstraint("edition_date", "run_variant", "keeper_cluster_id", name="uq_story_keeper"),
+    )
+
+    id: Mapped[int] = big_pk()
+    edition_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    run_variant: Mapped[str] = mapped_column(String(16), nullable=False)  # pipeline / mas
+    keeper_cluster_id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer(), "sqlite"), nullable=False)
+    merged_cluster_ids: Mapped[list | None] = mapped_column(JSON)
+    section: Mapped[str] = mapped_column(String(32), nullable=False)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    score: Mapped[float] = mapped_column(Float, nullable=False, default=0)
+
+
+class AgentMessage(Base):
+    """角色之間的一則訊息。不合法的也存，status=rejected（手冊 6.1、6.2）。"""
+
+    __tablename__ = "agent_messages"
+
+    id: Mapped[int] = big_pk()
+    run_variant: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
+    edition_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    story_id: Mapped[int | None] = mapped_column(BigInteger().with_variant(Integer(), "sqlite"), index=True)
+    sender_role: Mapped[str] = mapped_column(String(32), nullable=False)
+    recipient_role: Mapped[str] = mapped_column(String(32), nullable=False)
+    type: Mapped[str] = mapped_column(String(32), nullable=False)
+    target_version: Mapped[int | None] = mapped_column(Integer)
+    payload: Mapped[dict | None] = mapped_column(JSON)
+    correlation_id: Mapped[str | None] = mapped_column(String(64), index=True)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    llm_call_id: Mapped[int | None] = mapped_column(BigInteger().with_variant(Integer(), "sqlite"))
+
+
+class StoryVersion(Base):
+    """一版稿。舊版不刪。UNIQUE(story_id, version, run_variant)。"""
+
+    __tablename__ = "story_versions"
+    __table_args__ = (
+        UniqueConstraint("story_id", "version", "run_variant", name="uq_story_version"),
+    )
+
+    id: Mapped[int] = big_pk()
+    story_id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer(), "sqlite"), ForeignKey("stories.id"), nullable=False, index=True
+    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    run_variant: Mapped[str] = mapped_column(String(16), nullable=False)
+    headline: Mapped[str] = mapped_column(Text, nullable=False)
+    deck: Mapped[str | None] = mapped_column(Text)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    why_it_matters: Mapped[str | None] = mapped_column(Text)
+    source_ids: Mapped[list | None] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="draft")
+    caused_by_message_id: Mapped[int | None] = mapped_column(BigInteger().with_variant(Integer(), "sqlite"))
+    approved_by: Mapped[str | None] = mapped_column(String(64))
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    sender: Mapped[str] = mapped_column(String(16), nullable=False, default="agent")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class PagePlan(Base):
+    """一版版面計畫。排版只讀最新一份（手冊步驟 9）。"""
+
+    __tablename__ = "page_plans"
+    __table_args__ = (
+        UniqueConstraint("edition_date", "plan_version", "run_variant", name="uq_page_plan"),
+    )
+
+    id: Mapped[int] = big_pk()
+    edition_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    plan_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    run_variant: Mapped[str] = mapped_column(String(16), nullable=False)
+    slots: Mapped[dict] = mapped_column(JSON, nullable=False)
+    decided_by_message_id: Mapped[int | None] = mapped_column(BigInteger().with_variant(Integer(), "sqlite"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class LLMRecord(Base):
     __tablename__ = "llm_records"
 
     id: Mapped[int] = big_pk()
     provider: Mapped[str] = mapped_column(String(32))
     model: Mapped[str] = mapped_column(String(64))
-    purpose: Mapped[str] = mapped_column(String(32), index=True)  # scoring / summarization / qa
+    purpose: Mapped[str] = mapped_column(String(32), index=True)  # scoring / daily / reporter / ...
     input_tokens: Mapped[int | None] = mapped_column(Integer)
     output_tokens: Mapped[int | None] = mapped_column(Integer)
     cached_tokens: Mapped[int | None] = mapped_column(Integer)
     cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
     called_at: Mapped[datetime] = utc_now()
     context_ref: Mapped[dict | None] = mapped_column(JSON)
+    # 步驟 7：每一次嘗試（含重試）一列。request_hash 是重播的鑰匙。
+    request_hash: Mapped[str | None] = mapped_column(String(64), index=True)
+    prompt_text: Mapped[str | None] = mapped_column(Text)
+    response_text: Mapped[str | None] = mapped_column(Text)
+    latency_ms: Mapped[int | None] = mapped_column(Integer)
+    ok: Mapped[bool | None] = mapped_column(Boolean)
+    error: Mapped[str | None] = mapped_column(Text)
+    role: Mapped[str | None] = mapped_column(String(32))
+    run_variant: Mapped[str | None] = mapped_column(String(16))
+    edition_date: Mapped[date | None] = mapped_column(Date)
+    story_id: Mapped[int | None] = mapped_column(BigInteger().with_variant(Integer(), "sqlite"))
+    model_version: Mapped[str | None] = mapped_column(Text)
 
 
 class QASession(Base):
@@ -601,8 +709,13 @@ __all__ = [
     "AgentArtifactSource",
     "AgentRun",
     "CandidatePost",
+    "AgentMessage",
     "DailyArticle",
     "DailyEdition",
+    "DailySnapshot",
+    "PagePlan",
+    "Story",
+    "StoryVersion",
     "DailyPush",
     "EditionItem",
     "EditionItemSource",

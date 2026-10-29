@@ -40,6 +40,7 @@ from reddit_tracker.daily import market as market_module
 from reddit_tracker.daily import render as render_module
 from reddit_tracker.daily import run
 from reddit_tracker.daily.render import render_html
+from reddit_tracker.daily.view import view_from_edition
 from reddit_tracker.daily.scoring import ScoredCluster, kind_for
 from reddit_tracker.daily.writer import GROUPS_SCHEMA, DailyWriter
 from reddit_tracker.llm.replay import ReplayClient, ReplayResult, load_records
@@ -158,7 +159,7 @@ def published_view() -> EditionView:
     # 版面用現在的 render 重畫，但 10/27 刊出時的數據欄沒有延遲標示（E15），照當時的樣子畫。
     with pytest.MonkeyPatch.context() as mp:
         mp.setattr(render_module, "market_stale", lambda market, edition_date: False)
-        html = render_html(edition, sections)
+        html = render_html(view_from_edition(edition, sections))
     return EditionView("published", EDITION_DATE, events, html, data["market"])
 
 

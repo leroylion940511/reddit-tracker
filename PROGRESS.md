@@ -4,7 +4,14 @@
 > 現行企劃見 `docs/AI_NEWS_COMPANY_PROPOSAL.md`、規格入口見 `docs/v5/README.md`。
 > 2026-10-27 以前的段落是 v4／v5 歷史紀錄，裡面提到的 bot、scrapers、services、v5 newsroom 模組都已移除。
 
-**Last updated:** 2026-10-27（日報撰稿改用 Codex）
+**Last updated:** 2026-10-29（執行手冊步驟 6–11 的程式，`cursor/mas-steps-6-11-cc77`）
+
+## 目前狀態（2026-10-29，MAS 步驟 6–11 的程式）
+
+- ✅ 在 `mas-handbook` 之上的分支做了手冊步驟 6–11 能在沒有 Codex CLI、沒有 production DB 的環境驗證的部分。細節與 👤／🔁／⛔ 在 `docs/HANDBOOK_ADAPTATION.md`。
+- ✅ 新表與 Alembic `b8d4f0a17c33`；`DAILY_MODE=pipeline|mas`；P 組影子版不寫 `daily_editions`；`render_html` 只吃 `EditionView`；回放頁 `/daily/{date}/newsroom`；核准關卡；五項安全測試；盲計匯出（種子 `20261201`／`20261211`）。
+- ⚠️ 真 Codex 的 E01 trace、連續 3 天 live、試刊日期公告、真實盲計對照表的 SHA-256，都掛 xfail，等 Mac 與標註員。步驟 4（配額與三內版）與步驟 3.8、步驟 5 沒有做。沒有打 `gate-1115`。`gate-1108` 只代表程式關卡。
+- ➡️ 下一步仍是步驟 3.8（10/27 重編對照）與步驟 4、5（另一位開發者），以及在 Mac 上用 `data/work/1027_e01.db` 錄 T2a。
 
 ## 目前狀態（2026-10-27 起）
 

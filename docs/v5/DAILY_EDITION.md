@@ -202,8 +202,19 @@ desk_merges(session, pool, llm_groups, *, lexicon, rules, disabled_sources=froze
 #   DeskMerges(groups, entity_groups, llm_groups, rejected: list[{group, cluster_id, title, reason}])
 apply_merges(scored, groups) -> list[ScoredCluster]   # scoring.py；重疊的組會把已併入的事件一起帶過去
 story_evidence(session, cluster: ScoredCluster, registry, context=None) -> EvidencePack   # 選題與回歸集共用
-prepare_daily(edition_date, *, writer_mode=None, refresh=False, now=None, writer=None) -> int   # writer：直接指定撰稿者（回歸集 replay），不看 writer_mode
-publish_daily(edition_date) -> DailyEdition
+prepare_daily(edition_date, *, writer_mode=None, refresh=False, now=None, writer=None, mode=None, shadow=False, snapshot=None) -> int
+#   mode 預設讀 DAILY_MODE（pipeline／mas）。shadow=True：P 組寫 site/daily/shadow，不寫 daily_editions。
+#   DAILY_MODE=mas 時 publish_daily 若沒有準備好的期數就失敗，不重跑 prepare。
+publish_daily(edition_date) -> int   # 發行當下用 build_edition_view 重渲染；mas 未核准的全文改成標題短訊
+# reddit_tracker/daily/view.py
+render_html(view: EditionView) -> str   # 只吃 EditionView
+build_edition_view(session, edition_date, run_variant, sections, *, for_publish=False) -> EditionView
+view_from_edition(edition, sections) -> EditionView   # 還沒有 page_plans 的舊物件
+# reddit_tracker/daily/mas/orchestrator.py
+run_mas(session, *, edition_date, snapshot, registry, client, now, pitches=None) -> MasResult
+# reddit_tracker/daily/blind.py
+export_blind_count(session, dates, *, seed=BLIND_SEED) -> (text, mapping, sha256)
+#   BLIND_SEED = 20261201；EXP2_SEED = 20261211
 parse_now(text) -> datetime   # --now 的值：ISO；不帶時區＝出刊時區（台北），回傳 UTC aware
 recluster(now) -> ClusterRunStats   # 用同一個 now 跑 cluster_recent_items（重編舊期用）
 ```
@@ -211,8 +222,12 @@ recluster(now) -> ClusterRunStats   # 用同一個 now 跑 cluster_recent_items�
 CLI：
 
 ```bash
-uv run python -m reddit_tracker.daily prepare [--date YYYY-MM-DD] [--writer codex|gemini|template] [--refresh] [--now ISO] [--recluster]
+uv run python -m reddit_tracker.daily prepare [--date YYYY-MM-DD] [--writer codex|gemini|template|fake] [--refresh] [--shadow] [--mode pipeline|mas] [--now ISO] [--recluster]
 uv run python -m reddit_tracker.daily publish [--date YYYY-MM-DD]
+uv run python -m reddit_tracker.daily trace --date YYYY-MM-DD [--variant mas] [--cluster ID]
+uv run python -m reddit_tracker.daily approve --story ID --by 名字
+uv run python -m reddit_tracker.daily hold --date YYYY-MM-DD --story ID --by 名字
+uv run python -m reddit_tracker.daily blind-export --dates YYYY-MM-DD --out DIR
 ```
 
 `--now`（手冊步驟 3 第 8 點）：把「現在」固定在某個時間，評分、選題時間窗、證據包相關性的當天素材、
@@ -226,3 +241,16 @@ uv run python -m reddit_tracker.daily publish [--date YYYY-MM-DD]
 - Gemini 撰稿 37 則、模板稿 5 則；共 16 次請求，約 6 分鐘（本機限速每分鐘 5 次）。
 - 實測遇到的 Gemini 失敗：503 過載（重試後成功）、JSON 格式壞掉、直接回傳陣列而缺外層物件（已改為兩種形狀都接受）。
 - 試編中修正：重編時誤把本期舊草稿當成已刊登而排除大事件；板塊在選題時重新投票（Yahoo 股市 feed 改標綜合 feed）；頭版每版最多 2 則；模板稿與證據包優先保留中文來源。
+
+## PR #1 整合介面（2026-10-30；以下取代上文舊流水線的相衝敘述）
+
+- `prepare_daily(..., snapshot=None)`：提供 `DailySnapshot` 或 `{"candidates": [...]}` 時跳過評分與編輯會議，使用凍結的證據 id。兩組共用一份快照；`shadow=True` 即使當天已有 M 組版次也會產生 P 影子版。
+- `run_mas`：三內版共用 `select_articles` 正式稿名額；三次分版主編呼叫只改角度／推薦。版面編輯提出異議，總編裁決頭版。決定只能引用本期正式稿，不能讓 HOLD 上頭版；保留內版其他稿，頭版／內版連結只落一筆 `daily_articles`，保留 `merged_cluster_ids`。
+- `EditionView` 把同一正式稿展開成頭版全文與內版連結；渲染不重寫正文。P／M 都保留步驟 4 的六則頭版全文，其餘版面標題短訊來自 `stats.briefs`，不送 LLM。舊期 anchor 用 cluster id，新版 page plan 用 story id。
+- `stats.role_calls`、`llm_requests` 統計本期本組 Codex 嘗試（包含重試），`degraded` 順序為文稿編輯、查核員 LLM、記者模板；`injection_log` 留下被擋的來源指示。文稿編輯 CHALLENGE 會交給記者修稿並重驗；缺乏可驗證來源則 HOLD。
+- `llm/records.py` 是唯一紀錄入口。`RecordingCodexClient` 只查快取、設定 metadata、委派 `CodexClient.complete`；`scripts/llm_recorder.py` 僅保留相容 import，不另有重試或 INSERT。Replay 不呼叫真模型。
+- `b8d4f0a17c33` 先檢查欄位與 index，只補缺少的；舊列保留、無 hash 的舊列不能 replay。降回 `a6c9e2f31d84` 會移除新增表／錄音欄位，保留舊列基礎欄位；如需回復錄音必須事先備份複本。
+- 模型固定為 `gpt-6.1-sol | codex-cli 0.164.0-alpha.11.1 | reasoning_effort=low`（本機實測）。數字檢查只放行明確單位換算，純數字 14／140 不放行，也不把 published_at 當數字證據。
+- MAS 發行時依最新 page plan 與核准狀態重新渲染，未核准只能印標題短訊。P 影子版只存不發。舊 v5 Reddit 日報程式已移除，沒有雙排程並行。
+- 無人值守檢查使用 `REDDIT_TRACKER_NO_DOTENV=1`，Settings 不開啟 dotenv；不要從 production 取得設定。
+- `scripts/verify_mas_merge.py --stage t2a|mas [--live]` 只用 `data/work` 複本，已有目的 DB 就拒絕覆寫。`--live` 才能呼叫 Codex，固定 `LLM_QUOTA_STATE_PATH=data/work/llm-quota-merge.json`、`LLM_DAILY_LIMIT=40`；先完成回歸重播檢查再執行。T2a 專用證據刻意保留原始 E01 足球來源，正式編採仍先過濾。

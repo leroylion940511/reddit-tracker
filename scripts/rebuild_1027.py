@@ -33,7 +33,7 @@ sys.path[:0] = [str(ROOT), str(ROOT / "scripts")]
 SNAPSHOT = ROOT / "data/snapshots/2026-10-27.db"
 WORK = ROOT / "data/work"
 REBUILD_DB = WORK / "1027_rebuild.db"
-QUOTA_STATE = WORK / "llm-quota-1027.json"
+QUOTA_STATE = Path(os.environ.get("LLM_QUOTA_STATE_PATH", WORK / "llm-quota-1027.json"))
 # 本任務所有真 Codex 錄音的帳本（一起算上限、一起查重用）
 LEDGERS = [REBUILD_DB, WORK / "1027_regression_record" / "1027_rebuild.db"]
 EDITION_DATE = date(2026, 10, 27)
@@ -69,7 +69,7 @@ def old_market() -> list[dict] | None:
 
 def fresh_copy() -> int:
     """複製母本；舊複本裡本任務錄的 llm_records 搬過來。回傳搬過來的筆數。"""
-    from llm_recorder import restore_records, saved_records
+    from reddit_tracker.llm.records import restore_records, saved_records
 
     saved = saved_records(REBUILD_DB)
     WORK.mkdir(parents=True, exist_ok=True)
@@ -114,7 +114,7 @@ def recompute() -> int:
 
 
 def build_writer(mode: str, max_attempts: int):
-    from llm_recorder import RecordingCodexClient, cli_version
+    from reddit_tracker.llm.records import RecordingCodexClient, cli_version
 
     from reddit_tracker.daily.writer import DailyWriter
     from reddit_tracker.llm.codex import CodexClient
@@ -145,6 +145,9 @@ def main(argv: list[str] | None = None) -> int:
 
     kept = fresh_copy()
     print(f"[rebuild] copied snapshot → {REBUILD_DB.relative_to(ROOT)}（沿用 {kept} 筆 llm_records）")
+    from alembic import command
+    from alembic.config import Config
+    command.upgrade(Config("alembic.ini"), "head")
     print(f"[rebuild] prune: {prune()}")
     print(f"[rebuild] recompute_duplicates: {recompute()} duplicates")
     print(f"[rebuild] recluster(now={NOW.isoformat()}): {run.recluster(NOW)}")
