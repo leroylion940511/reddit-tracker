@@ -377,3 +377,43 @@ def test_default_daily_writer_does_not_build_gemini(monkeypatch):
 
     monkeypatch.setattr(gemini, "GeminiClient", boom)
     assert type(writer_module.DailyWriter("codex").client).__name__ == "CodexClient"
+
+
+# ── --now（手冊步驟 3 第 8 點：重編舊期）────────────────────────────────
+
+
+def test_parse_now_defaults_to_taipei_and_keeps_explicit_offsets(monkeypatch):
+    monkeypatch.setattr(run_module, "get_settings", lambda: SimpleNamespace(newsroom_delivery_timezone="Asia/Taipei"))
+    assert run_module.parse_now("2026-10-27T06:00") == datetime(2026, 10, 26, 22, 0, tzinfo=timezone.utc)
+    assert run_module.parse_now("2026-10-26T22:00+00:00") == datetime(2026, 10, 26, 22, 0, tzinfo=timezone.utc)
+    assert run_module.parse_now("2026-10-27 06:00:00+08:00") == datetime(2026, 10, 26, 22, 0, tzinfo=timezone.utc)
+
+
+def test_cli_now_reaches_clustering_scoring_and_edition(daily_env, monkeypatch):
+    """同一個 --now 傳給 cluster_recent_items、評分選題與版次時間；沒給 --date 時出刊日由 --now 推出。"""
+    run_module.get_settings().log_level = "WARNING"
+    seen = {}
+    real_cluster, real_score = run_module.cluster_recent_items, run_module.score_candidates
+
+    def spy_cluster(session, **kwargs):
+        seen["cluster"] = kwargs["now"]
+        return real_cluster(session, **kwargs)
+
+    def spy_score(session, **kwargs):
+        seen["score"] = kwargs["now"]
+        return real_score(session, **kwargs)
+
+    monkeypatch.setattr(run_module, "cluster_recent_items", spy_cluster)
+    monkeypatch.setattr(run_module, "score_candidates", spy_score)
+    assert run_module.main(["prepare", "--now", "2026-10-28T06:00", "--recluster", "--writer", "template"]) == 0
+
+    assert seen == {"cluster": NOW, "score": NOW}
+    edition = daily_env.session.scalar(select(DailyEdition))
+    assert edition.edition_date == EDITION
+    assert edition.prepared_at.replace(tzinfo=timezone.utc) == NOW
+
+
+def test_now_controls_the_selection_window(daily_env):
+    """素材是 NOW 前 3 小時的；把 now 設到一週後，選題時間窗裡就沒有事件。"""
+    with pytest.raises(run_module.DailyEditionError):
+        run_module.prepare_daily(EDITION + timedelta(days=7), now=NOW + timedelta(days=7))

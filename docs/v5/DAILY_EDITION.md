@@ -185,14 +185,21 @@ apply_merges(scored, groups) -> list[ScoredCluster]   # scoring.py；重疊的�
 story_evidence(session, cluster: ScoredCluster, registry, context=None) -> EvidencePack   # 選題與回歸集共用
 prepare_daily(edition_date, *, writer_mode=None, refresh=False, now=None, writer=None) -> int   # writer：直接指定撰稿者（回歸集 replay），不看 writer_mode
 publish_daily(edition_date) -> DailyEdition
+parse_now(text) -> datetime   # --now 的值：ISO；不帶時區＝出刊時區（台北），回傳 UTC aware
+recluster(now) -> ClusterRunStats   # 用同一個 now 跑 cluster_recent_items（重編舊期用）
 ```
 
 CLI：
 
 ```bash
-uv run python -m reddit_tracker.daily prepare [--date YYYY-MM-DD] [--writer codex|gemini|template] [--refresh]
+uv run python -m reddit_tracker.daily prepare [--date YYYY-MM-DD] [--writer codex|gemini|template] [--refresh] [--now ISO] [--recluster]
 uv run python -m reddit_tracker.daily publish [--date YYYY-MM-DD]
 ```
+
+`--now`（手冊步驟 3 第 8 點）：把「現在」固定在某個時間，評分、選題時間窗、證據包相關性的當天素材、
+版次 `prepared_at` 都用它；加 `--recluster` 時先用**同一個** `now` 聚合一輪。沒給 `--date` 時出刊日＝`now` 的台北日期。
+重編 10/27：`DATABASE_URL=sqlite:///data/work/1027_rebuild.db … prepare --now 2026-10-27T06:00 --recluster --refresh`；
+完整流程（刪截止後素材、清聚合與所有期數、重算重複稿）見 `scripts/rebuild_1027.py`。
 
 ## 試編紀錄（2026-10-26，production DB 複本，報紙日期 10/27）
 

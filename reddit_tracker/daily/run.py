@@ -19,6 +19,7 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 
+from ..collection.clustering import ClusterRunStats, cluster_recent_items
 from ..collection.entities import EntityContext, MergeRules, load_lexicon
 from ..config import LLM_PROVIDERS, get_settings
 from ..db import session_scope
@@ -339,6 +340,26 @@ def publish_daily(edition_date: date, *, now: datetime | None = None) -> int:
     return edition_id
 
 
+def parse_now(text: str) -> datetime:
+    """`--now` 的值：ISO 時間；沒帶時區就當成出刊時區（台北）。回傳 UTC aware。"""
+    value = datetime.fromisoformat(text)
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=ZoneInfo(get_settings().newsroom_delivery_timezone))
+    return value.astimezone(timezone.utc)
+
+
+def recluster(now: datetime) -> ClusterRunStats:
+    """用同一個 `now` 增量聚合（重編舊期時，聚合時間窗要跟選題對齊）。"""
+    registry = load_registry(get_settings().news_sources_path)
+    with session_scope() as session:
+        return cluster_recent_items(
+            session,
+            now=now,
+            general_sources=registry.general_source_ids(),
+            disabled_sources=registry.disabled_source_ids(),
+        )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m reddit_tracker.daily")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -346,14 +367,27 @@ def main(argv: list[str] | None = None) -> int:
     prepare.add_argument("--date", type=date.fromisoformat, default=None)
     prepare.add_argument("--writer", choices=LLM_PROVIDERS)
     prepare.add_argument("--refresh", action="store_true", help="重寫尚未發行的 draft")
+    prepare.add_argument(
+        "--now", type=parse_now, default=None,
+        help="把「現在」固定在這個時間（ISO；不帶時區＝台北），聚合、評分、選題、證據包都用它；重編舊期用",
+    )
+    prepare.add_argument("--recluster", action="store_true", help="準備前先用同一個 --now 聚合一輪")
     publish = sub.add_parser("publish", help="發行已準備的版次到 Telegram")
     publish.add_argument("--date", type=date.fromisoformat, default=None)
     args = parser.parse_args(argv)
     settings = get_settings()
     logging.basicConfig(level=settings.log_level, format="%(asctime)s %(levelname)s %(name)s | %(message)s")
-    edition_date = args.date or _today()
+    now = getattr(args, "now", None)
+    if args.date:
+        edition_date = args.date
+    elif now is not None:
+        edition_date = now.astimezone(ZoneInfo(settings.newsroom_delivery_timezone)).date()
+    else:
+        edition_date = _today()
     if args.command == "prepare":
-        edition_id = prepare_daily(edition_date, writer_mode=args.writer, refresh=args.refresh)
+        if args.recluster:
+            print(recluster(now or datetime.now(timezone.utc)))
+        edition_id = prepare_daily(edition_date, writer_mode=args.writer, refresh=args.refresh, now=now)
     else:
         edition_id = publish_daily(edition_date)
     with session_scope() as session:
