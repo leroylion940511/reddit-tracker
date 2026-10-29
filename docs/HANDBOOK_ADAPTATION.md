@@ -178,3 +178,56 @@
   - ✅ 兩岸、財經稿有出現在台灣／國際／科技版：財經在 10/27 實際刊出 3 篇。兩岸在 10/27 只做到改寫進內版、分數不夠沒入選；刊出由 `tests/test_sections.py` 以合成資料驗證（兩岸→台灣、兩岸→國際都刊出）。
   - ✅ E14 回歸測試通過。
 - 全套 `uv run python -m pytest -q`：243 passed、4 skipped（E03／E05 正文、E11、E12 在重編版不適用）。母本 `shasum -a 256 -c` OK。
+
+### 步驟 5｜給標註員的配對試算表＋8.1 抽樣規則（2026-10-30）
+
+本步驟沒有呼叫任何 LLM，也沒有碰 production DB。
+
+- ✅ **抽樣程式與種子已 commit**：`cff09fa`（第一個 commit，試抽在它之後才跑）。
+  - 程式：`reddit_tracker/eval/exp1.py`、`scripts/sample_exp1.py`。種子 `exp1.SEED = 20261104` 寫在程式裡。
+  - 新依賴 `openpyxl`（`uv add`，lock 已 commit）。操作說明在 `docs/eval/EXP1_SAMPLING.md`。
+  - 規則摘要：
+    - 方法 A＝現行聚合程式加參數 `METHOD_A_RULES`（相似度 ≥ 0.28、不要求共同實體＝舊規則，沒有另抄一份），用收集當時的重複稿標記、停用來源也參與。跨語言重播各期 `stats.merged_groups`（live cluster id → 素材 → A 的事件），沒紀錄的日期寫在 manifest。
+    - 方法 C＝步驟 3 現行版（設定門檻＋共同實體＋譯名表），加每個出刊日 06:00 的 desk 跨語言規則。
+    - 兩者都在暫存 SQLite 逐輪增量重跑。系統合併含遞移（`Components`）。
+    - 分層：同語言 4×15、中英 4×10。dev／test 名額同語言 8/7 交錯、中英 5/5，所以各 50。
+    - 中英不足就用 48 小時內同版別的隨機中英配對補；同語言不足照實記錄。
+    - 錯誤案例每案最多 1 組、只進 dev，test 排除錯誤案例素材。跨 dev／test 的配對不抽。
+    - B 複標 dev、test 各隨機 15 組。
+    - 匯出 CSV（utf-8-sig）與 xlsx（「說明」頁、dev／test 工作表、判斷欄下拉選單）。欄位只有 `pair_id｜標題 1｜摘要 1｜時間 1｜標題 2｜摘要 2｜時間 2｜判斷｜一句理由`，台北時間；分層與答案對照放 `annotation/exp1/_private/`。`annotation/` 已 gitignore。
+  - 測試 `tests/test_exp1.py`（15 個，合成資料）：
+    - 出刊日切分與 06:00 邊界；
+    - 可標素材篩選；
+    - 遞移合併；
+    - merged_groups 重播；
+    - 方法 A＝舊門檻；
+    - 暫存 DB 重跑時 A 會併微軟／Skydance、C 不會；
+    - 不跨 dev／test；
+    - 各層數量與 B 複標；
+    - 種子可重現；
+    - 中英補抽、同語言不補；
+    - 錯誤案例只進 dev；
+    - 匯出無洩漏欄位，CSV、xlsx 表頭正確；
+    - 列順序打亂但可重現。
+- 🔁 **手冊沒寫死、這裡的定義**：
+  - **dev／test 依「出刊日」切**：`first_seen_at` 在 (D-1 06:00, D 06:00] 台北 → D。如果用發布日，10/27 那期的錯誤案例素材多半是 10/26 發布，會掉出 dev。
+  - **重複稿不抽**：轉載、同標題重複稿一定是同一事件，不值得標。所以 E10 的轉載配對與 E05（PTT 已停用）不會出現。
+  - **所有配對都限制發布時間差 ≤ 48 小時**：與聚合規則、標註規則一致。
+  - **方法 C 的跨語言不含 `find_same_events` 第二意見**：本工具不呼叫 LLM。
+  - **增量聚合每 3 小時一輪**：線上是 15 分鐘；`--round-hours` 可調，3 小時一次約 4 分鐘。
+- ✅ **試抽**（用母本，`mode=ro&immutable=1` 唯讀，輸出到 `annotation/exp1-trial/`，不給標註員）：
+  - 2 萬 4,639 篇素材，到 10/29 18:40；dev 可標 18,611 篇；候選配對 82,761 組；約 3.75 分鐘。
+  - **dev 抽滿 50 組**（各層都足額）：同語言 8/7/8/7、中英 5/5/5/5，沒有補抽。錯誤案例 E01、E02、E03、E04、E06、E07 各 1 組進 dev。
+  - **test 0 組**：母本沒有 10/31–11/02 的素材，8 層都記為不足。**B 複標只有 dev 15 組。**
+  - dev 各層候選數：
+    - 同語言：都合併 10,647、只 A 18,229、只 C 1,199、都不合併 47,990；
+    - 中英：都合併 60、只 A 2,484、只 C 1,798、都不合併 354。
+  - merged_groups 重播：10/27 17 組、10/28 2 組、10/29 4 組；10/30–11/02 母本沒有那幾期，記「沒有紀錄」。
+  - commit 後重跑一次，兩次的 `exp1_key.csv`、`exp1_A_100.csv` 逐位元相同。
+- 👤 **11/04 前 A、B 都拿到試算表：留給人工（需要日曆時間）。** test 期 10/31–11/02 還沒發生，現有母本只到 10/29。
+  - 11/03 由開發者從當時的 production DB 做新的唯讀快照 `data/snapshots/2026-11-03.db`（同母本做法：online backup、`chmod 444`、記 sha256）。
+  - 再跑 `uv run python scripts/sample_exp1.py --db data/snapshots/2026-11-03.db` 正式抽樣，輸出到 `annotation/exp1/`。
+  - 11/04 把 `exp1_A_100.xlsx` 交 A、`exp1_B_30.xlsx` 交 B，`_private/` 不給標註員。
+  - 步驟見 `docs/eval/EXP1_SAMPLING.md`。實作代理不得碰 production DB，所以本步驟無法代做。
+- ⚠️ 正式抽樣時方法 C 要用「11/04 當下的暫定版」，也就是抽樣當下的 HEAD（manifest 會記 commit）。之後 11/12 前要打 `exp1-frozen` tag（手冊 8.1 第 3 點，另一步）。
+- 全套 `uv run python -m pytest -q`：258 passed、4 skipped。母本 sha256 OK。

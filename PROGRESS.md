@@ -33,7 +33,9 @@
 - ⚠️ 錄音只對當下的提示詞與證據包有效：改到撰稿提示、譯名表、證據包就要重跑 `scripts/record_regression_1027.py`（會呼叫 Codex，`LLM_QUOTA_STATE_PATH` 腳本已指到 `data/work`）。E03／E05 正文、E12 在重編版沒見報，回歸是 skip；E12 由 `tests/test_step3_rules.py` 把關。
 - ✅ 步驟 4（10/30）：`daily/sections.py`＋`seeds/section_rules.yaml` 改寫分版（兩岸→國際／台灣、財經→台灣／國際／科技、生活版教育社會→台灣），`SECTION_QUOTAS={taiwan:4, world:4, tech:4}` 一期 12 篇，頭版 6 則從中標記，內版放頭版連結；科學／生活／文化／體育只出頭版標題短訊（`stats.briefs`，不呼叫 LLM）。E14 通過。重錄錄音用真 Codex 4 次（累計 20），fixture 20 筆、82 KB。全套 243 passed／4 skipped。驗證：`scripts/validate_step4_1027.py`。
 - ⚠️ 10/27 兩岸稿全數改寫進內版但分數沒擠進國際版前 4；`cursor/mas-steps-6-11-cc77` 合併時 run.py／render.py 的衝突點見 ADAPTATION 步驟 4。
-- ➡️ 下一步：步驟 5（標註員配對試算表，11/04）；E11 等步驟 9 文稿編輯。
+- ✅ 步驟 5（10/30）：實驗一抽樣 `reddit_tracker/eval/exp1.py`＋`scripts/sample_exp1.py`（種子 20261104，commit `cff09fa`），方法 A＝舊門檻參數＋merged_groups 重播、方法 C＝現行規則＋desk；分層 60＋40、dev／test 各 50、B 複標 30、無洩漏欄位，私有對照在 `annotation/exp1/_private/`。母本試抽：dev 50 組抽滿、test 0（資料還沒發生）。操作說明 `docs/eval/EXP1_SAMPLING.md`。全套 258 passed／4 skipped。
+- 👤 **11/03 要做**：開發者從 production 做新的唯讀快照 `data/snapshots/2026-11-03.db`，跑 `uv run python scripts/sample_exp1.py --db data/snapshots/2026-11-03.db`，11/04 把 `annotation/exp1/exp1_A_100.xlsx` 給 A、`exp1_B_30.xlsx` 給 B（`_private/` 不給）。
+- ➡️ 下一步：步驟 6–7 由另一個分支（`cursor/mas-steps-6-11-cc77`）負責；本分支下一個是 11/03 正式抽樣（人工）與 E11（步驟 9 文稿編輯）。
 
 ## 本次變更（2026-10-27 — 日報撰稿改用 Codex）
 
