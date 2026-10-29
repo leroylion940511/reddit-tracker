@@ -5,7 +5,7 @@
   "event_hint": "吳俊立、蔡康永",
   "error": "「目前僅有一家媒體報導指出…」硬塞在段落中間",
   "stage": "提示詞",
-  "fix": "刪掉 writer.py 提示詞第 4 條，程式在單一來源稿文末加警語",
+  "fix": "刪掉 writer.py 提示詞第 4 條，程式在單一來源稿文末加警語（writer.finalize_story）",
   "event_titles": [
     "吳俊立心肌炎住院待開刀仍遭拘提！律師團深夜發聲：法院已准假",
     "蔡康永現身蔣萬安總部成立大會 蔣：在台不應因主張不同被出征"
@@ -17,6 +17,6 @@
   "expected": "單一來源警語只出現在 single_source 稿正文最後一段；多來源稿與標題、導言不得出現（arXiv 稿依 E12）",
   "due": "2026-11-04",
   "xfail": {
-    "single_source_notice": "步驟 3 尚未實作（程式加文末警語）；尚無錄好的 LLM 回應（步驟 7 建 llm_records 後錄製 fixtures/1027_llm_records.json）"
+    "single_source_notice": "程式規則已實作（步驟 3.7：提示詞第 4 條已刪、finalize_story 在文末加警語、LLM 自寫警語不過審；tests/test_step3_rules.py 用同一條件驗證，模板稿版面已符合）；重編版的 LLM 文字需要錄好的回應（步驟 7 後錄製）"
   }
 }

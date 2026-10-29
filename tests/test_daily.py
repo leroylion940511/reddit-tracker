@@ -19,7 +19,13 @@ from reddit_tracker.daily.scoring import (
     kind_for,
     select_articles,
 )
-from reddit_tracker.daily.writer import WrittenStory, review_story, template_story
+from reddit_tracker.daily.writer import (
+    SINGLE_SOURCE_NOTICE,
+    WrittenStory,
+    finalize_story,
+    review_story,
+    template_story,
+)
 from reddit_tracker.models import DailyArticle, DailyEdition, SourceItem, StoryCluster
 from reddit_tracker.seeds.news_sources import SourceRegistry
 
@@ -89,7 +95,9 @@ def test_template_prefers_chinese_lead_and_labels_kind():
     story = template_story(evidence, "single_source")
     assert story.headline == "中文標題"
     assert story.body.startswith("據中央社報導：中文摘要")
-    assert "BBC World" in story.body and "單一媒體" in story.body
+    assert "BBC World" in story.body and "單一媒體" not in story.body  # 警語由 finalize_story 加
+    story = finalize_story(story, evidence, "single_source")
+    assert story.body.split("\n")[-1] == SINGLE_SOURCE_NOTICE
     assert story.writer == "template"
 
 
@@ -320,7 +328,7 @@ def test_score_and_evidence_drop_disabled_members_of_mixed_clusters(session):
     assert len(everything) == 2
     assert [s.cluster_id for s in scored] == [mixed]  # 只有 PTT 的事件消失
     evidence = build_evidence(session, [mixed], {}, disabled)
-    assert [e.source_id for e in evidence] == ["cna-world"]
+    assert [e.source_id for e in evidence.items] == ["cna-world"]
 
 
 def test_render_marks_non_mvp_sections_as_not_open():

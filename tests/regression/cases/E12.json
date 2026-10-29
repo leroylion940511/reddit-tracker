@@ -21,6 +21,6 @@
   "expected": "只來自 arXiv 的稿件不得寫「獨家」「一家媒體」，正文要寫明是預印本",
   "due": "2026-11-04",
   "xfail": {
-    "arxiv_rules": "步驟 3 尚未實作（arXiv 措辭規則）；尚無錄好的 LLM 回應（步驟 7 建 llm_records 後錄製 fixtures/1027_llm_records.json）"
+    "arxiv_rules": "程式規則已實作（步驟 3.7：預印本措辭、審稿關卡、模板稿；tests/test_step3_rules.py 用同一條件驗證）；重編版的 LLM 文字需要錄好的回應（步驟 7 後錄製）"
   }
 }

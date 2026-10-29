@@ -183,6 +183,36 @@ def _duplicate_root(
     )
 
 
+def recompute_duplicates(items: list[SourceItem]) -> int:
+    """用現在的 `title_fingerprint` 重算指紋與 `duplicate_of_id`，回傳重複稿篇數。
+
+    指紋規則改了（例如去開頭標籤）只影響之後收到的新素材；重編舊資料（回歸集、
+    `data/work` 複本）要在聚合前對全部素材重算一次。規則與 `store_outcome` 相同：
+    依收錄順序（`first_seen_at`、id），網址相同、或指紋相同且發布時間差在
+    `TITLE_DUPLICATE_WINDOW` 內，就是「先收到、本身不是重複稿」那篇裡 id 最小的重複。
+    """
+    by_url: dict[str, int] = {}
+    by_fingerprint: dict[str, list[tuple[int, datetime]]] = {}
+    duplicates = 0
+    for item in sorted(items, key=lambda i: (as_utc(i.first_seen_at), i.id)):
+        item.title_fingerprint = title_fingerprint(item.title)
+        published = as_utc(item.published_at)
+        candidates = [by_url[item.canonical_url]] if item.canonical_url in by_url else []
+        candidates += [
+            root
+            for root, root_published in by_fingerprint.get(item.title_fingerprint or "", [])
+            if abs(root_published - published) <= TITLE_DUPLICATE_WINDOW
+        ]
+        item.duplicate_of_id = min(candidates) if candidates else None
+        if item.duplicate_of_id is None:
+            by_url.setdefault(item.canonical_url, item.id)
+            if item.title_fingerprint:
+                by_fingerprint.setdefault(item.title_fingerprint, []).append((item.id, published))
+        else:
+            duplicates += 1
+    return duplicates
+
+
 def store_outcome(
     session: Session, source: NewsSource, outcome: FetchOutcome, now: datetime
 ) -> SourceCollectStats:

@@ -18,6 +18,6 @@
   "expected": "SpaceX 事件不得含 PTT Anthropic IPO 貼文，稿件不得提到 Anthropic",
   "due": "2026-11-04",
   "xfail": {
-    "text_must_not_contain": "尚無錄好的 LLM 回應（步驟 7 建 llm_records 後錄製 fixtures/1027_llm_records.json）"
+    "text_must_not_contain": "證據包相關性過濾已實作（步驟 3.5，build_evidence）；正文檢查需要錄好的 LLM 回應（fixtures/1027_llm_records.json，步驟 7 後由協調者錄製）"
   }
 }

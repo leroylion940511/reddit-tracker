@@ -17,6 +17,8 @@ SUMMARY_MAX_CHARS = 1000
 
 _TAG_RE = re.compile(r"<[^>]+>")
 _SPACE_RE = re.compile(r"\s+")
+# 標題開頭的分類標籤：央廣的「[兩岸]」、某些媒體的「【政治】」；轉載稿常只差這個標籤。
+_LEADING_LABEL_RE = re.compile(r"^\s*(?:\[[^\[\]]{1,12}\]|【[^【】]{1,12}】)\s*")
 
 
 def canonicalize_url(url: str) -> str:
@@ -32,14 +34,32 @@ def canonicalize_url(url: str) -> str:
     return urlunsplit((parts.scheme.lower(), host, parts.path.rstrip("/"), urlencode(query), ""))
 
 
-def title_fingerprint(title: str | None) -> str | None:
-    """只保留字母與數字後取 sha1；太短的標題（如「直播更新」）不比對，避免誤判重複。"""
-    if not title:
-        return None
-    normalized = "".join(
-        ch for ch in unicodedata.normalize("NFKC", title).lower()
+def strip_title_labels(title: str | None) -> str:
+    """去掉開頭的 `[..]`／`【..】` 分類標籤（可能連續好幾個）。"""
+    text = title or ""
+    while True:
+        stripped = _LEADING_LABEL_RE.sub("", text, count=1)
+        if stripped == text:
+            return text
+        text = stripped
+
+
+def title_key(title: str | None) -> str:
+    """去標籤、NFKC、小寫後只保留字母與數字；指紋與轉載比對共用。"""
+    return "".join(
+        ch for ch in unicodedata.normalize("NFKC", strip_title_labels(title)).lower()
         if unicodedata.category(ch)[0] in ("L", "N")
     )
+
+
+def title_fingerprint(title: str | None) -> str | None:
+    """去掉開頭標籤、只保留字母與數字後取 sha1；太短的標題（如「直播更新」）不比對，避免誤判重複。
+
+    「[兩岸] 洪秀柱赴中…」與「洪秀柱赴中…」的指紋相同（E10）。
+    """
+    if not title:
+        return None
+    normalized = title_key(title)
     if len(normalized) < MIN_FINGERPRINT_CHARS:
         return None
     return hashlib.sha1(normalized.encode("utf-8")).hexdigest()

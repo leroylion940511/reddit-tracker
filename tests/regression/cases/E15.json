@@ -9,8 +9,5 @@
   "market_close_date": "2026-10-22",
   "market_stale_label": "資料更新延遲",
   "expected": "數據欄收盤日早於出刊日前一個交易日時，版面標示「資料更新延遲」",
-  "due": "2026-11-04",
-  "xfail": {
-    "market_stale_label": "步驟 3 尚未實作（數據欄延遲標示）"
-  }
+  "due": "2026-11-04"
 }

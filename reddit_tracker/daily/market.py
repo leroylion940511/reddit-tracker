@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import date, timedelta
 
 import requests
 
@@ -10,6 +11,27 @@ logger = logging.getLogger(__name__)
 
 TWSE_MI_INDEX_URL = "https://openapi.twse.com.tw/v1/exchangeReport/MI_INDEX"
 WANTED_INDICES = ("發行量加權股價指數", "臺灣50指數")
+STALE_LABEL = "資料更新延遲"
+# 收盤日期距出刊日超過這麼多個交易日就標示延遲（E15）。06:00 出刊時最新的是前一個交易日收盤。
+MAX_TRADING_DAYS_BEHIND = 1
+
+
+def trading_days_between(close: date, edition: date) -> int:
+    """`close` 之後到 `edition`（含）有幾個交易日。只排除週末，不含國定假日
+    （連假後第一期會多標一次延遲，寧可多標）。"""
+    days, day = 0, close
+    while day < edition:
+        day += timedelta(days=1)
+        days += day.weekday() < 5
+    return days
+
+
+def is_stale(close: str | date | None, edition: date) -> bool:
+    """數據欄是否延遲：收盤日距出刊日超過 `MAX_TRADING_DAYS_BEHIND` 個交易日；日期不明也算延遲。"""
+    if not close:
+        return True
+    close_date = date.fromisoformat(close) if isinstance(close, str) else close
+    return trading_days_between(close_date, edition) > MAX_TRADING_DAYS_BEHIND
 
 
 def _roc_to_iso(roc: str) -> str | None:

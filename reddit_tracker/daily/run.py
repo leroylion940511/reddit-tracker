@@ -12,25 +12,25 @@ import asyncio
 import logging
 import shutil
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 
-from ..collection.entities import MergeRules, load_lexicon
+from ..collection.entities import EntityContext, MergeRules, load_lexicon
 from ..config import LLM_PROVIDERS, get_settings
 from ..db import session_scope
 from ..llm.quota import QuotaExhausted
 from ..models import DailyArticle, DailyEdition, StoryCluster
 from ..seeds.news_sources import SourceRegistry, load_registry
 from .desk import DeskMerges, desk_merges
-from .evidence import EvidenceItem, build_evidence
+from .evidence import EvidenceItem, EvidencePack, build_evidence, title_context
 from .market import fetch_market_box
 from .render import render_html, telegram_digest
 from .scoring import ScoredCluster, Selection, apply_merges, desk_pool, score_candidates, select_articles, window_start_for
-from .writer import DailyWriter, WrittenStory, review_story, template_story
+from .writer import DailyWriter, WrittenStory, finalize_story, review_story, template_story
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +50,8 @@ class Planned:
     key: int
     selection: Selection
     evidence: list[EvidenceItem]
+    # 組證據包時的紀錄（相關性過濾剔除的來源），會寫進稿件的 review_notes
+    notes: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -61,6 +63,8 @@ class EditionPlan:
     merged_groups: list[list[int]]
     planned: list[Planned]
     desk: DeskMerges | None = None
+    # 證據包相關性過濾用的「當天素材」（聚合時間窗內的標題）
+    context: EntityContext | None = None
 
 
 def _today() -> date:
@@ -128,7 +132,7 @@ def _write_all(
                         time.sleep(RETRY_DELAY_SECONDS)
         for p in items:
             story = generated.get(p.key)
-            notes = [failure] if failure else []
+            notes = list(p.notes) + ([failure] if failure else [])
             if story is not None:
                 problems = review_story(story, p.evidence)
                 if problems:
@@ -138,18 +142,23 @@ def _write_all(
                 notes.append(f"{writer.name} 回應缺少這則")
             if story is None:
                 story = template_story(p.evidence, p.selection.cluster.kind)
+            story = finalize_story(story, p.evidence, p.selection.cluster.kind)
             story.review_notes = notes
             written[p.key] = story
     return written
 
 
-def story_evidence(session, cluster: ScoredCluster, registry: SourceRegistry) -> list[EvidenceItem]:
+def story_evidence(
+    session, cluster: ScoredCluster, registry: SourceRegistry, context: EntityContext | None = None
+) -> EvidencePack:
     """一個（可能已合併的）事件的證據包；選題與回歸集都從這裡取，確保同一套規則。"""
     return build_evidence(
         session,
         cluster.all_ids,
         {s.id: s.name for s in registry.sources},
         registry.disabled_source_ids(),
+        lexicon=load_lexicon(),
+        context=context,
     )
 
 
@@ -166,12 +175,13 @@ def plan_edition(
     )
     candidate_count = len(scored)
     scored, desk = _editorial_meeting(session, scored, writer, registry.disabled_source_ids())
+    context = title_context(session, now, load_lexicon(), registry.disabled_source_ids())
     planned = []
     for key, selection in enumerate(select_articles(scored), start=1):
-        evidence = story_evidence(session, selection.cluster, registry)
-        if evidence:
-            planned.append(Planned(key, selection, evidence))
-    return EditionPlan(scored, candidate_count, desk.groups, planned, desk)
+        pack = story_evidence(session, selection.cluster, registry, context)
+        if pack.items:
+            planned.append(Planned(key, selection, pack.items, pack.notes))
+    return EditionPlan(scored, candidate_count, desk.groups, planned, desk, context)
 
 
 def prepare_daily(

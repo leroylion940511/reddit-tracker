@@ -12,6 +12,7 @@ import unicodedata
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from difflib import SequenceMatcher
 from urllib.parse import urlsplit
 
 import zhconv
@@ -21,6 +22,7 @@ from sqlalchemy.orm import Session
 from ..models import SourceItem, StoryCluster
 from .collector import as_utc
 from .entities import EntityContext, EntityLexicon, MergeRules, load_lexicon
+from .normalize import title_key
 
 # 除了與某一篇夠像，也要與事件整體（成員向量和）夠像，避免單一連結一路串錯。
 CENTROID_MIN = 0.20
@@ -34,6 +36,13 @@ CANDIDATE_MIN_DF_CAP = 50
 MAX_CANDIDATES = 20
 TIER_RANK = {"T1": 0, "T2": 1, "T3": 2, "T4": 3}
 CNA_WIRE_MARKERS = ("中央社記者", "（中央社", "(中央社")
+CNA_DOMAIN = "cna.com.tw"
+# 轉載辨識（手冊步驟 3 第 6 點、E10）：去開頭標籤後標題相似度 ≥ 0.8，或轉載方內文帶中央社電頭，
+# 而且發布時間差 2 小時內。相似度只用在兩篇都是中文時：英文各家獨立報導的標題常常幾乎一樣
+# （10/27 微軟優離：The Verge 與 CNBC 相似度 0.89），英文轉載（Yahoo Finance 轉 Reuters）
+# 標題完全相同，收集時已判成重複稿。
+REPRINT_TITLE_SIMILARITY = 0.8
+REPRINT_MAX_GAP = timedelta(hours=2)
 SECOND_LEVEL_SUFFIXES = {
     ("com", "tw"), ("org", "tw"), ("gov", "tw"), ("edu", "tw"), ("net", "tw"),
     ("co", "uk"), ("org", "uk"), ("com", "hk"), ("com", "sg"), ("co", "jp"),
@@ -83,13 +92,92 @@ def tokenize(text: str, lang: str | None) -> list[str]:
     return tokens
 
 
-def outlet_of(canonical_url: str, title: str | None, summary: str | None) -> str:
+def has_cna_wire(title: str | None, summary: str | None) -> bool:
     text = f"{title or ''} {summary or ''}"
-    if any(marker in text for marker in CNA_WIRE_MARKERS):
-        return "cna.com.tw"
+    return any(marker in text for marker in CNA_WIRE_MARKERS)
+
+
+def domain_of(canonical_url: str) -> str:
+    """可註冊網域（news.ltn.com.tw → ltn.com.tw）。"""
     labels = (urlsplit(canonical_url).hostname or "").split(".")
     keep = 3 if len(labels) >= 3 and tuple(labels[-2:]) in SECOND_LEVEL_SUFFIXES else 2
     return ".".join(labels[-keep:])
+
+
+def outlet_of(canonical_url: str, title: str | None, summary: str | None) -> str:
+    """出處：可註冊網域；內文帶中央社電頭的轉載稿歸中央社。"""
+    if has_cna_wire(title, summary):
+        return CNA_DOMAIN
+    return domain_of(canonical_url)
+
+
+def _is_reprint_pair(a: SourceItem, b: SourceItem, keys: dict[int, str]) -> bool:
+    if abs(as_utc(a.published_at) - as_utc(b.published_at)) > REPRINT_MAX_GAP:
+        return False
+    for original, copy in ((a, b), (b, a)):
+        # 中央社電頭：轉載方（不是中央社自己）內文寫明是中央社稿，原稿是中央社的稿
+        if (
+            domain_of(original.canonical_url) == CNA_DOMAIN
+            and domain_of(copy.canonical_url) != CNA_DOMAIN
+            and has_cna_wire(copy.title, copy.summary)
+        ):
+            return True
+    ka, kb = keys[a.id], keys[b.id]
+    if not ka or not kb or lang_group(a.lang) != "zh" or lang_group(b.lang) != "zh":
+        return False
+    matcher = SequenceMatcher(None, ka, kb, autojunk=False)
+    return matcher.real_quick_ratio() >= REPRINT_TITLE_SIMILARITY and matcher.ratio() >= REPRINT_TITLE_SIMILARITY
+
+
+def _reprint_rank(item: SourceItem) -> tuple:
+    """同一組轉載裡誰是原稿：中央社優先（央廣、Yahoo 多半轉中央社），其次層級高、先發布、id 小。"""
+    return (
+        domain_of(item.canonical_url) != CNA_DOMAIN,
+        TIER_RANK.get(item.tier, 9),
+        as_utc(item.published_at),
+        item.id,
+    )
+
+
+def mark_reprints(members: list[SourceItem]) -> dict[int, int]:
+    """看整組素材找轉載，回傳 {轉載素材 id: 原稿 id}；原稿與非轉載素材不在結果裡。
+
+    `outlet_of` 一次只看一篇，無法兩兩比對，所以另寫這個。收集時已判為重複稿
+    （`duplicate_of_id`，標題指紋或網址相同）的一律算轉載；另外兩篇標題去掉開頭
+    標籤後相似度 ≥ `REPRINT_TITLE_SIMILARITY`（只比中文標題）、或轉載方帶中央社電頭，而且發布時間差
+    在 `REPRINT_MAX_GAP` 內，也算轉載。相連的素材成一組，組內 `_reprint_rank` 最前的是原稿。
+    """
+    by_id = {m.id: m for m in members}
+    parent = {m.id: m.id for m in members}
+
+    def find(i: int) -> int:
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    def union(a: int, b: int) -> None:
+        parent[find(a)] = find(b)
+
+    for member in members:
+        if member.duplicate_of_id in by_id:
+            union(member.id, member.duplicate_of_id)
+    keys = {m.id: title_key(m.title) for m in members}
+    ordered = sorted(members, key=lambda m: as_utc(m.published_at))
+    for x, a in enumerate(ordered):
+        for b in ordered[x + 1 :]:
+            if as_utc(b.published_at) - as_utc(a.published_at) > REPRINT_MAX_GAP:
+                break
+            if find(a.id) != find(b.id) and _is_reprint_pair(a, b, keys):
+                union(a.id, b.id)
+    groups: dict[int, list[SourceItem]] = defaultdict(list)
+    for member in members:
+        groups[find(member.id)].append(member)
+    reprints = {}
+    for group in groups.values():
+        original = min(group, key=_reprint_rank)
+        reprints.update({m.id: original.id for m in group if m is not original})
+    return reprints
 
 
 def _document_text(item: SourceItem) -> str:
@@ -141,8 +229,14 @@ def _refresh_cluster(
     cluster.title = representative.title
     cluster.representative_item_id = representative.id
     cluster.item_count = len(members)
+    # 轉載不算多來源（硬規則 3）：重複稿與 `mark_reprints` 認出的轉載只算原稿那一家。
+    reprints = mark_reprints(members)
     cluster.outlet_count = len(
-        {outlet_of(m.canonical_url, m.title, m.summary) for m in members if m.tier != "T4"}
+        {
+            outlet_of(m.canonical_url, m.title, m.summary)
+            for m in members
+            if m.tier != "T4" and m.duplicate_of_id is None and m.id not in reprints
+        }
     )
     cluster.t1_count, cluster.t2_count, cluster.t4_count = tiers["T1"], tiers["T2"], tiers["T4"]
     cluster.first_published_at = min(as_utc(m.published_at) for m in members)

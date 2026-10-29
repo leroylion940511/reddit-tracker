@@ -1,6 +1,9 @@
 """日報撰稿：LLM（預設 Codex，可切 Gemini；離線開發用 fake）每版一次請求；失敗或未過審稿關卡的稿件改用模板稿。
 
 LLM 只負責文字。順序、板塊、報導類型、來源與所有評分數字都由程式決定。
+警語也由程式加（手冊 6.6、E16）：`finalize_story` 在單一來源、社群、預印本稿的正文最後
+加一段固定警語；LLM 自己在稿件裡寫警語算未過審稿。只來自 arXiv 的稿件依 E12 規則：
+寫成「一篇發表於 arXiv 的預印本論文指出」，不得寫「獨家」「一家媒體」。
 """
 
 from __future__ import annotations
@@ -14,21 +17,36 @@ from pydantic import BaseModel, Field, ValidationError
 
 from ..collection.entities import EntityLexicon, load_lexicon
 from ..config import get_settings
-from .evidence import EvidenceItem
+from .evidence import EvidenceItem, short_outlet
 
 HEADLINE_RANGE = (4, 60)
 BODY_RANGE = (60, 900)
 TEMPLATE_SUMMARY_CHARS = 120
 KIND_LABELS = {"report": "", "single_source": "單一來源", "social": "社群觀察"}
+PREPRINT_LABEL = "預印本"
+# 預印本平台不是媒體（E12）：證據全部來自這些出處的稿件改用預印本措辭。
+PREPRINT_OUTLETS = frozenset({"arxiv.org"})
+PREPRINT_LEAD = "一篇發表於 arXiv 的預印本論文指出"
+
+# 程式加在正文最後一段的警語（E16）；LLM 不寫警語。
+SINGLE_SOURCE_NOTICE = "目前僅有單一媒體報導，後續發展待確認。"
+SOCIAL_NOTICE = "此為網路社群討論，不代表整體民意，內容亦未經證實。"
+PREPRINT_NOTICE = "預印本未必經過同儕審查，研究結論仍待驗證。"
+# LLM 稿件裡出現這些就是自己寫了警語或把 arXiv 當媒體（回歸案例 E12、E16 用同樣的樣式）
+NOTICE_PATTERN = re.compile(r"(僅有|只有|僅)\s*(一|1|單一)\s*家?\s*(媒體|來源)")
+PREPRINT_BANNED = (re.compile("獨家"), re.compile("一家媒體"), NOTICE_PATTERN)
 
 SYSTEM_PROMPT = """你是台灣綜合日報的資深編輯，替繁體中文讀者撰寫新聞。
 規則：
 1. 只能使用提供的證據（各家媒體的標題與摘要），不可補充證據以外的事實、數字、引述、人名或背景。
 2. 以「據某某報導」「某某指出」歸因；多家說法不一致時並陳，不自行裁決。
 3. 英文與簡體素材轉為台灣慣用的繁體中文用語；外國人名可附原文。
-4. kind 為 single_source 時，正文要明說目前只有一家媒體報導；kind 為 social 時，要明說這是網路社群討論，不代表整體民意，也不是已證實的事實。
-5. 語氣中立、克制，不煽動、不下結論。
-6. 輸出純 JSON，不要 Markdown。"""
+4. 語氣中立、克制，不煽動、不下結論。
+5. 輸出純 JSON，不要 Markdown。"""
+PREPRINT_PROMPT_NOTE = (
+    f"source_type 為 preprint 的稿件，證據是 arXiv 上的預印本論文，arXiv 不是媒體："
+    f"正文第一句寫「{PREPRINT_LEAD}」，不要寫「報導」「獨家」。\n\n"
+)
 
 _NUMBER = re.compile(r"\d+(?:[.,]\d+)*")
 
@@ -107,24 +125,48 @@ def _wrap_list(content: str, key: str) -> dict:
     return {key: data} if isinstance(data, list) else data
 
 
-def _short_outlet(name: str) -> str:
-    head = name.split(" ")[0]
-    return head if re.search(r"[一-鿿]", head) else name
+def is_preprint_only(evidence: list[EvidenceItem]) -> bool:
+    return bool(evidence) and all(e.outlet in PREPRINT_OUTLETS for e in evidence)
+
+
+def story_label(evidence: list[EvidenceItem], kind: str) -> str:
+    return PREPRINT_LABEL if is_preprint_only(evidence) else KIND_LABELS[kind]
+
+
+def notice_for(evidence: list[EvidenceItem], kind: str) -> str | None:
+    """程式加在文末的警語；多來源報導沒有警語。"""
+    if is_preprint_only(evidence):
+        return PREPRINT_NOTICE
+    if kind == "single_source":
+        return SINGLE_SOURCE_NOTICE
+    if kind == "social":
+        return SOCIAL_NOTICE
+    return None
+
+
+def finalize_story(story: WrittenStory, evidence: list[EvidenceItem], kind: str) -> WrittenStory:
+    """所有稿件（LLM 或模板）最後都經過這裡：警語由程式加在正文最後一段（E16）。"""
+    notice = notice_for(evidence, kind)
+    if notice and not story.body.rstrip().endswith(notice):
+        story.body = f"{story.body.rstrip()}\n\n{notice}"
+    return story
 
 
 def template_story(evidence: list[EvidenceItem], kind: str) -> WrittenStory:
+    """不經 LLM 的摘要稿；警語不在這裡加，由 `finalize_story` 統一處理。"""
     # 中文報紙的模板稿優先用中文來源當主稿，避免頭版出現英文標題。
     lead = next((e for e in evidence if (e.lang or "").startswith("zh")), evidence[0])
-    others = [e.source_name for e in evidence if e is not lead]
+    others = [e.display_name for e in evidence if e is not lead]
     summary = lead.summary[:TEMPLATE_SUMMARY_CHARS] + ("…" if len(lead.summary) > TEMPLATE_SUMMARY_CHARS else "")
-    label = KIND_LABELS[kind]
-    body = f"據{_short_outlet(lead.source_name)}報導：{summary or lead.title}"
-    if others:
-        body += f"\n\n另有{'、'.join(others)}報導此事。"
-    if kind == "social":
-        body += "\n\n此為網路社群討論，不代表整體民意，內容亦未經證實。"
-    elif kind == "single_source":
-        body += "\n\n目前僅有單一媒體報導，後續發展待確認。"
+    label = story_label(evidence, kind)
+    if is_preprint_only(evidence):
+        body = f"{PREPRINT_LEAD}：{summary or lead.title}"
+        if others:
+            body += f"\n\n另有 {len(others)} 篇 arXiv 預印本論文與此相關。"
+    else:
+        body = f"據{short_outlet(lead.source_name)}報導：{summary or lead.title}"
+        if others:
+            body += f"\n\n另有{'、'.join(others)}報導此事。"
     return WrittenStory(
         headline=lead.title,
         deck=f"【{label}】" if label else "",
@@ -158,8 +200,18 @@ def _number_supported(value: float, evidence_numbers: set[float]) -> bool:
 
 
 def review_story(story: WrittenStory, evidence: list[EvidenceItem]) -> list[str]:
-    """回傳未通過的原因；空 list 代表通過。"""
+    """LLM 稿件的審稿關卡（在 `finalize_story` 加警語之前跑）。回傳未通過的原因；空 list 代表通過。"""
     problems = []
+    fields = (("標題", story.headline), ("導言", story.deck), ("正文", story.body), ("重要性", story.why_it_matters))
+    if any(NOTICE_PATTERN.search(text or "") for _, text in fields):
+        problems.append("稿件自行寫了單一來源警語（警語由程式加在文末）")
+    if is_preprint_only(evidence):
+        written = " ".join(text or "" for _, text in fields)
+        banned = [p.pattern for p in PREPRINT_BANNED if p is not NOTICE_PATTERN and p.search(written)]
+        if banned:
+            problems.append(f"預印本稿不得寫「{'、'.join(banned)}」（arXiv 不是媒體）")
+        if PREPRINT_LABEL not in story.body:
+            problems.append("預印本稿正文沒寫明是預印本")
     if not HEADLINE_RANGE[0] <= len(story.headline) <= HEADLINE_RANGE[1]:
         problems.append(f"標題長度 {len(story.headline)} 不在範圍內")
     if not BODY_RANGE[0] <= len(story.body) <= BODY_RANGE[1]:
@@ -242,6 +294,7 @@ class DailyWriter:
             {
                 "id": story_id,
                 "kind": kind,
+                **({"source_type": "preprint"} if is_preprint_only(evidence) else {}),
                 "evidence": [
                     {"outlet": e.source_name, "title": e.title, "summary": e.summary, "published_at": e.published_at}
                     for e in evidence
@@ -249,11 +302,13 @@ class DailyWriter:
             }
             for story_id, kind, evidence in stories
         ]
+        preprint_note = PREPRINT_PROMPT_NOTE if any(is_preprint_only(e) for _, _, e in stories) else ""
         prompt = (
             f"板塊：{section_label}。替每個 id 各寫一則新聞，回傳 "
             '{"stories":[{"id":1,"headline":"不超過 40 字","deck":"一句話重點",'
             '"body":"150 到 400 字正文，可分段","why_it_matters":"一句話說明對台灣讀者的意義"}]}。\n\n'
             + self._glossary_note(stories)
+            + preprint_note
             + json.dumps({"stories": payload}, ensure_ascii=False, separators=(",", ":"))
         )
         self.requests += 1

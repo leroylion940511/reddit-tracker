@@ -5,8 +5,11 @@ from __future__ import annotations
 from datetime import date
 from html import escape
 
+from ..collection.clustering import domain_of
+from ..collection.normalize import canonicalize_url
 from ..models import DailyArticle, DailyEdition
-from .writer import KIND_LABELS
+from .market import STALE_LABEL, is_stale
+from .writer import KIND_LABELS, PREPRINT_LABEL, PREPRINT_OUTLETS
 
 WEEKDAYS = "一二三四五六日"
 # MVP 只做頭版＋台灣、國際、科技三個內版（手冊 1.3）；其他版留在選單，沒稿時寫「本版未開放」。
@@ -24,7 +27,7 @@ header.mast .meta{color:var(--muted);font-size:14px;margin-top:6px}
 nav{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center;padding:10px 0;border-bottom:1px solid var(--rule);font:15px/1.4 system-ui,sans-serif}
 nav a{color:var(--ink);text-decoration:none}nav a:hover{color:var(--accent)}
 .market{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:center;padding:8px 0;border-bottom:1px solid var(--rule);font:14px/1.4 system-ui,sans-serif;color:var(--muted)}
-.market b{color:var(--ink)}.down{color:#2e7d32}.up{color:#c62828}
+.market b{color:var(--ink)}.market .stale{color:var(--accent);font-weight:600}.down{color:#2e7d32}.up{color:#c62828}
 h2.section{font-size:22px;margin:32px 0 8px;padding-bottom:4px;border-bottom:2px solid var(--ink)}
 .front{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:0 32px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:0 32px}
@@ -48,9 +51,16 @@ def _paragraphs(text: str) -> str:
     return "".join(f"<p>{escape(part.strip())}</p>" for part in text.split("\n") if part.strip())
 
 
+def _preprint_only(article: DailyArticle) -> bool:
+    urls = [s.get("url") or "" for s in article.sources or []]
+    return bool(urls) and all(domain_of(canonicalize_url(u)) in PREPRINT_OUTLETS for u in urls)
+
+
 def _article_html(article: DailyArticle) -> str:
     tags = []
-    if KIND_LABELS.get(article.kind):
+    if _preprint_only(article):
+        tags.append(PREPRINT_LABEL)  # arXiv 不是媒體，不標「單一來源」（E12）
+    elif KIND_LABELS.get(article.kind):
         tags.append(KIND_LABELS[article.kind])
     if article.writer == "template":
         tags.append("摘要整理")
@@ -67,7 +77,11 @@ def _article_html(article: DailyArticle) -> str:
     )
 
 
-def _market_html(market: list[dict] | None) -> str:
+def market_stale(market: list[dict] | None, edition_date: date) -> bool:
+    return bool(market) and any(is_stale(row.get("date"), edition_date) for row in market)
+
+
+def _market_html(market: list[dict] | None, edition_date: date) -> str:
     if not market:
         return ""
     cells = []
@@ -78,6 +92,8 @@ def _market_html(market: list[dict] | None) -> str:
             f'<span class="{css}">{escape(row["change"])}（{escape(row["change_pct"])}）</span></span>'
         )
     date_note = f'<span>證交所 {escape(market[0]["date"] or "")} 收盤</span>'
+    if market_stale(market, edition_date):
+        date_note += f'<span class="stale">{STALE_LABEL}</span>'
     return f'<div class="market">{"".join(cells)}{date_note}</div>'
 
 
@@ -101,7 +117,7 @@ def render_html(edition: DailyEdition, sections: dict[str, str]) -> str:
 <body><div class="wrap">
 <header class="mast"><h1>AI 綜合日報</h1><div class="meta">{edition_title(edition.edition_date)}｜試刊號｜本期 {len(articles)} 則</div></header>
 <nav><a href="#front">頭版</a>{nav}</nav>
-{_market_html(stats.get("market"))}
+{_market_html(stats.get("market"), edition.edition_date)}
 <h2 class="section" id="front">頭版</h2><div class="front">{"".join(_article_html(a) for a in front)}</div>
 {"".join(blocks)}
 <footer>
@@ -127,7 +143,10 @@ def telegram_digest(edition: DailyEdition, sections: dict[str, str]) -> str:
     lines += ["", "各版：" + "｜".join(counts), "", "完整報紙請開啟下方 HTML 檔（含所有文章與來源連結）。"]
     market = (edition.stats or {}).get("market")
     if market:
-        lines.insert(2, "　".join(f"{m['name']} {m['close']}（{m['change_pct']}）" for m in market))
+        line = "　".join(f"{m['name']} {m['close']}（{m['change_pct']}）" for m in market)
+        if market_stale(market, edition.edition_date):
+            line += f"　⚠️{STALE_LABEL}（{market[0].get('date') or '日期不明'} 收盤）"
+        lines.insert(2, line)
         lines.insert(3, "")
     text = "\n".join(lines)
     return text if len(text) <= TELEGRAM_LIMIT else text[: TELEGRAM_LIMIT - 1] + "…"

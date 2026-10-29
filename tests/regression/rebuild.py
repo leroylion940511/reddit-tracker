@@ -1,7 +1,8 @@
 """回歸集 runner：用離線 fixture 在 tmp SQLite 上重編 10/27 那一期（手冊步驟 2）。
 
 流程與線上相同、全部走正式程式碼：
-1. `1027_items.json.xz` 的素材寫進 tmp SQLite（不碰 production、不碰母本）。
+1. `1027_items.json.xz` 的素材寫進 tmp SQLite（不碰 production、不碰母本）；標題指紋與
+   重複稿用現在的規則重算（`recompute_duplicates`，手冊 3.6 的注意事項）。
 2. 照線上當時的聚合時間表（`cluster_runs_utc`：10/26 22:53 首輪＋之後每輪收集）逐輪
    「放入該輪收到的素材 → `cluster_recent_items(now=該輪)`」，cluster id 會重新編號。
    一次全部重聚（手冊 3.8 的做法）跟線上的增量結果不同，例如 E03 就重現不出來。
@@ -31,9 +32,11 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from reddit_tracker.collection.clustering import cluster_recent_items, outlet_of
+from reddit_tracker.collection.collector import recompute_duplicates
 from reddit_tracker.collection.normalize import canonicalize_url
 from reddit_tracker.config import get_settings
 from reddit_tracker.daily import market as market_module
+from reddit_tracker.daily import render as render_module
 from reddit_tracker.daily import run
 from reddit_tracker.daily.render import render_html
 from reddit_tracker.daily.scoring import ScoredCluster, kind_for
@@ -149,7 +152,11 @@ def published_view() -> EditionView:
         )
     edition = DailyEdition(edition_date=EDITION_DATE, stats={"market": data["market"]})
     sections = load_registry(get_settings().news_sources_path).sections
-    return EditionView("published", EDITION_DATE, events, render_html(edition, sections), data["market"])
+    # 版面用現在的 render 重畫，但 10/27 刊出時的數據欄沒有延遲標示（E15），照當時的樣子畫。
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(render_module, "market_stale", lambda market, edition_date: False)
+        html = render_html(edition, sections)
+    return EditionView("published", EDITION_DATE, events, html, data["market"])
 
 
 # ── 重播 ────────────────────────────────────────────────────────────────
@@ -212,27 +219,41 @@ class _FakeResponse:
         return self._payload
 
 
-def _insert_items(engine, items: list[dict]) -> None:
+def _source_item(item: dict) -> SourceItem:
+    return SourceItem(
+        id=item["id"],
+        source_id=item["source_id"],
+        section=item["section"],
+        tier=item["tier"],
+        item_key=str(item["id"]),
+        url=item["url"],
+        canonical_url=canonicalize_url(item["url"]),
+        title=item["title"],
+        summary=item["summary"],
+        lang=item["lang"],
+        published_at=_utc(item["published_at"]),
+        published_at_estimated=item["published_at_estimated"],
+        first_seen_at=_utc(item["first_seen_at"]),
+    )
+
+
+def recomputed_duplicates(items: list[dict]) -> dict[int, tuple[str | None, int | None]]:
+    """用現在的指紋規則重算重複稿（手冊 3.6：指紋改了，重編用的資料要另外重算一次）。
+
+    fixture 裡的 `duplicate_of_id` 是當時的指紋算的（「[兩岸]」標籤還在指紋裡）。
+    回傳 {素材 id: (title_fingerprint, duplicate_of_id)}。
+    """
+    rows = [_source_item(item) for item in items]
+    recompute_duplicates(rows)
+    return {row.id: (row.title_fingerprint, row.duplicate_of_id) for row in rows}
+
+
+def _insert_items(engine, items: list[dict], duplicates: dict[int, tuple[str | None, int | None]]) -> None:
     with Session(engine) as session:
-        session.add_all(
-            SourceItem(
-                id=item["id"],
-                source_id=item["source_id"],
-                section=item["section"],
-                tier=item["tier"],
-                item_key=str(item["id"]),
-                url=item["url"],
-                canonical_url=canonicalize_url(item["url"]),
-                title=item["title"],
-                summary=item["summary"],
-                lang=item["lang"],
-                published_at=_utc(item["published_at"]),
-                published_at_estimated=item["published_at_estimated"],
-                first_seen_at=_utc(item["first_seen_at"]),
-                duplicate_of_id=item["duplicate_of_id"],
-            )
-            for item in items
-        )
+        for item in items:
+            row = _source_item(item)
+            row.title_fingerprint, row.duplicate_of_id = duplicates[item["id"]]
+            session.add(row)
         session.commit()
 
 
@@ -246,11 +267,12 @@ def rebuild_view(workdir: Path, needed_titles: set[str]) -> EditionView:
     engine = create_engine(f"sqlite:///{db_path}", future=True)
     Base.metadata.create_all(engine)
 
+    duplicates = recomputed_duplicates(data["items"])
     pending = sorted(data["items"], key=lambda item: item["first_seen_at"])
     for run_at in data["cluster_runs_utc"]:
         batch = [item for item in pending if _utc(item["first_seen_at"]) <= _utc(run_at)]
         pending = pending[len(batch):]
-        _insert_items(engine, batch)
+        _insert_items(engine, batch, duplicates)
         with Session(engine) as session:
             cluster_recent_items(
                 session,
@@ -329,7 +351,7 @@ def rebuild_view(workdir: Path, needed_titles: set[str]) -> EditionView:
             chosen = planned.get(candidate.cluster_id)
             if chosen is None and not titles & wanted:
                 continue
-            evidence = chosen.evidence if chosen else run.story_evidence(session, candidate, registry)
+            evidence = chosen.evidence if chosen else run.story_evidence(session, candidate, registry, plan.context).items
             article = articles.get(candidate.cluster_id) if chosen else None
             events.append(
                 Story(
