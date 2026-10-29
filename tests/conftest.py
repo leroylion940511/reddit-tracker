@@ -7,6 +7,23 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from reddit_tracker.models import Base
+from tests import llm_guard
+
+
+def pytest_configure(config):
+    """收集測試前就裝好防護：連 session fixture 的 setup 也不能呼叫真 LLM。"""
+    llm_guard.install()
+
+
+@pytest.fixture(autouse=True)
+def _no_real_llm():
+    """攔截可能被程式內的 `except` 吞掉；測試結束再檢查一次，有嘗試就判失敗。"""
+    llm_guard.attempts.clear()
+    yield
+    if llm_guard.attempts:
+        found = list(llm_guard.attempts)
+        llm_guard.attempts.clear()
+        pytest.fail(f"測試嘗試呼叫真 LLM：{found}")
 
 
 @pytest.fixture()

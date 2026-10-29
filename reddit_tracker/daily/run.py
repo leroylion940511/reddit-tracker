@@ -23,11 +23,11 @@ from ..config import LLM_PROVIDERS, get_settings
 from ..db import session_scope
 from ..llm.quota import QuotaExhausted
 from ..models import DailyArticle, DailyEdition, StoryCluster
-from ..seeds.news_sources import load_registry
+from ..seeds.news_sources import SourceRegistry, load_registry
 from .evidence import EvidenceItem, build_evidence
 from .market import fetch_market_box
 from .render import render_html, telegram_digest
-from .scoring import Selection, apply_merges, desk_pool, score_candidates, select_articles, window_start_for
+from .scoring import ScoredCluster, Selection, apply_merges, desk_pool, score_candidates, select_articles, window_start_for
 from .writer import DailyWriter, WrittenStory, review_story, template_story
 
 logger = logging.getLogger(__name__)
@@ -44,10 +44,20 @@ class DailyEditionError(RuntimeError):
 
 
 @dataclass
-class _Planned:
+class Planned:
     key: int
     selection: Selection
     evidence: list[EvidenceItem]
+
+
+@dataclass
+class EditionPlan:
+    """撰稿前的一期：編輯會議合併後的全部候選、合併組、選上且有證據的稿件。"""
+
+    candidates: list[ScoredCluster]
+    candidate_count: int
+    merged_groups: list[list[int]]
+    planned: list[Planned]
 
 
 def _today() -> date:
@@ -73,9 +83,9 @@ def _editorial_meeting(session, scored, writer: DailyWriter | None) -> tuple[lis
 
 
 def _write_all(
-    planned: list[_Planned], sections: dict[str, str], writer: DailyWriter | None
+    planned: list[Planned], sections: dict[str, str], writer: DailyWriter | None
 ) -> dict[int, WrittenStory]:
-    groups: dict[str, list[_Planned]] = {}
+    groups: dict[str, list[Planned]] = {}
     for item in planned:
         group = FRONT_GROUP if item.selection.is_front else item.selection.section
         groups.setdefault(group, []).append(item)
@@ -117,24 +127,62 @@ def _write_all(
     return written
 
 
+def story_evidence(session, cluster: ScoredCluster, registry: SourceRegistry) -> list[EvidenceItem]:
+    """一個（可能已合併的）事件的證據包；選題與回歸集都從這裡取，確保同一套規則。"""
+    return build_evidence(
+        session,
+        cluster.all_ids,
+        {s.id: s.name for s in registry.sources},
+        registry.disabled_source_ids(),
+    )
+
+
+def plan_edition(
+    session, *, edition_date: date, now: datetime, writer: DailyWriter | None, registry: SourceRegistry
+) -> EditionPlan:
+    """評分 → 編輯會議（跨語言合併）→ 選題 → 證據包；不撰稿、不寫 DB。"""
+    scored = score_candidates(
+        session,
+        edition_date=edition_date,
+        now=now,
+        general_sources=registry.general_source_ids(),
+        disabled_sources=registry.disabled_source_ids(),
+    )
+    candidate_count = len(scored)
+    scored, merged_groups = _editorial_meeting(session, scored, writer)
+    planned = []
+    for key, selection in enumerate(select_articles(scored), start=1):
+        evidence = story_evidence(session, selection.cluster, registry)
+        if evidence:
+            planned.append(Planned(key, selection, evidence))
+    return EditionPlan(scored, candidate_count, merged_groups, planned)
+
+
 def prepare_daily(
-    edition_date: date, *, writer_mode: str | None = None, refresh: bool = False, now: datetime | None = None
+    edition_date: date,
+    *,
+    writer_mode: str | None = None,
+    refresh: bool = False,
+    now: datetime | None = None,
+    writer: DailyWriter | None = None,
 ) -> int:
-    """冪等準備一期日報，回傳 edition id；不發送。"""
+    """冪等準備一期日報，回傳 edition id；不發送。
+
+    `writer`：直接指定撰稿者（回歸集用 replay client），此時不看 `writer_mode`、不找 codex binary。
+    """
     settings = get_settings()
     now = now or datetime.now(timezone.utc)
-    writer_mode = writer_mode or settings.daily_writer
-    if writer_mode not in LLM_PROVIDERS:
-        raise ValueError(f"撰稿 provider 只允許 {'/'.join(LLM_PROVIDERS)}：{writer_mode!r}")
-    if writer_mode == "gemini" and not settings.gemini_api_key:
-        writer_mode = "template"
-    if writer_mode == "codex" and shutil.which(settings.codex_bin) is None:
-        logger.warning("codex binary not found at %s; falling back to template", settings.codex_bin)
-        writer_mode = "template"
+    if writer is None:
+        writer_mode = writer_mode or settings.daily_writer
+        if writer_mode not in LLM_PROVIDERS:
+            raise ValueError(f"撰稿 provider 只允許 {'/'.join(LLM_PROVIDERS)}：{writer_mode!r}")
+        if writer_mode == "gemini" and not settings.gemini_api_key:
+            writer_mode = "template"
+        if writer_mode == "codex" and shutil.which(settings.codex_bin) is None:
+            logger.warning("codex binary not found at %s; falling back to template", settings.codex_bin)
+            writer_mode = "template"
     registry = load_registry(settings.news_sources_path)
     sections = registry.sections
-    source_names = {s.id: s.name for s in registry.sources}
-    disabled_sources = registry.disabled_source_ids()
 
     with session_scope() as session:
         existing = session.scalar(select(DailyEdition).where(DailyEdition.edition_date == edition_date))
@@ -143,21 +191,10 @@ def prepare_daily(
                 return existing.id
             if existing.status == "drafted" and not refresh:
                 return existing.id
-        writer = DailyWriter(writer_mode) if writer_mode in LLM_WRITERS else None
-        scored = score_candidates(
-            session,
-            edition_date=edition_date,
-            now=now,
-            general_sources=registry.general_source_ids(),
-            disabled_sources=disabled_sources,
-        )
-        candidate_count = len(scored)
-        scored, merged_groups = _editorial_meeting(session, scored, writer)
-        planned = []
-        for key, selection in enumerate(select_articles(scored), start=1):
-            evidence = build_evidence(session, selection.cluster.all_ids, source_names, disabled_sources)
-            if evidence:
-                planned.append(_Planned(key, selection, evidence))
+        if writer is None and writer_mode in LLM_WRITERS:
+            writer = DailyWriter(writer_mode)
+        plan = plan_edition(session, edition_date=edition_date, now=now, writer=writer, registry=registry)
+        candidate_count, merged_groups, planned = plan.candidate_count, plan.merged_groups, plan.planned
     if not planned:
         raise DailyEditionError("沒有可刊登的事件；請確認收集與聚合是否正常")
 

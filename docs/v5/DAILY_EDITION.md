@@ -137,18 +137,25 @@ build_evidence(session, cluster_ids, source_names, disabled_sources=frozenset())
 DailyWriter(name="codex", *, client=None)   # name: codex / gemini / fake
 DailyWriter.find_same_events(candidates) -> list[list[int]]
 DailyWriter.write(section, stories) -> dict[int, WrittenStory]
-# reddit_tracker/llm/codex.py、llm/gemini.py、llm/fake.py：介面相同
+# reddit_tracker/llm/codex.py、llm/gemini.py、llm/fake.py、llm/replay.py：介面相同
 CodexClient(*, binary=None, model=None, reasoning_effort=None, timeout=None, purpose="daily", max_retries=None, guard=None)
 GeminiClient(*, purpose, api_key=None, model=None, daily_limit=None, requests_per_minute=None, state_path=None, timeout=None, max_retries=None)
 # reddit_tracker/llm/quota.py
 ModelQuotaGuard(*, state_path, daily_limit, requests_per_minute=None)
 ModelQuotaGuard.acquire(*, model, purpose) -> None   # 用完拋 QuotaExhausted
 ModelQuotaGuard.used(model) -> int
+# reddit_tracker/llm/replay.py（手冊步驟 2／7：重播錄好的回應，找不到就丟 ReplayMissing，不呼叫真模型）
+request_hash(*, system, prompt, model, schema) -> str   # sha256(JSON [system, prompt, model, schema])；prompt＝user 訊息以空行相接
+load_records(path) -> dict[str, str]   # .json（[{request_hash, response_text, ok}]）或含 llm_records 表的 SQLite；只收 ok
+ReplayClient(records, *, model)   # .misses：找不到的 request_hash
 client.complete(*, system, messages, max_output_tokens, temperature, json_mode=False, json_schema=None) -> result(.content, .input_tokens, .output_tokens, .cached_tokens)
 template_story(evidence, kind) -> WrittenStory
 review_story(story, evidence) -> list[str]   # 空 list 代表通過
 # reddit_tracker/daily/run.py
-prepare_daily(edition_date, *, writer_mode=None, refresh=False) -> DailyEdition
+plan_edition(session, *, edition_date, now, writer, registry) -> EditionPlan   # 評分→編輯會議→選題→證據包；不撰稿、不寫 DB
+#   EditionPlan(candidates: list[ScoredCluster], candidate_count, merged_groups, planned: list[Planned(key, selection, evidence)])
+story_evidence(session, cluster: ScoredCluster, registry) -> list[EvidenceItem]   # 選題與回歸集共用
+prepare_daily(edition_date, *, writer_mode=None, refresh=False, now=None, writer=None) -> int   # writer：直接指定撰稿者（回歸集 replay），不看 writer_mode
 publish_daily(edition_date) -> DailyEdition
 ```
 
