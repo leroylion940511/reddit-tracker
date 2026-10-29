@@ -39,6 +39,9 @@ article h3{font-size:21px;line-height:1.4;margin:0 0 6px}
 article p{margin:0 0 10px}.why{font-size:15px;color:var(--muted)}
 details{font:13px/1.6 system-ui,sans-serif;color:var(--muted)}details a{color:var(--muted);word-break:break-all}
 .empty{color:var(--muted);font-style:italic;padding:12px 0}
+article.link h3{font-size:18px}article.link h3 a{color:var(--ink)}.see{font:13px/1.6 system-ui,sans-serif;color:var(--muted)}
+.briefs{grid-column:1/-1;padding:12px 0;border-bottom:1px solid var(--rule)}.briefs h3{font-size:18px;margin:0 0 6px}
+.briefs ul{margin:0;padding-left:18px}.briefs li{margin:2px 0}.briefs a{color:var(--ink)}.briefs .src{color:var(--muted);font-size:14px}
 footer{margin-top:40px;padding-top:16px;border-top:3px double var(--ink);font:13px/1.7 system-ui,sans-serif;color:var(--muted)}
 """
 
@@ -72,9 +75,41 @@ def _article_html(article: DailyArticle) -> str:
     deck = f'<p class="deck">{escape(article.deck)}</p>' if article.deck and article.writer != "template" else ""
     why = f'<p class="why">為什麼重要：{escape(article.why_it_matters)}</p>' if article.why_it_matters else ""
     return (
-        f"<article><h3>{tag_html}{escape(article.headline)}</h3>{deck}{_paragraphs(article.body)}{why}"
+        f'<article id="{_anchor(article)}"><h3>{tag_html}{escape(article.headline)}</h3>'
+        f"{deck}{_paragraphs(article.body)}{why}"
         f"<details><summary>來源（{len(article.sources)}）</summary><ul>{sources}</ul></details></article>"
     )
+
+
+def _anchor(article: DailyArticle) -> str:
+    return f"story-{article.cluster_id}"
+
+
+def _link_html(article: DailyArticle) -> str:
+    """內版遇到頭版稿：只放標題連結到頭版那篇，不重印正文（手冊步驟 4）。"""
+    return (
+        f'<article class="link"><h3><a href="#{_anchor(article)}">{escape(article.headline)}</a></h3>'
+        f'<p class="see">見頭版</p></article>'
+    )
+
+
+def _section_order(article: DailyArticle) -> int:
+    # 步驟 4 之後頭版稿的 position 是頭版順位，內版順位在 signals；舊期沒有就用 position
+    return (article.signals or {}).get("section_position") or article.position
+
+
+def _briefs_html(briefs: list[dict] | None, sections: dict[str, str]) -> str:
+    """其他版的標題短訊（不呼叫 LLM、沒有正文），放在頭版。"""
+    if not briefs:
+        return ""
+    items = "".join(
+        f'<li><span class="tag">{escape(sections.get(b["section"], b["section"]))}</span>'
+        + (f'<span class="tag">{escape(b["label"])}</span>' if b.get("label") else "")
+        + f'<a href="{escape(b["url"], quote=True)}" rel="noopener">{escape(b["headline"])}</a>'
+        f' <span class="src">（{escape(b["outlet"])}）</span></li>'
+        for b in briefs
+    )
+    return f'<div class="briefs"><h3>短訊</h3><ul>{items}</ul></div>'
 
 
 def market_stale(market: list[dict] | None, edition_date: date) -> bool:
@@ -105,9 +140,10 @@ def render_html(edition: DailyEdition, sections: dict[str, str]) -> str:
     for key, label in sections.items():
         if key == "data":
             continue
-        items = sorted((a for a in articles if a.section == key and not a.is_front), key=lambda a: a.position)
+        items = sorted((a for a in articles if a.section == key), key=_section_order)
         empty = "本版今日無新稿。" if key in MVP_SECTIONS else "本版未開放。"
-        inner = "".join(_article_html(a) for a in items) or f'<p class="empty">{empty}</p>'
+        inner = "".join(_link_html(a) if a.is_front else _article_html(a) for a in items)
+        inner = inner or f'<p class="empty">{empty}</p>'
         blocks.append(f'<h2 class="section" id="{key}">{escape(label)}</h2><div class="grid">{inner}</div>')
     stats = edition.stats or {}
     title = f"AI 綜合日報｜{edition.edition_date.isoformat()}"
@@ -118,7 +154,7 @@ def render_html(edition: DailyEdition, sections: dict[str, str]) -> str:
 <header class="mast"><h1>AI 綜合日報</h1><div class="meta">{edition_title(edition.edition_date)}｜試刊號｜本期 {len(articles)} 則</div></header>
 <nav><a href="#front">頭版</a>{nav}</nav>
 {_market_html(stats.get("market"), edition.edition_date)}
-<h2 class="section" id="front">頭版</h2><div class="front">{"".join(_article_html(a) for a in front)}</div>
+<h2 class="section" id="front">頭版</h2><div class="front">{"".join(_article_html(a) for a in front)}{_briefs_html(stats.get("briefs"), sections)}</div>
 {"".join(blocks)}
 <footer>
 <p>本報由 AI 協作編採：程式依獨立出處數、官方來源、時效與升溫速度選題，AI 依各家媒體的標題與摘要撰稿，未讀取全文、未做現場採訪。每則附原始來源，請以原文為準。</p>
@@ -137,9 +173,12 @@ def telegram_digest(edition: DailyEdition, sections: dict[str, str]) -> str:
             lines.append(f"   {article.deck}")
     counts = []
     for key, label in sections.items():
-        count = sum(1 for a in edition.articles if a.section == key and not a.is_front)
+        count = sum(1 for a in edition.articles if a.section == key)
         if key != "data" and count:
             counts.append(f"{label} {count}")
+    briefs = (edition.stats or {}).get("briefs") or []
+    if briefs:
+        counts.append(f"短訊 {len(briefs)}")
     lines += ["", "各版：" + "｜".join(counts), "", "完整報紙請開啟下方 HTML 檔（含所有文章與來源連結）。"]
     market = (edition.stats or {}).get("market")
     if market:

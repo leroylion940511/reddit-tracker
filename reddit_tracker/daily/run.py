@@ -31,6 +31,7 @@ from .evidence import EvidenceItem, EvidencePack, build_evidence, title_context
 from .market import fetch_market_box
 from .render import render_html, telegram_digest
 from .scoring import ScoredCluster, Selection, apply_merges, desk_pool, score_candidates, select_articles, window_start_for
+from .sections import rewrite_sections, rewrite_summary, select_briefs
 from .writer import DailyWriter, WrittenStory, finalize_story, review_story, template_story
 
 logger = logging.getLogger(__name__)
@@ -66,6 +67,8 @@ class EditionPlan:
     desk: DeskMerges | None = None
     # 證據包相關性過濾用的「當天素材」（聚合時間窗內的標題）
     context: EntityContext | None = None
+    # 其他版只出頭版標題短訊（不呼叫 LLM），寫進 stats["briefs"]（手冊步驟 4）
+    briefs: list[dict] = field(default_factory=list)
 
 
 def _today() -> date:
@@ -175,14 +178,17 @@ def plan_edition(
         disabled_sources=registry.disabled_source_ids(),
     )
     candidate_count = len(scored)
+    scored = rewrite_sections(session, scored, registry=registry)  # 併版：兩岸、財經、教育社會改寫到三個內版
     scored, desk = _editorial_meeting(session, scored, writer, registry.disabled_source_ids())
     context = title_context(session, now, load_lexicon(), registry.disabled_source_ids())
     planned = []
-    for key, selection in enumerate(select_articles(scored), start=1):
+    selections = select_articles(scored)
+    for key, selection in enumerate(selections, start=1):
         pack = story_evidence(session, selection.cluster, registry, context)
         if pack.items:
             planned.append(Planned(key, selection, pack.items, pack.notes))
-    return EditionPlan(scored, candidate_count, desk.groups, planned, desk, context)
+    briefs = select_briefs(scored, selections, lambda c: story_evidence(session, c, registry, context).items)
+    return EditionPlan(scored, candidate_count, desk.groups, planned, desk, context, briefs)
 
 
 def prepare_daily(
@@ -222,7 +228,7 @@ def prepare_daily(
             writer = DailyWriter(writer_mode)
         plan = plan_edition(session, edition_date=edition_date, now=now, writer=writer, registry=registry)
         candidate_count, merged_groups, planned = plan.candidate_count, plan.merged_groups, plan.planned
-        desk = plan.desk
+        desk, briefs, rewrites = plan.desk, plan.briefs, rewrite_summary(plan.candidates)
     if not planned:
         raise DailyEditionError("沒有可刊登的事件；請確認收集與聚合是否正常")
 
@@ -280,6 +286,9 @@ def prepare_daily(
             "template_articles": len(written) - ai_count,
             "llm_requests": llm_requests,
             "sections": {k: sum(1 for p in planned if p.selection.section == k) for k in sections},
+            "front_articles": sum(1 for p in planned if p.selection.is_front),
+            "briefs": briefs,
+            "section_rewrites": rewrites,
             "market": market,
         }
         edition.updated_at = now

@@ -101,6 +101,7 @@ class Story:
     body: str | None = None
     why_it_matters: str | None = None
     writer: str | None = None
+    signals: dict | None = None  # 重編版刊出稿的 signals（original_section、section_position…）
 
     @property
     def source_titles(self) -> list[str]:
@@ -119,6 +120,7 @@ class EditionView:
     html: str
     market: list[dict] | None
     replay_misses: list[str] | None = None  # None：刊出版不適用
+    stats: dict | None = None  # 重編版的 edition.stats（短訊、LLM 請求數…）
 
     @property
     def published(self) -> list[Story]:
@@ -327,7 +329,8 @@ def rebuild_view(workdir: Path, needed_titles: set[str]) -> EditionView:
     with Session(engine) as session:
         edition = session.get(DailyEdition, edition_id)
         html = Path(edition.html_path).read_text(encoding="utf-8")
-        market = (edition.stats or {}).get("market")
+        stats = dict(edition.stats or {})
+        market = stats.get("market")
         articles = {a.cluster_id: a for a in session.scalars(select(DailyArticle).where(DailyArticle.edition_id == edition_id))}
         members: dict[int, list[SourceItem]] = {}
         for item in session.scalars(select(SourceItem).where(SourceItem.cluster_id.is_not(None))):
@@ -384,7 +387,8 @@ def rebuild_view(workdir: Path, needed_titles: set[str]) -> EditionView:
                     body=article.body if article else None,
                     why_it_matters=article.why_it_matters if article else None,
                     writer=article.writer if article else None,
+                    signals=dict(article.signals or {}) if article else None,
                 )
             )
     engine.dispose()
-    return EditionView("rebuild", EDITION_DATE, events, html, market, replay_misses=list(replay.misses))
+    return EditionView("rebuild", EDITION_DATE, events, html, market, replay_misses=list(replay.misses), stats=stats)

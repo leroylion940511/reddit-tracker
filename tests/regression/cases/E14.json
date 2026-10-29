@@ -12,8 +12,5 @@
   ],
   "expected_section": "taiwan",
   "expected": "台灣高等研究學院事件放在台灣版",
-  "due": "2026-11-15",
-  "xfail": {
-    "expected_section": "步驟 4 併版與改寫分版尚未實作"
-  }
+  "due": "2026-11-15"
 }

@@ -22,20 +22,10 @@ MAX_AGE_PENALTY = 8.0
 FRONT_PAGE_SIZE = 6
 FRONT_PAGE_PER_SECTION = 2
 DESK_POOL_PER_SECTION = 2  # 每版送編輯會議的候選數＝配額 × 2
-SECTION_QUOTAS = {
-    "taiwan": 5,
-    "world": 5,
-    "cross_strait": 3,
-    "finance": 4,
-    "tech": 4,
-    "science_health": 3,
-    "life_env": 3,
-    "culture": 3,
-    "sports": 3,
-    "social": 3,
-}
+# 手冊步驟 4：只做台灣、國際、科技三個內版，一期 12 篇正式稿；頭版 6 則從這 12 篇裡標記。
+# 其他版的事件由 sections.rewrite_sections 改寫到這三版，或只出頭版標題短訊（sections.select_briefs）。
+SECTION_QUOTAS = {"taiwan": 4, "world": 4, "tech": 4}
 SECTION_KINDS = {section: ("report", "single_source") for section in SECTION_QUOTAS}
-SECTION_KINDS["social"] = ("social",)
 
 
 @dataclass
@@ -57,8 +47,9 @@ class ScoredCluster:
 class Selection:
     cluster: ScoredCluster
     section: str
-    position: int
+    position: int  # 頭版稿＝頭版順位；其他＝內版順位（DailyArticle.position）
     is_front: bool
+    section_position: int | None = None  # 內版順位；頭版稿在內版只放連結（也寫進 signals）
 
 
 def window_start_for(edition_date: date) -> datetime:
@@ -220,34 +211,47 @@ def apply_merges(scored: list[ScoredCluster], groups: list[list[int]]) -> list[S
 
 
 def select_articles(scored: list[ScoredCluster]) -> list[Selection]:
-    """頭版取分數最高的 report（每版最多 2 則）；各版依配額補足，report 優先、寧缺勿濫。"""
-    front: list[ScoredCluster] = []
-    per_section: dict[str, int] = {}
-    for s in sorted(scored, key=lambda s: (-s.score, s.cluster_id)):
-        if len(front) == FRONT_PAGE_SIZE:
-            break
-        if s.kind != "report" or s.section not in SECTION_QUOTAS:
-            continue
-        if per_section.get(s.section, 0) >= FRONT_PAGE_PER_SECTION:
-            continue
-        per_section[s.section] = per_section.get(s.section, 0) + 1
-        front.append(s)
-    used = {s.cluster_id for s in front}
-    selections = [
-        Selection(cluster=s, section=s.section, position=i, is_front=True)
-        for i, s in enumerate(front, start=1)
-    ]
+    """三個內版各依配額選稿（report 優先、寧缺勿濫），再從這些稿裡標頭版 6 則，不另佔名額。
+
+    頭版依分數取 report，每版最多 2 則；不足 6 則時放寬每版上限，仍不足就少放（single_source 不上頭版）。
+    回傳順序：頭版（依頭版順位）→ 各內版其餘稿件（依內版順位）。
+    """
     kind_rank = {"report": 0, "single_source": 1, "social": 2}
+    chosen: list[tuple[str, int, ScoredCluster]] = []
     for section, quota in SECTION_QUOTAS.items():
         candidates = sorted(
-            (
-                s
-                for s in scored
-                if s.section == section and s.kind in SECTION_KINDS[section] and s.cluster_id not in used
-            ),
+            (s for s in scored if s.section == section and s.kind in SECTION_KINDS[section]),
             key=lambda s: (kind_rank[s.kind], -s.score, s.cluster_id),
         )[:quota]
-        for position, chosen in enumerate(candidates, start=1):
-            used.add(chosen.cluster_id)
-            selections.append(Selection(cluster=chosen, section=section, position=position, is_front=False))
-    return selections
+        for position, s in enumerate(candidates, start=1):
+            s.signals["section_position"] = position
+            chosen.append((section, position, s))
+
+    by_score = sorted(chosen, key=lambda c: (-c[2].score, c[2].cluster_id))
+    front: list[int] = []
+    per_section: dict[str, int] = {}
+    passes = (
+        lambda section, s: s.kind == "report" and per_section.get(section, 0) < FRONT_PAGE_PER_SECTION,
+        lambda section, s: s.kind == "report",
+    )
+    for allowed in passes:
+        for section, _, s in by_score:
+            if len(front) == FRONT_PAGE_SIZE:
+                break
+            if s.cluster_id in front or not allowed(section, s):
+                continue
+            front.append(s.cluster_id)
+            per_section[section] = per_section.get(section, 0) + 1
+    front_position = {cid: i for i, cid in enumerate(front, start=1)}
+
+    selections = [
+        Selection(
+            cluster=s,
+            section=section,
+            position=front_position.get(s.cluster_id, position),
+            is_front=s.cluster_id in front_position,
+            section_position=position,
+        )
+        for section, position, s in chosen
+    ]
+    return sorted(selections, key=lambda sel: (not sel.is_front, sel.position if sel.is_front else 0))

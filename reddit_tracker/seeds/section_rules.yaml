@@ -1,0 +1,37 @@
+# 併版規則（手冊步驟 4）：十版縮成台灣、國際、科技三個內版。
+# 由 reddit_tracker/daily/sections.py 讀取；規則說明見 docs/v5/DAILY_EDITION.md「併版與配額」。
+#
+# 比對對象：事件內所有素材（已停用來源除外）的標題，先去掉開頭的 [..]／【..】 標籤、簡轉繁。
+# zh：子字串比對（簡轉繁後）；en：不分大小寫，前後不能緊接英數字（所以中文標題裡的「AI太燒錢」也算）。
+# 只收 10/27 試刊號實際出現過或台灣新聞的通用詞；調整後要重跑回歸集。
+
+version: 1
+
+# 與台灣直接相關（兩岸、財經改到台灣版）
+taiwan_terms:
+  zh: [台灣, 臺灣, 台海, 兩岸, 陸委會, 國台辦, 海基會, 海協會, 立法院, 行政院, 總統府, 賴清德, 蕭美琴,
+       國民黨, 民進黨, 民眾黨, 金門, 馬祖, 澎湖, 台北, 臺北, 新北, 桃園, 台中, 臺中, 台南, 臺南, 高雄,
+       台股, 臺股, 上市櫃, 上櫃, 櫃買, 證交所, 金管會, 新台幣, 台積電, 鴻海, 聯發科, -KY]
+  en: [Taiwan, Taiwanese, Taipei, Kaohsiung, TSMC, Foxconn, MediaTek, Lai Ching-te]
+
+# 財經稿改到科技版
+tech_terms:
+  zh: [人工智慧, 生成式, 晶片, 半導體, 輝達, 超微, 博通, 蘋果, 微軟, 谷歌, 亞馬遜, 雲端, 軟體, 資料中心,
+       伺服器, 演算法, 機器人, 電動車, 特斯拉, 摺疊機]
+  en: [AI, chip, chips, chipmaker, semiconductor, Nvidia, AMD, Broadcom, Apple, iPhone, iPad, Microsoft,
+       Google, Alphabet, Amazon, Meta, OpenAI, Anthropic, SpaceX, Tesla, software, cloud, data center,
+       data centers, robot, robotics, GPU, GPUs]
+# 這些登錄表板塊的來源在事件裡出現，也算科技主題
+tech_source_sections: [tech]
+
+# 中文財經稿預設是台灣財經；出現這些詞改判國際
+world_finance_terms:
+  zh: [美股, 美國, 美元, 聯準會, 華爾街, 歐盟, 歐洲, 日本, 日圓, 日股, 港股, 陸股, 中國, 大陸, 韓國, 全球,
+       國際, 川普, 巴西, 英國, 德國, 法國, 俄羅斯, 烏克蘭]
+
+# 教育、社會類（E14）：生活與環境版的事件若是台灣新聞就改到台灣版
+society_terms:
+  zh: [教育部, 教育, 學校, 校園, 大學, 高中, 國中, 國小, 學生, 學院, 師生, 教師, 學測, 招生,
+       警方, 警察, 檢方, 地檢署, 法院, 判決, 起訴, 羈押, 詐騙, 詐團, 車禍, 火警, 社會局, 社福, 長照,
+       勞動部, 勞工, 移工, 衛福部, 托育]
+society_sections: [life_env]

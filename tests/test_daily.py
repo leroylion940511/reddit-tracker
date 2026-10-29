@@ -50,18 +50,32 @@ def test_kind_follows_evidence_rules():
     assert kind_for(StoryCluster(outlet_count=0, t1_count=0)) == "social"
 
 
-def test_select_caps_front_page_per_section_and_respects_kinds():
-    scored = [ScoredCluster(i, "world", "report", 100 - i) for i in range(1, 6)]
-    scored += [ScoredCluster(10, "taiwan", "report", 50), ScoredCluster(11, "taiwan", "single_source", 49)]
-    scored += [ScoredCluster(20, "social", "social", 2), ScoredCluster(21, "social", "report", 60)]
+def test_select_twelve_articles_and_marks_front_from_them():
+    """手冊步驟 4：三個內版各 4 篇、共 12 篇；頭版 6 則從這 12 篇裡標記，每版最多 2 則，不另佔名額。"""
+    scored = [ScoredCluster(i, "world", "report", 100 - i) for i in range(1, 7)]
+    scored += [ScoredCluster(10 + i, "taiwan", "report", 60 - i) for i in range(5)]
+    scored += [ScoredCluster(20 + i, "tech", "report", 40 - i) for i in range(3)]
+    scored += [ScoredCluster(30, "tech", "single_source", 99), ScoredCluster(31, "tech", "single_source", 1)]
+    scored += [ScoredCluster(40, "sports", "report", 200), ScoredCluster(41, "social", "social", 300)]
     selections = select_articles(scored)
-    front = [s.cluster.cluster_id for s in selections if s.is_front]
-    assert front == [1, 2, 21, 10]  # 國際最多 2 則；social 版的 report 可上頭版
-    social = [s.cluster.cluster_id for s in selections if s.section == "social" and not s.is_front]
-    assert social == [20]
-    taiwan = [s.cluster.cluster_id for s in selections if s.section == "taiwan" and not s.is_front]
-    assert taiwan == [11]
-    assert len({s.cluster.cluster_id for s in selections}) == len(selections)
+
+    assert len(selections) == 12
+    by_section = {k: [s.cluster.cluster_id for s in selections if s.section == k] for k in ("taiwan", "world", "tech")}
+    assert by_section == {"world": [1, 2, 3, 4], "taiwan": [10, 11, 12, 13], "tech": [20, 21, 22, 30]}
+    front = [(s.position, s.cluster.cluster_id) for s in selections if s.is_front]
+    assert front == [(1, 1), (2, 2), (3, 10), (4, 11), (5, 20), (6, 21)]  # 每版最多 2 則、只放 report
+    assert [s.is_front for s in selections] == [True] * 6 + [False] * 6  # 頭版在前
+    inner = {s.cluster.cluster_id: s.section_position for s in selections}
+    assert inner[1] == 1 and inner[3] == 3 and inner[30] == 4  # 內版順位：頭版稿在內版只放連結
+    assert all(s.cluster.signals["section_position"] == s.section_position for s in selections)
+    assert not {40, 41} & {s.cluster.cluster_id for s in selections}  # 其他版、社群稿不進正式稿
+
+
+def test_front_page_relaxes_section_cap_but_never_takes_single_source():
+    scored = [ScoredCluster(i, "world", "report", 100 - i) for i in range(1, 5)]
+    scored += [ScoredCluster(10, "taiwan", "report", 50), ScoredCluster(11, "taiwan", "single_source", 99)]
+    front = [s.cluster.cluster_id for s in select_articles(scored) if s.is_front]
+    assert front == [1, 2, 10, 3, 4]  # 先每版 2 則，再放寬；不足 6 則就少放
 
 
 def test_apply_merges_keeps_highest_score_and_upgrades_kind():
@@ -114,6 +128,8 @@ REGISTRY = SourceRegistry(
          "url": "https://ltn.com.tw/rss", "lang": "zh-Hant"},
         {"id": "rti-news", "name": "中央廣播電台", "section": "taiwan", "tier": "T2", "method": "rss",
          "url": "https://rti.org.tw/rss", "lang": "zh-Hant", "general_feed": True},
+        {"id": "cna-politics", "name": "中央社 政治", "section": "taiwan", "tier": "T2", "method": "rss",
+         "url": "https://cna.com.tw/politics", "lang": "zh-Hant"},
         {"id": "ptt", "name": "PTT 八卦板", "section": "social", "tier": "T4", "method": "rss",
          "url": "https://ptt.cc/atom", "lang": "zh-Hant"},
     ],
@@ -158,6 +174,7 @@ def daily_env(session, monkeypatch, tmp_path):
     _add(session, "ltn-world", "news.ltn.com.tw", "武契奇承認敗選 塞爾維亞學運勝出", "塞爾維亞國會大選，武契奇承認敗選，學生運動勝出", section="world")
     _add(session, "rti-news", "rti.org.tw", "塞爾維亞大選 武契奇承認敗選學運勝", "塞爾維亞國會大選武契奇承認敗選", section="taiwan")
     _add(session, "ptt", "ptt.cc", "[問卦] 有沒有颱風假的八卦", "颱風假要不要放", section="social", tier="T4")
+    _add(session, "cna-politics", "cna.com.tw", "立法院三讀通過勞基法修正案", "立法院今天三讀通過勞基法修正案，明年起實施", section="taiwan")
     session.flush()
     cluster_recent_items(session, now=NOW, general_sources=REGISTRY.general_source_ids())
     session.commit()
@@ -181,19 +198,25 @@ def daily_env(session, monkeypatch, tmp_path):
     return SimpleNamespace(session=session, writer=writer, tmp_path=tmp_path)
 
 
-def test_prepare_builds_edition_with_front_page_social_and_html(daily_env):
+def test_prepare_builds_edition_with_front_page_links_and_html(daily_env):
     edition_id = run_module.prepare_daily(EDITION, now=NOW)
 
     edition = daily_env.session.get(DailyEdition, edition_id)
     assert edition.status == "drafted" and edition.writer == "codex"
     articles = {a.section: a for a in edition.articles}
+    assert set(articles) == {"world", "taiwan"}  # 社群稿不再成為正式稿
     serbia = articles["world"]
-    assert serbia.is_front and serbia.kind == "report"
+    assert serbia.is_front and serbia.kind == "report" and serbia.position == 1
+    assert serbia.signals["section_position"] == 1
     assert len(serbia.sources) == 3  # 中央社、自由、央廣三家出處
-    assert articles["social"].kind == "social" and not articles["social"].is_front
+    assert articles["taiwan"].kind == "single_source" and not articles["taiwan"].is_front
     html = (daily_env.tmp_path / "2026-10-28.html").read_text(encoding="utf-8")
-    assert "頭版" in html and "社群觀察" in html and "本版今日無新稿" in html
-    assert edition.stats["llm_requests"] == 3  # 編輯會議＋頭版＋社群版
+    world = html.split('id="world"')[1]
+    assert f'href="#story-{serbia.cluster_id}"' in world and "見頭版" in world  # 內版放頭版稿的連結
+    assert html.count(f'<article id="story-{serbia.cluster_id}">') == 1  # 頭版稿全文只印一次（在頭版）
+    assert html.index(f'id="story-{serbia.cluster_id}"') < html.index('id="world"')
+    assert edition.stats["llm_requests"] == 3  # 編輯會議＋頭版＋台灣版
+    assert edition.stats["front_articles"] == 1 and edition.stats["briefs"] == []
 
     # 已有 draft 時再次 prepare 不重寫、不再呼叫 LLM
     assert run_module.prepare_daily(EDITION, now=NOW) == edition_id
@@ -303,9 +326,9 @@ def test_disabled_source_material_already_in_db_is_not_selected(daily_env, monke
     # daily_env 已把 PTT 素材聚合成一個社群事件；停用來源後重編不得再選它。
     monkeypatch.setattr(run_module, "load_registry", lambda path: REGISTRY_SOCIAL_OFF)
     edition = daily_env.session.get(DailyEdition, run_module.prepare_daily(EDITION, now=NOW))
-    assert [a.section for a in edition.articles] == ["world"]
+    assert sorted(a.section for a in edition.articles) == ["taiwan", "world"]
     assert all(src["source_id"] != "ptt" for a in edition.articles for src in a.sources)
-    assert edition.stats["candidate_clusters"] == 1
+    assert edition.stats["candidate_clusters"] == 2
     html = (daily_env.tmp_path / "2026-10-28.html").read_text(encoding="utf-8")
     assert "本版未開放" in html and "颱風假" not in html
 
@@ -354,7 +377,7 @@ def test_quota_exhaustion_falls_back_to_template_without_retrying(daily_env):
     daily_env.writer.write = exhausted
     edition = daily_env.session.get(DailyEdition, run_module.prepare_daily(EDITION, now=NOW))
     assert {a.writer for a in edition.articles} == {"template"}
-    assert len(calls) == 2  # 頭版、社群版各試一次就放棄，不等重試
+    assert len(calls) == 2  # 頭版、台灣版各試一次就放棄，不等重試
 
 
 def test_fake_provider_writes_offline_without_quota():
