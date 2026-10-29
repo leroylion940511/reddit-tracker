@@ -1,0 +1,378 @@
+{
+ "edition_date": "2026-10-27",
+ "snapshot": "data/snapshots/2026-10-27.db",
+ "snapshot_sha256": "327923b02ca66688eb759397d037f62a8f4e864813e3d42f77a4f670ba10ccc9",
+ "cutoff_first_seen_at_utc": "2026-10-26 22:00:00.002414",
+ "edition_window_start_utc": "2026-10-25 10:00:00.000000",
+ "cluster_count": 2771,
+ "item_count": 3899,
+ "merged_groups_cluster_ids": [
+  [
+   403,
+   410
+  ],
+  [
+   426,
+   1052
+  ],
+  [
+   453,
+   2085
+  ],
+  [
+   1707,
+   1717
+  ],
+  [
+   1707,
+   2420
+  ],
+  [
+   1717,
+   2420
+  ],
+  [
+   1707,
+   2321
+  ],
+  [
+   1717,
+   2321
+  ],
+  [
+   2420,
+   2321
+  ],
+  [
+   232,
+   536
+  ],
+  [
+   1605,
+   1290
+  ],
+  [
+   1662,
+   1290
+  ],
+  [
+   1501,
+   1290
+  ],
+  [
+   1855,
+   1290
+  ],
+  [
+   2058,
+   1290
+  ],
+  [
+   1662,
+   2058
+  ],
+  [
+   1855,
+   2058
+  ]
+ ],
+ "articles": [
+  {
+   "cluster_id": 472,
+   "merged_cluster_ids": [],
+   "section": "world",
+   "headline": "巴西總統大選露拉勝選第四任 預測市場翻車、對手拒不承認"
+  },
+  {
+   "cluster_id": 2157,
+   "merged_cluster_ids": [],
+   "section": "finance",
+   "headline": "微軟全球推員工自願優離方案 傳為加速投入龐大AI基礎設施"
+  },
+  {
+   "cluster_id": 2154,
+   "merged_cluster_ids": [],
+   "section": "finance",
+   "headline": "美國司法部再度起訴前聯調局長柯米 控其涉嫌洩漏國防資訊"
+  },
+  {
+   "cluster_id": 1052,
+   "merged_cluster_ids": [
+    426
+   ],
+   "section": "world",
+   "headline": "委內瑞拉反對派領袖馬查多結束流亡返國 臨時總統表態願對話"
+  },
+  {
+   "cluster_id": 496,
+   "merged_cluster_ids": [],
+   "section": "taiwan",
+   "headline": "失言稱周春米「沒小孩很可憐」惹議 蘇清泉二度發文致歉"
+  },
+  {
+   "cluster_id": 1322,
+   "merged_cluster_ids": [],
+   "section": "taiwan",
+   "headline": "蔣萬安舉辦競總成立大會喊破5萬人 韓國瑜直言九成五媒體打他如政治謀殺"
+  },
+  {
+   "cluster_id": 344,
+   "merged_cluster_ids": [],
+   "section": "taiwan",
+   "headline": "蔡康永表態未挺台獨後現身蔣萬安競選活動 藍綠同聲挺參與自由"
+  },
+  {
+   "cluster_id": 1644,
+   "merged_cluster_ids": [],
+   "section": "taiwan",
+   "headline": "前台東縣長吳俊立心肌炎住院遭檢調拘提 律師團發聲質疑程序"
+  },
+  {
+   "cluster_id": 1568,
+   "merged_cluster_ids": [],
+   "section": "taiwan",
+   "headline": "民進黨代表赴歐洲民主黨大會 分享台灣防衛韌性與防範威權擴張"
+  },
+  {
+   "cluster_id": 1332,
+   "merged_cluster_ids": [],
+   "section": "taiwan",
+   "headline": "沈伯洋童子瑋基隆合體造勢 聚焦交通合作與產業分工"
+  },
+  {
+   "cluster_id": 1270,
+   "merged_cluster_ids": [],
+   "section": "taiwan",
+   "headline": "川普接受電視訪問再指台灣偷走晶片 稱價格離譜推升市場"
+  },
+  {
+   "cluster_id": 405,
+   "merged_cluster_ids": [],
+   "section": "world",
+   "headline": "What Vucic’s defeat means for Serbia’s foreign policy"
+  },
+  {
+   "cluster_id": 410,
+   "merged_cluster_ids": [
+    403
+   ],
+   "section": "world",
+   "headline": "塞爾維亞學生聯盟國會大選過半，克里姆林宮盼維持對俄合作"
+  },
+  {
+   "cluster_id": 1348,
+   "merged_cluster_ids": [],
+   "section": "world",
+   "headline": "奧迪執行長現身川普造勢大會惹議，德國國內批評違反公司規範"
+  },
+  {
+   "cluster_id": 1307,
+   "merged_cluster_ids": [],
+   "section": "world",
+   "headline": "美國歌手克里斯小子英國夜店襲擊案獲判緩刑，免去牢獄之災"
+  },
+  {
+   "cluster_id": 453,
+   "merged_cluster_ids": [
+    2085
+   ],
+   "section": "world",
+   "headline": "巴西總統大選魯拉逆轉勝連任，對手陣營拒絕承認結果並引發股市重挫"
+  },
+  {
+   "cluster_id": 232,
+   "merged_cluster_ids": [
+    536
+   ],
+   "section": "cross_strait",
+   "headline": "中共二十屆五中全會北京開幕 聚焦全面從嚴治黨"
+  },
+  {
+   "cluster_id": 1208,
+   "merged_cluster_ids": [],
+   "section": "cross_strait",
+   "headline": "洪秀柱赴中稱台灣少數人認賊作父 陸委會回應勿貶低國家"
+  },
+  {
+   "cluster_id": 1318,
+   "merged_cluster_ids": [],
+   "section": "cross_strait",
+   "headline": "中國擬發布特別規定防範外國實體侵害商業秘密"
+  },
+  {
+   "cluster_id": 2422,
+   "merged_cluster_ids": [],
+   "section": "finance",
+   "headline": "蘋果首款摺疊機iPhone Duo傳螢幕災情 官方承諾將提供更換"
+  },
+  {
+   "cluster_id": 1707,
+   "merged_cluster_ids": [
+    1717,
+    2420,
+    2321
+   ],
+   "section": "finance",
+   "headline": "人工智慧新創Anthropic正式提交IPO申請 尋求上市集資"
+  },
+  {
+   "cluster_id": 2425,
+   "merged_cluster_ids": [],
+   "section": "finance",
+   "headline": "美聯邦貿易委員會與20州聯合起訴 控告Dollar General標價不實"
+  },
+  {
+   "cluster_id": 1460,
+   "merged_cluster_ids": [],
+   "section": "finance",
+   "headline": "Meta宣布募資高達950億美元 擴大投資人工智慧基礎設施"
+  },
+  {
+   "cluster_id": 1630,
+   "merged_cluster_ids": [],
+   "section": "tech",
+   "headline": "蘋果推出搭載OLED螢幕與A20 Pro晶片的新款iPad mini"
+  },
+  {
+   "cluster_id": 1624,
+   "merged_cluster_ids": [],
+   "section": "tech",
+   "headline": "T-Mobile推出「T-Mix」方案，主打可自由更換的訂閱福利"
+  },
+  {
+   "cluster_id": 154,
+   "merged_cluster_ids": [],
+   "section": "tech",
+   "headline": "Block發表具備擬真語音的模型，可在MacBook M4 Max上運行"
+  },
+  {
+   "cluster_id": 498,
+   "merged_cluster_ids": [],
+   "section": "tech",
+   "headline": "馬斯克稱SpaceX籌得400億美元買晶片，目前僅有一家媒體報導"
+  },
+  {
+   "cluster_id": 262,
+   "merged_cluster_ids": [],
+   "section": "science_health",
+   "headline": "莫德納癌症疫苗熱度降溫 拼2027年申請FDA批准"
+  },
+  {
+   "cluster_id": 614,
+   "merged_cluster_ids": [],
+   "section": "science_health",
+   "headline": "評估動態工作環境中編程代理之新基準SWE-Shift"
+  },
+  {
+   "cluster_id": 641,
+   "merged_cluster_ids": [],
+   "section": "science_health",
+   "headline": "針對凍結多模態情感模型之混淆感知技能演進研究"
+  },
+  {
+   "cluster_id": 1301,
+   "merged_cluster_ids": [],
+   "section": "life_env",
+   "headline": "傳台灣高等研究學院籌設延宕 教育部澄清無延宕並將提前試辦"
+  },
+  {
+   "cluster_id": 1014,
+   "merged_cluster_ids": [],
+   "section": "life_env",
+   "headline": "野放國寶魚 11月可望自然產卵／存活率逾5成 出現配對繁衍"
+  },
+  {
+   "cluster_id": 451,
+   "merged_cluster_ids": [],
+   "section": "life_env",
+   "headline": "未來一週三波東北季風接力報到 迎風面北部東半部迎短暫雨"
+  },
+  {
+   "cluster_id": 1290,
+   "merged_cluster_ids": [
+    1605,
+    1662,
+    1501,
+    1855,
+    2058
+   ],
+   "section": "culture",
+   "headline": "第61屆金鐘獎戲劇類揭曉 莊凱勛、楊貴媚奪下帝后"
+  },
+  {
+   "cluster_id": 338,
+   "merged_cluster_ids": [],
+   "section": "culture",
+   "headline": "金鐘61節目類落幕 沈玉琳抗癌重生奪綜藝主持人獎"
+  },
+  {
+   "cluster_id": 1673,
+   "merged_cluster_ids": [],
+   "section": "culture",
+   "headline": "金鐘獎頒獎插曲 婁峻碩伸手致意遭張詩盈無視"
+  },
+  {
+   "cluster_id": 1325,
+   "merged_cluster_ids": [],
+   "section": "sports",
+   "headline": "味全龍台灣大賽封王 奪隊史第6冠與大巨蛋首冠"
+  },
+  {
+   "cluster_id": 163,
+   "merged_cluster_ids": [],
+   "section": "sports",
+   "headline": "拜仁前鋒凱恩成金球獎熱門人選 外界關注其表現"
+  },
+  {
+   "cluster_id": 459,
+   "merged_cluster_ids": [],
+   "section": "sports",
+   "headline": "唐嘉鴻體操世錦賽單槓摘金 寫下台灣歷史新紀錄"
+  },
+  {
+   "cluster_id": 2436,
+   "merged_cluster_ids": [],
+   "section": "social",
+   "headline": "學士工程師40歲會被裁員？PTT網友熱議桃竹苗勞動市場現況"
+  },
+  {
+   "cluster_id": 2097,
+   "merged_cluster_ids": [],
+   "section": "social",
+   "headline": "深夜社群發文打招呼 脆平台用戶凌晨發布台灣相關動態"
+  },
+  {
+   "cluster_id": 2485,
+   "merged_cluster_ids": [],
+   "section": "social",
+   "headline": "政壇動態引發討論 蔡壁如分析政治局勢與過往經驗"
+  }
+ ],
+ "e01": {
+  "title_pattern": "%Smith-Njigba%",
+  "items": [
+   {
+    "source_item_id": 1053,
+    "source_id": "apnews-top",
+    "lang": "en",
+    "title": "Jaxon Smith-Njigba has big night in Seahawks’ 20-3 win over Chiefs",
+    "cluster_id": 403,
+    "cluster_lang_group": "en",
+    "cluster_title": "NFL roundup: Seahawks overwhelm Chiefs to end KC’s unbeaten run",
+    "cluster_items_at_cutoff": 5,
+    "merged_groups_containing_cluster": [
+     [
+      403,
+      410
+     ]
+    ],
+    "published_in_articles": [
+     {
+      "cluster_id": 410,
+      "headline": "塞爾維亞學生聯盟國會大選過半，克里姆林宮盼維持對俄合作"
+     }
+    ]
+   }
+  ]
+ }
+}

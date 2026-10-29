@@ -44,6 +44,9 @@ htmlcov/
 data/
 dumps/
 
+# --- 標註員交件（含個人標註，不進版控）---
+annotation/
+
 # --- Logs ---
 *.log
 logs/
