@@ -48,7 +48,8 @@ score = 10·log2(1 + outlet_count)
 | 體育 | 3 | report、single_source |
 | 社群觀察 | 3 | social |
 
-- 各版依分數取前 N，`report` 優先於 `single_source`；不足時寧缺勿濫，該版顯示「本版今日無新稿」。
+- 各版依分數取前 N，`report` 優先於 `single_source`；不足時寧缺勿濫，MVP 版（台灣、國際、科技）顯示「本版今日無新稿」，其他版沒稿時顯示「本版未開放」（`render.MVP_SECTIONS`）。
+- **已停用來源**（登錄表 `enabled: false`，例如 2026-10-28 停用的 24 個社群來源）以前抓到的素材：不進聚合、不算事件訊號、不進證據包；只由它們組成的事件不進選題。
 - **編輯會議**（一次 LLM 請求）：各版取配額兩倍的候選，請 LLM 找出報導同一具體事件的組（通常是中英文各一），合併為一則，證據取兩邊聯集。失敗就略過。
 - **頭版**：所有 `report` 中分數最高的 6 則，每版最多 2 則；頭版刊全文，對應板塊不重複刊登。
 - 同一事件只會出現一次。
@@ -59,13 +60,14 @@ score = 10·log2(1 + outlet_count)
 
 ## 4. 撰稿
 
-- Provider 由 `DAILY_WRITER` 決定，預設 `codex`；`gemini`、`template` 可切換。每個板塊一次請求、頭版一次請求，加上編輯會議約 12 次／日。
+- Provider 由 `DAILY_WRITER` 決定，預設 `codex`；只允許 `codex`／`gemini`／`template`／`fake`（`config.LLM_PROVIDERS`，設定驗證會拒絕 `web`；網頁備援已移除）。`fake`（`llm/fake.py`）離線、不扣額度，給開發測試用。只建立被選用的 client，日報預設不建 GeminiClient。每個板塊一次請求、頭版一次請求，加上編輯會議約 12 次／日。
 - **Codex**（`reddit_tracker/llm/codex.py`）：subprocess 呼叫 ChatGPT.app 內建的 `codex exec`，吃本機 ChatGPT 訂閱登入（`~/.codex/auth.json`），不用 API key。模型 `CODEX_MODEL`（預設 `gpt-6.1-sol`、reasoning `low`），逾時 `CODEX_TIMEOUT_SECONDS`=300。輸出用 `--output-schema` 強制 JSON 形狀（`writer.STORIES_SCHEMA`／`GROUPS_SCHEMA`）。每次固定約 16k input tokens 的 agent 開銷，與使用者自己互動用 Codex 共用額度。
 - **Codex 安全邊界**：證據是外部不可信內容，Codex 又是 agent，所以每次都在空暫存目錄、`-s read-only`、`--ephemeral --ignore-user-config --ignore-rules` 下執行，關掉 shell／code mode／子 agent／外掛／瀏覽器等工具（`_DISABLED_FEATURES`；CLI 升版新增工具類 feature 要補關），並丟棄含 Telegram token、Gemini／RSSHub key 的輸出。找不到 `CODEX_BIN` 時整期改用模板稿。
-- **Gemini**（備用，`purpose="daily"`，`GEMINI_DAILY_LIMIT` 預設 60 次／日，以太平洋時間換日）。
+- **額度**（`llm/quota.py` 的 `ModelQuotaGuard`）：以 **model 字串**為鍵，同一模型所有用途（`purpose`）共用一個每日計數，`LLM_DAILY_LIMIT` 預設 60，太平洋時間換日，跨 process 共用 `LLM_QUOTA_STATE_PATH` state 檔。每次嘗試（含重試）扣一格；Codex 失敗重試 `CODEX_MAX_RETRIES`=1、Gemini 429 重試 `GEMINI_MAX_429_RETRIES`=1，外層 `WRITE_ATTEMPTS`=2，一版最壞吃 4 格。額度用完拋 `QuotaExhausted`，該版直接改模板稿、不再重試。
+- **Gemini**（備用，`purpose="daily"`，`GeminiQuotaGuard` 是 `ModelQuotaGuard` 加每分鐘上限）。
 - 指令：繁體中文、只能使用證據包內容、以「據某某報導」歸因、來源說法不一致時並陳、英文與簡體素材要轉為台灣用語、不得補造數字或引述。
 - 產出 JSON：`headline`（≤40 字）、`deck`（一句話重點）、`body`（150–400 字）、`why_it_matters`。
-- 每組請求失敗（JSON 格式錯、503 過載等）最多重試 2 次，間隔 15 秒。
+- 每組請求失敗（JSON 格式錯、503 過載等）整組重寫最多 2 次（`WRITE_ATTEMPTS`），間隔 15 秒。
 - 仍失敗、額度用完或該則未通過審稿關卡時，改用**模板稿**：優先以中文來源為主稿，原標題（簡轉繁）＋「據某某報導」＋摘要前 120 字＋其他出處清單。模板稿會在頁面上標示「摘要整理」。
 
 ## 5. 審稿關卡（程式）
@@ -120,22 +122,28 @@ score = 10·log2(1 + outlet_count)
 | `signals` | JSON | 評分各項與原始計數 |
 | `headline` / `deck` / `body` / `why_it_matters` | text | |
 | `sources` | JSON | `[{outlet, source_id, tier, title, url, published_at}]` |
-| `writer` | str(16) | `codex`／`gemini`／`template` |
+| `writer` | str(16) | `codex`／`gemini`／`fake`／`template` |
 | `review_notes` | JSON | 審稿關卡結果 |
 
 ## 介面
 
 ```python
 # reddit_tracker/daily/scoring.py
-score_candidates(session, *, edition_date, now) -> list[ScoredCluster]
+score_candidates(session, *, edition_date, now, general_sources=frozenset(), disabled_sources=frozenset()) -> list[ScoredCluster]
 select_articles(scored) -> list[Selection]
 # reddit_tracker/daily/evidence.py
-build_evidence(session, cluster_id, source_names) -> list[EvidenceItem]
+build_evidence(session, cluster_ids, source_names, disabled_sources=frozenset()) -> list[EvidenceItem]
 # reddit_tracker/daily/writer.py
-DailyWriter(name="codex", *, client=None)   # name: codex / gemini
+DailyWriter(name="codex", *, client=None)   # name: codex / gemini / fake
 DailyWriter.find_same_events(candidates) -> list[list[int]]
 DailyWriter.write(section, stories) -> dict[int, WrittenStory]
-# reddit_tracker/llm/codex.py、llm/gemini.py：兩者介面相同
+# reddit_tracker/llm/codex.py、llm/gemini.py、llm/fake.py：介面相同
+CodexClient(*, binary=None, model=None, reasoning_effort=None, timeout=None, purpose="daily", max_retries=None, guard=None)
+GeminiClient(*, purpose, api_key=None, model=None, daily_limit=None, requests_per_minute=None, state_path=None, timeout=None, max_retries=None)
+# reddit_tracker/llm/quota.py
+ModelQuotaGuard(*, state_path, daily_limit, requests_per_minute=None)
+ModelQuotaGuard.acquire(*, model, purpose) -> None   # 用完拋 QuotaExhausted
+ModelQuotaGuard.used(model) -> int
 client.complete(*, system, messages, max_output_tokens, temperature, json_mode=False, json_schema=None) -> result(.content, .input_tokens, .output_tokens, .cached_tokens)
 template_story(evidence, kind) -> WrittenStory
 review_story(story, evidence) -> list[str]   # 空 list 代表通過

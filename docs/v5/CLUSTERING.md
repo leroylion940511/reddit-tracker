@@ -76,7 +76,10 @@ tokenize(text: str, lang: str) -> list[str]
 lang_group(lang: str | None) -> str
 outlet_of(canonical_url: str, title: str | None, summary: str | None) -> str
 cluster_recent_items(session, *, now=None, threshold=CLUSTER_THRESHOLD,
-                     general_sources: frozenset[str] = frozenset()) -> ClusterRunStats
+                     general_sources: frozenset[str] = frozenset(),
+                     disabled_sources: frozenset[str] = frozenset()) -> ClusterRunStats
+# disabled_sources：已停用來源的素材不進聚合，既有事件的訊號也不算它們
+SourceRegistry.disabled_source_ids() -> frozenset[str]
 ```
 
 CLI：
