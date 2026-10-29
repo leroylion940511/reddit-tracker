@@ -128,3 +128,53 @@
   - ✅ **10/27 前後對照已附在週報**：`docs/weekly/2026-11-03.md` →`docs/weekly/1027_compare.md`。
   - 附帶：E08（11/15）錄音後通過（巴西稿全用「魯拉／佛拉維歐」），已拿掉 xfail。E11 的莫德納稿在重編版沒見報，維持 xfail。E14（11/15）兩邊都還是 ❌，等步驟 4。
 - 全套 `uv run python -m pytest -q`：213 passed、4 skipped（E03／E05 正文、E11、E12 不適用）、1 xfailed（E14）。
+
+### 步驟 4｜併版與配額＋E14（2026-10-30 完成）
+
+- ✅ **1. 先改寫分版**：新模組 `reddit_tracker/daily/sections.py`，詞表放在 `reddit_tracker/seeds/section_rules.yaml`。`plan_edition` 在 `score_candidates` 之後、編輯會議之前呼叫 `rewrite_sections`。規則如下，全部由程式判斷，詳細表格在 `docs/v5/DAILY_EDITION.md` §2：
+  - 兩岸版：有台灣詞或台灣官方 T1 來源就改到台灣版，其他改到國際版。
+  - 財經版依序判斷：台灣詞改台灣版；科技詞或事件裡有科技版來源改科技版；全是繁中（台灣媒體）而且沒有國際詞改台灣版；其他改國際版。
+  - 生活版的教育、社會類（E14）：有社會詞，而且有台灣詞、台灣官方來源或全是繁中，就改到台灣版。
+  - 英文詞前後不能緊接英數字，所以「AI太燒錢」算 AI，Thailand 不算。
+  - 改過的事件在 `signals` 記 `original_section`／`section_rule`，`stats.section_rewrites` 記統計。
+  - 🔁 手冊說「關鍵字／來源地區／譯名表」。這裡用關鍵字＋來源（台灣官方 T1、科技版來源、語言 `zh-Hant`）判斷。譯名表沒用到，因為它只有人名，判斷不了主題。
+  - 🔁 E14 這類只在生活版套用：科學版的「大學」研究、體育版的「學生」選手不改，避免誤判。
+  - 測試：`tests/test_sections.py` 有 19 個分類案例，都是 10/27 的真實標題。另有一個測試證明「只改配額不改分版，兩岸、財經事件會整篇消失」，改寫後兩岸、財經、教育稿都進了三個內版。
+- ✅ **2. `SECTION_QUOTAS = {taiwan: 4, world: 4, tech: 4}`**，共 12 篇。`SECTION_KINDS` 只剩三版，`social` 事件不再選題（社群來源已全停用）。
+- ✅ **3. `select_articles`**：三內版各取 4 篇，頭版 6 則從這 12 篇裡標記，不另佔名額。
+  - 頭版依分數取 report，每版最多 2 則；不足 6 則先放寬每版上限，仍不足就少放。
+  - 🔁 手冊沒寫不足時怎麼辦。這裡選擇讓 single_source 不上頭版，維持舊規格的「單一來源不上頭版」。
+  - `DailyArticle.position`：頭版稿是頭版順位，其他稿是內版順位。內版順位另寫在 `signals.section_position`，不改 schema。
+  - `render.py`：內版遇到頭版稿，放標題連結到頭版那篇（`#story-{cluster_id}`，標「見頭版」），全文只印一次。舊期沒有 `section_position` 就用 `position`。
+  - 撰稿分組不變：頭版一次、三內版各一次（只寫非頭版稿），所以頭版稿不會被重寫。
+- ✅ **4. 其他版只出頭版標題短訊**：`select_briefs` 處理科學、生活、文化、體育四版。
+  - 每版取分數最高 2 則；標題取證據包裡的中文來源，去掉分類標籤。
+  - 不呼叫 LLM，也不寫 `daily_articles`，存在 `stats.briefs`。頭版有一個「短訊」清單，附版別、媒體、原文連結。
+  - 這些版的選單保留，頁面顯示「本版未開放」。Telegram 精選多一行「短訊 N」。
+  - 🔁 短訊放在 `stats` JSON 而不是新資料表，因為本步驟不改 schema。正式的 `page_plans` 屬步驟 9。
+- ✅ **5. LLM 次數**：一期正式稿剛好 12 篇（10/27 重編驗證）。撰稿請求是頭版 1＋三內版各 1，加上編輯會議 1，一期最多 5 次（WRITE_ATTEMPTS／client 重試另計），短訊 0 次（有測試）。手冊 6.7 的 P 組每版一次撰稿、分版主編／總編等 MAS 角色都沒做（步驟 6–9）。
+- ⚠️ **與 `cursor/mas-steps-6-11-cc77` 的合併衝突風險點**（沒改 DB schema、migration、models、store、writer、evidence）：
+  - `daily/run.py`：`plan_edition` 多了 `rewrite_sections`、`select_briefs` 兩個呼叫，`EditionPlan.briefs` 欄位，import 一行，`prepare_daily` 的 stats 多 `front_articles`／`briefs`／`section_rewrites`、讀 `plan.briefs`。那個 PR 大改 run.py，合併時要把這幾個呼叫點搬到它的 P 組流程（`plan_edition` 或其等價處）。
+  - `daily/render.py`：`_anchor`／`_link_html`／`_section_order`／`_briefs_html` 四個新函式；`render_html` 的內版迴圈（頭版稿改連結、依 `section_position` 排序）、頭版加短訊；`telegram_digest` 的各版計數。那個 PR 也改 render.py（加 page_plans／回放頁），衝突集中在 `render_html`。
+  - `daily/scoring.py`：`SECTION_QUOTAS`、`SECTION_KINDS`、`Selection.section_position`、`select_articles` 全部重寫。那個 PR 沒列 scoring.py，但它的 MAS orchestrator 若依賴舊的 10 版配額或「頭版另選」語意，要改成三內版。
+  - `sections.py` import 了 `evidence.EvidenceItem`／`short_outlet` 與 `writer.story_label`；那個 PR 改 evidence.py、writer.py，若改名要跟著改。
+  - `tests/regression/rebuild.py` 多了 `Story.signals`、`EditionView.stats`（那個 PR 也改了這個檔 3 行）；`tests/test_daily.py` 的 fixture 把社群稿換成台灣版單一來源稿。
+  - 錄音 `fixtures/1027_llm_records.json` 綁定現在的分組與提示詞；那個 PR 若改撰稿提示，合併後要重錄。
+- ✅ **6. 測試**（都不呼叫真 LLM）：
+  - `tests/test_sections.py`：配額 12、19 個分類案例、英文詞邊界、不改分版會消失、兩岸／財經／教育稿進三內版、短訊不呼叫 writer、頭版只從正式稿標記。
+  - `tests/test_daily.py`：12 篇＋頭版 6 則（每版 ≤2）、放寬上限、內版放頭版連結且全文只印一次。
+  - `tests/regression/test_step4_layout.py` 在離線重編的 10/27 上驗證：剛好 12 篇（各版 4）、頭版 6；兩岸、財經事件全部改寫到三內版；短訊只有標題、撰稿請求 ≤ 5；內版頭版稿是連結。
+  - **E14 拿掉 xfail 並通過**；其他回歸案例照舊全過。
+  - 錄音重錄：分組改了，4 個撰稿 request_hash 對不上。用 `scripts/record_regression_1027.py --max-attempts 41`（本步驟上限 25＝先前 16＋25）在 `data/work/1027_regression_record/` 錄：**真 Codex 4 次、4 次成功**，帳本該檔 `llm_records` 4→8 筆，任務累計 20 次（額度檔 `data/work/llm-quota-1027.json` 也是 20，`/tmp` 預設檔不存在）。`fixtures/1027_llm_records.json` 更新為 20 筆、81,979 bytes，重播 0 miss；12 篇中 11 篇用錄音、1 篇被數字審稿關卡擋下改模板稿。沒有刪除任何條件或改回 xfail。
+- ✅ **7. 10/27 驗證**（`scripts/validate_step4_1027.py`：`data/work/1027_rebuild.db` 複製成 `data/work/1027_step4.db`，template writer，0 次 LLM）：
+  - 正式稿 12 篇：台灣 4、國際 4、科技 4。
+  - 頭版 6 則：巴西魯拉（國際）、柯米起訴（國際，原財經）、iPhone Duo（科技）、微軟優離（科技，原財經）、蔡康永（台灣）、蘇清泉（台灣）。
+  - 短訊 8 則：科學、生活、文化、體育各 2。
+  - 改寫統計：`cross_strait→world` 123、`cross_strait→taiwan` 6、`finance→world` 148、`finance→tech` 119、`finance→taiwan` 79、`life_env→taiwan` 7。
+  - 財經稿刊出 3 篇：柯米→國際、微軟與 SpaceX→科技。
+  - ⚠️ 兩岸稿 10/27 沒有入選：全部改寫到國際／台灣版參與選題，但國際版很擠，兩岸最高分的福田康夫（26.8）排國際第 17 名；洪秀柱（台灣版）是 single_source。這是分數競爭的結果，不是消失；合成資料測試證明兩岸稿在名額內會刊出。
+- ✅ **做完的標準**：
+  - ✅ 一期剛好 12 篇正式稿，頭版 6 則從中標記（回歸集＋驗證腳本）。
+  - ✅ 兩岸、財經稿有出現在台灣／國際／科技版：財經在 10/27 實際刊出 3 篇。兩岸在 10/27 只做到改寫進內版、分數不夠沒入選；刊出由 `tests/test_sections.py` 以合成資料驗證（兩岸→台灣、兩岸→國際都刊出）。
+  - ✅ E14 回歸測試通過。
+- 全套 `uv run python -m pytest -q`：243 passed、4 skipped（E03／E05 正文、E11、E12 在重編版不適用）。母本 `shasum -a 256 -c` OK。

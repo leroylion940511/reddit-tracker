@@ -31,7 +31,9 @@
 - ⚠️ 轉載不算多來源後，10/27 重編 ≥2 家出處事件 222 → 156（主要是排除重複稿）；相似度轉載只套中文標題（英文獨立報導標題常 >0.8）。數據欄交易日只排除週末，連假後會多標一次延遲。
 - ✅ 步驟 3 第 8 點（10/30）：`scripts/rebuild_1027.py` 在 `data/work/1027_rebuild.db` 重聚＋重編 10/27（39 則，Codex 38／模板 1）；`run.py prepare --now ISO [--recluster]`；`scripts/compare_1027.py` → `docs/weekly/1027_compare.md`（週報已連結）。真 Codex 16 次（上限 60），每次嘗試記進複本 `llm_records`（`scripts/llm_recorder.py`，不動 models／migration）；錄音 `tests/regression/fixtures/1027_llm_records.json`（16 筆、67 KB）。步驟 3 四項標準全過；全套 213 passed／4 skipped／1 xfailed（E14）。
 - ⚠️ 錄音只對當下的提示詞與證據包有效：改到撰稿提示、譯名表、證據包就要重跑 `scripts/record_regression_1027.py`（會呼叫 Codex，`LLM_QUOTA_STATE_PATH` 腳本已指到 `data/work`）。E03／E05 正文、E12 在重編版沒見報，回歸是 skip；E12 由 `tests/test_step3_rules.py` 把關。
-- ➡️ 下一步：步驟 4（併版與配額，E14 11/15 到期）；E11 等步驟 9 文稿編輯。
+- ✅ 步驟 4（10/30）：`daily/sections.py`＋`seeds/section_rules.yaml` 改寫分版（兩岸→國際／台灣、財經→台灣／國際／科技、生活版教育社會→台灣），`SECTION_QUOTAS={taiwan:4, world:4, tech:4}` 一期 12 篇，頭版 6 則從中標記，內版放頭版連結；科學／生活／文化／體育只出頭版標題短訊（`stats.briefs`，不呼叫 LLM）。E14 通過。重錄錄音用真 Codex 4 次（累計 20），fixture 20 筆、82 KB。全套 243 passed／4 skipped。驗證：`scripts/validate_step4_1027.py`。
+- ⚠️ 10/27 兩岸稿全數改寫進內版但分數沒擠進國際版前 4；`cursor/mas-steps-6-11-cc77` 合併時 run.py／render.py 的衝突點見 ADAPTATION 步驟 4。
+- ➡️ 下一步：步驟 5（標註員配對試算表，11/04）；E11 等步驟 9 文稿編輯。
 
 ## 本次變更（2026-10-27 — 日報撰稿改用 Codex）
 
