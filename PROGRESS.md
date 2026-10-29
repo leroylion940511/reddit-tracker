@@ -15,6 +15,14 @@
 - ⚠️ 首期觀察到的問題（使用者決定先多跑幾天再修）：① 同事件重複見報——巴西大選 cluster 472／453、塞爾維亞 405／410，`find_same_events` 一次丟整個候選池漏併；② 模板稿照搬英文原標題（Vucic）；③ 柯米起訴被投到財經版（cluster 2154）；④ 社群版有無內容稿、科學版單篇 arXiv、文化版三則都是金鐘；⑤ 數據欄停在 10/22——證交所 OpenAPI `MI_INDEX` 本身落後，非程式錯。建議修正順序 1→2→5→3→4。
 - ➡️ **下一步：** 再觀察幾期，看上述問題是否每期都出現，再一起修。
 
+## 本次變更（2026-10-29 — 執行手冊步驟 0，`mas-handbook` 分支）
+
+- ✅ 老師的執行手冊 `docs/HANDBOOK_2026-10-28.md` 在 `mas-handbook` worktree 實作，強制指令與逐步狀態見 `docs/HANDBOOK_ADAPTATION.md`。
+- ✅ 步驟 0：唯讀母本 `data/snapshots/2026-10-27.db`、tag `baseline-pipeline`（42a3cf5）、`scripts/export_1027_fixtures.py` 匯出 `tests/regression/fixtures/1027_{groups,merges,meta}.json`、`.gitignore` 補 `annotation/`、第一份週報 `docs/weekly/2026-11-03.md`。
+- ✅ E01 查證：美式足球稿（source_item 1053）原在英文 NFL cluster 403，是 `find_same_events` 的 `[403, 410]` 錯併進塞爾維亞 cluster 410；英文塞爾維亞 405 反而漏併（E07）。
+- ⚠️ 母本內容涵蓋到 10/29；凡是重現 10/27 都要以 `first_seen_at ≤ 2026-10-26 22:00 UTC` 截止。
+- ➡️ 下一步：手冊步驟 1（社群來源、依模型計數額度、網頁備援設定驗證）。
+
 ## 本次變更（2026-10-27 — 日報撰稿改用 Codex）
 
 - ✅ 撰稿 provider 改為 Codex CLI（`reddit_tracker/llm/codex.py`）：subprocess 呼叫 ChatGPT.app 內建的 `codex exec`，吃本機 ChatGPT 訂閱登入，模型 `gpt-6.1-sol`／reasoning low。`DAILY_WRITER` 預設 `codex`，`gemini`、`template` 仍可切；找不到 codex binary 整期退模板稿。`GeminiDailyWriter` → `DailyWriter(name)`；stats 鍵改 `ai_articles`／`llm_requests`（render 相容 10/27 舊鍵）。

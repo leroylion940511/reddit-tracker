@@ -22,3 +22,12 @@
 ## 逐步狀態
 
 （每一步完成時由實作者填寫：做完的標準 ✅／🔁改編（怎麼改）／👤留給人工（為什麼）／⛔受阻。）
+
+### 步驟 0｜第一天先做的事（2026-10-29 完成）
+
+- ✅ `data/snapshots/2026-10-27.db` 存在，而且不在排程的寫入路徑上：協調者 10/29 18:46 用 SQLite online backup 從 production 複製，放在 mas worktree（排程只寫 `/Users/leroy/reddit_tracker/reddit_tracker.db`），檔案權限 `r--r--r--`，`shasum -a 256 -c data/snapshots/2026-10-27.db.sha256` OK。🔁 母本內容涵蓋到 10/29（不是 10/27 當天的檔），所以匯出 fixture 時以那期 `prepared_at`（10/26 22:00 UTC＝10/27 06:00 台北）為 `first_seen_at` 截止。
+- ✅ 兩個 fixture 都存在：`scripts/export_1027_fixtures.py`（`mode=ro&immutable=1`，可重跑、輸出穩定）產生 `tests/regression/fixtures/1027_groups.json`（2,771 cluster／3,899 篇；截止前全部有素材的 cluster 都收，檔案 68 KB 不必再縮到 72 小時窗）與 `1027_merges.json`（17 組）。🔁 `merged_groups` 實際是 LLM 回的兩兩配對、會重疊（例如 1707／1717／2420／2321 六組），所以逐組一一轉成素材 id、保留順序，不先求連通分量，重播時照 `apply_merges` 原樣處理。cluster id 版本與追溯資料另存 `1027_meta.json`（母本 sha256、截止時間、merged_groups 原值、42 則刊出稿的 cluster／merged ids、E01 追溯）。腳本會驗證所有刊出稿／合併用到的 cluster 都在分組裡，且每則刊出稿的出處 URL 都落在截止前的分組內。測試 `tests/regression/test_1027_fixtures.py` 只讀 fixture，不依賴母本。
+- ✅ 週報寫了 E01 是在哪一步混進來的：`docs/weekly/2026-11-03.md`。結論：跨語言合併 `find_same_events` 錯併（AP source_item 1053 在英文 NFL cluster 403，merged_groups `[403, 410]` 把它併進中文塞爾維亞 cluster 410；英文塞爾維亞 cluster 405 反而沒併＝E07），與協調者查證一致，並以回歸測試鎖住。
+- ✅ `git status` 看不到任何 `.db` 檔：`.gitignore` 原本已有 `data/`、`*.db`，本步補上 `annotation/`；`git check-ignore` 確認三者生效。
+- ✅ `git tag` 看得到 `baseline-pipeline`：協調者已打在 `42a3cf5`（`git rev-parse 'baseline-pipeline^{commit}'` 驗證）。
+- 🔁 `main` 已更新：**main 已是最新：已滿足**。`main`、`origin/main`、`codex/ai-newsroom-foundation` 都是 `42a3cf5`，依強制指令 1 不合併、不動 main。
