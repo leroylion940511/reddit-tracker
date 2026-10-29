@@ -436,7 +436,9 @@ def test_render_follows_latest_page_plan(session):
     )
     second = render_html(build_edition_view(session, DAY, MAS, SECTIONS))
     assert first.index("甲稿標題") < (first.index("乙稿標題") if "乙稿標題" in first else 10**9)
-    assert 'id="front"' in second and second.index("乙稿標題") < second.index("甲稿改掛連結")
+    # 甲稿改成內版連結：連結文字是稿件標題（slot label 是內部角度，不印給讀者）
+    assert 'id="front"' in second and second.index("乙稿標題") < second.index("甲稿標題</a>（見頭版）")
+    assert "甲稿改掛連結" not in second
 
 
 def test_newsroom_replay_shows_messages_and_diff(session):

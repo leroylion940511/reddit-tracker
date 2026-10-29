@@ -57,7 +57,6 @@ footer{margin-top:40px;padding-top:16px;border-top:3px double var(--ink);font:13
 }
 """
 
-SECTION_KEYS = frozenset(MVP_SECTIONS)
 _CITE = re.compile(r"\[(?:S)?(\d+)\]")
 
 
@@ -117,7 +116,8 @@ def _article_html(article: ViewArticle) -> str:
     css = "brief" if article.display == BRIEF else ("link-only" if article.display == LINK else "")
     if article.display == LINK:
         # 內版遇到頭版稿：只放標題連結到頭版那篇，不重印正文（手冊步驟 4）；連結本身不帶 id，避免和頭版重複
-        label = article.link_label if article.link_label and article.link_label not in SECTION_KEYS else article.headline
+        # 連結文字一律用稿件標題；slot 的 label 是分版主編的內部角度，不給讀者看
+        label = article.headline
         return (
             f'<article class="link-only">'
             f'<p>{tag_html}<a href="#{article.anchor}">{escape(label)}</a>（見頭版）</p></article>'

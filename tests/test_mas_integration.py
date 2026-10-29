@@ -43,6 +43,8 @@ def test_three_editor_calls_twelve_stories_and_eic_preserves_inner_pages(session
     assert Counter(a.display for a in view.articles)["full"] == 12
     html = render_html(view)
     assert html.count('class="link-only"') == 6
+    # 內版連結顯示稿件標題，不把分版主編的內部角度（angle）印給讀者
+    assert html.count(">武契奇選舉</a>（見頭版）") == 6 and ">國會</a>" not in html
 
 
 def test_copy_editor_challenge_goes_back_to_reporter_and_is_rechecked(session):
@@ -121,3 +123,81 @@ def test_quota_degradation_order_and_no_duplicate_mas_articles(daily_env, monkey
 
 # Reuse an existing isolated environment, never a real DB/client.
 from tests.test_daily import daily_env  # noqa: E402, F401
+
+
+def test_t1_decision_only_moves_the_contested_story():
+    """10/30 真 Codex 的 T1 只回了被搶的那一篇；頭版其他 5 則不能因此消失。"""
+    from reddit_tracker.daily.mas.orchestrator import _Decision, merge_t1_decision
+
+    front = [1, 2, 5, 6, 7, 8]
+    only_lead = _Decision(lead=1, links=[{"story_id": 1, "section": "tech", "label": "x"}])
+    merged = merge_t1_decision(front, 1, only_lead)
+    assert [merged.lead, *merged.second, *merged.briefs] == front and merged.links == only_lead.links
+    promoted = merge_t1_decision(front, 7, _Decision(lead=7))
+    assert promoted.lead == 7 and promoted.second == [1, 2, 5, 6] and promoted.briefs == [8]
+    dropped = merge_t1_decision(front, 2, _Decision(lead=None))
+    assert [dropped.lead, *dropped.second, *dropped.briefs] == [1, 5, 6, 7, 8]
+
+
+def test_t3_empty_front_decision_is_rejected(session):
+    """10/30 真 Codex 的 T3 回了「暫不排版」（lead=null）；程式要拒絕，不能寫出空頭版。"""
+    from reddit_tracker.daily.mas.orchestrator import MasResult, Pitch, _resolve_t3
+    from reddit_tracker.daily.mas.protocol import Clock
+    from reddit_tracker.daily.store import add_page_plan, add_story, write_story_version
+    from reddit_tracker.models import AgentMessage
+
+    ids = []
+    for i in range(8):
+        story = add_story(session, edition_date=DAY, run_variant="mas", spec={
+            "keeper_cluster_id": 500 + i, "merged_cluster_ids": [], "section": SECTIONS_LIST[i % 3],
+            "kind": "report", "score": 10 - i})
+        write_story_version(session, story_id=story.id, run_variant="mas", expected_latest=0,
+                            headline=f"稿{i}", body="正文。", now=NOW, status="checked")
+        ids.append(story.id)
+    add_page_plan(session, edition_date=DAY, run_variant="mas", now=NOW, slots={
+        "front": {"lead": ids[0], "second": ids[1:5], "briefs": ids[5:6]},
+        "sections": {s: [{"story_id": i, "display": "full"} for i in ids if ids.index(i) % 3 == k]
+                     for k, s in enumerate(SECTIONS_LIST)}})
+    front = [Pitch(section=SECTIONS_LIST[k % 3], story_id=i, angle="", priority="front") for k, i in enumerate(ids)]
+    empty = json.dumps({"lead": None, "second": [], "briefs": [], "links": [], "dropped": [],
+                        "reasons": [{"story_id": ids[0], "why": "暫不排版"}]})
+    seen = []
+
+    def handler(kw):
+        seen.append(json.loads(kw["messages"][0]["content"]))
+        return empty
+
+    result = MasResult()
+    _resolve_t3(session, edition_date=DAY, front=front, client=Scripted(handler), clock=Clock(NOW),
+                hold_ids=set(), result=result)
+    decision = session.scalar(select(AgentMessage).where(AgentMessage.type == "DECISION"))
+    assert decision.status == "rejected" and "頭版沒有主稿" in decision.payload["program_reason"]
+    assert result.page_plan_ids == [] and session.scalar(select(PagePlan).order_by(
+        PagePlan.plan_version.desc())).slots["front"]["lead"] == ids[0]
+    # 總編看得到標題，才判斷得了（真跑那次只給 story_id，模型說缺少識別）
+    assert seen[0]["candidates"][0]["headline"] == "稿0" and "hold" in seen[0]["candidates"][0]
+
+
+SECTIONS_LIST = list(SECTIONS)
+
+
+def test_recorded_live_t1_t3_decisions_follow_the_rules():
+    """10/30 在 data/work/1027_t1t3.db 用真 Codex 錄的兩個總編決定（scripts/verify_t1_t3.py），離線檢查。"""
+    from pathlib import Path
+
+    from reddit_tracker.daily.mas.orchestrator import _Decision, _decision_problems, merge_t1_decision
+
+    rows = json.loads((Path(__file__).parent / "regression/fixtures/1027_t1t3_records.json").read_text())
+    assert len(rows) == 2 and all(r["ok"] and r["role"] == "eic" for r in rows)
+    assert all(r["model_version"].startswith("gpt-6.1-sol | codex-cli") for r in rows)
+    decisions = [_Decision.model_validate(json.loads(r["response_text"])) for r in rows]
+    t1 = next(d for d in decisions if d.links)
+    t3 = next(d for d in decisions if not d.links)
+    # T1：巴西主稿歸國際版，科技版用連結；併回原頭版後 6 則都在
+    assert t1.links[0]["section"] == "tech" and t1.reasons
+    merged = merge_t1_decision([1, 2, 5, 6, 7, 8], t1.lead, t1)
+    assert len([merged.lead, *merged.second, *merged.briefs]) == 6
+    # T3：8 則提案選剛好 6 則，入選與落選都有理由
+    chosen = [t3.lead, *t3.second, *t3.briefs]
+    assert len(chosen) == 6 and not _decision_problems(t3, set(), min_front=6)
+    assert len(t3.reasons) == 6 and len(t3.dropped) == 2 and all(d.get("why") for d in t3.dropped)

@@ -499,9 +499,13 @@ def _checker_llm(session, *, edition_date, story, evidence, version, client, clo
     return new
 
 
-def _decision_problems(decision: _Decision, hold_ids: set[int]) -> list[str]:
+def _decision_problems(decision: _Decision, hold_ids: set[int], min_front: int = 1) -> list[str]:
     problems = []
     full = [i for i in [decision.lead, *decision.second, *decision.briefs] if i is not None]
+    if decision.lead is None:
+        problems.append("頭版沒有主稿")
+    if len(full) < min_front:
+        problems.append(f"頭版要排滿 {min_front} 則（合格提案數與容量取小），只排了 {len(full)} 則")
     if len(full) != len(set(full)):
         problems.append("同一篇稿出現在頭版一個以上的位置")
     if decision.lead in hold_ids:
@@ -522,9 +526,10 @@ def apply_decision(
     now: datetime,
     hold_ids: set[int],
     section_links: list[tuple[str, int, str]] | None = None,
+    min_front: int = 1,
 ) -> int | None:
     """決定合規則寫下一版 page_plan。不合規則把訊息標成 rejected，不改版面。"""
-    problems = _decision_problems(decision, hold_ids)
+    problems = _decision_problems(decision, hold_ids, min_front)
     previous = session.scalar(select(PagePlan).where(
         PagePlan.edition_date == edition_date, PagePlan.run_variant == MAS
     ).order_by(PagePlan.plan_version.desc()))
@@ -722,6 +727,45 @@ def _conflicts(pitches: list[Pitch]) -> dict[int, list[Pitch]]:
     return {sid: group for sid, group in by.items() if len({p.section for p in group}) > 1}
 
 
+def _story_card(session, story_id: int, hold_ids: set[int]) -> dict:
+    """給總編看的稿件卡：標題、版別、種類、分數、是否 HOLD（不給全文）。"""
+    story = session.get(Story, story_id)
+    version = latest_version(session, story_id)
+    return {
+        "story_id": story_id,
+        "section": story.section if story else None,
+        "kind": story.kind if story else None,
+        "score": story.score if story else None,
+        "headline": version.headline if version else "",
+        "hold": story_id in hold_ids,
+    }
+
+
+def _current_front(session, edition_date) -> list[int]:
+    plan = session.scalar(select(PagePlan).where(
+        PagePlan.edition_date == edition_date, PagePlan.run_variant == MAS
+    ).order_by(PagePlan.plan_version.desc()))
+    front = (plan.slots or {}).get("front") or {} if plan else {}
+    return [i for i in [front.get("lead"), *(front.get("second") or []), *(front.get("briefs") or [])] if i]
+
+
+def merge_t1_decision(previous_front: list[int], story_id: int, decision: _Decision) -> _Decision:
+    """T1 只裁決被搶的那一篇：它在頭版的位置照總編的決定，頭版其他稿保持原順序（手冊 7.2）。"""
+    others = [i for i in previous_front if i != story_id]
+    if decision.lead == story_id:
+        order = [story_id, *others]
+    elif story_id in decision.second:
+        order = others[:1] + [story_id] + others[1:]
+    elif story_id in decision.briefs:
+        order = others + [story_id]
+    else:
+        order = others  # 總編把它撤下頭版，只留在內版
+    order = order[:FRONT_CAPACITY]
+    return decision.model_copy(update={
+        "lead": order[0] if order else None, "second": order[1:5], "briefs": order[5:],
+    })
+
+
 def _resolve_t1(session, *, edition_date, conflicts, client, clock, hold_ids, result: MasResult, pitches=None) -> None:
     # 先留下提案當時的版面，決定之後才是下一版。
     flat = pitches or [pitch for group in conflicts.values() for pitch in group]
@@ -730,16 +774,27 @@ def _resolve_t1(session, *, edition_date, conflicts, client, clock, hold_ids, re
     )
     result.page_plan_ids.append(proposal.id)
     for story_id, group in conflicts.items():
+        previous_front = _current_front(session, edition_date)
         user = json.dumps(
-            {"story_id": story_id, "pitches": [p.__dict__ for p in group], "hold_ids": sorted(hold_ids)},
+            {
+                "story": _story_card(session, story_id, hold_ids),
+                "pitches": [p.__dict__ for p in group],
+                "current_front": [_story_card(session, i, hold_ids) for i in previous_front],
+            },
             ensure_ascii=False,
         )
         text = _ask(
             session, client, role="eic", story_id=story_id, edition_date=edition_date,
-            system=EIC_SYSTEM + "\n兩個分版主編搶同一篇。頭版只能有一篇主稿，另一版用連結。",
+            system=EIC_SYSTEM + "\n兩個分版主編搶同一篇。只裁決這一篇：決定它歸哪一版當主稿、放頭版哪個位置"
+                                "（lead／second／briefs，或都不放＝撤下頭版），另一版用 links 連結。"
+                                "頭版其他稿不要動，程式會保留。每個決定在 reasons 寫理由。",
             user=user, schema=EIC_SCHEMA, temperature=0,
         )
         decision = _parse(text, _Decision)
+        # 先驗總編的原始決定（同一篇佔兩個位置、HOLD 上頭版），合規則才併回原頭版；不讓合併把違規洗掉
+        raw_problems = [
+            problem for problem in _decision_problems(decision, hold_ids, min_front=0) if problem != "頭版沒有主稿"
+        ] if decision is not None else []
         payload = decision.model_dump() if decision else {"error": "沒有可用的決定"}
         if decision and decision.reasons:
             payload["why"] = decision.reasons[0].get("why") or "同一事件不得有兩篇主稿"
@@ -749,11 +804,14 @@ def _resolve_t1(session, *, edition_date, conflicts, client, clock, hold_ids, re
             session, run_variant=MAS, edition_date=edition_date, sender="eic", recipient="section_editor",
             type="DECISION", now=clock.tick(), story_id=story_id, payload=payload,
         )
-        if decision is None:
+        if decision is None or raw_problems:
             message.status = "rejected"
+            if raw_problems:
+                message.payload = {**(message.payload or {}), "program_reason": "；".join(raw_problems)}
             result.rejected_decision_ids.append(message.id)
             session.flush()
             continue
+        decision = merge_t1_decision(previous_front, story_id, decision)
         plan_id = apply_decision(
             session, edition_date=edition_date, decision=decision, message=message, now=clock.tick(), hold_ids=hold_ids,
         )
@@ -776,9 +834,18 @@ def _resolve_t3(session, *, edition_date, front, client, clock, hold_ids, result
             "detail": f"頭版 {FRONT_CAPACITY} 個位置，目前有 {len(front)} 則提案",
         },
     )
-    user = json.dumps({"front": [p.__dict__ for p in front], "capacity": FRONT_CAPACITY}, ensure_ascii=False)
+    eligible = [p for p in dict((p.story_id, p) for p in front).values() if p.story_id not in hold_ids]
+    need = min(FRONT_CAPACITY, len(eligible))
+    user = json.dumps({
+        "capacity": FRONT_CAPACITY,
+        "candidates": [{**_story_card(session, p.story_id, hold_ids), "pitched_by": p.section, "angle": p.angle}
+                       for p in front],
+    }, ensure_ascii=False)
     text = _ask(
-        session, client, role="eic", story_id=None, edition_date=edition_date, system=EIC_SYSTEM,
+        session, client, role="eic", story_id=None, edition_date=edition_date,
+        system=EIC_SYSTEM + f"\n頭版提案超過容量。從 candidates 選剛好 {need} 則（hold=true 的不能選）："
+                            "lead 1 則主稿、second 最多 4 則、其餘放 briefs。每則入選的在 reasons 寫為什麼上，"
+                            "沒選的寫進 dropped 並寫為什麼不上。",
         user=user, schema=EIC_SCHEMA, temperature=0,
     )
     decision = _parse(text, _Decision)
@@ -794,6 +861,7 @@ def _resolve_t3(session, *, edition_date, front, client, clock, hold_ids, result
         return
     plan_id = apply_decision(
         session, edition_date=edition_date, decision=decision, message=message, now=clock.tick(), hold_ids=hold_ids,
+        min_front=need,
     )
     if plan_id is None:
         result.rejected_decision_ids.append(message.id)

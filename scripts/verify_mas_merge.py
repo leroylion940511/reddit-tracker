@@ -174,19 +174,35 @@ def report(path, client, baseline, stage):
     conn.close()
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     (WORK / f"merge-{stage}-summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2)+"\n")
-    if stage != "mas-replay":
+    if stage not in ("mas-replay", "mas-rerun"):
         export_ok_records([path], FIXTURES / f"1027_{stage}_records.json")
     (WORK / f"merge-{stage}-requests.json").write_text(json.dumps(client.requests, ensure_ascii=False, indent=1)+"\n")
 
 
+def _merge_mas_fixture(path):
+    """mas-rerun：程式改了之後補錄對不上的請求，併進 1027_mas_records.json（舊的 hash 保留）。"""
+    from reddit_tracker.llm.records import export_ok_records
+
+    tmp = WORK / "merge-mas-rerun-records.json"
+    export_ok_records([path], tmp)
+    target = FIXTURES / "1027_mas_records.json"
+    rows = {r["request_hash"]: r for r in json.loads(target.read_text(encoding="utf-8"))}
+    for row in json.loads(tmp.read_text(encoding="utf-8")):
+        if row.get("run_variant") == "mas":
+            rows.setdefault(row["request_hash"], row)
+    ordered = sorted(rows.values(), key=lambda r: (r["called_at"] or "", r["request_hash"]))
+    target.write_text(json.dumps(ordered, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--stage", choices=("t2a", "mas", "mas-replay"), required=True)
+    parser.add_argument("--stage", choices=("t2a", "mas", "mas-replay", "mas-rerun"), required=True)
     parser.add_argument("--live", action="store_true")
     args = parser.parse_args()
-    path = WORK / {"t2a": "1027_e01.db", "mas": "1027_mas.db", "mas-replay": "1027_mas_replay.db"}[args.stage]
-    if args.stage == "mas-replay":
-        if args.live:
+    path = WORK / {"t2a": "1027_e01.db", "mas": "1027_mas.db", "mas-replay": "1027_mas_replay.db",
+                   "mas-rerun": "1027_mas_rerun.db"}[args.stage]
+    if args.stage in ("mas-replay", "mas-rerun"):
+        if args.live and args.stage == "mas-replay":
             raise SystemExit("mas-replay 只重播，不能加 --live")
         for suffix in ("", "-wal", "-shm"):
             Path(f"{path}{suffix}").unlink(missing_ok=True)
@@ -201,6 +217,8 @@ def main():
     conn.close()
     client = ReplayThenCodex(args.live)
     (t2a if args.stage == "t2a" else mas)(path, client)
+    if args.stage == "mas-rerun":
+        _merge_mas_fixture(path)
     if client.attempts or (args.stage == "mas-replay" and not client.reused):
         print(f"[verify] attempts={client.attempts} reused={client.reused}")
     report(path, client, baseline, args.stage)
