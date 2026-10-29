@@ -8,17 +8,19 @@
   "fix": "步驟 3",
   "event_titles": [
     "What Vucic’s defeat means for Serbia’s foreign policy",
-    "塞爾維亞學運開花結果 國會大選席次過半"
+    "武契奇承認敗選　塞爾維亞學生運動贏得議會選舉"
   ],
   "must_merge_titles": [
     [
       "What Vucic’s defeat means for Serbia’s foreign policy",
-      "塞爾維亞學運開花結果 國會大選席次過半"
+      "武契奇承認敗選　塞爾維亞學生運動贏得議會選舉"
     ]
   ],
-  "expected": "中英文塞爾維亞大選報導併成同一則，只見報一次",
-  "due": "2026-11-08",
-  "xfail": {
-    "must_merge_titles": "步驟 3 尚未實作（譯名表＋共同實體的跨語言合併）"
-  }
+  "same_event_titles": [
+    "塞爾維亞學運開花結果 國會大選席次過半",
+    "塞爾維亞國會大選變天 學生主導反貪聯盟勝選",
+    "[國際] 塞爾維亞親俄強人敗選  克宮：盼新領袖願與俄合作"
+  ],
+  "expected": "中英文塞爾維亞大選報導併成同一則，只見報一次（含 same_event_titles 在內，同一事件的素材最多只出現在一則刊出稿）",
+  "due": "2026-11-08"
 }

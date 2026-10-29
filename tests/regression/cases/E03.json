@@ -19,7 +19,6 @@
   "expected": "Block 語音模型事件不得含瑞士地圖素材，稿件不得提到瑞士",
   "due": "2026-11-04",
   "xfail": {
-    "must_not_contain_titles": "步驟 3 尚未實作（兩段門檻＋共同實體）",
-    "text_must_not_contain": "步驟 3 尚未實作；尚無錄好的 LLM 回應（步驟 7 建 llm_records 後錄製 fixtures/1027_llm_records.json）"
+    "text_must_not_contain": "聚合已修好（步驟 3：瑞士地圖不再併入），重編版 Block 稿沒見報時不適用；有見報時需要錄好的 LLM 回應（fixtures/1027_llm_records.json，步驟 7 後由協調者錄製）"
   }
 }

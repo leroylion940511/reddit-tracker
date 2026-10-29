@@ -26,7 +26,7 @@ HANDBOOK_DUE = {
     "2026-11-15": {"E08", "E11", "E14"},
 }
 REQUIRED_KEYS = {"case_id", "edition", "is_error", "event_hint", "error", "stage", "fix", "expected", "due"}
-DOC_KEYS = REQUIRED_KEYS | {"event_titles", "xfail", "market_close_date", "non_contradiction"}
+DOC_KEYS = REQUIRED_KEYS | {"event_titles", "xfail", "market_close_date", "non_contradiction", "same_event_titles"}
 
 
 def _conditions(case: dict) -> list[str]:

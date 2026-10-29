@@ -58,12 +58,14 @@ def must_not_contain_titles(case: dict, view: EditionView) -> list[str]:
 
 
 def must_merge_titles(case: dict, view: EditionView) -> list[str]:
+    """整組標題要在同一則；而且同一事件（整組＋`same_event_titles`）最多只見報一次。"""
+    same_event = {norm_title(t) for t in case.get("same_event_titles", [])}
     problems = []
     for group in case["must_merge_titles"]:
         wanted = {norm_title(t) for t in group}
         if not any(wanted <= story.members for story in view.events):
             problems.append(f"沒有任何一則包含整組同一事件：{group}")
-        published = [s.key for s in view.published if s.members & wanted]
+        published = [s.key for s in view.published if s.members & (wanted | same_event)]
         if len(published) > 1:
             problems.append(f"同一事件見報 {len(published)} 次：{published}")
     return problems
@@ -249,6 +251,7 @@ def referenced_titles(case: dict) -> list[str]:
     titles += case.get("must_not_contain_titles", [])
     titles += case.get("must_not_publish_titles", [])
     titles += [t for group in case.get("must_merge_titles", []) for t in group]
+    titles += case.get("same_event_titles", [])
     titles += [t for pair in case.get("reprint_pairs", []) for t in pair]
     titles += case.get("non_contradiction", {}).get("titles", [])
     return titles

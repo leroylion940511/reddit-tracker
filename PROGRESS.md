@@ -15,7 +15,7 @@
 - ⚠️ 首期觀察到的問題（使用者決定先多跑幾天再修）：① 同事件重複見報——巴西大選 cluster 472／453、塞爾維亞 405／410，`find_same_events` 一次丟整個候選池漏併；② 模板稿照搬英文原標題（Vucic）；③ 柯米起訴被投到財經版（cluster 2154）；④ 社群版有無內容稿、科學版單篇 arXiv、文化版三則都是金鐘；⑤ 數據欄停在 10/22——證交所 OpenAPI `MI_INDEX` 本身落後，非程式錯。建議修正順序 1→2→5→3→4。
 - ➡️ **下一步：** 再觀察幾期，看上述問題是否每期都出現，再一起修。
 
-## 本次變更（2026-10-29 — 執行手冊步驟 0–2，`mas-handbook` 分支）
+## 本次變更（2026-10-29 — 執行手冊步驟 0–3，`mas-handbook` 分支）
 
 - ✅ 老師的執行手冊 `docs/HANDBOOK_2026-10-28.md` 在 `mas-handbook` worktree 實作，強制指令與逐步狀態見 `docs/HANDBOOK_ADAPTATION.md`。
 - ✅ 步驟 0：唯讀母本 `data/snapshots/2026-10-27.db`、tag `baseline-pipeline`（42a3cf5）、`scripts/export_1027_fixtures.py` 匯出 `tests/regression/fixtures/1027_{groups,merges,meta}.json`、`.gitignore` 補 `annotation/`、第一份週報 `docs/weekly/2026-11-03.md`。
@@ -25,7 +25,9 @@
 - ⚠️ 部署注意（尚未部署，`mas-handbook` 未併 main）：設定鍵改名 `GEMINI_DAILY_LIMIT`→`LLM_DAILY_LIMIT`、state 檔改 `/tmp/reddit-tracker-llm-quota.json`；Codex 呼叫也開始受每日 60 次本機上限。
 - ✅ 步驟 2：回歸集 `tests/regression/cases/E01–E16.json`（15 個錯誤案例＋E09 非錯誤），runner 用離線 fixture `1027_items.json.xz` 在 tmp SQLite 照線上聚合時間表逐輪重編 10/27，`find_same_events` 用 `1027_merges.json` 重播、撰稿走 `llm/replay.py`（request_hash，找不到就失敗）；全域防護擋 codex subprocess 與 Gemini HTTP。現況 E13 通過、15 個條件 strict xfail。全套 148 passed／1 skipped／15 xfailed。
 - ⚠️ 文字類案例（E03–E05 正文、E08、E11、E12、E16）要有錄好的回應才能拿掉 xfail：修完後先在 `data/work` 複本用 Codex 錄一次並匯出 `tests/regression/fixtures/1027_llm_records.json`。到期日當天還掛 xfail，`test_overdue_cases_are_not_xfail` 會失敗。
-- ➡️ 下一步：手冊步驟 3（修事件聚合；11/04 先過 E01、E03、E04、E10、E12、E15、E16）。
+- ✅ 步驟 3 第 1–4 點：共同實體檢查（`collection/entities.py`）＋兩段門檻（≥0.45 要 1 個、0.28–0.45 要 2 個，設定值 `CLUSTER_*`）＋譯名表 `seeds/name_glossary.yaml`（50 筆，中央社譯名，只收 10/30 前出現過的名字，撰稿與合併共用）＋常見字清單 `seeds/entity_common_words.yaml`；編輯會議改由 `daily/desk.py` 用譯名表＋共同實體做跨語言合併，`find_same_events` 降為第二意見、說合併也要程式確認有共同實體。回歸集 E01、E02、E03、E04、E06、E07 拿掉 xfail 並通過（E07 換了錨點標題，見 ADAPTATION）。全套 182 passed／4 skipped／6 xfailed。
+- ⚠️ 聚合變嚴格：10/27 重編事件數 2,539 → 2,822、≥2 家出處 264 → 220；英文 Title Case 標題與只共有一個名字的中段配對會被拆開（刻意，11/07 dev 標註後重調）。`cluster_recent_items(threshold=)` 改為 `rules=`／`lexicon=`；`apply_merges` 修正重疊組遺失事件的 bug。
+- ➡️ 下一步：步驟 3 第 5–8 點（證據包相關性過濾、轉載辨識 E10、arXiv／數據欄／單一來源警語 E12、E15、E16、`1027_rebuild.db` 前後對照週報）。
 
 ## 本次變更（2026-10-27 — 日報撰稿改用 Codex）
 

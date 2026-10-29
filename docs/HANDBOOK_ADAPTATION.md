@@ -53,3 +53,25 @@
 - 🔁 **重編方式**：手冊 3.8 是清空後一次重新聚合；但一次重聚和線上的增量結果不同（試過：E03 的 Block／瑞士就重現不出來，回歸集會在修之前就「通過」）。所以 runner 照線上當時的聚合時間表逐輪聚合：10/26 22:53（台北）首輪（PROGRESS 記錄的聚合上線時間），之後每輪收集完立刻聚合（取每輪素材的最晚 `first_seen_at`，共 15 輪）。這樣重編版重現了 E01、E02、E03、E04、E06、E07、E10、E14。步驟 3.8 的週報前後對照仍照手冊在 `data/work/1027_rebuild.db` 一次重聚。重編用的是**現在的**程式與登錄表（社群來源已停用），所以不會完全等於當期。
 - 🔁 **「到期後才通過」與錄音的相依**：E03–E05 正文、E12、E16（11/04 到期）的文字條件需要撰稿輸出，但 `llm_records` 與錄音是步驟 7（11/08）。步驟 3 修完這些程式規則時，要先在 `data/work/*.db` 複本用 Codex 錄一次（照強制指令 3，次數盡量少）並匯出成 `fixtures/1027_llm_records.json`（`[{request_hash, response_text, ok}]`，hash 一律用 `llm/replay.request_hash`），才能拿掉這些 xfail；錄音只對當時的 prompt 有效，之後改到證據包或提示詞要重錄。E08、E11 到期（11/15）前同理。
 - ℹ️ 程式變更：`daily/run.py` 拆出 `plan_edition()`（評分→編輯會議→選題→證據包）與 `story_evidence()`，`prepare_daily` 新增 `writer=` 注入（回歸集用，不找 codex binary），行為不變；規格 `docs/v5/DAILY_EDITION.md` 介面段已同步（順便修正 `prepare_daily` 回傳 edition id）。全套 148 passed、1 skipped、15 xfailed。
+
+### 步驟 3｜修事件聚合 — 第 1–4 點（2026-10-29 完成；第 5–8 點另開步驟）
+
+本次只做手冊步驟 3 的第 1–4 點（共同實體、兩段門檻、譯名表、跨語言合併）。第 5 點證據包相關性過濾、第 6 點轉載辨識（E10）、第 7 點 arXiv／數據欄／單一來源警語（E12、E15、E16）、第 8 點 `1027_rebuild.db` 前後對照與週報，都還沒做。沒有呼叫任何真 LLM。
+
+- ✅ **1. 共同實體檢查**（`reddit_tracker/collection/entities.py`）：合併前兩篇**標題**要有共同實體。先用譯名表統一成中文標準譯名；英文取大寫開頭的字，句首字、常見字清單（`reddit_tracker/seeds/entity_common_words.yaml`，有 Block、Apple、New，可凍結）不算；整個標題是 Title Case 時只認譯名表的名字（`iPhone` 這種字也算大寫）；中文取譯名表命中的名字，加上兩篇都有、≥3 字、在當天素材標題中出現率 < 5% 的片段；數字取 3 位數以上，年份不算。手冊的例子「Serbia、Vučić」對「Seahawks、Chiefs」沒有共同實體，有測試。🔁 改編了四處，都記在 `docs/v5/CLUSTERING.md`：
+  - **句首字有佐證才算**：句首字預設不算；但如果當天其他標題在句中把它大寫，而且當天從沒以小寫出現（例如「Anthropic files for IPO…」），就算名字。不這樣做的話，以公司名開頭的英文標題全部抽不到實體（10/27 的 Anthropic IPO 9 篇會拆成 9 個事件）。E03 不受影響：Block 在常見字清單。
+  - **大小寫混合的字**（iPhone、SpaceX）一律算名字；中文標題裡的英文字也算。
+  - 標題裡的 HTML 實體會先還原（`&#8216;` 原本會被當成數字 8216）。
+  - 「出現率 < 5%」的分母是這次聚合時間窗（72 小時）內的素材標題，不是日曆上的一天。只有這兩篇有的片段（df ≤ 2）一律算少見，不然素材很少時，5% 會小於 1 篇，片段永遠不成立。
+- ✅ **2. 兩段門檻**：相似度 ≥ 0.45 要 ≥ 1 個共同實體；0.28–0.45 要 ≥ 2 個；< 0.28 不合併。這些都是設定值：`CLUSTER_HIGH_THRESHOLD`、`CLUSTER_LOW_THRESHOLD`、`CLUSTER_HIGH_MIN_ENTITIES`、`CLUSTER_MID_MIN_ENTITIES`，由 `MergeRules.from_settings()` 讀取，`.env.example` 也已同步。`cluster_recent_items` 的 `threshold=` 參數改成 `rules=`／`lexicon=`。候選素材依相似度由高到低逐一檢查，第一個「過門檻＋實體夠＋和事件重心夠像」的就併入；`ClusterRunStats.rejected_no_entity` 記下被實體條件擋掉的次數。代價（離線重編 10/27）：事件數 2,539 → 2,822，≥2 家出處的事件 264 → 220，≥3 家 104 → 66。被拆開的大多是 Title Case 標題，以及只共有一個名字的中段配對。這符合「不確定就不要合併」，11/07 拿到 dev 標註後再重調。👤 重調門檻要等標註員 A 交回 dev 標註。
+- ✅ **3. 譯名表** `reddit_tracker/seeds/name_glossary.yaml`（手冊寫 `seeds/name_glossary.yaml`，專案的 seeds 目錄在套件裡）：50 筆，格式照手冊（`en`／`zh`／`also`），以中央社譯名為準，手冊舉的魯拉、佛拉維歐、武契奇三筆都在。撰稿與合併共用同一份：`DailyWriter.write` 的提示會列出證據中出現的譯名，要求一律使用中央社譯名（E08 的文字條件仍要等錄音，見下）。防偷看：`tests/test_entities.py::test_glossary_names_seen_before_cutoff` 用唯讀母本（`mode=ro&immutable=1`）驗證每一筆都在 10/31 00:00（台北）以前的素材標題出現過；母本不在時 skip。刻意不收美國、中國、俄羅斯這類幾乎每篇國際新聞都有的國名，避免不同事件被湊出「2 個共同實體」。👤 譯名表與常見字清單還要在實驗一打 tag `exp1-frozen` 凍結。
+- ✅ **4. 跨語言合併**（新模組 `reddit_tracker/daily/desk.py`，`run._editorial_meeting` 改為呼叫它）：
+  - 線上做法：在編輯會議的候選池（`desk_pool`）裡，中文事件 × 外文事件，只要某一對成員標題經譯名表統一後有 ≥ `CLUSTER_CROSS_LANG_MIN_ENTITIES`（2）個共同實體，就合併。不需要 LLM，模板模式也會做。
+  - `find_same_events`（Codex）保留為第二意見。它說要合併的組，程式逐對確認共同實體 ≥ `CLUSTER_LLM_MERGE_MIN_ENTITIES`（1）；確認不了就剔除，原因寫進 `stats.rejected_merges` 與 log。`stats` 另外新增 `entity_merge_groups`、`llm_merge_groups`，實驗一方法 A 的重播仍然讀 `merged_groups`。
+  - 🔁 順手修了 `apply_merges` 的重疊組 bug：A＋B、A＋C 而且 C 分數最高時，B 原本會遺失；現在被吸收事件之前併入的事件會一起帶過去。這是因為程式合併讓巴西的英文事件同時連到兩個中文事件。
+  - 多語言 embedding（方法 B）沒做：手冊說它只在實驗一離線跑，是加分項。
+- ✅ **回歸集結果**（離線重編、`find_same_events` 用 `1027_merges.json` 重播、沒有呼叫真 LLM）：已拿掉 xfail 並通過的有 **E01**（LLM 的 [NFL, 塞爾維亞] 組因沒有共同實體被剔除）、**E02**（沈伯洋後援會、蔣萬安競總三篇不再併入蘇清泉道歉）、**E03**（瑞士地圖不再併入 Block）、**E04**（Skydance 不再併入微軟）、**E06**（巴西中英文三個事件併成一則、只見報一次）、**E07**。E13 與 E05 的標題條件照舊通過。全套 182 passed、4 skipped、6 xfailed，母本 sha256 仍 OK。
+  - 🔁 **E07 改了條件的錨點**：原本的中文標題「塞爾維亞學運開花結果 國會大選席次過半」（自由時報）在新規則下自成單一來源事件：它和其他中文稿只共有「塞爾維亞」，相似度 0.29，落在中段；這是刻意接受的漏合併，而且它沒見報。中英文塞爾維亞事件（英文 404＋中文 409）已經合併、只見報一次。所以 `must_merge_titles` 改用同一則刊出稿裡的 DW 中文標題「武契奇承認敗選　塞爾維亞學生運動贏得議會選舉」，並新增 `same_event_titles`（自由時報、公視、央廣三篇）：同一事件的素材最多只能出現在一則刊出稿，所以自由時報那篇日後若單獨見報，條件會抓到。原始刊出版仍抓得到錯（`test_detects_original_error` 通過）。
+  - 🔁 E03 修好之後，Block 稿自成一則，而且已超出選題時間窗、不在候選裡。所以 runner（`tests/regression/rebuild.py`）也會列出「案例提到、但不是候選」的事件，讓「不得含某素材」能判定；不然只會得到「找不到事件」。
+- ⚠️ **仍掛 xfail、等錄音（照協調者指示，本步驟不呼叫真 LLM）**：E03 與 E04 的正文條件。E03 的 Block 稿在重編版沒見報，所以目前是 skip；E04 的正文要錄音才能檢查。另外 E08、E12、E16 的文字條件，以及 E10、E14、E15。E04 的聚合已修好，xfail 原因已改成只差錄音。注意：新聚合下，E11（莫德納）與 E12（只有 arXiv 來源的稿件）在重編版都沒見報，條件是 skip，不是通過；做第 7 點時，arXiv 措辭最好另外補一個不依賴選題結果的單元測試。
+- ℹ️ 規格已同步：`docs/v5/CLUSTERING.md`（新增「共同實體與兩段門檻」「譯名表」兩節、介面）、`docs/v5/DAILY_EDITION.md`（編輯會議、stats 鍵、`desk_merges`／`DailyWriter(lexicon=)` 介面）。

@@ -36,6 +36,7 @@ from reddit_tracker.config import get_settings
 from reddit_tracker.daily import market as market_module
 from reddit_tracker.daily import run
 from reddit_tracker.daily.render import render_html
+from reddit_tracker.daily.scoring import ScoredCluster, kind_for
 from reddit_tracker.daily.writer import GROUPS_SCHEMA, DailyWriter
 from reddit_tracker.llm.replay import ReplayClient, ReplayResult, load_records
 from reddit_tracker.models import Base, DailyArticle, DailyEdition, SourceItem, StoryCluster
@@ -312,8 +313,17 @@ def rebuild_view(workdir: Path, needed_titles: set[str]) -> EditionView:
         wanted = {norm_title(t) for t in needed_titles}
         planned = {p.selection.cluster.cluster_id: p for p in plan.planned}
 
+        # 案例提到、但不在候選裡的事件（例如修好之後自成一則、已超出選題時間窗）也要看得到，
+        # 否則「不得含某素材」這類條件會因為找不到事件而無法判定。
+        candidates = list(plan.candidates)
+        covered = {cid for c in candidates for cid in c.all_ids}
+        for cid, cluster_members in sorted(members.items()):
+            if cid not in covered and {norm_title(m.title) for m in cluster_members} & wanted:
+                cluster = session.get(StoryCluster, cid)
+                candidates.append(ScoredCluster(cid, cluster.section, kind_for(cluster), 0.0))
+
         events = []
-        for candidate in plan.candidates:
+        for candidate in candidates:
             items = [m for cid in candidate.all_ids for m in members.get(cid, [])]
             titles = {norm_title(m.title) for m in items}
             chosen = planned.get(candidate.cluster_id)
