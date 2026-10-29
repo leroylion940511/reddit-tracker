@@ -9,6 +9,8 @@ from ..models import DailyArticle, DailyEdition
 from .writer import KIND_LABELS
 
 WEEKDAYS = "一二三四五六日"
+# MVP 只做頭版＋台灣、國際、科技三個內版（手冊 1.3）；其他版留在選單，沒稿時寫「本版未開放」。
+MVP_SECTIONS = ("taiwan", "world", "tech")
 TELEGRAM_LIMIT = 3_900
 
 _CSS = """
@@ -88,7 +90,8 @@ def render_html(edition: DailyEdition, sections: dict[str, str]) -> str:
         if key == "data":
             continue
         items = sorted((a for a in articles if a.section == key and not a.is_front), key=lambda a: a.position)
-        inner = "".join(_article_html(a) for a in items) or '<p class="empty">本版今日無新稿。</p>'
+        empty = "本版今日無新稿。" if key in MVP_SECTIONS else "本版未開放。"
+        inner = "".join(_article_html(a) for a in items) or f'<p class="empty">{empty}</p>'
         blocks.append(f'<h2 class="section" id="{key}">{escape(label)}</h2><div class="grid">{inner}</div>')
     stats = edition.stats or {}
     title = f"AI 綜合日報｜{edition.edition_date.isoformat()}"

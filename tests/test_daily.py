@@ -193,12 +193,12 @@ def test_prepare_builds_edition_with_front_page_social_and_html(daily_env):
 
 
 def test_writer_failures_retry_then_fall_back_to_template(daily_env):
-    daily_env.writer.fail_times = 3  # 頭版三次都失敗
+    daily_env.writer.fail_times = 2  # 頭版兩次（WRITE_ATTEMPTS）都失敗
     edition_id = run_module.prepare_daily(EDITION, now=NOW)
     edition = daily_env.session.get(DailyEdition, edition_id)
     front = next(a for a in edition.articles if a.is_front)
     assert front.writer == "template"
-    assert "3 次" in front.review_notes[0]
+    assert "2 次" in front.review_notes[0]
     assert edition.writer == "mixed"
 
 
@@ -277,3 +277,95 @@ def test_prepare_falls_back_to_template_when_codex_missing(daily_env, monkeypatc
     settings.codex_bin = "/nonexistent/codex"
     edition = daily_env.session.get(DailyEdition, run_module.prepare_daily(EDITION, now=NOW))
     assert edition.writer == "template" and daily_env.writer.requests == 0
+
+
+# ── 手冊步驟 1：停用來源、MVP 版面、額度降級、fake provider ─────────────────
+
+
+REGISTRY_SOCIAL_OFF = REGISTRY.model_copy(update={
+    "sources": [
+        s.model_copy(update={"enabled": False, "notes": "2026-10-28 停用：社群來源，不在 MVP"})
+        if s.section == "social" else s
+        for s in REGISTRY.sources
+    ]
+})
+
+
+def test_disabled_source_material_already_in_db_is_not_selected(daily_env, monkeypatch):
+    # daily_env 已把 PTT 素材聚合成一個社群事件；停用來源後重編不得再選它。
+    monkeypatch.setattr(run_module, "load_registry", lambda path: REGISTRY_SOCIAL_OFF)
+    edition = daily_env.session.get(DailyEdition, run_module.prepare_daily(EDITION, now=NOW))
+    assert [a.section for a in edition.articles] == ["world"]
+    assert all(src["source_id"] != "ptt" for a in edition.articles for src in a.sources)
+    assert edition.stats["candidate_clusters"] == 1
+    html = (daily_env.tmp_path / "2026-10-28.html").read_text(encoding="utf-8")
+    assert "本版未開放" in html and "颱風假" not in html
+
+
+def test_score_and_evidence_drop_disabled_members_of_mixed_clusters(session):
+    from reddit_tracker.daily.evidence import build_evidence
+    from reddit_tracker.daily.scoring import score_candidates
+
+    _add(session, "cna-world", "cna.com.tw", "塞爾維亞總統武契奇承認敗選", "塞爾維亞國會大選學生運動勝出，武契奇承認敗選", section="world")
+    _add(session, "ptt", "ptt.cc", "[新聞] 塞爾維亞總統武契奇承認敗選", "塞爾維亞國會大選學生運動勝出，武契奇承認敗選", section="social", tier="T4")
+    _add(session, "ptt", "ptt.cc", "[問卦] 有沒有颱風假的八卦", "颱風假要不要放", section="social", tier="T4")
+    session.flush()
+    cluster_recent_items(session, now=NOW)
+    mixed = session.scalar(select(SourceItem).where(SourceItem.source_id == "cna-world")).cluster_id
+    assert len(session.scalars(select(SourceItem).where(SourceItem.cluster_id == mixed)).all()) == 2
+
+    disabled = frozenset({"ptt"})
+    everything = score_candidates(session, edition_date=EDITION, now=NOW)
+    scored = score_candidates(session, edition_date=EDITION, now=NOW, disabled_sources=disabled)
+    assert len(everything) == 2
+    assert [s.cluster_id for s in scored] == [mixed]  # 只有 PTT 的事件消失
+    evidence = build_evidence(session, [mixed], {}, disabled)
+    assert [e.source_id for e in evidence] == ["cna-world"]
+
+
+def test_render_marks_non_mvp_sections_as_not_open():
+    from reddit_tracker.daily.render import MVP_SECTIONS, render_html
+
+    assert MVP_SECTIONS == ("taiwan", "world", "tech")
+    edition = DailyEdition(edition_date=EDITION, stats={})
+    html = render_html(edition, {"taiwan": "台灣", "sports": "體育", "social": "社群觀察", "data": "數據欄"})
+    taiwan, rest = html.split('id="taiwan"')[1].split('id="sports"')
+    assert "本版今日無新稿" in taiwan and "本版未開放" not in taiwan
+    assert rest.count("本版未開放") == 2  # 體育、社群觀察
+
+
+def test_quota_exhaustion_falls_back_to_template_without_retrying(daily_env):
+    from reddit_tracker.llm.quota import QuotaExhausted
+
+    calls = []
+
+    def exhausted(label, stories):
+        calls.append(label)
+        raise QuotaExhausted("m 本機每日額度 60 已用完")
+
+    daily_env.writer.write = exhausted
+    edition = daily_env.session.get(DailyEdition, run_module.prepare_daily(EDITION, now=NOW))
+    assert {a.writer for a in edition.articles} == {"template"}
+    assert len(calls) == 2  # 頭版、社群版各試一次就放棄，不等重試
+
+
+def test_fake_provider_writes_offline_without_quota():
+    from reddit_tracker.daily.writer import DailyWriter
+
+    writer = DailyWriter("fake")
+    assert writer.find_same_events([(1, "a"), (2, "b")]) == []
+    stories = writer.write("國際", [(5, "report", [_ev(title="塞爾維亞大選", summary="武契奇承認敗選")])])
+    assert stories[5].headline == "塞爾維亞大選" and stories[5].writer == "fake"
+    assert "武契奇承認敗選" in stories[5].body
+    assert writer.client.calls == 2
+
+
+def test_default_daily_writer_does_not_build_gemini(monkeypatch):
+    from reddit_tracker.daily import writer as writer_module
+    from reddit_tracker.llm import gemini
+
+    def boom(*args, **kwargs):
+        raise AssertionError("日報不應建立 GeminiClient")
+
+    monkeypatch.setattr(gemini, "GeminiClient", boom)
+    assert type(writer_module.DailyWriter("codex").client).__name__ == "CodexClient"

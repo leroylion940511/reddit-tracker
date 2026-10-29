@@ -2,37 +2,33 @@
 
 The Gemini API's published free-tier request limits are project-specific.  This
 module therefore applies conservative, cross-process local limits before a
-request is made and retries temporary 429 responses.
+request is made and retries temporary 429 responses.  The daily count is keyed
+by model (shared with every purpose), and every HTTP attempt — retries included —
+consumes one unit.
 """
 
 from __future__ import annotations
 
-import contextlib
-import json
 import logging
-import os
 import time
 from dataclasses import dataclass
-from datetime import datetime
-from pathlib import Path
-from typing import Any, Iterator
-from zoneinfo import ZoneInfo
+from typing import Any
 
 import requests
 
 from ..config import get_settings
+from .quota import ModelQuotaGuard, QuotaExhausted
 
 logger = logging.getLogger(__name__)
 
 _API_URL = "https://generativelanguage.googleapis.com/v1beta/models"
-_PACIFIC = ZoneInfo("America/Los_Angeles")
 
 
 class GeminiAPIError(RuntimeError):
     """A Gemini response that cannot be safely handled by this project."""
 
 
-class GeminiQuotaExhausted(GeminiAPIError):
+class GeminiQuotaExhausted(GeminiAPIError, QuotaExhausted):
     """The local guard or Gemini API reports a request/rate quota problem."""
 
 
@@ -44,82 +40,19 @@ class GeminiResult:
     cached_tokens: int | None
 
 
-class GeminiQuotaGuard:
-    """Small file-backed quota guard shared by every process that calls Gemini."""
+class GeminiQuotaGuard(ModelQuotaGuard):
+    """Model-keyed daily quota (shared by every purpose) plus a per-minute request cap."""
 
     def __init__(self, *, state_path: str, daily_limit: int, requests_per_minute: int) -> None:
-        if daily_limit < 1 or requests_per_minute < 1:
-            raise ValueError("Gemini daily limit and RPM must both be positive")
-        self.state_path = Path(state_path)
-        self.lock_path = Path(f"{state_path}.lock")
-        self.daily_limit = daily_limit
-        self.requests_per_minute = requests_per_minute
+        super().__init__(state_path=state_path, daily_limit=daily_limit, requests_per_minute=requests_per_minute)
 
-    @staticmethod
-    def _day() -> str:
-        return datetime.now(_PACIFIC).date().isoformat()
-
-    @contextlib.contextmanager
-    def _lock(self) -> Iterator[None]:
+    def acquire(self, *, model: str, purpose: str) -> None:
         try:
-            import fcntl
-        except ImportError:  # pragma: no cover - production target is macOS
-            yield
-            return
-
-        self.lock_path.parent.mkdir(parents=True, exist_ok=True)
-        with self.lock_path.open("a+") as handle:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
-            try:
-                yield
-            finally:
-                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
-
-    def _load(self) -> dict[str, Any]:
-        try:
-            value = json.loads(self.state_path.read_text(encoding="utf-8"))
-        except (FileNotFoundError, ValueError, OSError):
-            value = {}
-        if value.get("day") != self._day():
-            return {"day": self._day(), "daily": {}, "events": []}
-        return {
-            "day": self._day(),
-            "daily": value.get("daily") if isinstance(value.get("daily"), dict) else {},
-            "events": value.get("events") if isinstance(value.get("events"), list) else [],
-        }
-
-    def _save(self, value: dict[str, Any]) -> None:
-        self.state_path.parent.mkdir(parents=True, exist_ok=True)
-        temp = self.state_path.with_name(f".{self.state_path.name}.{os.getpid()}.tmp")
-        temp.write_text(json.dumps(value, separators=(",", ":")), encoding="utf-8")
-        temp.replace(self.state_path)
-
-    def acquire(self, *, purpose: str) -> None:
-        """Reserve one API request, waiting briefly rather than creating a burst."""
-        while True:
-            now = time.time()
-            with self._lock():
-                state = self._load()
-                events = [
-                    event for event in state["events"]
-                    if isinstance(event, (int, float)) and event > now - 60
-                ]
-                daily = state["daily"]
-                used = int(daily.get(purpose, 0))
-                if used >= self.daily_limit:
-                    self._save({"day": state["day"], "daily": daily, "events": events})
-                    raise GeminiQuotaExhausted(
-                        f"Gemini local daily {purpose} limit ({self.daily_limit}) reached"
-                    )
-                if len(events) < self.requests_per_minute:
-                    events.append(now)
-                    daily[purpose] = used + 1
-                    self._save({"day": state["day"], "daily": daily, "events": events})
-                    return
-                wait_seconds = max(0.1, min(events) + 60 - now)
-                self._save({"day": state["day"], "daily": daily, "events": events})
-            logger.info("Gemini local RPM limit reached; waiting %.1fs", wait_seconds)
-            time.sleep(wait_seconds)
+            super().acquire(model=model, purpose=purpose)
+        except QuotaExhausted as exc:
+            if isinstance(exc, GeminiQuotaExhausted):
+                raise
+            raise GeminiQuotaExhausted(str(exc)) from exc
 
 
 class GeminiClient:
@@ -145,9 +78,9 @@ class GeminiClient:
         self.model = model or settings.gemini_daily_model
         self.timeout = timeout if timeout is not None else settings.gemini_timeout_seconds
         self.max_retries = max_retries if max_retries is not None else settings.gemini_max_429_retries
-        limit = daily_limit if daily_limit is not None else settings.gemini_daily_limit
+        limit = daily_limit if daily_limit is not None else settings.llm_daily_limit
         self.guard = GeminiQuotaGuard(
-            state_path=state_path or settings.gemini_quota_state_path,
+            state_path=state_path or settings.llm_quota_state_path,
             daily_limit=limit,
             requests_per_minute=requests_per_minute or settings.gemini_requests_per_minute,
         )
@@ -205,7 +138,7 @@ class GeminiClient:
         url = f"{_API_URL}/{self.model}:generateContent"
 
         for attempt in range(self.max_retries + 1):
-            self.guard.acquire(purpose=self.purpose)
+            self.guard.acquire(model=self.model, purpose=self.purpose)
             try:
                 response = self._session.post(url, json=payload, timeout=self.timeout)
             except requests.RequestException as exc:

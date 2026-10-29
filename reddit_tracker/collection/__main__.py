@@ -54,7 +54,11 @@ def main(argv: list[str] | None = None) -> int:
             print(f"\n{sum(s.ok for s in stats)}/{len(stats)} 個來源成功，新增 {sum(s.new for s in stats)} 筆"
                   f"（其中重複 {sum(s.duplicate for s in stats)} 筆）")
         elif args.command == "cluster":
-            print(cluster_recent_items(session, general_sources=registry.general_source_ids()))
+            print(cluster_recent_items(
+                session,
+                general_sources=registry.general_source_ids(),
+                disabled_sources=registry.disabled_source_ids(),
+            ))
         elif args.command == "clusters":
             _print_clusters(session, top=args.top, hours=args.hours)
         else:

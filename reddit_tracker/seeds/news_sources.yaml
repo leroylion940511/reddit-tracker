@@ -171,32 +171,32 @@ sources:
   - {id: sportsv, name: 運動視界, section: sports, tier: T2, method: rss, url: "https://www.sportsv.net/feed", lang: zh-Hant}
 
   # ── 社群觀察 ──────────────────────────────────────────
-  - {id: reddit-taiwan, name: r/taiwan, section: social, tier: T4, method: reddit, url: taiwan, lang: en}
-  - {id: reddit-taipei, name: r/taipei, section: social, tier: T4, method: reddit, url: taipei, lang: en}
-  - {id: reddit-china-irl, name: r/china_irl, section: social, tier: T4, method: reddit, url: china_irl, lang: zh}
-  - {id: reddit-hongkong, name: r/hongkong, section: social, tier: T4, method: reddit, url: hongkong, lang: en}
-  - {id: reddit-chineselanguage, name: r/ChineseLanguage, section: social, tier: T4, method: reddit, url: chineselanguage, lang: en}
-  - {id: reddit-askreddit, name: r/AskReddit, section: social, tier: T4, method: reddit, url: askreddit, lang: en}
-  - {id: reddit-amitheasshole, name: r/AmItheAsshole, section: social, tier: T4, method: reddit, url: amitheasshole, lang: en}
-  - {id: reddit-relationship-advice, name: r/relationship_advice, section: social, tier: T4, method: reddit, url: relationship_advice, lang: en}
-  - {id: reddit-offmychest, name: r/offmychest, section: social, tier: T4, method: reddit, url: offmychest, lang: en}
-  - {id: reddit-legaladvice, name: r/legaladvice, section: social, tier: T4, method: reddit, url: legaladvice, lang: en}
-  - {id: reddit-tifu, name: r/tifu, section: social, tier: T4, method: reddit, url: tifu, lang: en}
-  - {id: reddit-confession, name: r/confession, section: social, tier: T4, method: reddit, url: confession, lang: en}
-  - {id: reddit-bestofredditorupdates, name: r/BestofRedditorUpdates, section: social, tier: T4, method: reddit, url: bestofredditorupdates, lang: en}
-  - {id: reddit-maliciouscompliance, name: r/MaliciousCompliance, section: social, tier: T4, method: reddit, url: maliciouscompliance, lang: en}
-  - {id: reddit-updateme, name: r/UpdateMe, section: social, tier: T4, method: reddit, url: updateme, lang: en}
-  - {id: reddit-worldnews, name: r/worldnews, section: social, tier: T4, method: reddit, url: worldnews, lang: en}
-  - {id: reddit-technology, name: r/technology, section: social, tier: T4, method: reddit, url: technology, lang: en}
-  - {id: ptt-gossiping, name: PTT 八卦板, section: social, tier: T4, method: rss, url: "https://www.ptt.cc/atom/Gossiping.xml", lang: zh-Hant}
-  - {id: ptt-hatepolitics, name: PTT 政黑板, section: social, tier: T4, method: rss, url: "https://www.ptt.cc/atom/HatePolitics.xml", lang: zh-Hant}
-  - {id: ptt-stock, name: PTT 股票板, section: social, tier: T4, method: rss, url: "https://www.ptt.cc/atom/Stock.xml", lang: zh-Hant}
-  - {id: ptt-tech-job, name: PTT 科技業板, section: social, tier: T4, method: rss, url: "https://www.ptt.cc/atom/Tech_Job.xml", lang: zh-Hant}
-  - {id: ptt-womentalk, name: PTT 女孩板, section: social, tier: T4, method: rss, url: "https://www.ptt.cc/atom/WomenTalk.xml", lang: zh-Hant}
-  - {id: ptt-baseball, name: PTT 棒球板, section: social, tier: T4, method: rss, url: "https://www.ptt.cc/atom/Baseball.xml", lang: zh-Hant}
+  - {id: reddit-taiwan, name: r/taiwan, section: social, tier: T4, method: reddit, url: taiwan, lang: en, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
+  - {id: reddit-taipei, name: r/taipei, section: social, tier: T4, method: reddit, url: taipei, lang: en, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
+  - {id: reddit-china-irl, name: r/china_irl, section: social, tier: T4, method: reddit, url: china_irl, lang: zh, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
+  - {id: reddit-hongkong, name: r/hongkong, section: social, tier: T4, method: reddit, url: hongkong, lang: en, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
+  - {id: reddit-chineselanguage, name: r/ChineseLanguage, section: social, tier: T4, method: reddit, url: chineselanguage, lang: en, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
+  - {id: reddit-askreddit, name: r/AskReddit, section: social, tier: T4, method: reddit, url: askreddit, lang: en, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
+  - {id: reddit-amitheasshole, name: r/AmItheAsshole, section: social, tier: T4, method: reddit, url: amitheasshole, lang: en, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
+  - {id: reddit-relationship-advice, name: r/relationship_advice, section: social, tier: T4, method: reddit, url: relationship_advice, lang: en, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
+  - {id: reddit-offmychest, name: r/offmychest, section: social, tier: T4, method: reddit, url: offmychest, lang: en, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
+  - {id: reddit-legaladvice, name: r/legaladvice, section: social, tier: T4, method: reddit, url: legaladvice, lang: en, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
+  - {id: reddit-tifu, name: r/tifu, section: social, tier: T4, method: reddit, url: tifu, lang: en, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
+  - {id: reddit-confession, name: r/confession, section: social, tier: T4, method: reddit, url: confession, lang: en, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
+  - {id: reddit-bestofredditorupdates, name: r/BestofRedditorUpdates, section: social, tier: T4, method: reddit, url: bestofredditorupdates, lang: en, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
+  - {id: reddit-maliciouscompliance, name: r/MaliciousCompliance, section: social, tier: T4, method: reddit, url: maliciouscompliance, lang: en, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
+  - {id: reddit-updateme, name: r/UpdateMe, section: social, tier: T4, method: reddit, url: updateme, lang: en, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
+  - {id: reddit-worldnews, name: r/worldnews, section: social, tier: T4, method: reddit, url: worldnews, lang: en, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
+  - {id: reddit-technology, name: r/technology, section: social, tier: T4, method: reddit, url: technology, lang: en, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
+  - {id: ptt-gossiping, name: PTT 八卦板, section: social, tier: T4, method: rss, url: "https://www.ptt.cc/atom/Gossiping.xml", lang: zh-Hant, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
+  - {id: ptt-hatepolitics, name: PTT 政黑板, section: social, tier: T4, method: rss, url: "https://www.ptt.cc/atom/HatePolitics.xml", lang: zh-Hant, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
+  - {id: ptt-stock, name: PTT 股票板, section: social, tier: T4, method: rss, url: "https://www.ptt.cc/atom/Stock.xml", lang: zh-Hant, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
+  - {id: ptt-tech-job, name: PTT 科技業板, section: social, tier: T4, method: rss, url: "https://www.ptt.cc/atom/Tech_Job.xml", lang: zh-Hant, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
+  - {id: ptt-womentalk, name: PTT 女孩板, section: social, tier: T4, method: rss, url: "https://www.ptt.cc/atom/WomenTalk.xml", lang: zh-Hant, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
+  - {id: ptt-baseball, name: PTT 棒球板, section: social, tier: T4, method: rss, url: "https://www.ptt.cc/atom/Baseball.xml", lang: zh-Hant, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
   - {id: dcard-trending, name: Dcard 熱門, section: social, tier: T4, method: rsshub, url: /dcard/trending/popular, lang: zh-Hant, enabled: false, notes: "RSSHub 路由需 headless Chromium，且 Dcard 有反爬蟲"}
   - {id: dcard-funny, name: Dcard 有趣, section: social, tier: T4, method: rsshub, url: /dcard/funny/popular, lang: zh-Hant, enabled: false, notes: "RSSHub 路由需 headless Chromium，且 Dcard 有反爬蟲"}
-  - {id: threads-search-taiwan, name: Threads 搜尋 台灣, section: social, tier: T4, method: rsshub, url: /threads/search/台灣, lang: zh-Hant}
+  - {id: threads-search-taiwan, name: Threads 搜尋 台灣, section: social, tier: T4, method: rsshub, url: /threads/search/台灣, lang: zh-Hant, enabled: false, notes: "2026-10-28 停用：社群來源，不在 MVP"}
 
   # ── 數據欄 ───────────────────────────────────────────
   - {id: twse-index, name: 證交所 每日市場成交, section: data, tier: T1, method: json, url: "https://openapi.twse.com.tw/v1/exchangeReport/FMTQIK", lang: zh-Hant}

@@ -33,3 +33,14 @@ def session(engine) -> Session:
         s.rollback()
     finally:
         s.close()
+
+
+@pytest.fixture(autouse=True)
+def _isolated_llm_quota(tmp_path, monkeypatch):
+    """額度 state 檔一律放 tmp_path，絕不寫到 production 也會用的 /tmp 計數檔。"""
+    from reddit_tracker.config import get_settings
+
+    monkeypatch.setenv("LLM_QUOTA_STATE_PATH", str(tmp_path / "llm-quota.json"))
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()

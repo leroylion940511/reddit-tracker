@@ -1,6 +1,8 @@
-"""Scheduler registers only collection and v2.0 daily jobs."""
+"""Scheduler registers only collection and v2.0 daily jobs; legacy jobs never come back."""
 
 from __future__ import annotations
+
+import logging
 
 from datetime import datetime, timedelta
 from types import SimpleNamespace
@@ -19,6 +21,7 @@ def _settings(**overrides):
         daily_prepare_minute=0,
         daily_delivery_hour=8,
         daily_delivery_minute=35,
+        legacy_jobs_enabled=False,
     )
     values.update(overrides)
     return SimpleNamespace(**values)
@@ -37,6 +40,37 @@ def test_build_scheduler_registers_collection_and_daily_jobs(monkeypatch):
     built.shutdown()
     assert "hour='6'" in str(jobs["daily_prepare_edition"].trigger)
     assert "minute='35'" in str(jobs["daily_publish_edition"].trigger)
+
+
+EXPECTED_JOBS = {"newsroom_source_collection", "daily_prepare_edition", "daily_publish_edition"}
+
+
+def test_legacy_job_names_are_the_three_from_the_handbook():
+    assert scheduler.LEGACY_JOB_IDS == {
+        "newsroom_candidate_discovery", "newsroom_prepare_edition", "newsroom_daily_edition",
+    }
+    assert not scheduler.LEGACY_JOB_IDS & EXPECTED_JOBS
+
+
+def test_legacy_jobs_disabled_by_default_registers_no_legacy_job(monkeypatch):
+    monkeypatch.setattr(scheduler, "get_settings", lambda: _settings())
+    ids = {job.id for job in scheduler.build_scheduler().get_jobs()}
+    assert ids == EXPECTED_JOBS
+    assert not ids & scheduler.LEGACY_JOB_IDS
+
+
+def test_legacy_jobs_enabled_still_does_not_resurrect_removed_code(monkeypatch, caplog):
+    monkeypatch.setattr(scheduler, "get_settings", lambda: _settings(legacy_jobs_enabled=True))
+    with caplog.at_level(logging.WARNING, logger=scheduler.__name__):
+        ids = {job.id for job in scheduler.build_scheduler().get_jobs()}
+    assert ids == EXPECTED_JOBS
+    assert "removed in commit 2d95c07" in caplog.text
+
+
+def test_settings_default_has_legacy_jobs_off():
+    from reddit_tracker.config import Settings
+
+    assert Settings(_env_file=None).legacy_jobs_enabled is False
 
 
 def test_build_scheduler_respects_disabled_flags(monkeypatch):

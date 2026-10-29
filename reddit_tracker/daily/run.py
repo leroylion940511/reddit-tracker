@@ -19,8 +19,9 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 
-from ..config import get_settings
+from ..config import LLM_PROVIDERS, get_settings
 from ..db import session_scope
+from ..llm.quota import QuotaExhausted
 from ..models import DailyArticle, DailyEdition, StoryCluster
 from ..seeds.news_sources import load_registry
 from .evidence import EvidenceItem, build_evidence
@@ -32,8 +33,9 @@ from .writer import DailyWriter, WrittenStory, review_story, template_story
 logger = logging.getLogger(__name__)
 
 FRONT_GROUP = "front"
-LLM_WRITERS = ("codex", "gemini")
-WRITE_ATTEMPTS = 3
+LLM_WRITERS = ("codex", "gemini", "fake")
+# 外層整版重寫最多 2 次；client 內部失敗再各重試 1 次，最壞一版吃 4 格額度（手冊 6.7）。
+WRITE_ATTEMPTS = 2
 RETRY_DELAY_SECONDS = 15.0
 
 
@@ -94,6 +96,8 @@ def _write_all(
                 except Exception as exc:  # noqa: BLE001 — JSON 壞掉、503 過載都值得重試；最後才退模板稿
                     failure = f"{writer.name} 撰稿失敗（{attempt} 次）：{type(exc).__name__}: {str(exc)[:160]}"
                     logger.warning("daily writer failed for %s: %s", group, failure)
+                    if isinstance(exc, QuotaExhausted):
+                        break  # 額度用完重試也沒用，直接退模板稿
                     if attempt < WRITE_ATTEMPTS:
                         time.sleep(RETRY_DELAY_SECONDS)
         for p in items:
@@ -120,6 +124,8 @@ def prepare_daily(
     settings = get_settings()
     now = now or datetime.now(timezone.utc)
     writer_mode = writer_mode or settings.daily_writer
+    if writer_mode not in LLM_PROVIDERS:
+        raise ValueError(f"撰稿 provider 只允許 {'/'.join(LLM_PROVIDERS)}：{writer_mode!r}")
     if writer_mode == "gemini" and not settings.gemini_api_key:
         writer_mode = "template"
     if writer_mode == "codex" and shutil.which(settings.codex_bin) is None:
@@ -128,6 +134,7 @@ def prepare_daily(
     registry = load_registry(settings.news_sources_path)
     sections = registry.sections
     source_names = {s.id: s.name for s in registry.sources}
+    disabled_sources = registry.disabled_source_ids()
 
     with session_scope() as session:
         existing = session.scalar(select(DailyEdition).where(DailyEdition.edition_date == edition_date))
@@ -138,13 +145,17 @@ def prepare_daily(
                 return existing.id
         writer = DailyWriter(writer_mode) if writer_mode in LLM_WRITERS else None
         scored = score_candidates(
-            session, edition_date=edition_date, now=now, general_sources=registry.general_source_ids()
+            session,
+            edition_date=edition_date,
+            now=now,
+            general_sources=registry.general_source_ids(),
+            disabled_sources=disabled_sources,
         )
         candidate_count = len(scored)
         scored, merged_groups = _editorial_meeting(session, scored, writer)
         planned = []
         for key, selection in enumerate(select_articles(scored), start=1):
-            evidence = build_evidence(session, selection.cluster.all_ids, source_names)
+            evidence = build_evidence(session, selection.cluster.all_ids, source_names, disabled_sources)
             if evidence:
                 planned.append(_Planned(key, selection, evidence))
     if not planned:
@@ -265,7 +276,7 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
     prepare = sub.add_parser("prepare", help="準備一期（不發送）")
     prepare.add_argument("--date", type=date.fromisoformat, default=None)
-    prepare.add_argument("--writer", choices=(*LLM_WRITERS, "template"))
+    prepare.add_argument("--writer", choices=LLM_PROVIDERS)
     prepare.add_argument("--refresh", action="store_true", help="重寫尚未發行的 draft")
     publish = sub.add_parser("publish", help="發行已準備的版次到 Telegram")
     publish.add_argument("--date", type=date.fromisoformat, default=None)

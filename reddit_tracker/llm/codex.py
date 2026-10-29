@@ -4,6 +4,8 @@ Codex 是 agent，不是單純的 completion API；而 prompt 裡的新聞標題
 不可信內容。所以每次呼叫都：在空的暫存目錄、read-only sandbox 執行，忽略使用者
 config／rules，關掉 shell、code mode、子 agent、外掛等所有能碰到本機的工具，
 並拒絕任何含有本專案機密值的輸出。
+
+額度：每一次 subprocess 嘗試（含重試）都向依模型計數的 `ModelQuotaGuard` 扣一格。
 """
 
 from __future__ import annotations
@@ -17,6 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from ..config import get_settings
+from .quota import ModelQuotaGuard
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +33,10 @@ _DISABLED_FEATURES = (
 
 class CodexError(RuntimeError):
     """codex exec 失敗、逾時或回應不能安全使用。"""
+
+
+class CodexUnsafeOutput(CodexError):
+    """輸出含本機機密；不重試。"""
 
 
 @dataclass(frozen=True)
@@ -60,12 +67,20 @@ class CodexClient:
         model: str | None = None,
         reasoning_effort: str | None = None,
         timeout: float | None = None,
+        purpose: str = "daily",
+        max_retries: int | None = None,
+        guard: ModelQuotaGuard | None = None,
     ) -> None:
         settings = get_settings()
         self.binary = binary or settings.codex_bin
         self.model = model or settings.codex_model
         self.reasoning_effort = reasoning_effort or settings.codex_reasoning_effort
         self.timeout = timeout if timeout is not None else settings.codex_timeout_seconds
+        self.purpose = purpose
+        self.max_retries = max_retries if max_retries is not None else settings.codex_max_retries
+        self.guard = guard or ModelQuotaGuard(
+            state_path=settings.llm_quota_state_path, daily_limit=settings.llm_daily_limit
+        )
         self._secrets = [
             s for s in (settings.telegram_bot_token, settings.gemini_api_key, settings.rsshub_access_key)
             if s and len(s) >= 8
@@ -102,6 +117,20 @@ class CodexClient:
         if json_mode and json_schema is None:
             prompt += "\n\n只輸出 JSON。"
 
+        for attempt in range(self.max_retries + 1):
+            # 預扣額度在 subprocess 之前；額度用完（QuotaExhausted）直接往外拋，不重試。
+            self.guard.acquire(model=self.model, purpose=self.purpose)
+            try:
+                return self._run_once(prompt, json_schema)
+            except CodexUnsafeOutput:
+                raise
+            except CodexError as exc:
+                if attempt == self.max_retries:
+                    raise
+                logger.warning("codex attempt %d failed, retrying: %s", attempt + 1, exc)
+        raise AssertionError("unreachable")  # pragma: no cover
+
+    def _run_once(self, prompt: str, json_schema: dict | None) -> CodexResult:
         with tempfile.TemporaryDirectory(prefix="reddit-tracker-codex-") as tmp:
             root = Path(tmp)
             workdir = root / "work"
@@ -129,7 +158,7 @@ class CodexClient:
         if not content:
             raise CodexError("codex exec 回傳空白")
         if any(secret in content for secret in self._secrets):
-            raise CodexError("codex 輸出含有本機機密，丟棄")
+            raise CodexUnsafeOutput("codex 輸出含有本機機密，丟棄")
         usage = _usage(proc.stdout)
         logger.info(
             "codex completion: model=%s input=%s cached=%s output=%s",

@@ -4,10 +4,27 @@ from pydantic import ValidationError
 from reddit_tracker.seeds.news_sources import NewsSource, SourceRegistry, load_registry
 
 
-def test_registry_loads_and_every_section_has_enabled_sources():
+SOCIAL_NOTE = "2026-10-28 停用：社群來源，不在 MVP"
+
+
+def test_registry_loads_and_every_section_but_social_has_enabled_sources():
     registry = load_registry()
     sections = {s.section for s in registry.enabled()}
-    assert sections == set(registry.sections)
+    # 社群觀察版的來源已全停（手冊步驟 1），其他版仍要有啟用來源。
+    assert sections == set(registry.sections) - {"social"}
+
+
+def test_social_sources_are_all_disabled_with_reason():
+    registry = load_registry()
+    social = [s for s in registry.sources if s.section == "social"]
+    assert not [s.id for s in social if s.enabled]
+    newly_disabled = [s for s in social if s.notes == SOCIAL_NOTE]
+    kinds = [s.id.split("-")[0] for s in newly_disabled]
+    assert (kinds.count("reddit"), kinds.count("ptt"), kinds.count("threads")) == (17, 6, 1)
+    assert len(newly_disabled) == 24
+    # 其他版不能有社群／Reddit 來源偷偷啟用
+    assert not [s.id for s in registry.enabled() if s.tier == "T4" or s.method == "reddit"]
+    assert registry.disabled_source_ids() >= {s.id for s in social}
 
 
 def test_disabled_sources_explain_why():

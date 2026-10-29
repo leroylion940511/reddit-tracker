@@ -45,11 +45,18 @@ def _to_traditional(text: str | None, lang: str | None) -> str:
     return zhconv.convert(text or "", "zh-tw") if lang == "zh" else (text or "")
 
 
-def build_evidence(session: Session, cluster_ids: list[int], source_names: dict[str, str]) -> list[EvidenceItem]:
-    """不同出處優先、層級高優先，同一出處只取最新一篇；可跨多個已合併的事件。"""
+def build_evidence(
+    session: Session,
+    cluster_ids: list[int],
+    source_names: dict[str, str],
+    disabled_sources: frozenset[str] = frozenset(),
+) -> list[EvidenceItem]:
+    """不同出處優先、層級高優先，同一出處只取最新一篇；可跨多個已合併的事件。已停用來源不進證據包。"""
     members = session.scalars(
         select(SourceItem).where(
-            SourceItem.cluster_id.in_(cluster_ids), SourceItem.duplicate_of_id.is_(None)
+            SourceItem.cluster_id.in_(cluster_ids),
+            SourceItem.duplicate_of_id.is_(None),
+            SourceItem.source_id.not_in(sorted(disabled_sources)),
         )
     ).all()
     ordered = sorted(members, key=lambda m: (TIER_RANK.get(m.tier, 9), -as_utc(m.published_at).timestamp()))

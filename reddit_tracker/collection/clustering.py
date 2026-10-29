@@ -118,9 +118,15 @@ def _cosine(a: dict[str, float], b: dict[str, float]) -> float:
 
 
 def _refresh_cluster(
-    session: Session, cluster: StoryCluster, now: datetime, general_sources: frozenset[str]
+    session: Session,
+    cluster: StoryCluster,
+    now: datetime,
+    general_sources: frozenset[str],
+    disabled_sources: frozenset[str] = frozenset(),
 ) -> None:
     members = session.scalars(select(SourceItem).where(SourceItem.cluster_id == cluster.id)).all()
+    # 舊事件裡可能混有已停用來源的素材；事件訊號只看仍啟用的來源。
+    members = [m for m in members if m.source_id not in disabled_sources] or members
     tiers = Counter(member.tier for member in members)
     # 綜合 feed（央廣、中央社聚焦等）的板塊不代表這則新聞的板塊，不參與投票。
     voters = [m for m in members if m.source_id not in general_sources]
@@ -153,12 +159,18 @@ def cluster_recent_items(
     now: datetime | None = None,
     threshold: float = CLUSTER_THRESHOLD,
     general_sources: frozenset[str] = frozenset(),
+    disabled_sources: frozenset[str] = frozenset(),
 ) -> ClusterRunStats:
     now = now or datetime.now(timezone.utc)
     stats = ClusterRunStats()
+    # 已停用來源（例如 2026-10-28 停用的社群來源）以前抓到的素材不再參與聚合。
     items = session.scalars(
         select(SourceItem)
-        .where(SourceItem.duplicate_of_id.is_(None), SourceItem.published_at >= now - WINDOW)
+        .where(
+            SourceItem.duplicate_of_id.is_(None),
+            SourceItem.published_at >= now - WINDOW,
+            SourceItem.source_id.not_in(sorted(disabled_sources)),
+        )
         .order_by(SourceItem.published_at, SourceItem.id)
     ).all()
     stats.window_items = len(items)
@@ -230,7 +242,9 @@ def cluster_recent_items(
     root_cluster = {item.id: item.cluster_id for item in items}
     duplicates = session.scalars(
         select(SourceItem).where(
-            SourceItem.duplicate_of_id.in_(list(root_cluster)), SourceItem.cluster_id.is_(None)
+            SourceItem.duplicate_of_id.in_(list(root_cluster)),
+            SourceItem.cluster_id.is_(None),
+            SourceItem.source_id.not_in(sorted(disabled_sources)),
         )
     ).all()
     for duplicate in duplicates:
@@ -241,6 +255,6 @@ def cluster_recent_items(
     session.flush()
 
     for cluster in touched.values():
-        _refresh_cluster(session, cluster, now, general_sources)
+        _refresh_cluster(session, cluster, now, general_sources, disabled_sources)
     stats.touched_clusters = len(touched)
     return stats

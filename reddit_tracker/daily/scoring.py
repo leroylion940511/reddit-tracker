@@ -97,7 +97,9 @@ def score_cluster(cluster: StoryCluster, *, recent_items: int, now: datetime) ->
     return round(sum(parts.values()), 2), signals
 
 
-def _vote_sections(session: Session, cluster_ids: list[int], general_sources: frozenset[str]) -> dict[int, str]:
+def _vote_sections(
+    session: Session, cluster_ids: list[int], general_sources: frozenset[str], disabled_sources: frozenset[str]
+) -> dict[int, str]:
     """依目前登錄表重新決定板塊：T1／T2 非綜合 feed 的成員投票，聚合當時存的板塊只是後備。"""
     votes: dict[int, Counter] = defaultdict(Counter)
     fallback: dict[int, Counter] = defaultdict(Counter)
@@ -107,7 +109,7 @@ def _vote_sections(session: Session, cluster_ids: list[int], general_sources: fr
         )
     )
     for cluster_id, source_id, section, tier in rows:
-        if source_id in general_sources:
+        if source_id in general_sources or source_id in disabled_sources:
             continue
         fallback[cluster_id][section] += 1
         if tier in ("T1", "T2"):
@@ -119,8 +121,14 @@ def _vote_sections(session: Session, cluster_ids: list[int], general_sources: fr
 
 
 def score_candidates(
-    session: Session, *, edition_date: date, now: datetime, general_sources: frozenset[str] = frozenset()
+    session: Session,
+    *,
+    edition_date: date,
+    now: datetime,
+    general_sources: frozenset[str] = frozenset(),
+    disabled_sources: frozenset[str] = frozenset(),
 ) -> list[ScoredCluster]:
+    """`disabled_sources`：已停用來源的素材不算數；只由這些素材組成的事件不進選題。"""
     start = window_start_for(edition_date)
     published_before: set[int] = set()
     earlier = (
@@ -141,6 +149,16 @@ def score_candidates(
         )
         if c.id not in published_before
     ]
+    if clusters and disabled_sources:
+        alive = set(
+            session.scalars(
+                select(SourceItem.cluster_id).where(
+                    SourceItem.cluster_id.in_([c.id for c in clusters]),
+                    SourceItem.source_id.not_in(sorted(disabled_sources)),
+                )
+            )
+        )
+        clusters = [c for c in clusters if c.id in alive]
     if not clusters:
         return []
     recent = dict(
@@ -149,11 +167,12 @@ def score_candidates(
             .where(
                 SourceItem.cluster_id.in_([c.id for c in clusters]),
                 SourceItem.first_seen_at >= now - VELOCITY_WINDOW,
+                SourceItem.source_id.not_in(sorted(disabled_sources)),
             )
             .group_by(SourceItem.cluster_id)
         ).all()
     )
-    sections = _vote_sections(session, [c.id for c in clusters], general_sources)
+    sections = _vote_sections(session, [c.id for c in clusters], general_sources, disabled_sources)
     scored = []
     for cluster in clusters:
         score, signals = score_cluster(cluster, recent_items=recent.get(cluster.id, 0), now=now)

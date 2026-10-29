@@ -7,7 +7,12 @@ from __future__ import annotations
 
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# 允許的 LLM provider。網頁備援（用 Chrome 操控 ChatGPT／Gemini 網頁）已移除且禁止：
+# 結果不可重現、呼叫次數記不到（手冊步驟 1、第 10.1 節第 6 條）。
+LLM_PROVIDERS = ("codex", "gemini", "template", "fake")
 
 
 class Settings(BaseSettings):
@@ -30,14 +35,20 @@ class Settings(BaseSettings):
     gemini_api_key: str | None = None
     gemini_requests_per_minute: int = 5
     gemini_timeout_seconds: float = 60.0
-    gemini_max_429_retries: int = 2
-    gemini_quota_state_path: str = "/tmp/reddit-tracker-gemini-quota.json"
+    # 429 只重試 1 次：每次 HTTP 嘗試都扣一格（手冊 6.7）。
+    gemini_max_429_retries: int = 1
+
+    # --- LLM 每日額度（依模型計數，所有用途共用；手冊步驟 1、6.7）---
+    llm_daily_limit: int = 60
+    llm_quota_state_path: str = "/tmp/reddit-tracker-llm-quota.json"
 
     # --- Codex CLI（綜合日報撰稿預設 provider；吃本機 ChatGPT 訂閱登入，不用 API key）---
     codex_bin: str = "/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex"
     codex_model: str = "gpt-6.1-sol"
     codex_reasoning_effort: str = "low"
     codex_timeout_seconds: float = 300.0
+    # 失敗只重試 1 次；每次 subprocess 嘗試都扣一格額度。
+    codex_max_retries: int = 1
 
     # --- Telegram（綜合日報發行）---
     telegram_bot_token: str | None = None
@@ -57,18 +68,27 @@ class Settings(BaseSettings):
 
     # --- v2.0 綜合日報（規格見 docs/v5/DAILY_EDITION.md）---
     daily_edition_enabled: bool = False
-    daily_writer: str = "codex"                 # codex / gemini / template
+    daily_writer: str = "codex"                 # codex / gemini / template / fake（不得是 web）
     daily_prepare_hour: int = 6
     daily_prepare_minute: int = 0
     daily_delivery_hour: int = 8
     daily_delivery_minute: int = 35
     daily_site_dir: str = "site/daily"
     gemini_daily_model: str = "gemini-3.5-flash-lite"
-    # 每天約 12 次（編輯會議 1＋頭版 1＋10 版）；留給重試與重編。實際免費額度以 AI Studio 為準。
-    gemini_daily_limit: int = 60
+
+    # --- 舊排程（候選探索、舊版日報編採與發送）已在 commit 2d95c07 移除；設 true 也不會復活 ---
+    legacy_jobs_enabled: bool = False
 
     # --- Misc ---
     log_level: str = "INFO"
+
+    @field_validator("daily_writer")
+    @classmethod
+    def _check_provider(cls, value: str) -> str:
+        value = value.strip().lower()
+        if value not in LLM_PROVIDERS:
+            raise ValueError(f"LLM provider 只允許 {'/'.join(LLM_PROVIDERS)}，不得是 {value!r}")
+        return value
 
 
 @lru_cache(maxsize=1)

@@ -135,3 +135,29 @@ def test_representative_prefers_higher_tier(session):
     assert cluster.item_count == 2
     assert cluster.title == "央行理監事會決議升息半碼"
     assert cluster.section == "finance"
+
+
+def test_disabled_source_items_are_not_clustered_and_do_not_count(session):
+    # 舊事件裡已有一篇 PTT（停用前就聚合進去）
+    _item(session, "ltn-world", "https://news.ltn.com.tw/1", "巴西總統大選魯拉逆轉連任",
+          "巴西總統決選，魯拉擊敗佛拉維歐連任", section="world", hours_ago=5)
+    old_ptt = _item(session, "ptt-gossiping", "https://ptt.cc/0", "[新聞] 巴西總統大選魯拉逆轉連任",
+                    "巴西總統決選 魯拉擊敗佛拉維歐連任", section="social", tier="T4", hours_ago=4)
+    cluster_recent_items(session, now=NOW)
+    cluster = session.scalar(select(StoryCluster))
+    assert old_ptt.cluster_id == cluster.id and cluster.t4_count == 1
+
+    disabled = frozenset({"ptt-gossiping", "threads-search-taiwan"})
+    spam = _item(session, "threads-search-taiwan", "https://threads.net/1", "凌晨 02:57 打個招呼約啊",
+                 "打個招呼約啊", section="social", tier="T4", hours_ago=1)
+    ptt = _item(session, "ptt-gossiping", "https://ptt.cc/1", "[問卦] 巴西總統大選魯拉逆轉連任？",
+                "巴西總統決選 魯拉擊敗佛拉維歐連任", section="social", tier="T4", hours_ago=1)
+    cna = _item(session, "cna-world", "https://cna.com.tw/1", "魯拉贏得巴西總統大選 逆轉連任",
+                "巴西總統決選，魯拉擊敗佛拉維歐連任", section="world", hours_ago=1)
+    stats = cluster_recent_items(session, now=NOW, disabled_sources=disabled)
+
+    assert spam.cluster_id is None and ptt.cluster_id is None  # 停用來源的新素材不聚合
+    assert cna.cluster_id == cluster.id
+    assert stats.window_items == 2  # 只有 ltn、cna；停用來源的素材（含已歸事件的舊 ptt）不進聚合
+    assert cluster.item_count == 2 and cluster.t4_count == 0  # 事件訊號只算啟用來源
+    assert cluster.outlet_count == 2

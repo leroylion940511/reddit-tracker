@@ -23,6 +23,13 @@ from ..seeds.news_sources import load_registry
 
 logger = logging.getLogger(__name__)
 
+# 手冊步驟 1 要停的舊 job；程式已在 commit 2d95c07 刪除，這裡只留名字做防護與測試。
+LEGACY_JOB_IDS = frozenset({
+    "newsroom_candidate_discovery",  # 每 90 分鐘爬 Reddit
+    "newsroom_prepare_edition",      # 05:30 編舊版 Reddit 早報
+    "newsroom_daily_edition",        # 08:30 發舊版 Reddit 早報
+})
+
 
 class _PollingBackgroundScheduler(BackgroundScheduler):
     """繞 macOS cv_wait coalesce — _main_loop 改用 time.sleep polling.
@@ -58,7 +65,11 @@ def _run_source_collection() -> None:
     )
     # 聚合獨立 commit：失敗只影響本輪事件，不會讓已收的素材回滾。
     with session_scope() as session:
-        clustered = cluster_recent_items(session, general_sources=registry.general_source_ids())
+        clustered = cluster_recent_items(
+            session,
+            general_sources=registry.general_source_ids(),
+            disabled_sources=registry.disabled_source_ids(),
+        )
     logger.info("story clustering done: %s", clustered)
 
 
@@ -80,6 +91,12 @@ def build_scheduler() -> _PollingBackgroundScheduler:
     settings = get_settings()
     tz = ZoneInfo(settings.newsroom_delivery_timezone)
     scheduler = _PollingBackgroundScheduler(timezone=tz)
+    if getattr(settings, "legacy_jobs_enabled", False):
+        # 不復活已刪的程式：舊 job 一律不註冊，只提醒設定沒有作用。
+        logger.warning(
+            "LEGACY_JOBS_ENABLED=true ignored: legacy jobs %s were removed in commit 2d95c07",
+            ", ".join(sorted(LEGACY_JOB_IDS)),
+        )
     if getattr(settings, "news_collection_enabled", False):
         scheduler.add_job(
             _run_source_collection,
@@ -111,6 +128,9 @@ def build_scheduler() -> _PollingBackgroundScheduler:
             coalesce=True,
             misfire_grace_time=60 * 60,
         )
+    leaked = LEGACY_JOB_IDS & {job.id for job in scheduler.get_jobs()}
+    if leaked:  # pragma: no cover - 防護：之後的改動不得把舊 job 加回來
+        raise RuntimeError(f"legacy jobs must not be registered: {sorted(leaked)}")
     return scheduler
 
 

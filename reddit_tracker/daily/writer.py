@@ -1,4 +1,4 @@
-"""日報撰稿：LLM（預設 Codex，可切 Gemini）每版一次請求；失敗或未過審稿關卡的稿件改用模板稿。
+"""日報撰稿：LLM（預設 Codex，可切 Gemini；離線開發用 fake）每版一次請求；失敗或未過審稿關卡的稿件改用模板稿。
 
 LLM 只負責文字。順序、板塊、報導類型、來源與所有評分數字都由程式決定。
 """
@@ -179,15 +179,20 @@ def review_story(story: WrittenStory, evidence: list[EvidenceItem]) -> list[str]
 
 
 def _default_client(name: str) -> _CompletionClient:
+    """只建立被選用的 provider；停用的用途根本不建 client（不是把額度設 0）。"""
     settings = get_settings()
     if name == "codex":
         from ..llm.codex import CodexClient
 
-        return CodexClient()
+        return CodexClient(purpose="daily")
     if name == "gemini":
         from ..llm.gemini import GeminiClient
 
-        return GeminiClient(purpose="daily", model=settings.gemini_daily_model, daily_limit=settings.gemini_daily_limit)
+        return GeminiClient(purpose="daily", model=settings.gemini_daily_model)
+    if name == "fake":
+        from ..llm.fake import FakeClient
+
+        return FakeClient()
     raise ValueError(f"未知的撰稿 provider：{name}")
 
 

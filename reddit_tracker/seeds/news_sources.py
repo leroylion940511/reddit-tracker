@@ -80,6 +80,10 @@ class SourceRegistry(BaseModel):
     def general_source_ids(self) -> frozenset[str]:
         return frozenset(s.id for s in self.sources if s.general_feed)
 
+    def disabled_source_ids(self) -> frozenset[str]:
+        """已停用的來源；DB 裡它們以前抓到的素材不得再進入聚合、選題與證據包。"""
+        return frozenset(s.id for s in self.sources if not s.enabled)
+
 
 def load_registry(path: str | Path = DEFAULT_REGISTRY_PATH) -> SourceRegistry:
     with Path(path).open(encoding="utf-8") as fh:
