@@ -183,15 +183,30 @@ desk_merges(session, pool, llm_groups, *, lexicon, rules, disabled_sources=froze
 #   DeskMerges(groups, entity_groups, llm_groups, rejected: list[{group, cluster_id, title, reason}])
 apply_merges(scored, groups) -> list[ScoredCluster]   # scoring.py；重疊的組會把已併入的事件一起帶過去
 story_evidence(session, cluster: ScoredCluster, registry, context=None) -> EvidencePack   # 選題與回歸集共用
-prepare_daily(edition_date, *, writer_mode=None, refresh=False, now=None, writer=None) -> int   # writer：直接指定撰稿者（回歸集 replay），不看 writer_mode
-publish_daily(edition_date) -> DailyEdition
+prepare_daily(edition_date, *, writer_mode=None, refresh=False, now=None, writer=None, mode=None, shadow=False) -> int
+#   mode 預設讀 DAILY_MODE（pipeline／mas）。shadow=True：P 組寫 site/daily/shadow，不寫 daily_editions。
+#   DAILY_MODE=mas 時 publish_daily 若沒有準備好的期數就失敗，不重跑 prepare。
+publish_daily(edition_date) -> int   # 發行當下用 build_edition_view 重渲染；mas 未核准的全文改成標題短訊
+# reddit_tracker/daily/view.py
+render_html(view: EditionView) -> str   # 只吃 EditionView
+build_edition_view(session, edition_date, run_variant, sections, *, for_publish=False) -> EditionView
+view_from_edition(edition, sections) -> EditionView   # 還沒有 page_plans 的舊物件
+# reddit_tracker/daily/mas/orchestrator.py
+run_mas(session, *, edition_date, snapshot, registry, client, now, pitches=None) -> MasResult
+# reddit_tracker/daily/blind.py
+export_blind_count(session, dates, *, seed=BLIND_SEED) -> (text, mapping, sha256)
+#   BLIND_SEED = 20261201；EXP2_SEED = 20261211
 ```
 
 CLI：
 
 ```bash
-uv run python -m reddit_tracker.daily prepare [--date YYYY-MM-DD] [--writer codex|gemini|template] [--refresh]
+uv run python -m reddit_tracker.daily prepare [--date YYYY-MM-DD] [--writer codex|gemini|template|fake] [--refresh] [--shadow] [--mode pipeline|mas]
 uv run python -m reddit_tracker.daily publish [--date YYYY-MM-DD]
+uv run python -m reddit_tracker.daily trace --date YYYY-MM-DD [--variant mas] [--cluster ID]
+uv run python -m reddit_tracker.daily approve --story ID --by 名字
+uv run python -m reddit_tracker.daily hold --date YYYY-MM-DD --story ID --by 名字
+uv run python -m reddit_tracker.daily blind-export --dates YYYY-MM-DD --out DIR
 ```
 
 ## 試編紀錄（2026-10-26，production DB 複本，報紙日期 10/27）
