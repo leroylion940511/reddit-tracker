@@ -63,6 +63,9 @@ score = 10·log2(1 + outlet_count)
 
 每則事件最多取 6 篇成員：不同出處優先、層級高優先、同出處只取最新一篇。每篇提供出處名稱、層級、原標題、摘要（前 400 字）、發布時間、連結。**只給 LLM 摘要，不抓全文**；試刊期接受這個限制，並在報紙頁尾說明。
 
+- **轉載併成一列**（E10）：`mark_reprints` 認出的轉載與重複稿只放原稿一列，`sources[].outlet` 顯示「中央社（中央廣播電台轉載）」並多一個 `reprinted_by`；撰稿時歸因給原稿。
+- **相關性過濾**（手冊步驟 3 第 5 點、E01、E05）：每一篇都要和事件代表標題（合併事件取主事件 `cluster_ids[0]` 的代表素材）有共同實體，判斷方法與聚合相同（先用譯名表統一成中文；中文片段的「少見」以聚合時間窗 72 小時內的素材標題為準，`title_context`）。沒有就剔除，`review_notes` 記「剔除：AP｜Jaxon Smith-Njigba leads…，原因：無共同實體」。代表標題本身抽不到任何實體時不過濾，記「未做相關性過濾：…」。10/27 重編只有金鐘獎一則剔除了 3 篇（新人獎的分稿）。
+
 ## 4. 撰稿
 
 - Provider 由 `DAILY_WRITER` 決定，預設 `codex`；只允許 `codex`／`gemini`／`template`／`fake`（`config.LLM_PROVIDERS`，設定驗證會拒絕 `web`；網頁備援已移除）。`fake`（`llm/fake.py`）離線、不扣額度，給開發測試用。只建立被選用的 client，日報預設不建 GeminiClient。每個板塊一次請求、頭版一次請求，加上編輯會議約 12 次／日。
@@ -70,7 +73,9 @@ score = 10·log2(1 + outlet_count)
 - **Codex 安全邊界**：證據是外部不可信內容，Codex 又是 agent，所以每次都在空暫存目錄、`-s read-only`、`--ephemeral --ignore-user-config --ignore-rules` 下執行，關掉 shell／code mode／子 agent／外掛／瀏覽器等工具（`_DISABLED_FEATURES`；CLI 升版新增工具類 feature 要補關），並丟棄含 Telegram token、Gemini／RSSHub key 的輸出。找不到 `CODEX_BIN` 時整期改用模板稿。
 - **額度**（`llm/quota.py` 的 `ModelQuotaGuard`）：以 **model 字串**為鍵，同一模型所有用途（`purpose`）共用一個每日計數，`LLM_DAILY_LIMIT` 預設 60，太平洋時間換日，跨 process 共用 `LLM_QUOTA_STATE_PATH` state 檔。每次嘗試（含重試）扣一格；Codex 失敗重試 `CODEX_MAX_RETRIES`=1、Gemini 429 重試 `GEMINI_MAX_429_RETRIES`=1，外層 `WRITE_ATTEMPTS`=2，一版最壞吃 4 格。額度用完拋 `QuotaExhausted`，該版直接改模板稿、不再重試。
 - **Gemini**（備用，`purpose="daily"`，`GeminiQuotaGuard` 是 `ModelQuotaGuard` 加每分鐘上限）。
-- 指令：繁體中文、只能使用證據包內容、以「據某某報導」歸因、來源說法不一致時並陳、英文與簡體素材要轉為台灣用語、不得補造數字或引述。
+- 指令：繁體中文、只能使用證據包內容、以「據某某報導」歸因、來源說法不一致時並陳、英文與簡體素材要轉為台灣用語、不得補造數字或引述。2026-10-29 刪掉原第 4 條（單一來源／社群要在正文明說）：警語改由程式加（手冊 6.6、E16）。
+- **警語由程式加在正文最後一段**（`finalize_story`，LLM 稿與模板稿都經過）：`single_source`「目前僅有單一媒體報導，後續發展待確認。」、`social`「此為網路社群討論，不代表整體民意，內容亦未經證實。」、只來自 arXiv 的稿「預印本未必經過同儕審查，研究結論仍待驗證。」；`report` 沒有警語。
+- **arXiv 預印本**（E12）：證據全部來自 `arxiv.org` 的稿件，請求裡帶 `"source_type":"preprint"`，提示加一段「正文第一句寫『一篇發表於 arXiv 的預印本論文指出』」（只有這種稿件時才加）；模板稿也以這句開頭；標題旁標籤是「預印本」不是「單一來源」，導言【預印本】。
 - 產出 JSON：`headline`（≤40 字）、`deck`（一句話重點）、`body`（150–400 字）、`why_it_matters`。
 - 每組請求失敗（JSON 格式錯、503 過載等）整組重寫最多 2 次（`WRITE_ATTEMPTS`），間隔 15 秒。
 - 仍失敗、額度用完或該則未通過審稿關卡時，改用**模板稿**：優先以中文來源為主稿，原標題（簡轉繁）＋「據某某報導」＋摘要前 120 字＋其他出處清單。模板稿會在頁面上標示「摘要整理」。
@@ -82,6 +87,8 @@ score = 10·log2(1 + outlet_count)
 1. 標題與正文長度在範圍內。
 2. **數字核對**：稿件中出現的阿拉伯數字（兩位數以上或含小數），必須能在證據文字中找到，或與證據中的某個數字只差 10 的整數次方（容許「400 億」對「40 billion」這類換算）。
 3. 至少附一個來源連結；`single_source`／`social` 必須帶標示。
+4. **不得自己寫警語**：標題、導言、正文、重要性任何地方出現「僅有／只有一家媒體／來源」這類句子就不通過（警語只能是程式加的最後一段，E16）。
+5. **預印本稿**：不得寫「獨家」「一家媒體」，正文要有「預印本」（E12）。
 
 人工審閱（試刊期）：頭版與標示 `needs_review` 的稿件由專案成員在發行前看過；程式不會因為沒有人工審閱就停刊，但控制台會列出。
 
@@ -94,6 +101,8 @@ score = 10·log2(1 + outlet_count)
 ## 7. 數據欄
 
 證交所 OpenAPI `MI_INDEX` 的發行量加權股價指數與臺灣 50 收盤、漲跌（數字直接取自資料，不經 LLM）。取不到時不顯示。匯率與天氣來源需另行處理（登錄表中停用）。
+
+**延遲標示**（E15）：收盤日期距出刊日超過 1 個交易日（`market.is_stale`；06:00 出刊時最新應是前一個交易日），網頁數據欄與 Telegram 精選都加「資料更新延遲」。交易日只排除週末、不含國定假日：連假後第一期會多標一次（寧可多標）。日期不明也算延遲。
 
 ## 資料表
 
@@ -126,9 +135,9 @@ score = 10·log2(1 + outlet_count)
 | `score` | float | |
 | `signals` | JSON | 評分各項與原始計數 |
 | `headline` / `deck` / `body` / `why_it_matters` | text | |
-| `sources` | JSON | `[{outlet, source_id, tier, title, url, published_at}]` |
+| `sources` | JSON | `[{outlet, source_id, tier, title, url, published_at, reprinted_by?}]`；`outlet` 是顯示名稱（轉載併列時如「中央社（中央廣播電台轉載）」） |
 | `writer` | str(16) | `codex`／`gemini`／`fake`／`template` |
-| `review_notes` | JSON | 審稿關卡結果 |
+| `review_notes` | JSON | 證據包相關性過濾剔除的來源＋審稿關卡結果 |
 
 ## 介面
 
@@ -137,7 +146,15 @@ score = 10·log2(1 + outlet_count)
 score_candidates(session, *, edition_date, now, general_sources=frozenset(), disabled_sources=frozenset()) -> list[ScoredCluster]
 select_articles(scored) -> list[Selection]
 # reddit_tracker/daily/evidence.py
-build_evidence(session, cluster_ids, source_names, disabled_sources=frozenset()) -> list[EvidenceItem]
+build_evidence(session, cluster_ids, source_names, disabled_sources=frozenset(), *, lexicon=None, context=None) -> EvidencePack
+#   EvidencePack(items: list[EvidenceItem], notes: list[str])   # notes：剔除紀錄，進 review_notes
+#   EvidenceItem(outlet, source_id, source_name, tier, lang, title, summary, url, published_at, reprinted_by=[])
+#   EvidenceItem.display_name / as_source()
+title_context(session, now, lexicon, disabled_sources=frozenset()) -> EntityContext   # 聚合時間窗內的素材標題
+short_outlet(name) -> str   # 「中央社 政治」→「中央社」
+# reddit_tracker/daily/market.py
+trading_days_between(close: date, edition: date) -> int
+is_stale(close: str | date | None, edition: date) -> bool   # 超過 1 個交易日
 # reddit_tracker/daily/writer.py
 DailyWriter(name="codex", *, client=None, lexicon=None)   # name: codex / gemini / fake；撰稿提示附上證據中出現的譯名表名字
 DailyWriter.find_same_events(candidates) -> list[list[int]]
@@ -154,16 +171,18 @@ request_hash(*, system, prompt, model, schema) -> str   # sha256(JSON [system, p
 load_records(path) -> dict[str, str]   # .json（[{request_hash, response_text, ok}]）或含 llm_records 表的 SQLite；只收 ok
 ReplayClient(records, *, model)   # .misses：找不到的 request_hash
 client.complete(*, system, messages, max_output_tokens, temperature, json_mode=False, json_schema=None) -> result(.content, .input_tokens, .output_tokens, .cached_tokens)
-template_story(evidence, kind) -> WrittenStory
-review_story(story, evidence) -> list[str]   # 空 list 代表通過
+template_story(evidence, kind) -> WrittenStory   # 不含警語
+review_story(story, evidence) -> list[str]   # LLM 稿審稿（加警語前跑）；空 list 代表通過
+finalize_story(story, evidence, kind) -> WrittenStory   # 文末加警語（單一來源／社群／預印本），可重複呼叫
+is_preprint_only(evidence) -> bool / notice_for(evidence, kind) -> str | None
 # reddit_tracker/daily/run.py
 plan_edition(session, *, edition_date, now, writer, registry) -> EditionPlan   # 評分→編輯會議→選題→證據包；不撰稿、不寫 DB
-#   EditionPlan(candidates: list[ScoredCluster], candidate_count, merged_groups, planned: list[Planned(key, selection, evidence)], desk: DeskMerges)
+#   EditionPlan(candidates: list[ScoredCluster], candidate_count, merged_groups, planned: list[Planned(key, selection, evidence, notes)], desk: DeskMerges, context: EntityContext)
 # reddit_tracker/daily/desk.py
 desk_merges(session, pool, llm_groups, *, lexicon, rules, disabled_sources=frozenset(), context_cluster_ids=None) -> DeskMerges
 #   DeskMerges(groups, entity_groups, llm_groups, rejected: list[{group, cluster_id, title, reason}])
 apply_merges(scored, groups) -> list[ScoredCluster]   # scoring.py；重疊的組會把已併入的事件一起帶過去
-story_evidence(session, cluster: ScoredCluster, registry) -> list[EvidenceItem]   # 選題與回歸集共用
+story_evidence(session, cluster: ScoredCluster, registry, context=None) -> EvidencePack   # 選題與回歸集共用
 prepare_daily(edition_date, *, writer_mode=None, refresh=False, now=None, writer=None) -> int   # writer：直接指定撰稿者（回歸集 replay），不看 writer_mode
 publish_daily(edition_date) -> DailyEdition
 ```

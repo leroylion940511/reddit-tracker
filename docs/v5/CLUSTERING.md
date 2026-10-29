@@ -70,6 +70,14 @@
 - 出處 = `canonical_url` 的可註冊網域（`news.ltn.com.tw` → `ltn.com.tw`；`.com.tw`、`.org.tw`、`.gov.tw`、`.co.uk` 等取三段）。
 - 轉載通訊社稿：摘要或標題含「中央社記者」「（中央社」者，出處視為 `cna.com.tw`。其他通訊社（路透、美聯）的轉載辨識留待之後補強。
 - 社群來源（T4）計入 `item_count`，**不計入** `outlet_count`。
+- **轉載不算多來源**（手冊步驟 3 第 6 點、E10、硬規則 3）：`outlet_count` 不算重複稿（`duplicate_of_id` 非空）與 `mark_reprints` 認出的轉載，只算原稿那一家。
+
+### 轉載辨識（2026-10-29，手冊步驟 3 第 6 點）
+
+- **標題指紋**（`normalize.title_fingerprint`）：先去掉開頭的 `[..]`／`【..】` 分類標籤（可連續多個，`strip_title_labels`）再只保留字母與數字取 sha1，所以「[兩岸] 洪秀柱赴中…」與中央社原稿「洪秀柱赴中…」在收集時就判成重複稿。指紋規則改了只影響之後的新素材；重編舊資料前要先跑 `collector.recompute_duplicates(items)`（依 `first_seen_at`、id 順序重算指紋與 `duplicate_of_id`，規則與 `store_outcome` 相同；回歸集 runner 會跑）。
+- **`mark_reprints(members)`**（看整組，`outlet_of` 一次只看一篇做不到）：回傳 `{轉載素材 id: 原稿 id}`。轉載＝(a) 收集時的重複稿，或 (b) 兩篇**都是中文**、去標籤後標題相似度（`difflib` ratio）≥ 0.8、或轉載方（不是中央社網域）內文帶中央社電頭而另一篇是中央社，而且發布時間差 ≤ 2 小時。相連的素材成一組，組內原稿依序：中央社網域優先 → 層級高 → 先發布 → id 小（所以央廣比中央社早收到，原稿仍是中央社）。
+- 🔁 相似度規則只比中文標題：英文各家獨立報導的標題常常幾乎一樣（10/27 微軟優離：The Verge 對 CNBC 0.89、FT 對 NYT 0.92），套用 0.8 會把 7 家併成 1 家。英文轉載（Yahoo Finance 轉 Reuters／TechCrunch）標題完全相同，已由 (a) 處理。
+- 前台：證據包把同一組轉載併成原稿一列，來源列顯示「中央社（中央廣播電台轉載）」；帶中央社電頭、但不是中央社網域的稿顯示「中央社（某某轉載）」。同一家媒體的不同 feed（中央社聚焦／中央社生活）不算轉載者。
 
 ## 資料表
 
@@ -101,6 +109,15 @@
 tokenize(text: str, lang: str) -> list[str]
 lang_group(lang: str | None) -> str
 outlet_of(canonical_url: str, title: str | None, summary: str | None) -> str
+domain_of(canonical_url: str) -> str                  # 可註冊網域（不看中央社電頭）
+has_cna_wire(title, summary) -> bool
+mark_reprints(members: list[SourceItem]) -> dict[int, int]   # {轉載 id: 原稿 id}
+# reddit_tracker/collection/normalize.py
+strip_title_labels(title) -> str      # 去開頭 [..]／【..】
+title_key(title) -> str               # 去標籤＋NFKC＋小寫，只留字母數字（指紋與轉載比對共用）
+title_fingerprint(title) -> str | None
+# reddit_tracker/collection/collector.py
+recompute_duplicates(items: list[SourceItem]) -> int  # 重算指紋與 duplicate_of_id（重編舊資料用），回傳重複稿數
 cluster_recent_items(session, *, now=None, rules: MergeRules | None = None,
                      lexicon: EntityLexicon | None = None,
                      general_sources: frozenset[str] = frozenset(),

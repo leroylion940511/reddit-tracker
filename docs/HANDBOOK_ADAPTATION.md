@@ -75,3 +75,26 @@
   - 🔁 E03 修好之後，Block 稿自成一則，而且已超出選題時間窗、不在候選裡。所以 runner（`tests/regression/rebuild.py`）也會列出「案例提到、但不是候選」的事件，讓「不得含某素材」能判定；不然只會得到「找不到事件」。
 - ⚠️ **仍掛 xfail、等錄音（照協調者指示，本步驟不呼叫真 LLM）**：E03 與 E04 的正文條件。E03 的 Block 稿在重編版沒見報，所以目前是 skip；E04 的正文要錄音才能檢查。另外 E08、E12、E16 的文字條件，以及 E10、E14、E15。E04 的聚合已修好，xfail 原因已改成只差錄音。注意：新聚合下，E11（莫德納）與 E12（只有 arXiv 來源的稿件）在重編版都沒見報，條件是 skip，不是通過；做第 7 點時，arXiv 措辭最好另外補一個不依賴選題結果的單元測試。
 - ℹ️ 規格已同步：`docs/v5/CLUSTERING.md`（新增「共同實體與兩段門檻」「譯名表」兩節、介面）、`docs/v5/DAILY_EDITION.md`（編輯會議、stats 鍵、`desk_merges`／`DailyWriter(lexicon=)` 介面）。
+
+### 步驟 3｜修事件聚合 — 第 5–7 點（2026-10-29 完成；第 8 點另開步驟）
+
+本次做手冊步驟 3 的第 5 點（證據包相關性過濾）、第 6 點（轉載辨識 E10）、第 7 點（arXiv E12、數據欄 E15、單一來源警語 E16）。第 8 點（`data/work/1027_rebuild.db` 前後對照＋週報）還沒做。沒有呼叫任何真 LLM；母本 sha256 仍 OK。
+
+- ✅ **5. 證據包相關性過濾**（`daily/evidence.py`）：`build_evidence` 改回傳 `EvidencePack(items, notes)`。每一篇都要和事件代表標題（合併事件取主事件 `cluster_ids[0]` 的代表素材）有共同實體，用第 1 點同一套 `EntityLexicon.shared`（先用譯名表統一成中文，英文代表標題不會把中文來源全剔掉——單元測試：DW 英文「Serbia's Vucic…」為錨點時，中文「…武契奇承認敗選」保留、AP 美式足球剔除）。剔除紀錄照手冊格式「剔除：AP｜Jaxon Smith-Njigba leads…，原因：無共同實體」，經 `Planned.notes` 寫進該稿 `review_notes`（模板稿也有）。🔁 兩處補充：(a) 中文片段「少見」的分母要用當天素材，否則同一事件的 6 篇都有「塞爾維亞」就變常見而互相剔除；所以 `plan_edition` 先算 `title_context`（聚合時間窗 72 小時內的素材標題，與聚合同一定義）傳進去；(b) 代表標題本身抽不到任何實體（全是一般字的 Title Case 英文）時無從比對，不過濾、記「未做相關性過濾：…」，避免整包只剩代表那一篇。10/27 重編：39 則中只有金鐘獎一則剔除 3 篇（新人獎龍步晞的分稿），沒有誤剔中文來源。
+- ✅ **6. 轉載辨識（E10）**，手冊列的三個地方都改了：
+  - `collection/normalize.py`：`title_fingerprint` 先去掉開頭的 `[..]`／`【..】` 標籤（可連續多個）再算；新增 `strip_title_labels`、`title_key`。
+  - `collection/clustering.py` 的 `_refresh_cluster`：`outlet_count` 排除 `duplicate_of_id` 非空的素材，也排除 `mark_reprints` 認出的轉載。
+  - 新寫 `mark_reprints(members) -> {轉載 id: 原稿 id}`：重複稿一律算轉載；另外去標籤後標題相似度 ≥ 0.8，或轉載方內文帶中央社電頭（另一篇是中央社網域），且發布時間差 ≤ 2 小時。原稿依序取中央社網域 → 層級高 → 先發布（10/27 央廣「[兩岸] 中國擬加強保護商業秘密…」id 比中央社小、先收到，原稿仍是中央社）。前台：證據包把轉載併成原稿一列，來源列顯示「中央社（中央廣播電台轉載）」，`sources[]` 多 `reprinted_by`；帶中央社電頭的他站稿顯示「中央社（風傳媒轉載）」。
+  - 「指紋改了要另外重算」：新增 `collector.recompute_duplicates(items)`（規則同 `store_outcome`，依收錄順序），回歸集 runner 重編前對全部素材重算（10/27：重複稿 352 → 401）。第 8 點在 `1027_rebuild.db` 重聚前也要先跑它。
+  - 🔁 **相似度 ≥ 0.8 只用在兩篇都是中文**：英文各家獨立報導標題常幾乎一樣（10/27 微軟優離：The Verge 對 CNBC 0.89、FT 對 NYT 0.92、再串到 BBC），照套會把 7 家併成 1 家、把獨立報導當轉載。英文轉載（Yahoo Finance 轉 Reuters／TechCrunch）標題完全相同，已由指紋重複稿處理。記在 `docs/v5/CLUSTERING.md`。
+  - ⚠️ 代價（10/27 重編）：≥2 家出處的事件 222 → 156（排除重複稿 222 → 170、再排除轉載 → 156），≥3 家 66 → 41；選題 39 則（report 33／single_source 6）。這是「轉載不算多來源」的直接結果，11/07 dev 標註後與門檻一起看。
+- ✅ **7. 其他程式規則**：
+  - arXiv（E12）：證據全部來自 `arxiv.org` 的稿（`writer.is_preprint_only`），撰稿請求帶 `"source_type":"preprint"`，提示加一句「正文第一句寫『一篇發表於 arXiv 的預印本論文指出』，不要寫報導、獨家」（只有這種稿時才加，其他版的 request_hash 不變）；審稿關卡：出現「獨家」「一家媒體」或沒寫「預印本」就不通過、改模板稿；模板稿以「一篇發表於 arXiv 的預印本論文指出：」開頭，文末「預印本未必經過同儕審查，研究結論仍待驗證。」；網頁標籤「預印本」取代「單一來源」。
+  - 數據欄（E15）：`market.is_stale`——收盤日期距出刊日超過 1 個交易日，網頁數據欄與 Telegram 精選都加「資料更新延遲」。🔁 交易日只排除週末、沒有國定假日表：連假後第一期會多標一次（寧可多標）；日期不明也算延遲。
+  - 單一來源警語（E16）：`writer.py` 提示詞第 4 條（single_source／social 要在正文明說）刪掉；新增 `finalize_story`，LLM 稿與模板稿最後都經過它，由程式在正文最後一段加警語（single_source、social、預印本各一句，report 不加；可重複呼叫不會加兩次）。模板稿本身不再自帶警語。審稿關卡新增：LLM 在標題／導言／正文／重要性任何地方自己寫「僅有／只有一家媒體／來源」就不通過、改模板稿（原因進 `review_notes`）。
+- ✅ **回歸集**：拿掉 xfail 並通過 **E10**（`reprint_pairs` 六組全過）、**E15**（`market_stale_label`）。E01、E02、E03、E04、E05（標題條件）、E06、E07、E13 照舊通過。
+  - 🔁 E15 的「刊出版必須抓得到錯」：刊出版面是用現在的 `render_html` 從 fixture 重畫的，修好後也會帶標示；所以 `published_view` 畫數據欄時把 `market_stale` 固定為 False（＝10/27 當時的版面），原始錯誤仍抓得到。
+  - ⚠️ **仍掛 xfail、等錄音**（照協調者指示，本步驟不呼叫真 LLM）：E04、E05 正文（`text_must_not_contain`）、E12 `arxiv_rules`、E16 `single_source_notice`、E08；xfail 原因已改成「程式規則已實作、只差錄音」。E12 在重編版沒有只來自 arXiv 的刊出稿，是 skip。用 `--runxfail` 確認 E04、E16 失敗的唯一原因是 `require_written`（10 個 request_hash 找不到）；另把 `replay_misses` 清空、只看模板稿時，E16 條件在重編版已通過。E14 等步驟 4。
+  - ✅ **不依賴選題結果的單元測試**（`tests/test_step3_rules.py`，18 個）：直接拿回歸案例的同一個條件函式（`checks.arxiv_rules`、`checks.single_source_notice`）檢查合成稿件——arXiv 稿 LLM 寫「據 arXiv 獨家報導，目前僅有一家媒體」→ 改模板稿、以預印本句開頭、E12／E16 條件通過，而原始錯誤文字在同條件下會被抓到；單一來源稿 LLM 沒寫警語 → 程式加在最後一段；把警語塞在段落中間 → 不過審；多來源稿不加；E16 條件通過、原始錯誤抓得到。另含轉載（指紋去標籤、`recompute_duplicates`、`mark_reprints` 中文相似度／中央社電頭／2 小時、英文不套相似度、`outlet_count`＝1、來源列「中央社（中央廣播電台轉載）」）、相關性過濾（剔除格式、notes 進 `review_notes`）、交易日計算與延遲標示（網頁＋Telegram）、預印本標籤。
+- ℹ️ 介面變更（規格已同步 `docs/v5/CLUSTERING.md`「轉載辨識」、`docs/v5/DAILY_EDITION.md` 證據包／撰稿／審稿／數據欄／介面）：`build_evidence` 與 `story_evidence` 回傳 `EvidencePack`；`Planned` 多 `notes`、`EditionPlan` 多 `context`；`EvidenceItem` 多 `reprinted_by`、`display_name`；`writer._short_outlet` 移到 `evidence.short_outlet`。全套 202 passed、4 skipped、4 xfailed。
+- ➡️ 下一步：步驟 3 第 8 點（`cp` 母本到 `data/work/1027_rebuild.db`，刪 10/27 06:00 後素材、清空聚合與所有期數、`recompute_duplicates`、`run.py --now`，前後來源清單並排附週報）。E04／E05／E12／E16 的文字條件要等協調者用真 Codex 在 `data/work` 複本錄音；11/04 到期前沒錄就會被 `test_overdue_cases_are_not_xfail` 擋下。
