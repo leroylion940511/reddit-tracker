@@ -36,9 +36,13 @@ def main() -> int:
     args = parser.parse_args()
     if not SOURCE.exists():
         raise SystemExit("先跑 scripts/verify_mas_merge.py --stage mas-replay")
+    from reddit_tracker.llm.records import restore_records, saved_records
+
+    kept = [r for r in saved_records(TARGET) if r.get("run_variant") == "mas" and r.get("role") == "eic"]
     for suffix in ("", "-wal", "-shm"):
         Path(f"{TARGET}{suffix}").unlink(missing_ok=True)
     shutil.copyfile(SOURCE, TARGET)
+    restore_records(TARGET, kept)  # 重建複本不能丟掉之前錄的真呼叫紀錄
     configure(TARGET)
 
     from sqlalchemy import select

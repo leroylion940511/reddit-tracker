@@ -259,6 +259,12 @@
 - ✅ **T1 成功＋衝突**：兩個分版搶同一篇 → v1 提案版面，總編 DECISION 寫 v2（一篇主稿、另一版連結）。同一篇佔兩個頭版位置 → 訊息 `status=rejected`，不寫新版面。
 - ✅ **T2 成功＋衝突**：T2a 是成功（見步驟 8）。衝突用兩個百分比：查核員 CHALLENGE → 記者 REBUT → 再 CHALLENGE → REVISION_DONE，最後 checked。用腳本回應，不呼叫真模型。
 - ✅ **T3 成功＋衝突**：頭版提案超過 6 則 → `PAGE_OBJECTION` → 總編留下 6 則。把 HOLD 的稿放頭版 → 決定 rejected，理由含 HOLD。主稿超過 300 字 → `REQUEST_REVISION` 縮短，文稿編輯確認譯名還在。
+- ✅ **真 Codex 的 T1／T3 成功 trace（10/30，`scripts/verify_t1_t3.py`，`data/work/1027_t1t3.db`）**：
+  - **T1（E06 巴西）**：國際版、科技版主編都對巴西大選（同一個 story_id）發 PITCH，科技版用「預測市場翻車」的角度、`priority=front`。總編 DECISION：主稿歸國際版放頭版 lead，科技版用連結，理由「避免同一事件重複主稿」；page_plans v3→v4，其餘 5 則頭版不動。
+  - **T3**：三版主編合計推 8 則上頭版 → 版面編輯 `PAGE_OBJECTION`（OVER_CAPACITY）→ 總編選剛好 6 則，6 則入選、2 則落選都附理由；page_plans v5。
+  - 🔁 這兩個情境的 PITCH 由程式注入：現行三位分版主編只看本版候選，不會自然搶同一篇，也不會推超過 6 則。DECISION 是模型決定，程式只驗證規則（手冊 7.2「不合格」那條沒有違反）。
+  - 錄音 `tests/regression/fixtures/1027_t1t3_records.json`，離線測試 `test_recorded_live_t1_t3_decisions_follow_the_rules`。T3 第 4 點（主稿超過 300 字縮稿）這次沒觸發，由腳本測試 `test_lead_shorten_keeps_glossary_name` 覆蓋。
+  - 衝突案例（T1 同一篇佔兩個位置、T3 把 HOLD 放頭版、T2 REBUT 兩輪）仍是腳本回應的測試 trace。🔁 真跑剛好提供一個真實衝突：修正前那次 T3，總編回了空頭版（lead=null），現在會被程式以「頭版沒有主稿」拒絕（`test_t3_empty_front_decision_is_rejected`）。
 - ✅ **`render_html` 只吃 `EditionView`**。改下一版 `page_plans` 再渲染，頭版標題跟著變。P 組的 page plan 來自 `select_articles`；準備當下的 HTML 仍用 `view_from_edition`，好讓既有回歸集的來源列格式不變。發行時改走 `build_edition_view`。
 - ✅ **回放頁** `GET /daily/{date}/newsroom?variant=mas&story=`：左邊狀態，右邊訊息（時間、角色、type）與 v1→v2 `difflib`，上方 page plan 各版 diff。核准走 `GET/POST /daily/{date}/newsroom/decision` 的 query 參數（這個環境沒有 `python-multipart`）。
 - ✅ **回放頁指向 `1027_e01.db`**：已用 web view 驗證 HTTP 200，含角色、時間、type；點 E01 可看 v1→v2 diff。頁面讀 `DATABASE_URL` 指向的實驗庫。
@@ -283,3 +289,138 @@
 - 👤 **用真的 3 天 P＋M 試匯出，並把對照表 SHA-256 commit 進 repo**：現在沒有那三天的稿。`test_real_blind_mapping_hash_is_committed` 掛 xfail。對照表本體不要 commit（`annotation/` 已在 `.gitignore`）；有真資料之後只 commit 雜湊。
 
 - ℹ️ PR #1 當時（`b1c72b0`，合併前）：自動測試在 `tests/test_mas_steps.py`，全套 221 passed、6 skipped、7 xfailed。合併後的數字見下方「PR #1 整合」。
+
+### PR #1 整合（`cursor/mas-steps-6-11-cc77` → `mas-handbook`，2026-10-30）
+
+協調者先執行 `git merge --no-ff origin/cursor/mas-steps-6-11-cc77`，五個檔衝突：`docs/HANDBOOK_ADAPTATION.md`、`docs/v5/DAILY_EDITION.md`、`daily/render.py`、`daily/run.py`、`tests/test_daily.py`。merge commit 是 `48c7c2b`，後續修正在 `7a00d47`，文件與 tag 在本 commit。
+
+工作分兩段：Claude 先開始，額度中斷後由 Codex 程式助理接手到 02:17（同樣因額度中斷），最後由 Claude 檢查、補完並 commit。
+
+**衝突怎麼解（語意合併，不是挑一邊）：**
+- `run.py`：以 PR 版（P 組寫 stories／story_versions／page_plans、M 組 `_finish_mas`、trace／approve／hold／blind-export CLI）為底，加回步驟 3.8、4 的內容：
+  - `--now`／`--recluster`、`parse_now`、`recluster`；
+  - `plan_edition` 在評分後呼叫 `rewrite_sections`；
+  - `select_briefs`，`EditionPlan.briefs`；
+  - stats 的 `front_articles`／`briefs`／`section_rewrites`。
+
+  P、M 兩組都用 `layout_slots` 排版：頭版 6 則全文刊在頭版，所屬內版只放連結。M 組的 `stats.sections` 只算內版。
+- `render.py`：以 PR 版（只吃 `EditionView`、段落引用 `[n]`、未核准印標題、歷史期號頁）為底，加回步驟 4 的三項：
+  - 內版頭版稿連結（連結本身不帶 id，避免和頭版的錨點重複）；
+  - 其他版標題短訊（`stats.briefs`）；
+  - 非 MVP 版印「本版未開放」。
+
+  Telegram 各版篇數含頭版連結，並多一行「短訊 N」。
+- `view.py`（PR 新檔，非衝突但語意要跟步驟 4 一致）：
+  - `ViewArticle.anchor`：有 page_plans 時用 story id，舊 DailyEdition 用 cluster id；
+  - `view_from_edition` 依 `signals.section_position` 排內版，頭版稿在內版是連結。
+- `scoring.py`（自動合併）：保留步驟 4 的 `SECTION_QUOTAS={taiwan:4, world:4, tech:4}` 與「12 篇裡標頭版」的 `select_articles`。PR 的 `_default_pitches` 原本是「依分數取、每版 4、全站前 6 名上頭版」，已改成直接呼叫同一個 `select_articles`，P／M 選題規則相同。
+- **M 組改用步驟 4 版面**（`daily/mas/orchestrator.py`，Codex 助理實作、Claude 檢查並修正）：
+  - 三位分版主編各呼叫 1 次（＝三內版），可以看全站前 10 名，只能改角度與頭版推薦，**不能增減正式稿**（12 篇是程式名額）；
+  - single_source 不上頭版；
+  - 版面編輯 1 次，總編裁決頭版；決定只能用本期正式稿、HOLD 不能上頭版，其他內版稿保留；
+  - 文稿編輯看頭版 6 則，CHALLENGE 交回記者修稿，再由程式重驗；
+  - 額度降級順序：文稿編輯 → 查核員 LLM → 記者模板稿，寫在 `stats.degraded`。
+- `tests/test_daily.py`：保留步驟 4 的 12 篇／頭版連結／`--now` 測試與 PR 的 page_plans 測試，fixture 合併。
+- 文件：ADAPTATION 依步驟順序排（3.8、4、5 在前，6–11 在後）。PR 的過時敘述已改，包括「步驟 4 未勾」「不打 gate-1115」「留給 Mac」三處。`DAILY_EDITION.md` 併成一份規格（§2 併版與配額、M 組流程、介面、CLI）。
+
+**`llm_records` 統一：**
+- 只剩 `reddit_tracker/llm/records.py` 一套。`CodexClient`／`GeminiClient` 每次嘗試呼叫 `note_attempt`。`RecordingCodexClient`（`data/work` 錄音用）只負責查帳本重用、加總上限，真正寫紀錄交給 `note_attempt`。`scripts/llm_recorder.py` 只剩轉出 import 的相容層。
+- migration `b8d4f0a17c33` 先 inspect 現有欄位，有的不重加，能處理兩種情況：
+  - 母本那張舊表（唯讀檢查：`id, provider, model, purpose, input_tokens, output_tokens, cached_tokens, cost_usd, called_at, context_ref`，1 筆 2026-06-24 的 MiniMax `qa` 紀錄）；
+  - 步驟 3.8 錄音器已補過一半欄位的複本。
+- 測試 `test_mas_migration_preserves_old_and_partially_recorded_tables` 用合成舊表驗證：升級後舊列與已錄的 `request_hash`／`response_text` 都保留，降級回去舊列也還在。
+- `data/work` 複本 alembic upgrade 實跑成功：`1027_e01.db` 從 `a6c9e2f31d84`、`1027_mas*.db` 從步驟 3.8 的複本升級，MiniMax 那筆留著。
+
+**整合後補修的缺陷（Claude，`7a00d47`；都有測試）：**
+1. 文稿編輯的 CHALLENGE 沒有 claim 就 `mark_handled`，一直停在 pending。改成先 claim（手冊 6.4 第 4 條）。測試 `test_copy_editor_challenge_goes_back_to_reporter_and_is_rechecked`。
+2. 內版連結文字用了 slot 的 label。真跑時 label 是分版主編的內部角度（「頭版首選：聚焦 Lula…」），會印給讀者。改成一律用稿件標題。
+3. 真 Codex T1：總編只回被搶的那一篇，程式就把頭版從 6 則砍成 1 則。改成 `merge_t1_decision`：只移動被搶那篇，其餘頭版保持原順序。違規先對原始決定判斷，不讓合併把違規洗掉。
+4. 真 Codex T3：總編只拿到 story_id，回了「暫不排版」的空頭版，程式也照寫。修法：
+   - 總編提示改附稿件卡（標題、版別、種類、分數、是否 HOLD）；
+   - 驗證新增「頭版沒有主稿」「T3 要選滿 min(6, 合格提案數)」，不合就拒絕。
+5. 兩份 docstring 還寫「第 6 則是短訊、全文留內版」，跟實作（6 則都刊全文）不符，已改。
+
+**錄音與真 Codex（只在 `data/work` 複本；額度檔 `data/work/llm-quota-merge.json`、`LLM_DAILY_LIMIT=40`，守衛本身擋超量）：**
+
+| 順序 | 內容 | 誰跑 | 真 Codex 嘗試 | 結果 |
+| --- | --- | --- | --- | --- |
+| 1 | 回歸集重錄 | Codex 助理 | 0 | PR 改了 writer／evidence，但 20 個 request_hash 都沒變，0 miss，不用重錄 |
+| 2 | T2a（`1027_e01.db`，修正前聚合＋保留 AP 美式足球 1053） | Codex 助理 | 3（記者 2、查核員 1） | CHALLENGE → v2 → checked，v2 排除 1053；`test_live_codex_t2a_on_1027_copy` 拿掉 xfail，改用 `1027_t2a_records.json` 離線重播 |
+| 3 | MAS 整期（`1027_mas.db`） | Codex 助理 | 28 | 見下方 e2e |
+| 4 | 文稿編輯修稿流程重跑 | Codex 助理 | 2（記者修稿） | 文稿 CHALLENGE → 記者 v2 → 重驗 checked |
+| 5 | T1＋T3 第一次（修正前） | Claude | 2（總編） | 抓到缺陷 3、4，決定被程式照單全收 |
+| 6 | T1＋T3（修正後，`1027_t1t3.db`） | Claude | 2（總編） | T1：v3→v4，巴西國際版主稿＋科技版連結。T3：8→6，入選與落選都有理由 |
+| 7 | MAS 整期重跑（`1027_mas_rerun.db`，總編提示改了） | Claude | 1（總編） | 其餘 29 個回應重用 |
+| | **合計** | | **38／40** | 全部 ok |
+
+- 每次嘗試都寫進該複本的 `llm_records`：e01 3 筆、mas 30 筆、mas_rerun 1 筆、t1t3 2 筆，共 36 筆。⚠️ 第 5 列那 2 筆，在 `verify_t1_t3.py` 下一次重建 `1027_t1t3.db` 時被覆蓋。回應內容保留在 `data/work/merge-t1t3-run.txt`，但 llm_records 列沒了。腳本已改成重建前先保存、重建後放回。第 6 列那 2 筆也一度被覆蓋，已從匯出的 fixture 放回。
+- 錄音 fixture（已掃過，沒有路徑、key、token）：
+  - `1027_llm_records.json`：回歸集 20 筆，沒變；
+  - `1027_t2a_records.json`：3 筆；`1027_t2a_evidence.json`；
+  - `1027_mas_records.json`：43 筆，併入修稿與重跑，刪掉重複的 `1027_mas-revision_records.json`；
+  - `1027_t1t3_records.json`：2 筆。
+- 重現：`verify_mas_merge.py --stage mas-replay`（新複本 `1027_mas_replay.db`）與 `verify_t1_t3.py`（不加 `--live`）都是 **0 次真呼叫**，整期與 T1／T3 完全重現，回放頁 200。
+
+**MAS e2e（`DAILY_MODE=mas`，10/27 複本，`--now` 10/27 06:00）：**
+- 12 篇正式稿（台灣 4／國際 4／科技 4）、頭版 6 則、短訊照步驟 4、`stats.degraded=[]`（額度夠，沒有降級）。
+- 各角色真 Codex 次數（第 3＋4 列合計 30 次）：
+
+  | 角色 | 次數 |
+  | --- | --- |
+  | 記者 | 16（12 篇初稿＋查核修稿 2＋文稿修稿 2） |
+  | 文稿編輯 | 6（頭版 6 則） |
+  | 分版主編 | 3 |
+  | 查核員 | 2 |
+  | 編輯會議（find_same_events） | 1 |
+  | 版面編輯 | 1 |
+  | 總編 | 1 |
+
+  `llm_records` 30 筆＝subprocess 30 次，一致（`verify_mas_merge.py` 有 assert）。手冊 6.7 估 M 組約 33 次，實測 30 次。
+- 回放頁 `/daily/2026-10-27/newsroom`：用 `web.newsroom_page` 直接呼叫，HTTP 200，各角色的訊息都在頁面上（section_editor 12、system 14、reporter 4、fact_checker 2、copy_editor 2、layout_editor 2、eic 1）。資料表：2,521 stories（快照全部候選）、16 story_versions、37 agent_messages、2 page_plans。
+
+**測試：** `uv run python -m pytest -q` 287 passed、4 skipped、2 xfailed。
+- skipped（都是「不適用」）：E03／E05 正文、E11、E12，這些稿件在重編版沒見報。
+- xfailed（都是 👤）：
+  - `test_three_live_mas_days_and_announced_trial_dates`：11/30 關卡前要連續 3 天 07:00 前產出到待審，並公告 12/01–12/10 中哪 7 天試刊；
+  - `test_real_blind_mapping_hash_is_committed`：真實 P／M 稿的盲計對照表 SHA-256，12/01 前 commit。
+
+  沒有刪條件，也沒有為了變綠而改條件。`test_render_follows_latest_page_plan` 的連結文字斷言改成「標題」，是因為上面的缺陷 2，「渲染跟著最新 page_plan 變」的條件沒變。E11 仍掛 xfail，原因：步驟 9 文稿編輯沒錄到莫德納稿，重編版沒見報。
+- 母本 `shasum -a 256 -c` OK。
+
+**gate-1115 評估 → 本地打 tag `gate-1115`（不 push，協調者決定）：**
+- ✅ T1、T2、T3 各有 1 成功＋1 衝突的 trace：
+  - 成功：T2＝E01 真 Codex，T1＝E06 真 Codex，T3＝8→6 真 Codex。
+  - 衝突：腳本回應的測試 trace，加上 T3 真實空頭版被拒。
+  - 🔁 T1／T3 的 PITCH 是注入的，理由見步驟 9。
+- ✅ `render_html` 只吃 `EditionView`，改 page_plans 後報紙跟著變。
+- ✅ 回放頁指向 `1027_e01.db`，看得到 E01 的訊息（時間、角色、type）與 v1→v2 diff。
+- ✅ 模型定案：`gpt-6.1-sol | codex-cli 0.164.0-alpha.11.1 | reasoning_effort=low`，P／M 相同，所有錄音的 model_version 都是這個字串。
+- ✅ 步驟 4 做完標準全部打勾（見步驟 4 小節）。
+
+**手冊步驟 0–11 與關卡總表（2026-10-30）：**
+
+| 步驟 | 狀態 | 說明 |
+| --- | --- | --- |
+| 0 | ✅🔁 | main 已是最新、不動 main |
+| 1 | ✅🔁 | 舊 job 已在 2d95c07 刪除；額度改依 Codex model 計數 |
+| 2 | ✅ | 15 案例＋E09；離線 replay |
+| 3 | ✅🔁 | 11/04 九案、11/08 三案都過；E03／E05 正文、E12 不適用（沒見報），E12 由單元測試把關；前後對照已附週報 |
+| 4 | ✅🔁 | 12 篇、頭版 6、三內版、短訊；10/27 兩岸稿進了內版但分數沒入選 |
+| 5 | ✅／👤 | 程式＋種子已 commit；11/03 快照、11/04 交件留給人工 |
+| 6 | ✅🔁 | migration（相容舊表）、快照、DAILY_MODE；P 影子版 |
+| 7 | ✅ | 每次嘗試一筆 llm_records（e2e 30＝30）；兩個數字測試 |
+| 8 | ✅ | E01 真 trace、trace 指令；`gate-1108`（PR 打在 `b1c72b0`） |
+| 9 | ✅🔁 | T1／T2／T3、page_plans、回放頁、模型定案；`gate-1115` 已本地打 |
+| 9b | 👤 | 11/12 前 `exp1-frozen`、11/22 結果（需標註） |
+| 10 | ✅／👤 | 核准、未核准不發、五項安全測試已做；連續 3 天 live、試刊公告留給人工（11/30 前） |
+| 11 | ✅／👤 | 盲計工具與種子；真實對照表雜湊 12/01 前 |
+| gate-1108 | ✅ | tag 在 `b1c72b0`（PR #1） |
+| gate-1115 | ✅ | 本地 tag（本 commit），未 push |
+
+**留給人工的事（含日期）：**
+- 11/03：從 production 做唯讀快照，跑 `scripts/sample_exp1.py --db data/snapshots/2026-11-03.db`；11/04 交 A、B。
+- 11/07：A、B 交 dev 標註；11/12 前打 `exp1-frozen`；11/12 交 test 標註；11/22 實驗一結果。
+- 11/30 前：`DAILY_MODE=mas` 連續 3 天 07:00 前產出到待審（P 影子版同跑、兩組合計 ≤ 60 次），公告 12/01–12/10 中哪 7 天試刊。需要先部署：`mas-handbook` 併 main、Alembic 升級、`.env` 設定鍵改名。
+- 12/01 前：用真的 3 天 P＋M 稿試匯出盲計，commit 對照表 SHA-256。
+- 12/01–12/10：7 日試刊與實驗三（真人核准、A 抽查、B 盲計）。
+- 是否 push `gate-1115`、合併 `mas-handbook`：協調者決定。

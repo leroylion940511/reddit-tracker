@@ -4,14 +4,23 @@
 > 現行企劃見 `docs/AI_NEWS_COMPANY_PROPOSAL.md`、規格入口見 `docs/v5/README.md`。
 > 2026-10-27 以前的段落是 v4／v5 歷史紀錄，裡面提到的 bot、scrapers、services、v5 newsroom 模組都已移除。
 
-**Last updated:** 2026-10-29（執行手冊步驟 6–11 的程式，`cursor/mas-steps-6-11-cc77`）
+**Last updated:** 2026-10-30（PR #1 手冊步驟 6–11 併入 `mas-handbook`，merge `48c7c2b`）
 
-## 目前狀態（2026-10-29，MAS 步驟 6–11 的程式）
+## 目前狀態（2026-10-30，`mas-handbook`：手冊步驟 0–11 的程式都在）
 
-- ✅ 在 `mas-handbook` 之上的分支做了手冊步驟 6–11 能在沒有 Codex CLI、沒有 production DB 的環境驗證的部分。細節與 👤／🔁／⛔ 在 `docs/HANDBOOK_ADAPTATION.md`。
-- ✅ 新表與 Alembic `b8d4f0a17c33`；`DAILY_MODE=pipeline|mas`；P 組影子版不寫 `daily_editions`；`render_html` 只吃 `EditionView`；回放頁 `/daily/{date}/newsroom`；核准關卡；五項安全測試；盲計匯出（種子 `20261201`／`20261211`）。
-- ⚠️ 真 Codex 的 E01 trace、連續 3 天 live、試刊日期公告、真實盲計對照表的 SHA-256，都掛 xfail，等 Mac 與標註員。步驟 4（配額與三內版）與步驟 3.8、步驟 5 沒有做。沒有打 `gate-1115`。`gate-1108` 只代表程式關卡。
-- ➡️ 下一步仍是步驟 3.8（10/27 重編對照）與步驟 4、5（另一位開發者），以及在 Mac 上用 `data/work/1027_e01.db` 錄 T2a。
+- ✅ PR #1（`cursor/mas-steps-6-11-cc77`）已併入 `mas-handbook`。內容：MAS 資料表／migration `b8d4f0a17c33`、編排器、回放頁、核准、盲計匯出。M 組改用步驟 4 版面：三內版各 4 篇共 12 篇、頭版 6 則從中標記、其他版只出標題短訊；三位分版主編各提案 1 次。P／M 共用 `select_articles`。`llm_records` 統一由 `llm/records.py` 寫，migration 相容母本那張舊表。
+- ✅ 真 Codex（只在 `data/work` 複本，額度檔 `data/work/llm-quota-merge.json`、上限 40）：本階段 **38 次 subprocess 嘗試，全部 ok**。每次都寫了 `llm_records`；目前複本裡留 36 筆，修正前那次 T1／T3 試跑的 2 筆因為重建複本被覆蓋（腳本已改成會保留，回應內容留在 log）。
+  - T2a（E01）3 次；
+  - MAS 整期 28 次＋修稿 2 次＋總編提示修正後 1 次；
+  - T1（E06）＋T3（8→6）2 次（另有 2 次是修正前的試跑，抓到總編決定的缺陷）。
+  - 錄音都可離線重播：回歸集 0 miss、MAS 整期與 T1／T3 0 次真呼叫重現。
+- ✅ 全套 287 passed／4 skipped／2 xfailed。2 個 xfail 都是 👤：連續 3 天 live＋試刊日期公告（11/30 關卡）、真實盲計對照表 SHA-256（12/01 前）。tag `gate-1115` 已在本地打（不 push，由協調者決定），見 ADAPTATION「PR #1 整合」。
+- ⚠️ `mas-handbook` 尚未併 main、尚未部署；production 仍是 10/27 的 pipeline。部署需要 Alembic 升到 `b8d4f0a17c33`，以及設定鍵改名（`LLM_DAILY_LIMIT` 等），由協調者決定。
+- ➡️ 下一步（人工／日曆）：
+  - 11/03 從 production 做唯讀快照，正式抽實驗一配對；11/04 交 A、B。
+  - 11/12 前打 `exp1-frozen`。
+  - 11/30 前連續 3 天 `DAILY_MODE=mas` 產出到待審，並公告試刊 7 天。
+  - 12/01 前 commit 真實盲計對照表的雜湊。
 
 ## 目前狀態（2026-10-27 起）
 
