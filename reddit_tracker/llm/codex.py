@@ -14,12 +14,14 @@ import json
 import logging
 import subprocess
 import tempfile
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from ..config import get_settings
 from .quota import ModelQuotaGuard
+from .records import note_attempt
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +62,9 @@ def _usage(events: str) -> dict[str, Any]:
 
 
 class CodexClient:
+    # 每次嘗試自己寫 llm_records；外層不要再記一次。
+    logs_attempts = True
+
     def __init__(
         self,
         *,
@@ -85,6 +90,10 @@ class CodexClient:
             s for s in (settings.telegram_bot_token, settings.gemini_api_key, settings.rsshub_access_key)
             if s and len(s) >= 8
         ]
+        locked = getattr(settings, "daily_model_version", None)
+        self.model_version = locked if locked and self.model == settings.codex_model else (
+            f"{self.model}+effort={self.reasoning_effort}"
+        )
 
     def command(self, *, workdir: Path, schema_path: Path | None, output_path: Path) -> list[str]:
         cmd = [
@@ -118,17 +127,34 @@ class CodexClient:
             prompt += "\n\n只輸出 JSON。"
 
         for attempt in range(self.max_retries + 1):
-            # 預扣額度在 subprocess 之前；額度用完（QuotaExhausted）直接往外拋，不重試。
+            # 預扣額度在 subprocess 之前；額度用完（QuotaExhausted）直接往外拋，不重試、也不記嘗試。
             self.guard.acquire(model=self.model, purpose=self.purpose)
+            started = time.perf_counter()
             try:
-                return self._run_once(prompt, json_schema)
-            except CodexUnsafeOutput:
+                result = self._run_once(prompt, json_schema)
+            except CodexUnsafeOutput as exc:
+                self._note(system, messages, json_schema, ok=False, error=str(exc), content=None, started=started)
                 raise
             except CodexError as exc:
+                self._note(system, messages, json_schema, ok=False, error=str(exc), content=None, started=started)
                 if attempt == self.max_retries:
                     raise
                 logger.warning("codex attempt %d failed, retrying: %s", attempt + 1, exc)
+                continue
+            self._note(
+                system, messages, json_schema, ok=True, error=None, content=result.content, started=started,
+                input_tokens=result.input_tokens, output_tokens=result.output_tokens, cached_tokens=result.cached_tokens,
+            )
+            return result
         raise AssertionError("unreachable")  # pragma: no cover
+
+    def _note(self, system, messages, json_schema, *, ok, error, content, started, input_tokens=None, output_tokens=None, cached_tokens=None) -> None:
+        note_attempt(
+            provider="codex", model=self.model, model_version=self.model_version, purpose=self.purpose,
+            system=system, messages=messages, schema=json_schema, ok=ok, response_text=content, error=error,
+            latency_ms=int((time.perf_counter() - started) * 1000),
+            input_tokens=input_tokens, output_tokens=output_tokens, cached_tokens=cached_tokens,
+        )
 
     def _run_once(self, prompt: str, json_schema: dict | None) -> CodexResult:
         with tempfile.TemporaryDirectory(prefix="reddit-tracker-codex-") as tmp:

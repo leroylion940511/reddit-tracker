@@ -9,6 +9,7 @@ LLM 只負責文字。順序、板塊、報導類型、來源與所有評分數�
 from __future__ import annotations
 
 import json
+import math
 import re
 from dataclasses import dataclass, field
 from typing import Protocol
@@ -48,7 +49,12 @@ PREPRINT_PROMPT_NOTE = (
     f"正文第一句寫「{PREPRINT_LEAD}」，不要寫「報導」「獨家」。\n\n"
 )
 
-_NUMBER = re.compile(r"\d+(?:[.,]\d+)*")
+# 數字＋可選的單位。只有萬／億／million／billion 才做單位換算；裸數字差 10 倍不放行（手冊步驟 7）。
+_NUMBER_TOKEN = re.compile(
+    r"(?P<num>\d+(?:\.\d+)?)(?:\s*(?P<unit>萬|億|million|billion|(?<![A-Za-z])bn(?![A-Za-z])|%|％|百分點))?",
+    re.IGNORECASE,
+)
+_SCALE = {"萬": 10_000, "億": 100_000_000, "million": 1_000_000, "billion": 1_000_000_000, "bn": 1_000_000_000}
 
 
 class _Result(Protocol):
@@ -176,27 +182,45 @@ def template_story(evidence: list[EvidenceItem], kind: str) -> WrittenStory:
     )
 
 
-def _numbers(text: str) -> set[float]:
-    values = set()
-    for raw in _NUMBER.findall(text.replace(",", "")):
+def _absolute_numbers(text: str) -> list[tuple[str, float, str]]:
+    """(原文數字, 換算後的值, 單位)。百分比不換算；萬／億／million／billion 換成絕對值。"""
+    found = []
+    for match in _NUMBER_TOKEN.finditer(text.replace(",", "")):
+        raw = match.group("num")
+        unit = match.group("unit") or ""
         try:
-            values.add(float(raw))
+            value = float(raw)
         except ValueError:
             continue
-    return values
+        scale = _SCALE.get(unit.lower(), _SCALE.get(unit, 1))
+        found.append((raw, value * scale, unit))
+    return found
 
 
-def _number_supported(value: float, evidence_numbers: set[float]) -> bool:
-    if value in evidence_numbers:
+def _close(value: float, known: float) -> bool:
+    if known == 0:
+        return value == 0
+    return math.isclose(value, known, rel_tol=1e-6, abs_tol=1e-6)
+
+
+def _must_check(raw: str, unit: str) -> bool:
+    """兩位數以上、小數，或一位數帶 %／單位，都要在證據裡找得到。"""
+    if unit:
         return True
-    for known in evidence_numbers:
-        if known == 0:
+    return len(raw.replace(".", "")) >= 2 or "." in raw
+
+
+def unsupported_numbers(text: str, evidence_text: str) -> list[str]:
+    """正文裡證據對不上的數字（原始寫法）。不讀發布時間。"""
+    known = [value for _, value, _ in _absolute_numbers(evidence_text)]
+    missing = []
+    for raw, value, unit in _absolute_numbers(text):
+        if not _must_check(raw, unit):
             continue
-        ratio = value / known
-        for power in range(-4, 5):
-            if abs(ratio - 10**power) < 1e-6 * 10**power:
-                return True
-    return False
+        if any(_close(value, item) for item in known):
+            continue
+        missing.append(raw)
+    return list(dict.fromkeys(missing))
 
 
 def review_story(story: WrittenStory, evidence: list[EvidenceItem]) -> list[str]:
@@ -216,16 +240,10 @@ def review_story(story: WrittenStory, evidence: list[EvidenceItem]) -> list[str]
         problems.append(f"標題長度 {len(story.headline)} 不在範圍內")
     if not BODY_RANGE[0] <= len(story.body) <= BODY_RANGE[1]:
         problems.append(f"正文長度 {len(story.body)} 不在範圍內")
-    evidence_numbers = _numbers(" ".join(f"{e.title} {e.summary} {e.published_at}" for e in evidence))
+    # 不從 published_at 抽數字：日期裡的 10、27 不是報導中的數量（手冊步驟 7）。
+    evidence_text = " ".join(f"{e.title} {e.summary}" for e in evidence)
     written = " ".join((story.headline, story.deck, story.body, story.why_it_matters))
-    unsupported = sorted(
-        {
-            raw
-            for raw in _NUMBER.findall(written.replace(",", ""))
-            if (len(raw.replace(".", "")) >= 2 or "." in raw)
-            and not _number_supported(float(raw), evidence_numbers)
-        }
-    )
+    unsupported = unsupported_numbers(written, evidence_text)
     if unsupported:
         problems.append(f"證據中找不到的數字：{', '.join(unsupported[:5])}")
     return problems

@@ -79,7 +79,12 @@ class Settings(BaseSettings):
 
     # --- v2.0 綜合日報（規格見 docs/v5/DAILY_EDITION.md）---
     daily_edition_enabled: bool = False
+    # pipeline＝現有流水線（實驗三對照組）；mas＝六個角色。預設 pipeline，不改線上行為。
+    daily_mode: str = "pipeline"
     daily_writer: str = "codex"                 # codex / gemini / template / fake（不得是 web）
+    # 11/15 定案：P 與 M 共用 Codex CLI 這一個模型字串（不是 Gemini）。之後不換。
+    # CLI 版本要在開發者的 Mac 上補進這個字串；VM 沒有 codex binary。
+    daily_model_version: str = "gpt-6.1-sol+effort=low"
     daily_prepare_hour: int = 6
     daily_prepare_minute: int = 0
     daily_delivery_hour: int = 8
@@ -99,6 +104,14 @@ class Settings(BaseSettings):
         value = value.strip().lower()
         if value not in LLM_PROVIDERS:
             raise ValueError(f"LLM provider 只允許 {'/'.join(LLM_PROVIDERS)}，不得是 {value!r}")
+        return value
+
+    @field_validator("daily_mode")
+    @classmethod
+    def _check_mode(cls, value: str) -> str:
+        value = value.strip().lower()
+        if value not in ("pipeline", "mas"):
+            raise ValueError(f"DAILY_MODE 只允許 pipeline / mas：{value!r}")
         return value
 
 

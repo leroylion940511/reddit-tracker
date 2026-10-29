@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import re
 from datetime import date
 from html import escape
+from zoneinfo import ZoneInfo
 
 from ..collection.clustering import domain_of
 from ..collection.normalize import canonicalize_url
-from ..models import DailyArticle, DailyEdition
+from ..config import get_settings
 from .market import STALE_LABEL, is_stale
+from .view import BRIEF, FULL, LINK, EditionView, ViewArticle
 from .writer import KIND_LABELS, PREPRINT_LABEL, PREPRINT_OUTLETS
 
 WEEKDAYS = "一二三四五六日"
@@ -39,41 +42,93 @@ article h3{font-size:21px;line-height:1.4;margin:0 0 6px}
 article p{margin:0 0 10px}.why{font-size:15px;color:var(--muted)}
 details{font:13px/1.6 system-ui,sans-serif;color:var(--muted)}details a{color:var(--muted);word-break:break-all}
 .empty{color:var(--muted);font-style:italic;padding:12px 0}
+.brief h3{font-size:17px}.brief .deck,.brief .why,.brief p{display:none}
+.link-only{font:15px/1.6 system-ui,sans-serif}
+.sources{list-style:none;padding:0;margin:8px 0 0;font:13px/1.6 system-ui,sans-serif;color:var(--muted)}
+.sources a{color:var(--muted)}
+.withheld{font:13px system-ui,sans-serif;color:var(--accent)}
 footer{margin-top:40px;padding-top:16px;border-top:3px double var(--ink);font:13px/1.7 system-ui,sans-serif;color:var(--muted)}
+@media (max-width:420px){
+  .front,.grid{display:block}
+  .wrap,article,h3,p{overflow-wrap:anywhere}
+  body{overflow-x:hidden}
+}
 """
+
+_CITE = re.compile(r"\[(?:S)?(\d+)\]")
 
 
 def edition_title(edition_date: date) -> str:
     return f"{edition_date.year} 年 {edition_date.month} 月 {edition_date.day} 日 星期{WEEKDAYS[edition_date.weekday()]}"
 
 
-def _paragraphs(text: str) -> str:
-    return "".join(f"<p>{escape(part.strip())}</p>" for part in text.split("\n") if part.strip())
-
-
-def _preprint_only(article: DailyArticle) -> bool:
+def _preprint_only(article: ViewArticle) -> bool:
     urls = [s.get("url") or "" for s in article.sources or []]
     return bool(urls) and all(domain_of(canonicalize_url(u)) in PREPRINT_OUTLETS for u in urls)
 
 
-def _article_html(article: DailyArticle) -> str:
+def _cite(text: str, anchor: str, n_sources: int) -> str:
+    def repl(match: re.Match) -> str:
+        number = int(match.group(1))
+        if 1 <= number <= n_sources:
+            return f'<a href="#{anchor}-{number}">[{number}]</a>'
+        return match.group(0)
+
+    cited = _CITE.sub(repl, escape(text))
+    if n_sources and "<a href=" not in cited:
+        links = "".join(f'<a href="#{anchor}-{i}">[{i}]</a>' for i in range(1, n_sources + 1))
+        cited = f"{cited} {links}"
+    return cited
+
+
+def _paragraphs(text: str, anchor: str, n_sources: int) -> str:
+    return "".join(
+        f"<p>{_cite(part.strip(), anchor, n_sources)}</p>" for part in text.split("\n") if part.strip()
+    )
+
+
+def _source_list(article: ViewArticle, anchor: str) -> str:
+    items = []
+    for index, source in enumerate(article.sources, start=1):
+        when = source.get("published_at") or ""
+        title = source.get("title") or ""
+        url = source.get("url") or ""
+        outlet = source.get("outlet") or ""
+        link = f'<a href="{escape(url, quote=True)}" rel="noopener">{escape(title)}</a>' if url else escape(title)
+        items.append(f'<li id="{anchor}-{index}">{escape(outlet)}｜{link}' + (f"｜{escape(when)}" if when else "") + "</li>")
+    return f'<ul class="sources">{"".join(items)}</ul>' if items else ""
+
+
+def _article_html(article: ViewArticle) -> str:
+    anchor = f"s{article.story_id or article.position}-{article.section}"
     tags = []
-    if _preprint_only(article):
-        tags.append(PREPRINT_LABEL)  # arXiv 不是媒體，不標「單一來源」（E12）
+    if article.withheld:
+        tags.append("未核准")
+    elif _preprint_only(article):
+        tags.append(PREPRINT_LABEL)
     elif KIND_LABELS.get(article.kind):
         tags.append(KIND_LABELS[article.kind])
-    if article.writer == "template":
+    if article.writer == "template" and not article.withheld:
         tags.append("摘要整理")
     tag_html = "".join(f'<span class="tag">{escape(t)}</span>' for t in tags)
-    sources = "".join(
-        f'<li>{escape(s["outlet"])}｜<a href="{escape(s["url"], quote=True)}" rel="noopener">{escape(s["title"])}</a></li>'
-        for s in article.sources
-    )
+    css = "brief" if article.display == BRIEF else ("link-only" if article.display == LINK else "")
+    if article.display == LINK:
+        label = article.link_label or article.headline
+        return (
+            f'<article class="link-only" id="story-{article.story_id}">'
+            f'<p>{tag_html}<a href="#story-{article.story_id}">{escape(label)}</a>（見頭版）</p></article>'
+        )
+    if article.withheld:
+        return (
+            f'<article class="brief" id="story-{article.story_id}"><h3>{tag_html}{escape(article.headline)}</h3>'
+            f'<p class="withheld">未核准，本期不發行全文。</p></article>'
+        )
     deck = f'<p class="deck">{escape(article.deck)}</p>' if article.deck and article.writer != "template" else ""
     why = f'<p class="why">為什麼重要：{escape(article.why_it_matters)}</p>' if article.why_it_matters else ""
+    klass = f' class="{css}"' if css else ""
     return (
-        f"<article><h3>{tag_html}{escape(article.headline)}</h3>{deck}{_paragraphs(article.body)}{why}"
-        f"<details><summary>來源（{len(article.sources)}）</summary><ul>{sources}</ul></details></article>"
+        f'<article{klass} id="story-{article.story_id}"><h3>{tag_html}{escape(article.headline)}</h3>{deck}'
+        f"{_paragraphs(article.body, anchor, len(article.sources))}{why}{_source_list(article, anchor)}</article>"
     )
 
 
@@ -97,56 +152,100 @@ def _market_html(market: list[dict] | None, edition_date: date) -> str:
     return f'<div class="market">{"".join(cells)}{date_note}</div>'
 
 
-def render_html(edition: DailyEdition, sections: dict[str, str]) -> str:
-    articles = edition.articles
-    front = sorted((a for a in articles if a.is_front), key=lambda a: a.position)
+def _mast_meta(view: EditionView) -> str:
+    issue = f"第 {view.issue_number} 期" if view.issue_number else "試刊號"
+    when = ""
+    if view.published_at is not None:
+        tz = ZoneInfo(get_settings().newsroom_delivery_timezone)
+        local = view.published_at.astimezone(tz)
+        when = f"｜{local.strftime('%Y-%m-%d %H:%M')} 出刊"
+    count = sum(1 for a in view.articles if a.display == FULL or a.is_front)
+    return f"{edition_title(view.edition_date)}｜{issue}{when}｜本期 {count} 則"
+
+
+def render_html(view: EditionView) -> str:
+    """只吃 `EditionView`。版位來自 page_plans，不直接讀 scoring 的順序。"""
+    sections = view.sections
+    front = [a for a in view.articles if a.is_front]
     nav = "".join(f'<a href="#{key}">{escape(label)}</a>' for key, label in sections.items() if key != "data")
     blocks = []
     for key, label in sections.items():
         if key == "data":
             continue
-        items = sorted((a for a in articles if a.section == key and not a.is_front), key=lambda a: a.position)
-        empty = "本版今日無新稿。" if key in MVP_SECTIONS else "本版未開放。"
-        inner = "".join(_article_html(a) for a in items) or f'<p class="empty">{empty}</p>'
+        items = [a for a in view.articles if a.section == key and not a.is_front]
+        if items:
+            note = '<p class="empty">本版今日稿量較少</p>' if 0 < len(items) < 2 and key in MVP_SECTIONS else ""
+            inner = note + "".join(_article_html(a) for a in items)
+        else:
+            empty = "本版今日無新稿。" if key in MVP_SECTIONS else "本版未開放。"
+            inner = f'<p class="empty">{empty}</p>'
         blocks.append(f'<h2 class="section" id="{key}">{escape(label)}</h2><div class="grid">{inner}</div>')
-    stats = edition.stats or {}
-    title = f"AI 綜合日報｜{edition.edition_date.isoformat()}"
+    stats = view.stats or {}
+    title = f"AI 綜合日報｜{view.edition_date.isoformat()}"
     return f"""<!doctype html>
 <html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex"><title>{escape(title)}</title><style>{_CSS}</style></head>
 <body><div class="wrap">
-<header class="mast"><h1>AI 綜合日報</h1><div class="meta">{edition_title(edition.edition_date)}｜試刊號｜本期 {len(articles)} 則</div></header>
+<header class="mast"><h1>AI 綜合日報</h1><div class="meta">{_mast_meta(view)}</div></header>
 <nav><a href="#front">頭版</a>{nav}</nav>
-{_market_html(stats.get("market"), edition.edition_date)}
+{_market_html(view.market if view.market is not None else stats.get("market"), view.edition_date)}
 <h2 class="section" id="front">頭版</h2><div class="front">{"".join(_article_html(a) for a in front)}</div>
 {"".join(blocks)}
 <footer>
 <p>本報由 AI 協作編採：程式依獨立出處數、官方來源、時效與升溫速度選題，AI 依各家媒體的標題與摘要撰稿，未讀取全文、未做現場採訪。每則附原始來源，請以原文為準。</p>
-<p>標示「單一來源」者目前僅一家媒體報導；「社群觀察」為網路討論，不代表整體民意，亦非已證實的事實；「摘要整理」為未經 AI 改寫的來源摘要。</p>
+<p>標示「單一來源」者目前僅一家媒體報導；「社群觀察」為網路討論，不代表整體民意，亦非已證實的事實；「摘要整理」為未經 AI 改寫的來源摘要。「多來源」只計算獨立來源，轉載併成一列。</p>
 <p>素材收集 {escape(str(stats.get("candidate_clusters", "—")))} 個事件｜AI 撰稿 {escape(str(stats.get("ai_articles", stats.get("gemini_articles", 0))))} 則｜摘要整理 {escape(str(stats.get("template_articles", 0)))} 則</p>
 </footer></div></body></html>
 """
 
 
-def telegram_digest(edition: DailyEdition, sections: dict[str, str]) -> str:
-    front = sorted((a for a in edition.articles if a.is_front), key=lambda a: a.position)
-    lines = [f"📰 AI 綜合日報｜{edition_title(edition.edition_date)}", "", "【頭版】"]
+def render_index(editions: list[tuple[date, str]]) -> str:
+    items = "".join(
+        f'<li><a href="{escape(name, quote=True)}">{escape(edition_title(day))}</a></li>' for day, name in editions
+    )
+    return f"""<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI 綜合日報｜期號</title><style>{_CSS}</style></head>
+<body><div class="wrap"><header class="mast"><h1>AI 綜合日報</h1><div class="meta">歷史期號</div></header>
+<ul class="sources">{items or "<li>尚無期號</li>"}</ul></div></body></html>
+"""
+
+
+def telegram_digest(view: EditionView) -> str:
+    front = [a for a in view.articles if a.is_front and not a.withheld]
+    lines = [f"📰 AI 綜合日報｜{edition_title(view.edition_date)}", "", "【頭版】"]
     for article in front:
         lines.append(f"{article.position}. {article.headline}")
         if article.deck and article.writer != "template":
             lines.append(f"   {article.deck}")
     counts = []
-    for key, label in sections.items():
-        count = sum(1 for a in edition.articles if a.section == key and not a.is_front)
+    for key, label in view.sections.items():
+        count = sum(1 for a in view.articles if a.section == key and not a.is_front and a.display == FULL)
         if key != "data" and count:
             counts.append(f"{label} {count}")
     lines += ["", "各版：" + "｜".join(counts), "", "完整報紙請開啟下方 HTML 檔（含所有文章與來源連結）。"]
-    market = (edition.stats or {}).get("market")
+    market = view.market if view.market is not None else (view.stats or {}).get("market")
     if market:
         line = "　".join(f"{m['name']} {m['close']}（{m['change_pct']}）" for m in market)
-        if market_stale(market, edition.edition_date):
+        if market_stale(market, view.edition_date):
             line += f"　⚠️{STALE_LABEL}（{market[0].get('date') or '日期不明'} 收盤）"
         lines.insert(2, line)
         lines.insert(3, "")
     text = "\n".join(lines)
     return text if len(text) <= TELEGRAM_LIMIT else text[: TELEGRAM_LIMIT - 1] + "…"
+
+
+def write_history_index(site_dir) -> None:
+    from pathlib import Path
+
+    root = Path(site_dir)
+    pages = []
+    for path in sorted(root.glob("*.html")):
+        if path.name == "index.html":
+            continue
+        try:
+            pages.append((date.fromisoformat(path.stem), path.name))
+        except ValueError:
+            continue
+    root.mkdir(parents=True, exist_ok=True)
+    (root / "index.html").write_text(render_index(pages), encoding="utf-8")

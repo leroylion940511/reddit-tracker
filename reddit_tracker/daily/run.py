@@ -23,13 +23,27 @@ from ..collection.entities import EntityContext, MergeRules, load_lexicon
 from ..config import LLM_PROVIDERS, get_settings
 from ..db import session_scope
 from ..llm.quota import QuotaExhausted
-from ..models import DailyArticle, DailyEdition, StoryCluster
+from ..llm.records import bind_log_factory, llm_log_meta
+from ..models import DailyArticle, DailyEdition, Story, StoryCluster
 from ..seeds.news_sources import SourceRegistry, load_registry
 from .desk import DeskMerges, desk_merges
-from .evidence import EvidenceItem, EvidencePack, build_evidence, title_context
+from .evidence import EvidenceItem, EvidencePack, build_evidence, build_evidence_from_ids, title_context
 from .market import fetch_market_box
-from .render import render_html, telegram_digest
+from .render import render_html, telegram_digest, write_history_index
 from .scoring import ScoredCluster, Selection, apply_merges, desk_pool, score_candidates, select_articles, window_start_for
+from .store import (
+    MAS,
+    PIPELINE,
+    add_page_plan,
+    add_story,
+    approve_story,
+    clear_variant,
+    freeze_candidates,
+    hold_story,
+    upsert_snapshot,
+    write_story_version,
+)
+from .view import build_edition_view, view_from_edition
 from .writer import DailyWriter, WrittenStory, finalize_story, review_story, template_story
 
 logger = logging.getLogger(__name__)
@@ -148,6 +162,100 @@ def _write_all(
     return written
 
 
+class _SilentClient:
+    """沒有模型時讓 MAS 退回模板稿。不連網、不執行 codex。"""
+
+    model = "template"
+
+    def complete(self, **kwargs):
+        from types import SimpleNamespace
+
+        return SimpleNamespace(content="", input_tokens=0, output_tokens=0, cached_tokens=0)
+
+
+def evidence_packs_from_snapshot(session, snapshot, registry: SourceRegistry) -> list[tuple[int, list[int]]]:
+    """同一份快照組出來的證據素材 id。不看素材現在屬於哪個 cluster。"""
+    names = {source.id: source.name for source in registry.sources}
+    candidates = snapshot.candidates if hasattr(snapshot, "candidates") else snapshot["candidates"]
+    packs = []
+    for raw in candidates:
+        pack = build_evidence_from_ids(
+            session,
+            list(raw.get("evidence_item_ids") or []),
+            names,
+            anchor_item_id=raw.get("anchor_item_id"),
+        )
+        packs.append((raw["keeper_cluster_id"], [item.item_id for item in pack.items]))
+    return packs
+
+
+def _pipeline_slots(planned: list[Planned], story_ids: dict[int, int]) -> dict:
+    front = sorted((p for p in planned if p.selection.is_front), key=lambda p: p.selection.position)
+    ids = [story_ids[p.key] for p in front]
+    sections: dict[str, list] = {}
+    for p in sorted(
+        (p for p in planned if not p.selection.is_front),
+        key=lambda p: (p.selection.section, p.selection.position),
+    ):
+        sections.setdefault(p.selection.section, []).append({"story_id": story_ids[p.key], "display": "full"})
+    return {
+        "front": {"lead": ids[0] if ids else None, "second": ids[1:5], "briefs": ids[5:]},
+        "sections": sections,
+    }
+
+
+def _persist_pipeline(session, *, edition_date: date, plan: EditionPlan, planned, written, registry, now) -> None:
+    """P 組把選題寫成 stories／story_versions／page_plans，並凍結全部候選。"""
+    clear_variant(session, edition_date, PIPELINE)
+    upsert_snapshot(
+        session, edition_date, freeze_candidates(session, plan.candidates, registry.disabled_source_ids()), now,
+    )
+    story_ids: dict[int, int] = {}
+    for p in planned:
+        story = add_story(
+            session,
+            edition_date=edition_date,
+            run_variant=PIPELINE,
+            spec={
+                "keeper_cluster_id": p.selection.cluster.cluster_id,
+                "merged_cluster_ids": list(p.selection.cluster.merged_ids),
+                "section": p.selection.section,
+                "kind": p.selection.cluster.kind,
+                "score": p.selection.cluster.score,
+            },
+        )
+        story_ids[p.key] = story.id
+        text = written[p.key]
+        write_story_version(
+            session,
+            story_id=story.id,
+            run_variant=PIPELINE,
+            expected_latest=0,
+            headline=text.headline,
+            deck=text.deck,
+            body=text.body,
+            why_it_matters=text.why_it_matters,
+            source_ids=[item.item_id for item in p.evidence if item.item_id is not None],
+            status="checked",
+            now=now,
+            sender="agent",
+        )
+    add_page_plan(
+        session,
+        edition_date=edition_date,
+        run_variant=PIPELINE,
+        slots=_pipeline_slots(planned, story_ids),
+        now=now,
+    )
+
+
+def _mode(explicit: str | None) -> str:
+    mode = explicit or getattr(get_settings(), "daily_mode", "pipeline")
+    if mode not in (PIPELINE, MAS):
+        raise ValueError(f"DAILY_MODE 只允許 pipeline／mas：{mode!r}")
+    return mode
+
+
 def story_evidence(
     session, cluster: ScoredCluster, registry: SourceRegistry, context: EntityContext | None = None
 ) -> EvidencePack:
@@ -184,6 +292,178 @@ def plan_edition(
     return EditionPlan(scored, candidate_count, desk.groups, planned, desk, context)
 
 
+def _write_edition_html(site_dir: str, edition_date: date, view) -> Path:
+    path = Path(site_dir) / f"{edition_date.isoformat()}.html"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(render_html(view), encoding="utf-8")
+    return path
+
+
+def _draft_edition(
+    session,
+    *,
+    edition_date: date,
+    now: datetime,
+    planned,
+    written,
+    writer,
+    candidate_count: int,
+    merged_groups,
+    desk,
+    sections: dict,
+    market,
+    llm_requests: int,
+    run_variant: str,
+) -> DailyEdition:
+    edition = session.scalar(select(DailyEdition).where(DailyEdition.edition_date == edition_date))
+    if edition is None:
+        edition = DailyEdition(edition_date=edition_date, created_at=now)
+        session.add(edition)
+    elif edition.status in ("publishing", "published", "delivery_failed"):
+        raise DailyEditionError(f"版次已是 {edition.status}，拒絕覆寫")
+    edition.status = "drafting"
+    edition.window_start = window_start_for(edition_date)
+    edition.prepared_at = now
+    edition.updated_at = now
+    edition.articles.clear()
+    session.flush()
+    for p in planned:
+        story = written[p.key]
+        edition.articles.append(
+            DailyArticle(
+                cluster_id=p.selection.cluster.cluster_id,
+                section=p.selection.section,
+                position=p.selection.position,
+                is_front=p.selection.is_front,
+                kind=p.selection.cluster.kind,
+                score=p.selection.cluster.score,
+                signals=p.selection.cluster.signals,
+                headline=story.headline,
+                deck=story.deck,
+                body=story.body,
+                why_it_matters=story.why_it_matters,
+                sources=[e.as_source() for e in p.evidence],
+                writer=story.writer,
+                review_notes=story.review_notes,
+            )
+        )
+    ai_count = sum(1 for s in written.values() if s.writer != "template")
+    if run_variant == MAS:
+        edition.writer = "mas"
+    elif not written:
+        edition.writer = "template"
+    else:
+        edition.writer = (writer.name if writer else "template") if ai_count == len(written) else (
+            "template" if not ai_count else "mixed"
+        )
+    edition.stats = {
+        "run_variant": run_variant,
+        "candidate_clusters": candidate_count,
+        "merged_groups": merged_groups,
+        "entity_merge_groups": desk.entity_groups if desk else [],
+        "llm_merge_groups": desk.llm_groups if desk else [],
+        "rejected_merges": desk.rejected if desk else [],
+        "articles": len(written) or len(edition.articles),
+        "ai_articles": ai_count,
+        "template_articles": (len(written) - ai_count) if written else 0,
+        "llm_requests": llm_requests,
+        "sections": {k: sum(1 for p in planned if p.selection.section == k) for k in sections},
+        "market": market,
+    }
+    edition.status = "drafted"
+    edition.updated_at = now
+    session.flush()
+    return edition
+
+
+def _finish_mas(
+    session,
+    *,
+    edition_date,
+    plan,
+    registry,
+    writer,
+    now,
+    settings,
+    sections,
+    market,
+    llm_requests,
+    candidate_count,
+    merged_groups,
+    desk,
+) -> int:
+    from .mas.orchestrator import run_mas
+
+    clear_variant(session, edition_date, MAS)
+    snapshot = upsert_snapshot(
+        session, edition_date, freeze_candidates(session, plan.candidates, registry.disabled_source_ids()), now,
+    )
+    client = getattr(writer, "client", None) or _SilentClient()
+    result = run_mas(
+        session, edition_date=edition_date, snapshot=snapshot, registry=registry, client=client, now=now,
+    )
+    view = build_edition_view(session, edition_date, MAS, sections, market=market, for_publish=False)
+    if not view.articles:
+        raise DailyEditionError("沒有可刊登的事件；請確認收集與聚合是否正常")
+    edition = _draft_edition(
+        session, edition_date=edition_date, now=now, planned=[], written={}, writer=writer,
+        candidate_count=candidate_count, merged_groups=merged_groups, desk=desk, sections=sections,
+        market=market, llm_requests=llm_requests, run_variant=MAS,
+    )
+    for article in view.articles:
+        story = session.get(Story, article.story_id) if article.story_id else None
+        if story is None:
+            continue
+        edition.articles.append(
+            DailyArticle(
+                cluster_id=story.keeper_cluster_id,
+                section=story.section,
+                position=article.position,
+                is_front=article.is_front,
+                kind=story.kind,
+                score=story.score,
+                signals={},
+                headline=article.headline,
+                deck=article.deck,
+                body=article.body,
+                why_it_matters=article.why_it_matters,
+                sources=article.sources,
+                writer="mas",
+                review_notes=[],
+            )
+        )
+    edition.stats = {
+        **(edition.stats or {}),
+        "articles": len(edition.articles),
+        "degraded": list(result.degraded),
+        "run_variant": MAS,
+    }
+    session.flush()
+    view.stats = edition.stats
+    path = _write_edition_html(settings.daily_site_dir, edition_date, view)
+    edition.html_path = str(path)
+    write_history_index(settings.daily_site_dir)
+    logger.info("mas edition %s drafted: articles=%d degraded=%s", edition_date, len(edition.articles), result.degraded)
+    return edition.id
+
+
+def _publication_view(session, edition: DailyEdition, sections: dict, mode: str):
+    variant = MAS if mode == MAS else PIPELINE
+    try:
+        return build_edition_view(
+            session,
+            edition.edition_date,
+            variant,
+            sections,
+            market=(edition.stats or {}).get("market"),
+            stats=edition.stats,
+            published_at=edition.published_at,
+            for_publish=mode == MAS,
+        )
+    except LookupError:
+        return view_from_edition(edition, sections)
+
+
 def prepare_daily(
     edition_date: date,
     *,
@@ -191,6 +471,8 @@ def prepare_daily(
     refresh: bool = False,
     now: datetime | None = None,
     writer: DailyWriter | None = None,
+    mode: str | None = None,
+    shadow: bool = False,
 ) -> int:
     """冪等準備一期日報，回傳 edition id；不發送。
 
@@ -198,6 +480,7 @@ def prepare_daily(
     """
     settings = get_settings()
     now = now or datetime.now(timezone.utc)
+    mode = PIPELINE if shadow else _mode(mode)
     if writer is None:
         writer_mode = writer_mode or settings.daily_writer
         if writer_mode not in LLM_PROVIDERS:
@@ -225,71 +508,45 @@ def prepare_daily(
     if not planned:
         raise DailyEditionError("沒有可刊登的事件；請確認收集與聚合是否正常")
 
-    written = _write_all(planned, sections, writer)
+    if mode == PIPELINE:
+        with bind_log_factory(session_scope), llm_log_meta(run_variant=PIPELINE, edition_date=edition_date, purpose="daily"):
+            written = _write_all(planned, sections, writer)
+    else:
+        written = {}
     llm_requests = writer.requests if writer else 0
     market = fetch_market_box()
 
     with session_scope() as session:
-        edition = session.scalar(select(DailyEdition).where(DailyEdition.edition_date == edition_date))
-        if edition is None:
-            edition = DailyEdition(edition_date=edition_date, created_at=now)
-            session.add(edition)
-        elif edition.status in ("publishing", "published", "delivery_failed"):
-            raise DailyEditionError(f"版次已是 {edition.status}，拒絕覆寫")
-        edition.status = "drafting"
-        edition.window_start = window_start_for(edition_date)
-        edition.prepared_at = now
-        edition.updated_at = now
-        edition.articles.clear()
-        session.flush()
-        for p in planned:
-            story = written[p.key]
-            edition.articles.append(
-                DailyArticle(
-                    cluster_id=p.selection.cluster.cluster_id,
-                    section=p.selection.section,
-                    position=p.selection.position,
-                    is_front=p.selection.is_front,
-                    kind=p.selection.cluster.kind,
-                    score=p.selection.cluster.score,
-                    signals=p.selection.cluster.signals,
-                    headline=story.headline,
-                    deck=story.deck,
-                    body=story.body,
-                    why_it_matters=story.why_it_matters,
-                    sources=[e.as_source() for e in p.evidence],
-                    writer=story.writer,
-                    review_notes=story.review_notes,
-                )
+        if mode == MAS:
+            return _finish_mas(
+                session, edition_date=edition_date, plan=plan, registry=registry, writer=writer,
+                now=now, settings=settings, sections=sections, market=market, llm_requests=llm_requests,
+                candidate_count=candidate_count, merged_groups=merged_groups, desk=desk,
             )
-        ai_count = sum(1 for s in written.values() if s.writer != "template")
-        edition.status = "drafted"
-        edition.writer = (writer.name if writer else "template") if ai_count == len(written) else (
-            "template" if not ai_count else "mixed"
+        _persist_pipeline(
+            session, edition_date=edition_date, plan=plan, planned=planned, written=written, registry=registry, now=now,
         )
-        edition.stats = {
-            "candidate_clusters": candidate_count,
-            "merged_groups": merged_groups,
-            # 合併來源拆開記：程式（譯名表＋共同實體）、LLM 原始回應、LLM 說合併但被程式剔除的
-            "entity_merge_groups": desk.entity_groups if desk else [],
-            "llm_merge_groups": desk.llm_groups if desk else [],
-            "rejected_merges": desk.rejected if desk else [],
-            "articles": len(written),
-            "ai_articles": ai_count,
-            "template_articles": len(written) - ai_count,
-            "llm_requests": llm_requests,
-            "sections": {k: sum(1 for p in planned if p.selection.section == k) for k in sections},
-            "market": market,
-        }
-        edition.updated_at = now
-        session.flush()
-        path = Path(settings.daily_site_dir) / f"{edition_date.isoformat()}.html"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(render_html(edition, sections), encoding="utf-8")
+        if shadow:
+            view = build_edition_view(
+                session, edition_date, PIPELINE, sections, market=market, stats={"market": market},
+            )
+            path = Path(settings.daily_site_dir) / "shadow" / f"{edition_date.isoformat()}.html"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(render_html(view), encoding="utf-8")
+            logger.info("pipeline shadow %s written to %s", edition_date, path)
+            return 0
+        edition = _draft_edition(
+            session, edition_date=edition_date, now=now, planned=planned, written=written, writer=writer,
+            candidate_count=candidate_count, merged_groups=merged_groups, desk=desk, sections=sections,
+            market=market, llm_requests=llm_requests, run_variant=PIPELINE,
+        )
+        view = view_from_edition(edition, sections)
+        path = _write_edition_html(settings.daily_site_dir, edition_date, view)
         edition.html_path = str(path)
+        write_history_index(settings.daily_site_dir)
         logger.info(
             "daily edition %s drafted: articles=%d ai=%d template=%d",
-            edition_date, len(written), ai_count, len(written) - ai_count,
+            edition_date, len(written), edition.stats["ai_articles"], edition.stats["template_articles"],
         )
         return edition.id
 
@@ -308,7 +565,15 @@ def publish_daily(edition_date: date, *, now: datetime | None = None) -> int:
     settings = get_settings()
     if not settings.telegram_bot_token or not settings.telegram_chat_id:
         raise DailyEditionError("TELEGRAM_BOT_TOKEN／TELEGRAM_CHAT_ID 未設定")
-    edition_id = prepare_daily(edition_date, now=now)
+    mode = _mode(None)
+    if mode == MAS:
+        with session_scope() as session:
+            edition = session.scalar(select(DailyEdition).where(DailyEdition.edition_date == edition_date))
+            if edition is None:
+                raise DailyEditionError("DAILY_MODE=mas 時沒有準備好的期數，發行不會重跑 prepare")
+            edition_id = edition.id
+    else:
+        edition_id = prepare_daily(edition_date, now=now)
     registry = load_registry(settings.news_sources_path)
     with session_scope() as session:
         edition = session.get(DailyEdition, edition_id)
@@ -318,8 +583,13 @@ def publish_daily(edition_date: date, *, now: datetime | None = None) -> int:
         if edition.status != "drafted":
             raise DailyEditionError(f"版次狀態 {edition.status}，不可發行（避免重複投遞）")
         edition.status = "publishing"
-        text = telegram_digest(edition, registry.sections)
-        html_path = Path(edition.html_path)
+        view = _publication_view(session, edition, registry.sections, mode)
+        text = telegram_digest(view)
+        html_path = Path(edition.html_path) if edition.html_path else _write_edition_html(
+            settings.daily_site_dir, edition_date, view,
+        )
+        html_path.write_text(render_html(view), encoding="utf-8")
+        edition.html_path = str(html_path)
     try:
         message_ids = asyncio.run(
             _send(settings.telegram_bot_token, int(settings.telegram_chat_id), text, html_path,
@@ -339,6 +609,17 @@ def publish_daily(edition_date: date, *, now: datetime | None = None) -> int:
     return edition_id
 
 
+def _print_edition(edition_id: int) -> None:
+    with session_scope() as session:
+        edition = session.get(DailyEdition, edition_id)
+        if edition is None:
+            print(f"edition={edition_id}（影子版不寫 daily_editions）")
+            return
+        print(f"edition={edition.id} date={edition.edition_date} status={edition.status} "
+              f"writer={edition.writer} html={edition.html_path}")
+        print(edition.stats)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m reddit_tracker.daily")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -346,19 +627,68 @@ def main(argv: list[str] | None = None) -> int:
     prepare.add_argument("--date", type=date.fromisoformat, default=None)
     prepare.add_argument("--writer", choices=LLM_PROVIDERS)
     prepare.add_argument("--refresh", action="store_true", help="重寫尚未發行的 draft")
+    prepare.add_argument("--shadow", action="store_true", help="P 組影子版：寫 site/daily/shadow，不寫 daily_editions")
+    prepare.add_argument("--mode", choices=(PIPELINE, MAS))
     publish = sub.add_parser("publish", help="發行已準備的版次到 Telegram")
     publish.add_argument("--date", type=date.fromisoformat, default=None)
+    trace = sub.add_parser("trace", help="印出一期的訊息與稿件版本")
+    trace.add_argument("--date", type=date.fromisoformat, required=True)
+    trace.add_argument("--variant", choices=(PIPELINE, MAS), default=MAS)
+    trace.add_argument("--cluster", type=int, default=None)
+    approve = sub.add_parser("approve", help="真人核准一則稿")
+    approve.add_argument("--story", type=int, required=True)
+    approve.add_argument("--by", required=True)
+    hold = sub.add_parser("hold", help="真人 HOLD 一則稿")
+    hold.add_argument("--story", type=int, required=True)
+    hold.add_argument("--date", type=date.fromisoformat, required=True)
+    hold.add_argument("--by", required=True)
+    blind = sub.add_parser("blind-export", help="匯出盲計純文字與對照表雜湊")
+    blind.add_argument("--dates", required=True, help="逗號分隔的 YYYY-MM-DD")
+    blind.add_argument("--out", type=Path, required=True)
     args = parser.parse_args(argv)
     settings = get_settings()
     logging.basicConfig(level=settings.log_level, format="%(asctime)s %(levelname)s %(name)s | %(message)s")
+    if args.command == "trace":
+        from .mas.orchestrator import format_trace
+
+        with session_scope() as session:
+            print(format_trace(session, args.date, args.variant, args.cluster))
+        return 0
+    if args.command == "approve":
+        with session_scope() as session:
+            row = approve_story(session, args.story, by=args.by, now=datetime.now(timezone.utc))
+            print(f"story={row.story_id} v{row.version} status={row.status} approved_by={row.approved_by}")
+        return 0
+    if args.command == "hold":
+        from .mas.protocol import post_message
+
+        with session_scope() as session:
+            post_message(
+                session, run_variant=MAS, edition_date=args.date, sender="human", recipient="eic",
+                type="HOLD", now=datetime.now(timezone.utc), story_id=args.story,
+                payload={"by": args.by, "detail": "審核者 HOLD"},
+            )
+            row = hold_story(session, args.story)
+            print(f"story={row.story_id} v{row.version} status={row.status}")
+        return 0
+    if args.command == "blind-export":
+        from .blind import export_blind_count
+
+        days = [date.fromisoformat(part) for part in args.dates.split(",") if part]
+        with session_scope() as session:
+            text, mapping, digest = export_blind_count(session, days)
+        args.out.mkdir(parents=True, exist_ok=True)
+        (args.out / "blind.txt").write_text(text, encoding="utf-8")
+        (args.out / "mapping.sha256").write_text(digest + "\n", encoding="utf-8")
+        print(digest)
+        print(f"items={len(mapping)}")
+        return 0
     edition_date = args.date or _today()
     if args.command == "prepare":
-        edition_id = prepare_daily(edition_date, writer_mode=args.writer, refresh=args.refresh)
+        edition_id = prepare_daily(
+            edition_date, writer_mode=args.writer, refresh=args.refresh, mode=args.mode, shadow=args.shadow,
+        )
     else:
         edition_id = publish_daily(edition_date)
-    with session_scope() as session:
-        edition = session.get(DailyEdition, edition_id)
-        print(f"edition={edition.id} date={edition.edition_date} status={edition.status} "
-              f"writer={edition.writer} html={edition.html_path}")
-        print(edition.stats)
+    _print_edition(edition_id)
     return 0

@@ -32,6 +32,14 @@ def test_v5_newsroom_migration_up_and_down(tmp_path, monkeypatch):
             reader_columns = {column["name"] for column in inspect(engine).get_columns("reader_profiles")}
             assert {"included_keywords", "excluded_keywords"} <= reader_columns
             assert {"source_items", "source_fetch_runs", "story_clusters", "daily_editions", "daily_articles"} <= tables
+            assert {
+                "daily_snapshots", "stories", "agent_messages", "story_versions", "page_plans",
+            } <= tables
+            record_columns = {column["name"] for column in inspect(engine).get_columns("llm_records")}
+            assert {
+                "request_hash", "prompt_text", "response_text", "latency_ms", "ok", "error",
+                "role", "run_variant", "edition_date", "story_id", "model_version",
+            } <= record_columns
             item_columns = {column["name"] for column in inspect(engine).get_columns("source_items")}
             assert "cluster_id" in item_columns
         finally:
@@ -40,8 +48,10 @@ def test_v5_newsroom_migration_up_and_down(tmp_path, monkeypatch):
         command.downgrade(config, "7778060d74e7")
         engine = create_engine(f"sqlite:///{database_path}")
         try:
-            assert "reader_profiles" not in inspect(engine).get_table_names()
-            assert "candidate_posts" in inspect(engine).get_table_names()
+            names = set(inspect(engine).get_table_names())
+            assert "reader_profiles" not in names
+            assert "stories" not in names and "page_plans" not in names
+            assert "candidate_posts" in names
         finally:
             engine.dispose()
     finally:

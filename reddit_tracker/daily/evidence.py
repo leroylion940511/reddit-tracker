@@ -43,6 +43,8 @@ class EvidenceItem:
     published_at: str
     # 轉載這篇的其他來源名稱（已併成這一列，不另算一家）
     reprinted_by: list[str] = field(default_factory=list)
+    # source_items.id；快照凍結用。舊的呼叫端可以不填。
+    item_id: int | None = None
 
     @property
     def display_name(self) -> str:
@@ -114,49 +116,35 @@ def _display_source(member: SourceItem, source_names: dict[str, str]) -> tuple[s
     return name, []
 
 
-def build_evidence(
-    session: Session,
-    cluster_ids: list[int],
+def _assemble_evidence(
+    members: list[SourceItem],
     source_names: dict[str, str],
-    disabled_sources: frozenset[str] = frozenset(),
     *,
-    lexicon: EntityLexicon | None = None,
-    context: EntityContext | None = None,
+    anchor: SourceItem | None,
+    lexicon: EntityLexicon,
+    context: EntityContext | None,
+    notes: list[str] | None = None,
 ) -> EvidencePack:
-    """不同出處優先、層級高優先，同一出處只取最新一篇；可跨多個已合併的事件。已停用來源不進證據包。
-
-    `cluster_ids[0]` 是主事件，它的代表標題是相關性過濾的錨點。`context`：判斷中文片段是否
-    少見的「當天素材」（`title_context`）；沒給就只用這幾個事件的素材，片段容易被當成常見。
-    """
-    lexicon = lexicon or load_lexicon()
-    members = session.scalars(
-        select(SourceItem).where(
-            SourceItem.cluster_id.in_(cluster_ids),
-            SourceItem.source_id.not_in(sorted(disabled_sources)),
-        )
-    ).all()
+    """同一批素材組證據包。`anchor` 是相關性過濾的代表稿；沒給就用排序後的第一篇。"""
+    notes = list(notes or [])
     if not members:
-        return EvidencePack([])
+        return EvidencePack([], notes)
     if context is None:
         context = EntityContext(_entities(lexicon, m) for m in members if m.duplicate_of_id is None)
-    # 轉載併成原稿那一列：原稿＝`mark_reprints` 認定的那篇（例如中央社，而不是先收到的央廣）
     reprints = mark_reprints(members)
     by_id = {m.id: m for m in members}
     reprinted_by: dict[int, list[SourceItem]] = {}
     for copy_id, original_id in reprints.items():
-        reprinted_by.setdefault(original_id, []).append(by_id[copy_id])
+        if original_id in by_id and copy_id in by_id:
+            reprinted_by.setdefault(original_id, []).append(by_id[copy_id])
     originals = [m for m in members if m.id not in reprints]
-
-    primary = session.get(StoryCluster, cluster_ids[0])
-    anchor = by_id.get(primary.representative_item_id) if primary is not None else None
+    if not originals:
+        return EvidencePack([], notes)
     if anchor is not None:
-        anchor = by_id.get(reprints.get(anchor.id, anchor.id), anchor)
+        anchor = by_id.get(reprints.get(anchor.id, anchor.id), anchor if anchor.id in by_id else None)
     ordered = sorted(originals, key=lambda m: (TIER_RANK.get(m.tier, 9), -as_utc(m.published_at).timestamp()))
     anchor = anchor or ordered[0]
     anchor_entities = _entities(lexicon, anchor)
-    notes: list[str] = []
-    # 代表標題本身抽不到任何實體（例如全是一般字的 Title Case 英文標題）就無從比對；
-    # 這時不過濾（否則只剩代表那一篇），在 review_notes 註明。
     can_filter = bool(context.names(anchor_entities) or anchor_entities.trigrams)
     if not can_filter and len(ordered) > 1:
         notes.append(f"未做相關性過濾：代表標題抽不到實體（{(anchor.title or '')[:REJECTED_TITLE_CHARS]}）")
@@ -176,7 +164,6 @@ def build_evidence(
         outlet = outlet_of(member.canonical_url, member.title, member.summary)
         chosen.setdefault(outlet, member)
     picked = list(chosen.items())[:MAX_EVIDENCE_ITEMS]
-    # 合併後的中英文事件，中文來源可能被層級與時間排序擠出前 6 篇；至少保留一篇中文。
     if not any((m.lang or "").startswith("zh") for _, m in picked):
         first_zh = next(((o, m) for o, m in chosen.items() if (m.lang or "").startswith("zh")), None)
         if first_zh is not None:
@@ -186,7 +173,7 @@ def build_evidence(
         name, carriers = _display_source(member, source_names)
         for copy in sorted(reprinted_by.get(member.id, []), key=lambda m: (as_utc(m.published_at), m.id)):
             if domain_of(copy.canonical_url) == domain_of(member.canonical_url):
-                continue  # 同一家媒體的不同 feed（中央社聚焦／中央社生活），不算轉載
+                continue
             carrier = source_names.get(copy.source_id, copy.source_id)
             if carrier not in carriers:
                 carriers.append(carrier)
@@ -202,6 +189,74 @@ def build_evidence(
                 url=member.url,
                 published_at=as_utc(member.published_at).astimezone(TAIPEI).isoformat(timespec="minutes"),
                 reprinted_by=carriers,
+                item_id=member.id,
             )
         )
     return EvidencePack(evidence, notes)
+
+
+def build_evidence(
+    session: Session,
+    cluster_ids: list[int],
+    source_names: dict[str, str],
+    disabled_sources: frozenset[str] = frozenset(),
+    *,
+    lexicon: EntityLexicon | None = None,
+    context: EntityContext | None = None,
+) -> EvidencePack:
+    """不同出處優先、層級高優先，同一出處只取最新一篇；可跨多個已合併的事件。已停用來源不進證據包。
+
+    `cluster_ids[0]` 是主事件，它的代表標題是相關性過濾的錨點。`context`：判斷中文片段是否
+    少見的「當天素材」（`title_context`）；沒給就只用這幾個事件的素材，片段容易被當成常見。
+    """
+    lexicon = lexicon or load_lexicon()
+    members = list(session.scalars(
+        select(SourceItem).where(
+            SourceItem.cluster_id.in_(cluster_ids),
+            SourceItem.source_id.not_in(sorted(disabled_sources)),
+        )
+    ).all())
+    if not members:
+        return EvidencePack([])
+    primary = session.get(StoryCluster, cluster_ids[0])
+    by_id = {m.id: m for m in members}
+    anchor = by_id.get(primary.representative_item_id) if primary is not None and primary.representative_item_id else None
+    return _assemble_evidence(members, source_names, anchor=anchor, lexicon=lexicon, context=context)
+
+
+def build_evidence_from_ids(
+    session: Session,
+    item_ids: list[int],
+    source_names: dict[str, str],
+    *,
+    anchor_item_id: int | None = None,
+    lexicon: EntityLexicon | None = None,
+    context: EntityContext | None = None,
+    allowed_domains: frozenset[str] | None = None,
+) -> EvidencePack:
+    """用快照凍結的素材 id 組證據包，不看現在的 `source_items.cluster_id`。
+
+    `allowed_domains` 有給時，網域不在登錄表的素材不進證據包（手冊 10.2 假來源）。
+    流水線的 `build_evidence` 不套這道，避免改到既有回歸行為。
+    """
+    lexicon = lexicon or load_lexicon()
+    if not item_ids:
+        return EvidencePack([])
+    members = list(session.scalars(select(SourceItem).where(SourceItem.id.in_(list(item_ids)))).all())
+    notes: list[str] = []
+    if allowed_domains is not None:
+        kept = []
+        for member in members:
+            domain = domain_of(member.canonical_url)
+            outlet = outlet_of(member.canonical_url, member.title, member.summary)
+            if domain not in allowed_domains and outlet not in allowed_domains:
+                title = member.title or ""
+                short = title[:REJECTED_TITLE_CHARS] + ("…" if len(title) > REJECTED_TITLE_CHARS else "")
+                name = source_names.get(member.source_id, member.source_id)
+                notes.append(f"剔除：{name}｜{short}，原因：不在登錄表網域")
+                continue
+            kept.append(member)
+        members = kept
+    by_id = {m.id: m for m in members}
+    anchor = by_id.get(anchor_item_id) if anchor_item_id else None
+    return _assemble_evidence(members, source_names, anchor=anchor, lexicon=lexicon, context=context, notes=notes)

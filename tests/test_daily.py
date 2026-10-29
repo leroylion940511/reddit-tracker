@@ -194,10 +194,21 @@ def test_prepare_builds_edition_with_front_page_social_and_html(daily_env):
     html = (daily_env.tmp_path / "2026-10-28.html").read_text(encoding="utf-8")
     assert "頭版" in html and "社群觀察" in html and "本版今日無新稿" in html
     assert edition.stats["llm_requests"] == 3  # 編輯會議＋頭版＋社群版
+    from reddit_tracker.models import DailySnapshot, PagePlan
+
+    assert daily_env.session.scalar(select(DailySnapshot).where(DailySnapshot.edition_date == EDITION)) is not None
+    plan = daily_env.session.scalar(select(PagePlan).where(PagePlan.run_variant == "pipeline"))
+    assert plan is not None and plan.slots["front"]["lead"]
 
     # 已有 draft 時再次 prepare 不重寫、不再呼叫 LLM
     assert run_module.prepare_daily(EDITION, now=NOW) == edition_id
     assert daily_env.writer.requests == 3
+
+
+def test_shadow_prepare_does_not_write_daily_edition(daily_env):
+    assert run_module.prepare_daily(EDITION, now=NOW, shadow=True) == 0
+    assert daily_env.session.scalar(select(DailyEdition)) is None
+    assert (daily_env.tmp_path / "shadow" / "2026-10-28.html").is_file()
 
 
 def test_writer_failures_retry_then_fall_back_to_template(daily_env):
@@ -333,10 +344,12 @@ def test_score_and_evidence_drop_disabled_members_of_mixed_clusters(session):
 
 def test_render_marks_non_mvp_sections_as_not_open():
     from reddit_tracker.daily.render import MVP_SECTIONS, render_html
+    from reddit_tracker.daily.view import view_from_edition
 
     assert MVP_SECTIONS == ("taiwan", "world", "tech")
     edition = DailyEdition(edition_date=EDITION, stats={})
-    html = render_html(edition, {"taiwan": "台灣", "sports": "體育", "social": "社群觀察", "data": "數據欄"})
+    edition.articles = []
+    html = render_html(view_from_edition(edition, {"taiwan": "台灣", "sports": "體育", "social": "社群觀察", "data": "數據欄"}))
     taiwan, rest = html.split('id="taiwan"')[1].split('id="sports"')
     assert "本版今日無新稿" in taiwan and "本版未開放" not in taiwan
     assert rest.count("本版未開放") == 2  # 體育、社群觀察
