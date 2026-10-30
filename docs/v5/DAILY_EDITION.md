@@ -1,6 +1,6 @@
 # 綜合日報編採與發行規格（v2.0 試刊版）
 
-從 `story_clusters` 到讀者手上的報紙：評分 → 各版選題 → 證據包 → 撰稿 → 審稿關卡 → 網頁報紙＋Telegram 精選。對應企劃 5.1 步驟 4–9。舊 v5 Reddit 日報（`newsroom_editions`）不受影響，兩者並行到新報紙試刊通過。
+從 `story_clusters` 到讀者手上的報紙：評分 → 各版選題 → 證據包 → 撰稿 → 審稿關卡 → 網頁報紙＋Telegram 精選。對應企劃 5.1 步驟 4–9。（舊 v5 Reddit 日報 `newsroom_editions` 已於 2026-10-27 停刊、程式已移除，資料表保留。）
 
 ## 每日流程（Asia/Taipei）
 
@@ -8,8 +8,8 @@
 | --- | --- |
 | 每 15 分鐘 | 收集＋事件聚合（[COLLECTION.md](COLLECTION.md)、[CLUSTERING.md](CLUSTERING.md)） |
 | `DAILY_PREPARE` 06:00 | 評分、選題、撰稿、審稿，產生 `site/daily/YYYY-MM-DD.html`，狀態 `drafted`；不發送 |
-| 06:00–08:30 | 人工可在控制台或 HTML 檢視；需要時 `--refresh` 重寫 |
-| `DAILY_DELIVERY` 08:35 | 只發行既有 draft：Telegram 頭版精選＋完整報紙 HTML 檔；與 v5 的 08:30 錯開 |
+| 06:00–08:35 | 人工可在 web 或 HTML 檢視；需要時 `--refresh` 重寫。`DAILY_MODE=mas` 需逐則 `approve`，未核准只出標題 |
+| `DAILY_DELIVERY` 08:35 | 只發行既有 draft：Telegram 頭版精選＋完整報紙 HTML 檔（當初為與已停刊的 v5 08:30 錯開而定） |
 
 兩個排程只有 `DAILY_EDITION_ENABLED=true` 時才註冊。
 
