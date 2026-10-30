@@ -23,9 +23,12 @@
 
 ## Local Environment Defaults
 
-- Primary local root: `/Users/leroy/local`
-- Developer workspace root: `/Users/leroy/local/Developer`
-- Documents root: `/Users/leroy/local/Developer/Docs`
+- Production checkout: `/Users/leroy/reddit_tracker` on `main` (launchd runs from here; do not develop in it).
+- Development happens in feature branches / git worktrees, e.g. `mas-handbook` at `/Users/leroy/reddit_tracker-mas`.
+- Python: `uv` with the project-local `.venv`; tests: `REDDIT_TRACKER_NO_DOTENV=1 uv run python -m pytest -q`.
+- Resident service: launchd `com.leroy.reddit-tracker.newsroom` runs `caffeinate -i uv run python -m reddit_tracker.newsroom.scheduler` (APScheduler; log `newsroom.log`).
+- RSSHub: separate launchd `com.leroy.reddit-tracker.rsshub` runs Homebrew `node dist/index.mjs` in `~/rsshub`, listening only on `127.0.0.1:1200` (`RSSHUB_BASE_URL` default `http://127.0.0.1:1200`; install via `deploy/install_launchd.sh rsshub-install`). No Docker / docker-compose.
+- Codex CLI: `CODEX_BIN` defaults to `/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex`; `CODEX_MODEL` defaults to `gpt-6.1-sol` (see `reddit_tracker/config.py`).
 - Preferred editor: VS Code
 
 ## Language And Tooling Defaults
@@ -66,8 +69,7 @@
 
 ### Docker
 
-- Docker Desktop is the default container runtime.
-- When container behavior changes, verify the current Docker context.
+- Docker is not installed and not used; do not propose containers as a solution.
 
 ## Collaboration Preferences
 
