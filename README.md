@@ -132,7 +132,7 @@ uv run python -m reddit_tracker.web
 | `DAILY_SITE_DIR` | `site/daily` | HTML 輸出目錄（不進版控） |
 | `DAILY_SHADOW_ENABLED` | `false` | 只在 `DAILY_MODE=mas` 生效：06:00 先跑 P 影子、M 再從同一份快照跑；影子失敗只記 log |
 | `DAILY_SHADOW_LLM_LIMIT` | `12` | P 影子每日最多用幾格額度（含編輯會議與重試）；M 至少保有 `LLM_DAILY_LIMIT` 減這個數 |
-| `DAILY_ANNOTATION_DIR` | `annotation` | 影子＋M 都有稿時匯出盲計稿／抽查稿到 `YYYY-MM-DD/`（對照表在 `_private/`，不進版控） |
+| `DAILY_ANNOTATION_DIR` | `annotation` | 影子＋M 都有稿時匯出盲計稿／抽查稿到 `YYYY-MM-DD/`（可整個交給 B；對照表在 `_private/YYYY-MM-DD/mapping.json`，不給 B、不進版控） |
 | `NEWSROOM_DELIVERY_TIMEZONE` | `Asia/Taipei` | 排程時區 |
 | `LLM_DAILY_LIMIT` | `60` | 每個模型每日嘗試次數上限（所有用途共用） |
 | `LLM_QUOTA_STATE_PATH` | `/tmp/reddit-tracker-llm-quota.json` | 額度 state 檔 |
@@ -205,7 +205,7 @@ deploy/install_launchd.sh rsshub-install    # 本機 RSSHub（只綁 127.0.0.1:1
 | `python -m reddit_tracker.daily trace --date D [--variant V] [--cluster ID]` | 印出一期的訊息與稿件版本 |
 | `python -m reddit_tracker.daily approve --story ID --by NAME` | 真人核可一則稿 |
 | `python -m reddit_tracker.daily hold --story ID --date D --by NAME` | 真人 HOLD 一則稿 |
-| `python -m reddit_tracker.daily blind-export --dates D1,D2 --out DIR` | 每天各自匯出到 `DIR/YYYY-MM-DD/`：盲計 8 篇（P、M 都有寫的事件，4 P／4 M）、抽查表、對照表 SHA-256 |
+| `python -m reddit_tracker.daily blind-export --dates D1,D2 --out DIR` | 每天各自匯出到 `DIR/YYYY-MM-DD/`：盲計 8 篇（P、M 都有寫的事件，4 P／4 M）、抽查表、對照表 SHA-256；對照表本體寫到 `DIR/_private/YYYY-MM-DD/mapping.json`。B 交件後用 `scripts/analyze_blind_count.py --labels L --date D` 分析 |
 | `python -m reddit_tracker.web` | 本機檢視器（127.0.0.1:8765） |
 | `python -m reddit_tracker.newsroom.scheduler` | 前景跑 scheduler（正式環境由 launchd 啟動） |
 | `python -m reddit_tracker.newsroom.deploy` | 對設定的 SQLite DB 做 online backup |

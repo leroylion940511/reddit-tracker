@@ -632,11 +632,19 @@ def export_annotation(edition_date: date, out_root: str | Path) -> Path | None:
     """當期盲計稿與抽查稿寫到 `out_root/YYYY-MM-DD/`（手冊步驟 11 第 4 點、8.3 第 7 點、9.2）。
 
     P、M 都有稿才匯出。`blind.sample_day` 從兩組都有寫的事件抽 8 篇（4 P／4 M），給標註員的是
-    blind.txt、spot-check.txt、mapping.sha256；對照表本體放 `_private/mapping.json`
-    （內容就是 `mapping_bytes`，雜湊可用 `shasum -a 256` 重算）。共同事件 0 個時不寫 blind.txt
-    與對照表，改寫 README.txt 說明原因；抽查表照常。
+    blind.txt、spot-check.txt、mapping.sha256；對照表本體放在當天資料夾之外的
+    `out_root/_private/YYYY-MM-DD/mapping.json`（`blind.private_mapping_path`；內容就是 `mapping_bytes`，
+    雜湊可用 `shasum -a 256` 重算），所以 `out_root/YYYY-MM-DD/` 整個交給 B 也不會帶到對照表。
+    共同事件 0 個時不寫 blind.txt 與對照表，改寫 README.txt 說明原因；抽查表照常。
     """
-    from .blind import BLIND_PER_DAY, export_blind_count, mapping_bytes, spot_check_sheet
+    from .blind import (
+        BLIND_PER_DAY,
+        export_blind_count,
+        legacy_mapping_path,
+        mapping_bytes,
+        private_mapping_path,
+        spot_check_sheet,
+    )
 
     with session_scope() as session:
         if not (_variant_has_stories(session, edition_date, PIPELINE) and _variant_has_stories(session, edition_date, MAS)):
@@ -647,8 +655,14 @@ def export_annotation(edition_date: date, out_root: str | Path) -> Path | None:
     out = Path(out_root) / edition_date.isoformat()
     out.mkdir(parents=True, exist_ok=True)
     (out / "spot-check.txt").write_text(spot, encoding="utf-8")
-    for stale in ("README.txt", "blind.txt", "mapping.sha256", "_private/mapping.json"):  # 同一天重匯出
-        (out / stale).unlink(missing_ok=True)
+    private = private_mapping_path(out_root, edition_date)
+    for stale in (out / "README.txt", out / "blind.txt", out / "mapping.sha256", private):  # 同一天重匯出
+        stale.unlink(missing_ok=True)
+    if legacy_mapping_path(out_root, edition_date).exists():
+        logger.warning(
+            "annotation export %s: old mapping %s is inside the folder for annotator B; move it out",
+            edition_date, legacy_mapping_path(out_root, edition_date),
+        )
     if not mapping:
         (out / "README.txt").write_text(
             f"{edition_date.isoformat()} 沒有盲計稿：P、M 兩組都有寫正文的事件是 0 個，所以今天不用盲計。"
@@ -657,19 +671,35 @@ def export_annotation(edition_date: date, out_root: str | Path) -> Path | None:
         )
         logger.warning("annotation export %s: no common events, blind.txt not written", edition_date)
         return out
-    private = out / "_private"
-    private.mkdir(exist_ok=True)
+    private.parent.mkdir(parents=True, exist_ok=True)
     (out / "blind.txt").write_text(text, encoding="utf-8")
     (out / "mapping.sha256").write_text(digest + "\n", encoding="utf-8")
-    (private / "mapping.json").write_bytes(mapping_bytes(mapping))
+    private.write_bytes(mapping_bytes(mapping))
     pipeline = sum(1 for meta in mapping.values() if meta["variant"] == PIPELINE)
     logger.info(
-        "annotation export %s: items=%d (P=%d M=%d hold=%d) sha256=%s dir=%s", edition_date, len(mapping),
-        pipeline, len(mapping) - pipeline, sum(1 for meta in mapping.values() if meta["hold"]), digest, out,
+        "annotation export %s: items=%d (P=%d M=%d hold=%d) sha256=%s dir=%s mapping=%s", edition_date,
+        len(mapping), pipeline, len(mapping) - pipeline, sum(1 for meta in mapping.values() if meta["hold"]), digest,
+        out, private,
     )
     if len(mapping) < BLIND_PER_DAY:
         logger.warning("annotation export %s: only %d blind items (fewer than 8 common events)", edition_date, len(mapping))
     return out
+
+
+def export_annotation_report(edition_date: date, out_root: str | Path) -> str:
+    """手動補匯出（CLI `blind-export`、`scripts/export_blind_count.py`）共用的一行輸出。
+
+    `日期 雜湊|no blind items|skipped 當天資料夾 [對照表路徑]`；只有寫了對照表才印最後一欄。
+    """
+    from .blind import private_mapping_path
+
+    out = export_annotation(edition_date, out_root)
+    if out is None:
+        return f"{edition_date.isoformat()} skipped: P 或 M 沒有稿"
+    digest = out / "mapping.sha256"
+    if not digest.exists():
+        return f"{edition_date.isoformat()} no blind items {out}"
+    return f"{edition_date.isoformat()} {digest.read_text().strip()} {out} {private_mapping_path(out_root, edition_date)}"
 
 
 def prepare_with_shadow(edition_date: date, *, now: datetime | None = None) -> int:
@@ -821,7 +851,7 @@ def main(argv: list[str] | None = None) -> int:
     hold.add_argument("--story", type=int, required=True)
     hold.add_argument("--date", type=date.fromisoformat, required=True)
     hold.add_argument("--by", required=True)
-    blind = sub.add_parser("blind-export", help="每天各自匯出盲計稿、抽查表、對照表雜湊到 OUT/YYYY-MM-DD/")
+    blind = sub.add_parser("blind-export", help="每天各自匯出盲計稿、抽查表、對照表雜湊到 OUT/YYYY-MM-DD/，對照表本體到 OUT/_private/YYYY-MM-DD/")
     blind.add_argument("--dates", required=True, help="逗號分隔的 YYYY-MM-DD")
     blind.add_argument("--out", type=Path, required=True, help="annotation 根目錄")
     args = parser.parse_args(argv)
@@ -853,8 +883,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "blind-export":
         days = [date.fromisoformat(part) for part in args.dates.split(",") if part]
         for day in days:
-            out = export_annotation(day, args.out)
-            print(f"{day.isoformat()} {out if out else 'skipped'}")
+            print(export_annotation_report(day, args.out))
         return 0
     now = getattr(args, "now", None)
     if args.date:

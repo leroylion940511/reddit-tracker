@@ -211,7 +211,9 @@ prepare_daily(edition_date, *, writer_mode=None, refresh=False, now=None, writer
 #   shadow=True 時撰稿 client 的額度用途是 SHADOW_PURPOSE（DailyWriter(name, purpose=...)）。
 prepare_with_shadow(edition_date, *, now=None) -> int   # DAILY_MODE=mas＋DAILY_SHADOW_ENABLED：P 影子先跑建快照，M 用同一份快照；回傳 M 的 edition id
 #   影子失敗只記 log（M 自建快照、不匯出）；當天已有 daily_editions 就不跑影子
-export_annotation(edition_date, out_root) -> Path | None   # P、M 都有稿才寫 out_root/YYYY-MM-DD/{blind.txt,spot-check.txt,mapping.sha256,_private/mapping.json}
+export_annotation(edition_date, out_root) -> Path | None   # P、M 都有稿才寫 out_root/YYYY-MM-DD/{blind.txt,spot-check.txt,mapping.sha256} 與 out_root/_private/YYYY-MM-DD/mapping.json
+export_annotation_report(edition_date, out_root) -> str     # blind-export／export_blind_count.py 共用：「日期 雜湊 當天資料夾 對照表路徑」
+private_mapping_path(root, edition_date) -> Path            # blind.py：root/_private/YYYY-MM-DD/mapping.json
 publish_daily(edition_date) -> int   # 發行當下用 build_edition_view 重渲染；mas 未核准的全文改成標題短訊
 # reddit_tracker/daily/view.py
 render_html(view: EditionView) -> str   # 只吃 EditionView

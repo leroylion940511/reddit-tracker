@@ -7,6 +7,7 @@ import json
 import random
 import re
 from datetime import date
+from pathlib import Path
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -180,13 +181,24 @@ def export_blind_count(
 def mapping_bytes(mapping: dict) -> bytes:
     """對照表的標準位元組：UTF-8 的 `json.dumps(mapping, ensure_ascii=False, sort_keys=True, separators=(",", ":"))`。
 
-    `_private/mapping.json` 就是寫這串位元組（不加換行），所以 `shasum -a 256 mapping.json` 等於 `mapping.sha256`。
+    `_private/YYYY-MM-DD/mapping.json` 就是寫這串位元組（不加換行），所以 `shasum -a 256 mapping.json` 等於
+    `mapping.sha256`。
     """
     return json.dumps(mapping, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 
 def mapping_digest(mapping: dict) -> str:
     return hashlib.sha256(mapping_bytes(mapping)).hexdigest()
+
+
+def private_mapping_path(root: str | Path, edition_date: date) -> Path:
+    """對照表本體：`root/_private/YYYY-MM-DD/mapping.json`，放在交給 B 的 `root/YYYY-MM-DD/` 之外。"""
+    return Path(root) / "_private" / edition_date.isoformat() / "mapping.json"
+
+
+def legacy_mapping_path(root: str | Path, edition_date: date) -> Path:
+    """2026-10-30 以前的位置 `root/YYYY-MM-DD/_private/mapping.json`；在這裡發現代表當天資料夾含對照表。"""
+    return Path(root) / edition_date.isoformat() / "_private" / "mapping.json"
 
 
 def _count_sheet(count: int) -> str:

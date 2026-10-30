@@ -193,7 +193,9 @@ def test_annotation_export_writes_blind_spot_and_private_mapping(shadow_env):
     blind = (out / "blind.txt").read_text(encoding="utf-8")
     assert "#1" in blind and "pipeline" not in blind and "mas" not in blind
     assert (out / "spot-check.txt").read_text(encoding="utf-8").startswith("# 抽查 2026-10-28")
-    mapping = json.loads((out / "_private" / "mapping.json").read_text(encoding="utf-8"))
+    assert not (out / "_private").exists()
+    private = shadow_env.tmp_path / "annotation" / "_private" / "2026-10-28" / "mapping.json"
+    mapping = json.loads(private.read_text(encoding="utf-8"))
     assert {m["variant"] for m in mapping.values()} == {"pipeline", "mas"}
     from reddit_tracker.daily.blind import mapping_digest
 

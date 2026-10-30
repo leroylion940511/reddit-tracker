@@ -291,13 +291,14 @@
   - **版本**：M 用送核准前的最新版（含 CHALLENGE 後修稿），**HOLD 的稿照抽**。是否 HOLD 看 `agent_messages`：有非真人發出、status 不是 rejected／expired 的 HOLD（查核員來回 2 輪、查核員停擺）。不看 `story_versions.status`，因為真人 HOLD（`hold_story`）會直接改最新版的 status，事後重匯出會分不出是誰擋的；真人 HOLD 不算 M 的 HOLD（手冊 8.3「人工擋下的錯不算 MAS 的功勞」）。
   - **種子**：`random.Random(f"{BLIND_SEED}-{YYYY-MM-DD}")`（`BLIND_SEED=20261201`），每天不同、同一天重跑一樣。共同事件先依 keeper 排序，`rng.sample` 抽 8 個，再把 4 個 P、4 個 M 的組別清單 `rng.shuffle` 後依序配給抽到的事件。編號另用 `random.Random(f"{BLIND_SEED}-order-{日期}")` 打亂。抽查表的隨機一篇用 `random.Random(f"{BLIND_SEED}-spot-{日期}")`。
   - **不分層**：手冊沒要求按版別平衡；一天 8 篇再分台灣／國際／科技三層，每層只剩 2–3 篇，分層只會讓抽樣更不隨機，所以照手冊直接從全部共同事件抽。
-  - **不足 8 個**：共同事件全部都抽，P 拿 ⌊n/2⌋、M 拿其餘；n 是奇數時多出的那一篇由同一個 rng 決定給 P 或 M。blind.txt 開頭寫「共 n 篇」與「注意：只有 n 篇（兩組都有寫的事件只有 n 個，不足 8 個）」，log 記 warning。**0 個**：不寫 blind.txt、mapping.sha256、`_private/mapping.json`，改寫 `README.txt` 說明原因並記 warning；spot-check.txt 照常。P 或 M 整組沒稿時照舊整天不匯出。
+  - **不足 8 個**：共同事件全部都抽，P 拿 ⌊n/2⌋、M 拿其餘；n 是奇數時多出的那一篇由同一個 rng 決定給 P 或 M。blind.txt 開頭寫「共 n 篇」與「注意：只有 n 篇（兩組都有寫的事件只有 n 個，不足 8 個）」，log 記 warning。**0 個**：不寫 blind.txt、mapping.sha256、對照表，改寫 `README.txt` 說明原因並記 warning；spot-check.txt 照常。P 或 M 整組沒稿時照舊整天不匯出。
   - **blind.txt**：開頭一行「# 盲計 日期｜共 n 篇」，接著 `#編號` 區塊（版、標題、正文、來源：`- 媒體｜標題｜摘要`），最後是計數表 `編號,第1類,…,第7類,你猜這篇是哪一組（P／M／不知道）`。🔁 原本計數表只有 4 類，改成手冊 9.4 的七類（主指標算 1–5 類，6、7 另列）。
-  - **對照表**：`_private/mapping.json`，編號 → `edition_date`、`story_id`、`variant`（pipeline／mas）、`version`、`keeper_cluster_id`、`merged_cluster_ids`、`section`、`hold`（只有 M 可能為 true）。
-  - **雜湊定義**：`mapping.sha256` ＝ SHA-256 of UTF-8 `json.dumps(mapping, ensure_ascii=False, sort_keys=True, separators=(",", ":"))`（`blind.py::mapping_bytes`）。`mapping.json` 就是寫這串位元組、不加換行，所以 `shasum -a 256 _private/mapping.json` 直接等於 `mapping.sha256`；`analyze_blind_count.py` 讀對照表時也會用同目錄上一層的 `mapping.sha256` 驗證，不符就停。
-  - **分析**：`analyze_blind`／`scripts/analyze_blind_count.py` 讀 labels `{"編號": {"class1".."class7": 0/1, "guess": "P"|"M"|"不知道"}}`（多天時鍵用「日期:編號」、`--mapping` 給多次），輸出各類錯誤、主指標（1–5 類 ÷ 篇數 × 10）、HOLD 敏感度版本（M 的 HOLD 稿篇數照算、錯誤記 0）、B 猜組別正確率（「不知道」不算猜）。
+  - **對照表**：`annotation/_private/YYYY-MM-DD/mapping.json`（`blind.py::private_mapping_path`），編號 → `edition_date`、`story_id`、`variant`（pipeline／mas）、`version`、`keeper_cluster_id`、`merged_cluster_ids`、`section`、`hold`（只有 M 可能為 true）。
+  - **對照表位置（2026-10-30 改）**：原本放在 `annotation/YYYY-MM-DD/_private/mapping.json`，當天資料夾要記得先拿掉 `_private/` 才能交 B，容易出錯。改放 `annotation/_private/YYYY-MM-DD/`，讓 `annotation/YYYY-MM-DD/`（blind.txt、spot-check.txt、mapping.sha256 或 README.txt）可以整個交給 B。`mapping.sha256` 留在當天資料夾：手冊步驟 11 只要求雜湊事先 commit、9.2 只要求盲計稿與抽查稿放進 `annotation/YYYY-MM-DD/`，雜湊本來就是公開的，沒有其他位置要求。`annotation/` 整個 gitignore，`git check-ignore -v annotation/_private/2026-11-09/mapping.json` 命中 `.gitignore:48:annotation/`。重匯出時若舊位置還有對照表，log 記 warning（不自動刪）；`analyze_blind_count.py` 發現舊位置直接停。
+  - **雜湊定義**：`mapping.sha256` ＝ SHA-256 of UTF-8 `json.dumps(mapping, ensure_ascii=False, sort_keys=True, separators=(",", ":"))`（`blind.py::mapping_bytes`）。`mapping.json` 就是寫這串位元組、不加換行，所以 `shasum -a 256 annotation/_private/YYYY-MM-DD/mapping.json` 直接等於 `annotation/YYYY-MM-DD/mapping.sha256`；`analyze_blind_count.py` 讀對照表時一定用這個雜湊檔驗證，雜湊檔不在或不符就停。
+  - **分析**：`analyze_blind`／`scripts/analyze_blind_count.py` 讀 labels `{"編號": {"class1".."class7": 0/1, "guess": "P"|"M"|"不知道"}}`（`--date YYYY-MM-DD [--root annotation]` 讀新位置，或 `--mapping annotation/_private/YYYY-MM-DD/mapping.json`；多天時鍵用「日期:編號」、參數給多次；對照表在舊位置或找不到都明確失敗），輸出各類錯誤、主指標（1–5 類 ÷ 篇數 × 10）、HOLD 敏感度版本（M 的 HOLD 稿篇數照算、錯誤記 0）、B 猜組別正確率（「不知道」不算猜）。
   - **抽查表**：M 組最新 page_plan 的頭版主稿＋其餘有正文的 M 稿（含 HOLD）中隨機 1 篇，送核准前版本，附來源媒體、標題、摘要。🔁 原本隨機池含沒有稿的候選、且種子每天相同，已改。
-  - 測試：`tests/test_blind_sampling.py`（13 個，不呼叫真 LLM）。
+  - 測試：`tests/test_blind_sampling.py`（17 個，不呼叫真 LLM）。
 - ✅ **種子固定**：`BLIND_SEED=20261201`、`EXP2_SEED=20261211`。同一輸入的編號與 SHA-256 穩定。實驗二從 M 組抽最多 25 篇。
 - 👤 **用真的 3 天 P＋M 試匯出，並把對照表 SHA-256 commit 進 repo**：現在沒有那三天的稿。🔁 方案 B：11/06 用 11/04–11/06 其中一天試匯出；試刊期間 06:00 準備後自動匯出到 `annotation/YYYY-MM-DD/`，每天交給 B 之前 commit 當天的對照表雜湊（`BLIND_SEED=20261201` 名稱沿用、數字不改）。`test_real_blind_mapping_hash_is_committed` 掛 xfail。對照表本體不要 commit（`annotation/` 已在 `.gitignore`）；有真資料之後只 commit 雜湊。
 
@@ -474,7 +475,7 @@
 **順序：P 先、M 後（照手冊 2.3、步驟 12、8.3）。**
 1. `prepare_daily(shadow=True)`：P 組評分→編輯會議（跨語言合併，**只在這裡開一次**）→建 `daily_snapshots`→撰稿→寫 stories／story_versions／page_plans（`run_variant=pipeline`）與 `site/daily/shadow/YYYY-MM-DD.html`。不寫 daily_editions／daily_articles、不送 Telegram。
 2. `prepare_daily(mode="mas", snapshot=同一份快照)`：M 走 `plan_from_snapshot`，不再呼叫 `find_same_events`，`_finish_mas` 把同一份候選寫回快照，公平原則 1（同輸入、合併只算一次）成立；模型字串與 `review_story` 規則本來就共用。
-3. 兩組都有稿才匯出（`export_annotation`）：`annotation/YYYY-MM-DD/blind.txt`（`export_blind_count`，每日抽 8 篇，規則見步驟 11「每日抽樣」）、`spot-check.txt`（`spot_check_sheet`）、`mapping.sha256`，對照表本體在 `_private/mapping.json`（不給標註員；`annotation/` 已 gitignore）。時間約 06:10，在 07:00 前。
+3. 兩組都有稿才匯出（`export_annotation`）：`annotation/YYYY-MM-DD/blind.txt`（`export_blind_count`，每日抽 8 篇，規則見步驟 11「每日抽樣」）、`spot-check.txt`（`spot_check_sheet`）、`mapping.sha256`，對照表本體在當天資料夾之外的 `annotation/_private/YYYY-MM-DD/mapping.json`（不給標註員；`annotation/` 已 gitignore）。時間約 06:10，在 07:00 前。
 - 影子任何例外只記 log（`pipeline shadow … failed`），M 照常、自己建快照，當天不匯出。匯出失敗也只記 log。
 - 當天 daily_editions 已有這期（重跑、手動 prepare 過）就不跑影子，避免覆寫 M 用過的快照。
 - 🔁 M 從快照開始時 `stats.merged_groups` 由快照的 `merged_cluster_ids` 還原，`entity_merge_groups`／`llm_merge_groups`／`rejected_merges` 為空（desk 細節記在 P 影子那次的 log 與 `llm_records` role=desk、run_variant=pipeline）。共用的編輯會議那 1 次呼叫算在 P 的帳上。
@@ -490,5 +491,5 @@
 
 **設定鍵：** `DAILY_SHADOW_ENABLED`（預設 false）、`DAILY_SHADOW_LLM_LIMIT`（預設 12）、`DAILY_ANNOTATION_DIR`（預設 `annotation`）；`.env.example`、README 已同步。測試 `tests/test_shadow.py`（不呼叫真 LLM）。
 
-**缺口（已補，2026-10-30）：** 原本 `export_blind_count` 匯出當期兩組全部稿件；現在依手冊 8.3 第 7 點每天只抽 8 篇（見步驟 11「每日抽樣」）。仍要注意：`_private/` 在 `annotation/YYYY-MM-DD/` 裡面，交給 B 時只能給 blind.txt（或先把 `_private/` 移走），不能整個資料夾分享。
+**缺口（已補，2026-10-30）：** 原本 `export_blind_count` 匯出當期兩組全部稿件；現在依手冊 8.3 第 7 點每天只抽 8 篇（見步驟 11「每日抽樣」）。對照表原本在 `annotation/YYYY-MM-DD/_private/`，交 B 時要先移走；2026-10-30 改放 `annotation/_private/YYYY-MM-DD/`，當天資料夾可以整個分享。
 

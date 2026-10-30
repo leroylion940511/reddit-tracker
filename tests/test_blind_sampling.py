@@ -17,6 +17,7 @@ from reddit_tracker.daily.blind import (
     export_blind_count,
     mapping_bytes,
     mapping_digest,
+    private_mapping_path,
     sample_day,
     spot_check_sheet,
 )
@@ -202,8 +203,12 @@ def test_export_annotation_writes_files_and_verifiable_hash(session, tmp_path, m
     monkeypatch.setattr(run_module, "session_scope", lambda: _scope(session))
     _edition(session, DAY, 10)
     out = run_module.export_annotation(DAY, tmp_path)
-    assert sorted(p.name for p in out.iterdir()) == ["_private", "blind.txt", "mapping.sha256", "spot-check.txt"]
-    raw = (out / "_private" / "mapping.json").read_bytes()
+    assert out == tmp_path / "2026-11-09"
+    assert sorted(p.name for p in out.iterdir()) == ["blind.txt", "mapping.sha256", "spot-check.txt"]
+    assert not list(out.rglob("mapping.json")) and not (out / "_private").exists()
+    private = tmp_path / "_private" / "2026-11-09" / "mapping.json"
+    assert private == private_mapping_path(tmp_path, DAY)
+    raw = private.read_bytes()
     digest = (out / "mapping.sha256").read_text().strip()
     assert hashlib.sha256(raw).hexdigest() == digest == mapping_digest(json.loads(raw))
     mapping = json.loads(raw)
@@ -220,6 +225,75 @@ def test_export_annotation_with_no_common_events_writes_readme(session, tmp_path
     out = run_module.export_annotation(DAY, tmp_path)
     assert sorted(p.name for p in out.iterdir()) == ["README.txt", "spot-check.txt"]
     assert "0 個" in (out / "README.txt").read_text(encoding="utf-8")
+    assert not (tmp_path / "_private").exists()
+
+
+def test_reexport_replaces_private_mapping_and_report_line(session, tmp_path, monkeypatch):
+    monkeypatch.setattr(run_module, "session_scope", lambda: _scope(session))
+    _edition(session, DAY, 10)
+    private = private_mapping_path(tmp_path, DAY)
+    first = run_module.export_annotation_report(DAY, tmp_path)
+    private.write_bytes(b"tampered")
+    second = run_module.export_annotation_report(DAY, tmp_path)
+    digest = (tmp_path / "2026-11-09" / "mapping.sha256").read_text().strip()
+    assert first == second == f"2026-11-09 {digest} {tmp_path / '2026-11-09'} {private}"
+    assert hashlib.sha256(private.read_bytes()).hexdigest() == digest
+
+
+def _analyze(argv):
+    import importlib.util
+    from pathlib import Path
+
+    spec = importlib.util.spec_from_file_location("analyze_blind_count", Path("scripts/analyze_blind_count.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.main(argv)
+
+
+def _exported_with_labels(session, tmp_path, monkeypatch):
+    monkeypatch.setattr(run_module, "session_scope", lambda: _scope(session))
+    _edition(session, DAY, 10)
+    run_module.export_annotation(DAY, tmp_path)
+    mapping = json.loads(private_mapping_path(tmp_path, DAY).read_bytes())
+    labels = tmp_path / "labels.json"
+    labels.write_text(json.dumps({n: {"class1": 1} for n in mapping}), encoding="utf-8")
+    return labels
+
+
+def test_analyze_script_reads_new_path_by_date_and_mapping(session, tmp_path, monkeypatch, capsys):
+    labels = _exported_with_labels(session, tmp_path, monkeypatch)
+    assert _analyze(["--labels", str(labels), "--root", str(tmp_path), "--date", "2026-11-09"]) == 0
+    by_date = json.loads(capsys.readouterr().out)
+    assert by_date["main_per_10"] == {PIPELINE: 10.0, MAS: 10.0}
+    assert _analyze(["--labels", str(labels), "--mapping", str(private_mapping_path(tmp_path, DAY))]) == 0
+    assert json.loads(capsys.readouterr().out) == by_date
+
+
+def test_analyze_script_rejects_legacy_path(session, tmp_path, monkeypatch):
+    labels = _exported_with_labels(session, tmp_path, monkeypatch)
+    legacy = tmp_path / "2026-11-09" / "_private" / "mapping.json"
+    legacy.parent.mkdir()
+    private_mapping_path(tmp_path, DAY).rename(legacy)
+    for argv in (["--root", str(tmp_path), "--date", "2026-11-09"], ["--mapping", str(legacy)]):
+        with pytest.raises(SystemExit, match="舊位置.*_private/2026-11-09/mapping.json.*盲化"):
+            _analyze(["--labels", str(labels), *argv])
+
+
+def test_analyze_script_fails_when_mapping_or_hash_missing_or_changed(session, tmp_path, monkeypatch):
+    labels = _exported_with_labels(session, tmp_path, monkeypatch)
+    argv = ["--labels", str(labels), "--root", str(tmp_path), "--date", "2026-11-09"]
+    private = private_mapping_path(tmp_path, DAY)
+    original = private.read_bytes()
+    private.write_bytes(original.replace(b'"pipeline"', b'"mas"', 1))
+    with pytest.raises(SystemExit, match="SHA-256"):
+        _analyze(argv)
+    private.write_bytes(original)
+    (tmp_path / "2026-11-09" / "mapping.sha256").unlink()
+    with pytest.raises(SystemExit, match="mapping.sha256"):
+        _analyze(argv)
+    private.unlink()
+    with pytest.raises(SystemExit, match="找不到對照表"):
+        _analyze(argv)
 
 
 def test_analyze_hold_sensitivity_counts_hold_as_blocked():
