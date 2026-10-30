@@ -205,7 +205,7 @@ deploy/install_launchd.sh rsshub-install    # 本機 RSSHub（只綁 127.0.0.1:1
 | `python -m reddit_tracker.daily trace --date D [--variant V] [--cluster ID]` | 印出一期的訊息與稿件版本 |
 | `python -m reddit_tracker.daily approve --story ID --by NAME` | 真人核可一則稿 |
 | `python -m reddit_tracker.daily hold --story ID --date D --by NAME` | 真人 HOLD 一則稿 |
-| `python -m reddit_tracker.daily blind-export --dates D1,D2 --out DIR` | 匯出盲計純文字與對照表 SHA-256 |
+| `python -m reddit_tracker.daily blind-export --dates D1,D2 --out DIR` | 每天各自匯出到 `DIR/YYYY-MM-DD/`：盲計 8 篇（P、M 都有寫的事件，4 P／4 M）、抽查表、對照表 SHA-256 |
 | `python -m reddit_tracker.web` | 本機檢視器（127.0.0.1:8765） |
 | `python -m reddit_tracker.newsroom.scheduler` | 前景跑 scheduler（正式環境由 launchd 啟動） |
 | `python -m reddit_tracker.newsroom.deploy` | 對設定的 SQLite DB 做 online backup |
@@ -220,7 +220,7 @@ deploy/install_launchd.sh rsshub-install    # 本機 RSSHub（只綁 127.0.0.1:1
 REDDIT_TRACKER_NO_DOTENV=1 uv run python -m pytest -q
 ```
 
-目前基準：302 passed／4 skipped／2 xfailed。2 個 xfail 是要等真人與真實日曆的關卡（連續 3 天 live 出刊與試刊公告、真實盲計對照表雜湊），4 個 skip 是重編版沒見報而不適用的案例。
+目前基準：315 passed／4 skipped／2 xfailed。2 個 xfail 是要等真人與真實日曆的關卡（連續 3 天 live 出刊與試刊公告、真實盲計對照表雜湊），4 個 skip 是重編版沒見報而不適用的案例。
 
 - **測試不呼叫真 LLM**：`tests/llm_guard.py` 全域擋 codex subprocess 與 Gemini HTTP；額度 state 檔改到 `tmp_path`。
 - **回歸集 E01–E16**（`tests/regression/cases/`，10/27 首期的 15 個錯誤案例＋E09 非錯誤案例）：runner 用離線 fixture 在 tmp SQLite 照線上時間表重編 10/27，撰稿走 `llm/replay.py` 錄音重播，案例到期還掛 xfail 會失敗。只跑回歸集：
@@ -238,8 +238,8 @@ REDDIT_TRACKER_NO_DOTENV=1 uv run python -m pytest -q
 | 工具 | 用途 |
 | --- | --- |
 | `scripts/sample_exp1.py` ＋ `reddit_tracker/eval/exp1.py` | 實驗一：事件合併方法 A／C 的配對抽樣（固定種子，dev／test、複標），說明見 [`docs/eval/EXP1_SAMPLING.md`](docs/eval/EXP1_SAMPLING.md) |
-| `scripts/export_blind_count.py` ／ `daily blind-export` ＋ `daily/blind.py` | 實驗三盲計：P／M 稿去識別化匯出，只 commit 對照表 SHA-256 |
-| `scripts/analyze_blind_count.py` | 用標註結果與對照表算 P／M 的四類錯誤 |
+| `scripts/export_blind_count.py` ／ `daily blind-export` ＋ `daily/blind.py` | 實驗三盲計：每天從 P、M 都有寫的事件抽 8 篇（4 P／4 M）去識別化匯出，只 commit 對照表 SHA-256 |
+| `scripts/analyze_blind_count.py` | 驗證對照表雜湊後算 P／M 的七類錯誤、每 10 篇主指標、HOLD 敏感度版本與猜組別正確率 |
 | `scripts/sample_exp2.py` | 實驗二：從 M 組稿固定種子抽 25 篇 |
 | `scripts/export_1027_fixtures.py` | 從 10/27 唯讀母本匯出回歸集 fixture |
 | `scripts/rebuild_1027.py`、`compare_1027.py` | 在複本重聚＋重編 10/27，產生前後對照週報 |
