@@ -643,7 +643,7 @@ def test_newsroom_decision_route(session, monkeypatch):
 
 
 def test_blind_export_hides_variant_and_is_stable(session):
-    for variant, keeper, headline in ((PIPELINE, 1, "流水線標題"), (MAS, 2, "編輯室標題")):
+    for variant, keeper, headline in ((PIPELINE, 1, "流水線標題"), (MAS, 1, "編輯室標題")):
         story = add_story(session, edition_date=DAY, run_variant=variant, spec={
             "keeper_cluster_id": keeper, "section": "world", "kind": "report", "score": 1,
         })
@@ -663,13 +663,13 @@ def test_blind_export_hides_variant_and_is_stable(session):
     assert "pipeline" not in lowered and "mas" not in lowered
     assert "approved" not in lowered and "review_notes" not in lowered
     assert "[S1]" in text and "[S2]" in text and "你猜這篇是哪一組" in text
-    assert {meta["variant"] for meta in mapping.values()} == {PIPELINE, MAS}
+    assert len(mapping) == 1  # 同一事件只出現一個版本（抽樣細節見 test_blind_sampling.py）
     assert mapping2 == mapping
     sheet = spot_check_sheet(session, DAY, seed=BLIND_SEED)
     assert "頭版主稿" in sheet and "隨機一則" in sheet
     assert sample_exp2(session, [DAY], seed=EXP2_SEED) == sample_exp2(session, [DAY], seed=EXP2_SEED)
     summary = analyze_blind({"1": {"class1": 1, "class2": 0, "class3": 0, "class4": 0}}, mapping)
-    assert sum(summary["counts"].values()) == 2
+    assert sum(summary["counts"].values()) == 1
 
 
 def test_live_codex_t2a_on_1027_copy(session):

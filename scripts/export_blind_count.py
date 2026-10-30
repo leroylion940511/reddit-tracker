@@ -1,35 +1,37 @@
-"""匯出盲計稿。對照表本體不寫進這個目錄，只寫 SHA-256。
+"""手動補匯出盲計稿與抽查表，一天一個目錄，內容和 06:00 自動匯出（`run.export_annotation`）一模一樣。
 
-    uv run python scripts/export_blind_count.py --dates 2026-11-09 --out annotation/2026-11-09
+    uv run python scripts/export_blind_count.py --dates 2026-11-09,2026-11-10 --out annotation
 
-真人對照表請另存在不進 git 的地方。每天交給 B 之前把印出的雜湊 commit 進 repo（方案 B；手冊原為 12/01 前）。
-06:00 自動排程（DAILY_SHADOW_ENABLED=true）已會匯出到 annotation/YYYY-MM-DD/，這支腳本給手動補匯出用。
+每天寫到 OUT/YYYY-MM-DD/：blind.txt（P、M 都有寫的事件抽 8 篇、4 P／4 M、混合隨機編號）、spot-check.txt、
+mapping.sha256；對照表本體在 OUT/YYYY-MM-DD/_private/mapping.json（交給 B 之前要把 _private/ 拿掉）。
+共同事件 0 個的那天只有 README.txt 與 spot-check.txt。每天交給 B 之前把印出的雜湊 commit 進 repo
+（方案 B；手冊原為 12/01 前）。抽樣規則見 `reddit_tracker/daily/blind.py::sample_day`。
 """
 
 from __future__ import annotations
 
 import argparse
+import sys
 from datetime import date
 from pathlib import Path
 
-from reddit_tracker.daily.blind import export_blind_count, spot_check_sheet
-from reddit_tracker.db import session_scope
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from reddit_tracker.daily.run import export_annotation  # noqa: E402
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dates", required=True, help="逗號分隔的 YYYY-MM-DD")
-    parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--out", type=Path, required=True, help="annotation 根目錄")
     args = parser.parse_args(argv)
-    days = [date.fromisoformat(part) for part in args.dates.split(",") if part]
-    args.out.mkdir(parents=True, exist_ok=True)
-    with session_scope() as session:
-        text, _mapping, digest = export_blind_count(session, days)
-        spot = spot_check_sheet(session, days[0]) if days else ""
-    (args.out / "blind.txt").write_text(text, encoding="utf-8")
-    (args.out / "spot-check.txt").write_text(spot, encoding="utf-8")
-    (args.out / "mapping.sha256").write_text(digest + "\n", encoding="utf-8")
-    print(digest)
+    for day in (date.fromisoformat(part) for part in args.dates.split(",") if part):
+        out = export_annotation(day, args.out)
+        if out is None:
+            print(f"{day.isoformat()} skipped: P 或 M 沒有稿")
+            continue
+        digest = out / "mapping.sha256"
+        print(f"{day.isoformat()} {digest.read_text().strip() if digest.exists() else 'no blind items'} {out}")
     return 0
 
 

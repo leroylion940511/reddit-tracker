@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import json
 import logging
 import shutil
 import time
@@ -630,12 +629,14 @@ def _variant_has_stories(session, edition_date: date, variant: str) -> bool:
 
 
 def export_annotation(edition_date: date, out_root: str | Path) -> Path | None:
-    """當期盲計稿與抽查稿寫到 `out_root/YYYY-MM-DD/`（手冊步驟 11 第 4 點、9.2）。
+    """當期盲計稿與抽查稿寫到 `out_root/YYYY-MM-DD/`（手冊步驟 11 第 4 點、8.3 第 7 點、9.2）。
 
-    P、M 都有稿才匯出。給標註員的是 blind.txt、spot-check.txt、mapping.sha256；
-    對照表本體放 `_private/mapping.json`（不給標註員；annotation/ 已 gitignore）。
+    P、M 都有稿才匯出。`blind.sample_day` 從兩組都有寫的事件抽 8 篇（4 P／4 M），給標註員的是
+    blind.txt、spot-check.txt、mapping.sha256；對照表本體放 `_private/mapping.json`
+    （內容就是 `mapping_bytes`，雜湊可用 `shasum -a 256` 重算）。共同事件 0 個時不寫 blind.txt
+    與對照表，改寫 README.txt 說明原因；抽查表照常。
     """
-    from .blind import export_blind_count, spot_check_sheet
+    from .blind import BLIND_PER_DAY, export_blind_count, mapping_bytes, spot_check_sheet
 
     with session_scope() as session:
         if not (_variant_has_stories(session, edition_date, PIPELINE) and _variant_has_stories(session, edition_date, MAS)):
@@ -644,15 +645,30 @@ def export_annotation(edition_date: date, out_root: str | Path) -> Path | None:
         text, mapping, digest = export_blind_count(session, [edition_date])
         spot = spot_check_sheet(session, edition_date)
     out = Path(out_root) / edition_date.isoformat()
-    private = out / "_private"
-    private.mkdir(parents=True, exist_ok=True)
-    (out / "blind.txt").write_text(text, encoding="utf-8")
+    out.mkdir(parents=True, exist_ok=True)
     (out / "spot-check.txt").write_text(spot, encoding="utf-8")
+    for stale in ("README.txt", "blind.txt", "mapping.sha256", "_private/mapping.json"):  # 同一天重匯出
+        (out / stale).unlink(missing_ok=True)
+    if not mapping:
+        (out / "README.txt").write_text(
+            f"{edition_date.isoformat()} 沒有盲計稿：P、M 兩組都有寫正文的事件是 0 個，所以今天不用盲計。"
+            "抽查表照常。\n",
+            encoding="utf-8",
+        )
+        logger.warning("annotation export %s: no common events, blind.txt not written", edition_date)
+        return out
+    private = out / "_private"
+    private.mkdir(exist_ok=True)
+    (out / "blind.txt").write_text(text, encoding="utf-8")
     (out / "mapping.sha256").write_text(digest + "\n", encoding="utf-8")
-    (private / "mapping.json").write_text(
-        json.dumps(mapping, ensure_ascii=False, sort_keys=True, indent=1), encoding="utf-8",
+    (private / "mapping.json").write_bytes(mapping_bytes(mapping))
+    pipeline = sum(1 for meta in mapping.values() if meta["variant"] == PIPELINE)
+    logger.info(
+        "annotation export %s: items=%d (P=%d M=%d hold=%d) sha256=%s dir=%s", edition_date, len(mapping),
+        pipeline, len(mapping) - pipeline, sum(1 for meta in mapping.values() if meta["hold"]), digest, out,
     )
-    logger.info("annotation export %s: items=%d sha256=%s dir=%s", edition_date, len(mapping), digest, out)
+    if len(mapping) < BLIND_PER_DAY:
+        logger.warning("annotation export %s: only %d blind items (fewer than 8 common events)", edition_date, len(mapping))
     return out
 
 
@@ -805,9 +821,9 @@ def main(argv: list[str] | None = None) -> int:
     hold.add_argument("--story", type=int, required=True)
     hold.add_argument("--date", type=date.fromisoformat, required=True)
     hold.add_argument("--by", required=True)
-    blind = sub.add_parser("blind-export", help="匯出盲計純文字與對照表雜湊")
+    blind = sub.add_parser("blind-export", help="每天各自匯出盲計稿、抽查表、對照表雜湊到 OUT/YYYY-MM-DD/")
     blind.add_argument("--dates", required=True, help="逗號分隔的 YYYY-MM-DD")
-    blind.add_argument("--out", type=Path, required=True)
+    blind.add_argument("--out", type=Path, required=True, help="annotation 根目錄")
     args = parser.parse_args(argv)
     settings = get_settings()
     logging.basicConfig(level=settings.log_level, format="%(asctime)s %(levelname)s %(name)s | %(message)s")
@@ -835,16 +851,10 @@ def main(argv: list[str] | None = None) -> int:
             print(f"story={row.story_id} v{row.version} status={row.status}")
         return 0
     if args.command == "blind-export":
-        from .blind import export_blind_count
-
         days = [date.fromisoformat(part) for part in args.dates.split(",") if part]
-        with session_scope() as session:
-            text, mapping, digest = export_blind_count(session, days)
-        args.out.mkdir(parents=True, exist_ok=True)
-        (args.out / "blind.txt").write_text(text, encoding="utf-8")
-        (args.out / "mapping.sha256").write_text(digest + "\n", encoding="utf-8")
-        print(digest)
-        print(f"items={len(mapping)}")
+        for day in days:
+            out = export_annotation(day, args.out)
+            print(f"{day.isoformat()} {out if out else 'skipped'}")
         return 0
     now = getattr(args, "now", None)
     if args.date:
