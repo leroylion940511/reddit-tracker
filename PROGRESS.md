@@ -4,7 +4,7 @@
 > 現行企劃見 `docs/AI_NEWS_COMPANY_PROPOSAL.md`、規格入口見 `docs/v5/README.md`。
 > 2026-10-27 以前的段落是 v4／v5 歷史紀錄，裡面提到的 bot、scrapers、services、v5 newsroom 模組都已移除。
 
-**Last updated:** 2026-10-30（PR #1 手冊步驟 6–11 併入 `mas-handbook`，merge `48c7c2b`）
+**Last updated:** 2026-10-30（`mas-handbook` 併入 main 並部署 production，`DAILY_MODE=mas`）
 
 ## 目前狀態（2026-10-30，`mas-handbook`：手冊步驟 0–11 的程式都在）
 
@@ -15,7 +15,8 @@
   - T1（E06）＋T3（8→6）2 次（另有 2 次是修正前的試跑，抓到總編決定的缺陷）。
   - 錄音都可離線重播：回歸集 0 miss、MAS 整期與 T1／T3 0 次真呼叫重現。
 - ✅ 全套 287 passed／4 skipped／2 xfailed。2 個 xfail 都是 👤：連續 3 天 live＋試刊日期公告（11/30 關卡）、真實盲計對照表 SHA-256（12/01 前）。tag `gate-1115` 已在本地打（不 push，由協調者決定），見 ADAPTATION「PR #1 整合」。
-- ⚠️ `mas-handbook` 尚未併 main、尚未部署；production 仍是 10/27 的 pipeline。部署需要 Alembic 升到 `b8d4f0a17c33`，以及設定鍵改名（`LLM_DAILY_LIMIT` 等），由協調者決定。
+- ✅ 已部署（2026-10-30 10:05 台北，依使用者同意）：`mas-handbook` fast-forward 併入 main（`42a3cf5`→`bd84bcd`）；全套 287 passed／4 skipped／2 xfailed；備份 `~/reddit_tracker_backups/deploy-20261030-1003/`（DB integrity ok＋`.env`）；先在備份複本演練，再把 production Alembic 由 `a6c9e2f31d84` 升到 `b8d4f0a17c33`（舊 `llm_records` 1 筆保留）；`.env` 加 `DAILY_MODE=mas`、`LLM_DAILY_LIMIT=60`（舊 `GEMINI_DAILY_LIMIT`／`GEMINI_QUOTA_STATE_PATH` 原本就不在 `.env`）；只重啟 `com.leroy.reddit-tracker.newsroom`，三個 job 已註冊，rsshub 未動。部署時沒有呼叫 Codex、沒有試編或發送。
+  - 👀 10/31 起 06:00 以 M 組準備（約 30 次 Codex，額度 60）、08:35 發行；MAS 未核准的稿只發標題短訊，要全文需先 `uv run python -m reddit_tracker.daily approve --story ID --by 名字`。
 - ➡️ 下一步（人工／日曆）：
   - 11/03 從 production 做唯讀快照，正式抽實驗一配對；11/04 交 A、B。
   - 11/12 前打 `exp1-frozen`。
