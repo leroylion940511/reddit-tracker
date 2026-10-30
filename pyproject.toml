@@ -1,7 +1,7 @@
 [project]
 name = "reddit-tracker"
 version = "0.1.0"
-description = "Reddit 素人爆文發現 / 追蹤 / 問答系統 — 學術專題 v4"
+description = "AI 綜合日報：多來源新聞收集、事件聚合、pipeline／Multi-Agent 編輯室撰稿查核、人工核可後 Telegram 發行（畢業專題）"
 requires-python = ">=3.11"
 dependencies = [
     "alembic>=1.18.4",
