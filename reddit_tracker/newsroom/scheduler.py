@@ -17,7 +17,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from ..collection.clustering import cluster_recent_items
 from ..collection.collector import collect_due_sources
 from ..config import get_settings
-from ..daily.run import prepare_daily, publish_daily
+from ..daily.run import prepare_daily, prepare_with_shadow, publish_daily
 from ..db import session_scope
 from ..seeds.news_sources import load_registry
 
@@ -76,8 +76,17 @@ def _run_source_collection() -> None:
 def _prepare_daily_today() -> None:
     settings = get_settings()
     today = datetime.now(ZoneInfo(settings.newsroom_delivery_timezone)).date()
-    edition_id = prepare_daily(today)
+    if shadow_enabled(settings):
+        # 手冊步驟 10、12：P 影子先跑、M 後跑，同一份快照；影子失敗只記 log
+        edition_id = prepare_with_shadow(today)
+    else:
+        edition_id = prepare_daily(today)
     logger.info("daily edition prepared: date=%s id=%s", today, edition_id)
+
+
+def shadow_enabled(settings) -> bool:
+    """只有 DAILY_MODE=mas 且 DAILY_SHADOW_ENABLED=true 才跑 P 影子；pipeline 模式行為不變。"""
+    return getattr(settings, "daily_mode", "pipeline") == "mas" and bool(getattr(settings, "daily_shadow_enabled", False))
 
 
 def _publish_daily_today() -> None:
@@ -150,10 +159,13 @@ def main() -> int:
     signal.signal(signal.SIGINT, shutdown)
     signal.signal(signal.SIGTERM, shutdown)
     logger.info(
-        "newsroom scheduler starting: collection=%s/%dmin, daily=%s prepare=%02d:%02d delivery=%02d:%02d %s",
+        "newsroom scheduler starting: collection=%s/%dmin, daily=%s mode=%s shadow=%s "
+        "prepare=%02d:%02d delivery=%02d:%02d %s",
         settings.news_collection_enabled,
         settings.news_collection_tick_minutes,
         settings.daily_edition_enabled,
+        settings.daily_mode,
+        shadow_enabled(settings),
         settings.daily_prepare_hour,
         settings.daily_prepare_minute,
         settings.daily_delivery_hour,

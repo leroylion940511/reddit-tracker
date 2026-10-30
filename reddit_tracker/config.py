@@ -91,6 +91,13 @@ class Settings(BaseSettings):
     daily_delivery_hour: int = 8
     daily_delivery_minute: int = 35
     daily_site_dir: str = "site/daily"
+    # P 組影子版（手冊步驟 10、12、8.3）：DAILY_MODE=mas 時 06:00 先跑 P 影子、M 再從同一份快照跑。
+    # 影子不寫 daily_editions、不發 Telegram；預設關閉，pipeline 模式不看這個旗標。
+    daily_shadow_enabled: bool = False
+    # P 影子一個太平洋日最多用幾格 LLM 額度（含編輯會議與重試）；M 至少保有 LLM_DAILY_LIMIT 減這個數。
+    daily_shadow_llm_limit: int = 12
+    # 影子跑完後，盲計稿與抽查稿匯出到這裡的 YYYY-MM-DD/（已 gitignore；對照表在 _private/）
+    daily_annotation_dir: str = "annotation"
     gemini_daily_model: str = "gemini-3.5-flash-lite"
 
     # --- 舊排程（候選探索、舊版日報編採與發送）已在 commit 2d95c07 移除；設 true 也不會復活 ---
@@ -105,6 +112,13 @@ class Settings(BaseSettings):
         value = value.strip().lower()
         if value not in LLM_PROVIDERS:
             raise ValueError(f"LLM provider 只允許 {'/'.join(LLM_PROVIDERS)}，不得是 {value!r}")
+        return value
+
+    @field_validator("daily_shadow_llm_limit")
+    @classmethod
+    def _check_shadow_limit(cls, value: int) -> int:
+        if value < 1:
+            raise ValueError("DAILY_SHADOW_LLM_LIMIT 至少要 1")
         return value
 
     @field_validator("daily_mode")

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 import logging
 import shutil
 import time
@@ -23,9 +24,9 @@ from ..collection.clustering import ClusterRunStats, cluster_recent_items
 from ..collection.entities import EntityContext, MergeRules, load_lexicon
 from ..config import LLM_PROVIDERS, get_settings
 from ..db import session_scope
-from ..llm.quota import QuotaExhausted
+from ..llm.quota import SHADOW_PURPOSE, QuotaExhausted
 from ..llm.records import bind_log_factory, bind_log_session, llm_log_meta
-from ..models import DailyArticle, DailyEdition, LLMRecord, Story, StoryCluster
+from ..models import DailyArticle, DailyEdition, DailySnapshot, LLMRecord, Story, StoryCluster, StoryVersion
 from ..seeds.news_sources import SourceRegistry, load_registry
 from .desk import DeskMerges, desk_merges
 from .evidence import EvidenceItem, EvidencePack, build_evidence, build_evidence_from_ids, title_context
@@ -330,7 +331,9 @@ def plan_from_snapshot(session, snapshot, registry) -> EditionPlan:
         if evidence.items:
             planned.append(Planned(key, selection, evidence.items, evidence.notes))
     briefs = select_briefs(candidates, selections, lambda c: pack(c).items)
-    return EditionPlan(candidates, len(candidates), [], planned, briefs=briefs, snapshot_candidates=raw)
+    # 快照裡已經是編輯會議合併後的候選；合併組從 merged_cluster_ids 還原（desk 細節不在快照裡）
+    merged_groups = [[c.cluster_id, *c.merged_ids] for c in candidates if c.merged_ids]
+    return EditionPlan(candidates, len(candidates), merged_groups, planned, briefs=briefs, snapshot_candidates=raw)
 
 
 def _write_edition_html(site_dir: str, edition_date: date, view) -> Path:
@@ -563,7 +566,8 @@ def prepare_daily(
             if existing.status == "drafted" and not refresh:
                 return existing.id
         if writer is None and writer_mode in LLM_WRITERS:
-            writer = DailyWriter(writer_mode)
+            # 影子版的額度另外記在 SHADOW_PURPOSE，受 DAILY_SHADOW_LLM_LIMIT 限制（保護 M 組的額度）
+            writer = DailyWriter(writer_mode, purpose=SHADOW_PURPOSE) if shadow else DailyWriter(writer_mode)
         with bind_log_session(session), llm_log_meta(role="desk", run_variant=mode, edition_date=edition_date):
             if snapshot is None:
                 plan = plan_edition(session, edition_date=edition_date, now=now, writer=writer, registry=registry)
@@ -616,6 +620,73 @@ def prepare_daily(
             edition_date, len(written), edition.stats["ai_articles"], edition.stats["template_articles"],
         )
         return edition.id
+
+
+def _variant_has_stories(session, edition_date: date, variant: str) -> bool:
+    return session.scalar(
+        select(func.count()).select_from(StoryVersion).join(Story, StoryVersion.story_id == Story.id)
+        .where(Story.edition_date == edition_date, Story.run_variant == variant)
+    ) > 0
+
+
+def export_annotation(edition_date: date, out_root: str | Path) -> Path | None:
+    """當期盲計稿與抽查稿寫到 `out_root/YYYY-MM-DD/`（手冊步驟 11 第 4 點、9.2）。
+
+    P、M 都有稿才匯出。給標註員的是 blind.txt、spot-check.txt、mapping.sha256；
+    對照表本體放 `_private/mapping.json`（不給標註員；annotation/ 已 gitignore）。
+    """
+    from .blind import export_blind_count, spot_check_sheet
+
+    with session_scope() as session:
+        if not (_variant_has_stories(session, edition_date, PIPELINE) and _variant_has_stories(session, edition_date, MAS)):
+            logger.info("annotation export %s skipped: P or M has no stories", edition_date)
+            return None
+        text, mapping, digest = export_blind_count(session, [edition_date])
+        spot = spot_check_sheet(session, edition_date)
+    out = Path(out_root) / edition_date.isoformat()
+    private = out / "_private"
+    private.mkdir(parents=True, exist_ok=True)
+    (out / "blind.txt").write_text(text, encoding="utf-8")
+    (out / "spot-check.txt").write_text(spot, encoding="utf-8")
+    (out / "mapping.sha256").write_text(digest + "\n", encoding="utf-8")
+    (private / "mapping.json").write_text(
+        json.dumps(mapping, ensure_ascii=False, sort_keys=True, indent=1), encoding="utf-8",
+    )
+    logger.info("annotation export %s: items=%d sha256=%s dir=%s", edition_date, len(mapping), digest, out)
+    return out
+
+
+def prepare_with_shadow(edition_date: date, *, now: datetime | None = None) -> int:
+    """`DAILY_MODE=mas` 且 `DAILY_SHADOW_ENABLED=true` 的 06:00：P 影子先跑、M 後跑（手冊 2.3、8.3）。
+
+    - 同一份快照：P 影子建快照（跨語言合併只跑一次），M 用 `plan_from_snapshot` 從同一份開始。
+    - 額度：P 影子的每次嘗試記在 `SHADOW_PURPOSE`，上限 `DAILY_SHADOW_LLM_LIMIT`；M 至少保有其餘額度。
+    - 影子失敗只記 log，M 照常（此時 M 自己建快照）；匯出失敗也只記 log。
+    - 當天 daily_editions 已有這期（重跑、手動 prepare 過）就不跑影子，避免覆寫 M 用過的快照。
+    """
+    settings = get_settings()
+    now = now or datetime.now(timezone.utc)
+    snapshot = None
+    with session_scope() as session:
+        existing = session.scalar(select(DailyEdition.status).where(DailyEdition.edition_date == edition_date))
+    if existing is not None:
+        logger.info("pipeline shadow %s skipped: edition already %s", edition_date, existing)
+    else:
+        try:
+            prepare_daily(edition_date, now=now, shadow=True)
+            with session_scope() as session:
+                row = session.scalar(select(DailySnapshot).where(DailySnapshot.edition_date == edition_date))
+                snapshot = {"candidates": list(row.candidates)} if row is not None else None
+        except Exception:  # noqa: BLE001 — 影子失敗不能影響 M
+            logger.exception("pipeline shadow %s failed; MAS continues with its own snapshot", edition_date)
+            snapshot = None
+    edition_id = prepare_daily(edition_date, now=now, mode=MAS, snapshot=snapshot)
+    if snapshot is not None:
+        try:
+            export_annotation(edition_date, getattr(settings, "daily_annotation_dir", "annotation"))
+        except Exception:  # noqa: BLE001 — 匯出失敗不影響出刊
+            logger.exception("annotation export %s failed", edition_date)
+    return edition_id
 
 
 async def _send(token: str, chat_id: int, text: str, html_path: Path, filename: str) -> list[int]:

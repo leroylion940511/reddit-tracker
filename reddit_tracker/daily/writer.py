@@ -249,17 +249,20 @@ def review_story(story: WrittenStory, evidence: list[EvidenceItem]) -> list[str]
     return problems
 
 
-def _default_client(name: str) -> _CompletionClient:
-    """只建立被選用的 provider；停用的用途根本不建 client（不是把額度設 0）。"""
+def _default_client(name: str, purpose: str = "daily") -> _CompletionClient:
+    """只建立被選用的 provider；停用的用途根本不建 client（不是把額度設 0）。
+
+    `purpose` 是額度用途：P 組影子版用 `SHADOW_PURPOSE`，受 `DAILY_SHADOW_LLM_LIMIT` 限制。
+    """
     settings = get_settings()
     if name == "codex":
         from ..llm.codex import CodexClient
 
-        return CodexClient(purpose="daily")
+        return CodexClient(purpose=purpose)
     if name == "gemini":
         from ..llm.gemini import GeminiClient
 
-        return GeminiClient(purpose="daily", model=settings.gemini_daily_model)
+        return GeminiClient(purpose=purpose, model=settings.gemini_daily_model)
     if name == "fake":
         from ..llm.fake import FakeClient
 
@@ -271,10 +274,15 @@ class DailyWriter:
     """一次請求寫完一個板塊的所有稿件；`name` 寫進每則稿件的 writer 欄位。"""
 
     def __init__(
-        self, name: str = "codex", *, client: _CompletionClient | None = None, lexicon: EntityLexicon | None = None
+        self,
+        name: str = "codex",
+        *,
+        client: _CompletionClient | None = None,
+        lexicon: EntityLexicon | None = None,
+        purpose: str = "daily",
     ) -> None:
         self.name = name
-        self.client = client or _default_client(name)
+        self.client = client or _default_client(name, purpose)
         self.requests = 0
         self.lexicon = lexicon
 

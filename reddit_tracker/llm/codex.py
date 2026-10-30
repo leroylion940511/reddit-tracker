@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from ..config import get_settings
-from .quota import ModelQuotaGuard
+from .quota import ModelQuotaGuard, purpose_limits_from_settings
 from .records import note_attempt
 
 logger = logging.getLogger(__name__)
@@ -84,7 +84,8 @@ class CodexClient:
         self.purpose = purpose
         self.max_retries = max_retries if max_retries is not None else settings.codex_max_retries
         self.guard = guard or ModelQuotaGuard(
-            state_path=settings.llm_quota_state_path, daily_limit=settings.llm_daily_limit
+            state_path=settings.llm_quota_state_path, daily_limit=settings.llm_daily_limit,
+            purpose_limits=purpose_limits_from_settings(settings),
         )
         self._secrets = [
             s for s in (settings.telegram_bot_token, settings.gemini_api_key, settings.rsshub_access_key)

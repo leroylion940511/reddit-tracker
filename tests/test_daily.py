@@ -193,7 +193,7 @@ def daily_env(session, monkeypatch, tmp_path):
     monkeypatch.setattr(run_module, "get_settings", lambda: settings)
     monkeypatch.setattr(run_module, "load_registry", lambda path: REGISTRY)
     monkeypatch.setattr(run_module, "fetch_market_box", lambda: None)
-    monkeypatch.setattr(run_module, "DailyWriter", lambda name: writer)
+    monkeypatch.setattr(run_module, "DailyWriter", lambda name, **kw: writer)
     monkeypatch.setattr(run_module, "RETRY_DELAY_SECONDS", 0)
     return SimpleNamespace(session=session, writer=writer, tmp_path=tmp_path)
 

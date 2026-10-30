@@ -17,7 +17,7 @@ from typing import Any
 import requests
 
 from ..config import get_settings
-from .quota import ModelQuotaGuard, QuotaExhausted
+from .quota import ModelQuotaGuard, QuotaExhausted, purpose_limits_from_settings
 from .records import note_attempt
 
 logger = logging.getLogger(__name__)
@@ -44,8 +44,13 @@ class GeminiResult:
 class GeminiQuotaGuard(ModelQuotaGuard):
     """Model-keyed daily quota (shared by every purpose) plus a per-minute request cap."""
 
-    def __init__(self, *, state_path: str, daily_limit: int, requests_per_minute: int) -> None:
-        super().__init__(state_path=state_path, daily_limit=daily_limit, requests_per_minute=requests_per_minute)
+    def __init__(
+        self, *, state_path: str, daily_limit: int, requests_per_minute: int, purpose_limits=None,
+    ) -> None:
+        super().__init__(
+            state_path=state_path, daily_limit=daily_limit, requests_per_minute=requests_per_minute,
+            purpose_limits=purpose_limits,
+        )
 
     def acquire(self, *, model: str, purpose: str) -> None:
         try:
@@ -86,6 +91,7 @@ class GeminiClient:
             state_path=state_path or settings.llm_quota_state_path,
             daily_limit=limit,
             requests_per_minute=requests_per_minute or settings.gemini_requests_per_minute,
+            purpose_limits=purpose_limits_from_settings(settings),
         )
         self.model_version = self.model
         self._session = requests.Session()
