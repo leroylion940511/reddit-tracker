@@ -4,7 +4,7 @@
 > 現行企劃見 `docs/AI_NEWS_COMPANY_PROPOSAL.md`、規格入口見 `docs/v5/README.md`。
 > 2026-10-27 以前的段落是 v4／v5 歷史紀錄，裡面提到的 bot、scrapers、services、v5 newsroom 模組都已移除。
 
-**Last updated:** 2026-10-30（`mas-handbook` 併入 main 並部署 production，`DAILY_MODE=mas`）
+**Last updated:** 2026-10-30（`mas-handbook` 併入 main 並部署 production，`DAILY_MODE=mas`；之後在 `mas-handbook` 加方案 B 的 P 影子自動排程，未部署）
 
 ## 目前狀態（2026-10-30，`mas-handbook`：手冊步驟 0–11 的程式都在）
 
@@ -14,23 +14,25 @@
   - MAS 整期 28 次＋修稿 2 次＋總編提示修正後 1 次；
   - T1（E06）＋T3（8→6）2 次（另有 2 次是修正前的試跑，抓到總編決定的缺陷）。
   - 錄音都可離線重播：回歸集 0 miss、MAS 整期與 T1／T3 0 次真呼叫重現。
-- ✅ 全套 287 passed／4 skipped／2 xfailed。2 個 xfail 都是 👤：連續 3 天 live＋試刊日期公告（11/30 關卡）、真實盲計對照表 SHA-256（12/01 前）。tag `gate-1115` 已打並於 10/30 push 到 origin，見 ADAPTATION「PR #1 整合」。
+- ✅ 全套 287 passed／4 skipped／2 xfailed。2 個 xfail 都是 👤：連續 3 天 live＋試刊日期公告（方案 B：11/04–11/06、11/06 公告；手冊原為 11/30 關卡）、真實盲計對照表 SHA-256（方案 B：試刊期間每天交 B 前；手冊原為 12/01 前）。tag `gate-1115` 已打並於 10/30 push 到 origin，見 ADAPTATION「PR #1 整合」。
 - ✅ 已部署（2026-10-30 10:05 台北，依使用者同意）：`mas-handbook` fast-forward 併入 main（`42a3cf5`→`bd84bcd`）；全套 287 passed／4 skipped／2 xfailed；備份 `~/reddit_tracker_backups/deploy-20261030-1003/`（DB integrity ok＋`.env`）；先在備份複本演練，再把 production Alembic 由 `a6c9e2f31d84` 升到 `b8d4f0a17c33`（舊 `llm_records` 1 筆保留）；`.env` 加 `DAILY_MODE=mas`、`LLM_DAILY_LIMIT=60`（舊 `GEMINI_DAILY_LIMIT`／`GEMINI_QUOTA_STATE_PATH` 原本就不在 `.env`）；只重啟 `com.leroy.reddit-tracker.newsroom`，三個 job 已註冊，rsshub 未動。部署時沒有呼叫 Codex、沒有試編或發送。
   - 👀 10/31 起 06:00 以 M 組準備（約 30 次 Codex，額度 60）、08:35 發行；MAS 未核准的稿只發標題短訊，要全文需先 `uv run python -m reddit_tracker.daily approve --story ID --by 名字`。
-- ➡️ 下一步（人工／日曆）：
-  - 11/03 從 production 做唯讀快照，正式抽實驗一配對；11/04 交 A、B。
-  - 11/12 前打 `exp1-frozen`。
-  - 11/30 關卡前：`DAILY_MODE=mas` 連續 3 天在 07:00 前產出頭版＋三內版到待審（P 同時以影子模式跑），日期寫進週報；並公告 12/01–12/10 中哪 7 天試刊，寫進週報並告知 A、B（手冊步驟 10）。
-  - 12/01 前 commit 真實盲計對照表的雜湊與抽樣／分析腳本（手冊步驟 11）。
-  - 12/01–12/10 七日試刊＋實驗三（出刊 7 期，失敗照實記錄；手冊步驟 12）。
-  - 12/11–12/15 實驗二、封版，12/15 打 `final-1215` 功能凍結（手冊步驟 13）。
+- ✅ 方案 B 程式（2026-10-30，`mas-handbook`，未部署）：`DAILY_MODE=mas`＋`DAILY_SHADOW_ENABLED=true` 時 06:00 由 `prepare_with_shadow` 先跑 P 影子（建快照、編輯會議只開一次）、M 再從同一份快照跑；P 影子額度記在用途 `shadow`，上限 `DAILY_SHADOW_LLM_LIMIT=12`（M 至少保有 48 格）；兩組都有稿就把盲計稿／抽查稿匯出到 `annotation/YYYY-MM-DD/`（對照表在 `_private/`）。影子失敗只記 log。設計與估算見 ADAPTATION「P 影子自動排程」。全套 302 passed／4 skipped／2 xfailed。
+- ➡️ 下一步（人工／日曆；方案 B 試刊提前，👤 老師尚未確認，對照表見 ADAPTATION「🔁 時程提前（方案 B）」）：
+  - 11/03 從 production 做唯讀快照，正式抽實驗一配對；11/04 交 A、B。約 11/03 打 `exp1-frozen`（仍在 11/12 test 標註之前）。
+  - 11/04 前部署方案 B 程式，production `.env` 加 `DAILY_SHADOW_ENABLED=true`（`DAILY_MODE=mas` 已設）。
+  - 11/04–11/06：`DAILY_MODE=mas` 連續 3 天在 07:00 前產出頭版＋三內版到待審（P 同時以影子模式跑，確認兩組合計 ≤ 60 次），日期寫進週報（手冊步驟 10）。
+  - 11/06：用其中一天試匯出盲計（手冊步驟 11），公告試刊日期，寫 `docs/weekly/trial-dates.md` 並告知 A、B。
+  - 11/08 前：B 拿到七類錯誤計數練習（老師）。
+  - 11/09–11/16 之間出 7 期七日試刊＋實驗三（預定 11/09–11/15；失敗照實記錄；手冊步驟 12）。盲計對照表雜湊每天交給 B 之前 commit（種子 `BLIND_SEED=20261201` 與抽樣／分析腳本已 commit，數字不改）。
+  - 11/17–11/18 實驗二；11/20 打 `final-1120` 功能凍結（手冊原為 12/15 `final-1215`；手冊步驟 13）。報告與發表仍在 2027 年 1 月初。
 - ℹ️ 2026-10-30 docs：README／簡介重寫（v2 綜合日報＋MAS），`docs/v5/README.md`、`DAILY_EDITION.md` 開頭、CLAUDE.md／AGENTS.md 概述、`pyproject.toml` description 同步；程式行為未改。
 
 ## 目前狀態（2026-10-27 起）
 
 - **線上只跑 v2.0 綜合日報。** LaunchAgent 只剩 `newsroom`（`reddit_tracker.newsroom.scheduler`：收集＋聚合每 15 分鐘、06:00 準備、08:35 發 Telegram）與 `rsshub`。
 - **程式結構：** `collection/`（收集、聚合、報表）、`daily/`（評分、撰稿、渲染、發行）、`llm/{codex,gemini}.py`、`newsroom/{scheduler,deploy}.py`、`web.py`（只看日報）、`seeds/news_sources.*`、`scripts/probe_news_sources.py`。
-- **驗收：** 收集七天驗收 10/27–11/02，11/03 用 `uv run python -m reddit_tracker.collection report --days 7 --out docs/collection_acceptance_2026-11-03.md` 出報告。後續時程依 10/28 老師手冊（取代企劃 v2.0 的 11/30 交付、11/13–11/19 試刊）：11/30 出刊準備關卡、12/01–12/10 七日試刊、12/15 功能凍結。
+- **驗收：** 收集七天驗收 10/27–11/02，11/03 用 `uv run python -m reddit_tracker.collection report --days 7 --out docs/collection_acceptance_2026-11-03.md` 出報告。後續時程依 10/28 老師手冊（取代企劃 v2.0 的 11/30 交付、11/13–11/19 試刊），10/30 起再改成方案 B（👤 老師尚未確認）：11/04–11/06 連續 3 天 live（手冊原為 11/30 關卡）、11/09–11/16 間七日試刊（原 12/01–12/10）、11/20 功能凍結（原 12/15）。
 - ✅ 10/27 首期正常發行：42 則（Gemini 40／模板 2，12 次 request），Telegram message 499、500。
 - ⚠️ 首期觀察到的問題（使用者決定先多跑幾天再修）：① 同事件重複見報——巴西大選 cluster 472／453、塞爾維亞 405／410，`find_same_events` 一次丟整個候選池漏併；② 模板稿照搬英文原標題（Vucic）；③ 柯米起訴被投到財經版（cluster 2154）；④ 社群版有無內容稿、科學版單篇 arXiv、文化版三則都是金鐘；⑤ 數據欄停在 10/22——證交所 OpenAPI `MI_INDEX` 本身落後，非程式錯。建議修正順序 1→2→5→3→4。
 - ➡️ **下一步：** 再觀察幾期，看上述問題是否每期都出現，再一起修。
@@ -142,7 +144,7 @@
 - ✅ 參考 intel-radar（程式計分、雙訊號分級、預算上限、冪等補跑、靜態日報）與 RSSHub（本機自架、只綁 127.0.0.1、作為無原生 RSS 網站的第二順位管道）。已用 GitHub 原始碼確認 RSSHub 有 cna／pts／ltn／udn／twreporter／cw／storm 等台灣媒體路由，但**沒有 Reddit 路由**；需 Node 22/24 + pnpm。
 - ⚠️ v1.1 排定的 10/15–10/21 第三方 Reddit 供應商驗收**未執行**（未建帳號）；候選仍只靠 Reddit RSS（15 個 subreddit，每日約 1,300–1,600 篇），11/13 RSS 停止後 Reddit 斷料。v5 日報仍每天 08:30 發 8 則。
 - ⚠️ 僅改文件；未改程式、schema、排程或 production。新企劃待教授確認後才更新 `docs/v5/` 實作契約。
-- ➡️ 下一步：建立來源登錄表（YAML，首批 120+ 來源）並本機架設 RSSHub，逐一實測可用性；10/29 起收集層（`source_items`、去重、事件聚合、來源健康）與七天收集驗收。時程（當時排定 11/12 前端到端出刊、11/13–11/19 七天試刊、11/30 交付；已由 10/28 老師手冊取代）：11/30 出刊準備關卡（連續 3 天 live＋公告試刊日期）、12/01–12/10 七日試刊、12/15 功能凍結。
+- ➡️ 下一步：建立來源登錄表（YAML，首批 120+ 來源）並本機架設 RSSHub，逐一實測可用性；10/29 起收集層（`source_items`、去重、事件聚合、來源健康）與七天收集驗收。時程（當時排定 11/12 前端到端出刊、11/13–11/19 七天試刊、11/30 交付；已由 10/28 老師手冊取代，10/30 再改成方案 B，👤 老師尚未確認）：11/04–11/06 連續 3 天 live、11/06 公告試刊日期、11/09–11/16 間七日試刊（預定 11/09–11/15）、11/20 功能凍結（`final-1120`）。
 
 ## 本次變更（2026-10-14 — 資料取得與交付驗收規劃）
 

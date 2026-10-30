@@ -44,7 +44,7 @@ flowchart TD
 
 兩組用同一套選題（`select_articles`）、同一個模型字串（`DAILY_MODEL_VERSION`），差別只在撰稿與審稿方式，作為實驗三的對照。
 
-- **`pipeline`（P 組，預設）**：編輯會議一次、頭版一次、三個內版各一次撰稿，一期最多 5 次 LLM 請求（＋重試）。程式做數字核對，不過關或失敗就改用模板稿；arXiv 預印本與單一來源警語由程式加在文末。P 組沒有人工核可關卡。`prepare --shadow` 可產生 P 組影子版（寫 `site/daily/shadow`，不寫 `daily_editions`）。
+- **`pipeline`（P 組，預設）**：編輯會議一次、頭版一次、三個內版各一次撰稿，一期最多 5 次 LLM 請求（＋重試）。程式做數字核對，不過關或失敗就改用模板稿；arXiv 預印本與單一來源警語由程式加在文末。P 組沒有人工核可關卡。`prepare --shadow` 可產生 P 組影子版（寫 `site/daily/shadow`，不寫 `daily_editions`）；`DAILY_MODE=mas`＋`DAILY_SHADOW_ENABLED=true` 時 06:00 自動先跑 P 影子、M 再從同一份快照跑，P 額度另有上限 `DAILY_SHADOW_LLM_LIMIT`。
 - **`mas`（M 組）**：六個角色分開呼叫 LLM、經 `agent_messages` 互相傳訊，所有版本與版面變化都存在 DB，可在回放頁一步步重看。
 
 ## MAS 編輯室
@@ -130,6 +130,9 @@ uv run python -m reddit_tracker.web
 | `DAILY_PREPARE_HOUR`／`_MINUTE` | `6`／`0` | 準備時間 |
 | `DAILY_DELIVERY_HOUR`／`_MINUTE` | `8`／`35` | 發行時間 |
 | `DAILY_SITE_DIR` | `site/daily` | HTML 輸出目錄（不進版控） |
+| `DAILY_SHADOW_ENABLED` | `false` | 只在 `DAILY_MODE=mas` 生效：06:00 先跑 P 影子、M 再從同一份快照跑；影子失敗只記 log |
+| `DAILY_SHADOW_LLM_LIMIT` | `12` | P 影子每日最多用幾格額度（含編輯會議與重試）；M 至少保有 `LLM_DAILY_LIMIT` 減這個數 |
+| `DAILY_ANNOTATION_DIR` | `annotation` | 影子＋M 都有稿時匯出盲計稿／抽查稿到 `YYYY-MM-DD/`（對照表在 `_private/`，不進版控） |
 | `NEWSROOM_DELIVERY_TIMEZONE` | `Asia/Taipei` | 排程時區 |
 | `LLM_DAILY_LIMIT` | `60` | 每個模型每日嘗試次數上限（所有用途共用） |
 | `LLM_QUOTA_STATE_PATH` | `/tmp/reddit-tracker-llm-quota.json` | 額度 state 檔 |
@@ -217,7 +220,7 @@ deploy/install_launchd.sh rsshub-install    # 本機 RSSHub（只綁 127.0.0.1:1
 REDDIT_TRACKER_NO_DOTENV=1 uv run python -m pytest -q
 ```
 
-目前基準：287 passed／4 skipped／2 xfailed。2 個 xfail 是要等真人與真實日曆的關卡（連續 3 天 live 出刊與試刊公告、真實盲計對照表雜湊），4 個 skip 是重編版沒見報而不適用的案例。
+目前基準：302 passed／4 skipped／2 xfailed。2 個 xfail 是要等真人與真實日曆的關卡（連續 3 天 live 出刊與試刊公告、真實盲計對照表雜湊），4 個 skip 是重編版沒見報而不適用的案例。
 
 - **測試不呼叫真 LLM**：`tests/llm_guard.py` 全域擋 codex subprocess 與 Gemini HTTP；額度 state 檔改到 `tmp_path`。
 - **回歸集 E01–E16**（`tests/regression/cases/`，10/27 首期的 15 個錯誤案例＋E09 非錯誤案例）：runner 用離線 fixture 在 tmp SQLite 照線上時間表重編 10/27，撰稿走 `llm/replay.py` 錄音重播，案例到期還掛 xfail 會失敗。只跑回歸集：
@@ -295,4 +298,4 @@ docs/                    規格、手冊、週報、歷史文件
 ## 狀態與路線圖
 
 - 目前狀態、已知問題與下一步：[`PROGRESS.md`](PROGRESS.md)「目前狀態」。
-- 手冊步驟與關卡（`gate-1108`、`gate-1115`、`exp1-frozen`、11/30 連續 3 天 live、12/01–12/10 試刊）：[`docs/HANDBOOK_ADAPTATION.md`](docs/HANDBOOK_ADAPTATION.md)。
+- 手冊步驟與關卡（`gate-1108`、`gate-1115`、`exp1-frozen`；方案 B：11/04–11/06 連續 3 天 live、11/09–11/16 間七日試刊、11/20 `final-1120`，👤 老師尚未確認）：[`docs/HANDBOOK_ADAPTATION.md`](docs/HANDBOOK_ADAPTATION.md)。

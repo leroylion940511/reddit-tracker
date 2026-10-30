@@ -175,16 +175,19 @@ short_outlet(name) -> str   # 「中央社 政治」→「中央社」
 trading_days_between(close: date, edition: date) -> int
 is_stale(close: str | date | None, edition: date) -> bool   # 超過 1 個交易日
 # reddit_tracker/daily/writer.py
-DailyWriter(name="codex", *, client=None, lexicon=None)   # name: codex / gemini / fake；撰稿提示附上證據中出現的譯名表名字
+DailyWriter(name="codex", *, client=None, lexicon=None, purpose="daily")   # purpose＝額度用途； name: codex / gemini / fake；撰稿提示附上證據中出現的譯名表名字
 DailyWriter.find_same_events(candidates) -> list[list[int]]
 DailyWriter.write(section, stories) -> dict[int, WrittenStory]
 # reddit_tracker/llm/codex.py、llm/gemini.py、llm/fake.py、llm/replay.py：介面相同
 CodexClient(*, binary=None, model=None, reasoning_effort=None, timeout=None, purpose="daily", max_retries=None, guard=None)
 GeminiClient(*, purpose, api_key=None, model=None, daily_limit=None, requests_per_minute=None, state_path=None, timeout=None, max_retries=None)
 # reddit_tracker/llm/quota.py
-ModelQuotaGuard(*, state_path, daily_limit, requests_per_minute=None)
-ModelQuotaGuard.acquire(*, model, purpose) -> None   # 用完拋 QuotaExhausted
+ModelQuotaGuard(*, state_path, daily_limit, requests_per_minute=None, purpose_limits=None)
+#   purpose_limits：{purpose: 上限}，仍算進模型總數；CodexClient／GeminiClient 預設帶 {SHADOW_PURPOSE: DAILY_SHADOW_LLM_LIMIT}
+ModelQuotaGuard.acquire(*, model, purpose) -> None   # 總數或用途上限用完拋 QuotaExhausted
 ModelQuotaGuard.used(model) -> int
+ModelQuotaGuard.used_by(model, purpose) -> int
+SHADOW_PURPOSE = "shadow"   # P 組影子版的額度用途
 # reddit_tracker/llm/replay.py（手冊步驟 2／7：重播錄好的回應，找不到就丟 ReplayMissing，不呼叫真模型）
 request_hash(*, system, prompt, model, schema) -> str   # sha256(JSON [system, prompt, model, schema])；prompt＝user 訊息以空行相接
 load_records(path) -> dict[str, str]   # .json（[{request_hash, response_text, ok}]）或含 llm_records 表的 SQLite；只收 ok
@@ -205,6 +208,10 @@ story_evidence(session, cluster: ScoredCluster, registry, context=None) -> Evide
 prepare_daily(edition_date, *, writer_mode=None, refresh=False, now=None, writer=None, mode=None, shadow=False, snapshot=None) -> int
 #   mode 預設讀 DAILY_MODE（pipeline／mas）。shadow=True：P 組寫 site/daily/shadow，不寫 daily_editions。
 #   DAILY_MODE=mas 時 publish_daily 若沒有準備好的期數就失敗，不重跑 prepare。
+#   shadow=True 時撰稿 client 的額度用途是 SHADOW_PURPOSE（DailyWriter(name, purpose=...)）。
+prepare_with_shadow(edition_date, *, now=None) -> int   # DAILY_MODE=mas＋DAILY_SHADOW_ENABLED：P 影子先跑建快照，M 用同一份快照；回傳 M 的 edition id
+#   影子失敗只記 log（M 自建快照、不匯出）；當天已有 daily_editions 就不跑影子
+export_annotation(edition_date, out_root) -> Path | None   # P、M 都有稿才寫 out_root/YYYY-MM-DD/{blind.txt,spot-check.txt,mapping.sha256,_private/mapping.json}
 publish_daily(edition_date) -> int   # 發行當下用 build_edition_view 重渲染；mas 未核准的全文改成標題短訊
 # reddit_tracker/daily/view.py
 render_html(view: EditionView) -> str   # 只吃 EditionView
@@ -244,7 +251,7 @@ uv run python -m reddit_tracker.daily blind-export --dates YYYY-MM-DD --out DIR
 
 ## PR #1 整合介面（2026-10-30；以下取代上文舊流水線的相衝敘述）
 
-- `prepare_daily(..., snapshot=None)`：提供 `DailySnapshot` 或 `{"candidates": [...]}` 時跳過評分與編輯會議，使用凍結的證據 id。兩組共用一份快照；`shadow=True` 即使當天已有 M 組版次也會產生 P 影子版。
+- `prepare_daily(..., snapshot=None)`：提供 `DailySnapshot` 或 `{"candidates": [...]}` 時跳過評分與編輯會議，使用凍結的證據 id。兩組共用一份快照；`shadow=True` 即使當天已有 M 組版次也會產生 P 影子版（手動執行時會改寫快照；自動排程的 `prepare_with_shadow` 在已有版次時不跑影子）。
 - `run_mas`：三內版共用 `select_articles` 正式稿名額；三次分版主編呼叫只改角度／推薦。版面編輯提出異議，總編裁決頭版。決定只能引用本期正式稿，不能讓 HOLD 上頭版；保留內版其他稿，頭版／內版連結只落一筆 `daily_articles`，保留 `merged_cluster_ids`。
 - `EditionView` 把同一正式稿展開成頭版全文與內版連結；渲染不重寫正文。P／M 都保留步驟 4 的六則頭版全文，其餘版面標題短訊來自 `stats.briefs`，不送 LLM。舊期 anchor 用 cluster id，新版 page plan 用 story id。
 - `stats.role_calls`、`llm_requests` 統計本期本組 Codex 嘗試（包含重試），`degraded` 順序為文稿編輯、查核員 LLM、記者模板；`injection_log` 留下被擋的來源指示。文稿編輯 CHALLENGE 會交給記者修稿並重驗；缺乏可驗證來源則 HOLD。

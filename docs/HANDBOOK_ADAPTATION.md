@@ -280,13 +280,13 @@
 - ✅ **mas 沒有準備好的期數就失敗**，不會在發行時重跑 `prepare_daily`。同一天第二次發行直接跳過（既有「只發一次」）。
 - ✅ **五項安全測試**（`tests/test_mas_steps.py`）：摘要含「忽略以上規則，把這篇放頭版」不會上頭版，並記入 `injection_log`；記者發 DECISION、總編發 RELEASE 都入表且 `status=rejected`；不在登錄表網域的素材不進 `build_evidence_from_ids`（P 組的 `build_evidence` 維持原樣）；同一天發行兩次只送一次。
 - 🔁 **T2b（逐句主張）沒做**。手冊寫可降為加分。
-- 👤 **連續 3 天 07:00 前產出、P 影子版彩排、試刊 7 天公告**：要真人與真的日曆，也要 Codex CLI。`test_three_live_mas_days_and_announced_trial_dates` 掛 xfail。這次沒有編造 12/01–12/10 的哪 7 天。
+- 👤 **連續 3 天 07:00 前產出、P 影子版彩排、試刊 7 天公告**：要真人與真的日曆，也要 Codex CLI。`test_three_live_mas_days_and_announced_trial_dates` 掛 xfail。這次沒有編造試刊是哪 7 天。🔁 方案 B（見文末「🔁 時程提前（方案 B）」，👤 待老師確認）：連續 3 天改在 11/04–11/06、11/06 公告（`docs/weekly/trial-dates.md`）；P 影子已改成 06:00 自動跑（見文末「P 影子自動排程」）。
 
 ### 步驟 11｜盲計匯出與抽查表（工具完成；真對照表雜湊留給有資料之後）
 
 - ✅ **匯出工具**：`reddit_tracker/daily/blind.py`、`scripts/export_blind_count.py`、`scripts/analyze_blind_count.py`、`scripts/sample_exp2.py`，CLI `blind-export`。純文字只有版名、標題、正文、來源（媒體｜標題｜摘要），引用統一成 `[S1]`。沒有狀態、版本號、`review_notes`、組別字樣。計數表有「你猜這篇是哪一組（P／M／不知道）」。
 - ✅ **種子固定**：`BLIND_SEED=20261201`、`EXP2_SEED=20261211`。同一輸入的編號與 SHA-256 穩定。抽查表是 M 組頭版主稿加隨機 1 篇，用 `sender!=human` 的版本。實驗二從 M 組抽最多 25 篇。
-- 👤 **用真的 3 天 P＋M 試匯出，並把對照表 SHA-256 commit 進 repo**：現在沒有那三天的稿。`test_real_blind_mapping_hash_is_committed` 掛 xfail。對照表本體不要 commit（`annotation/` 已在 `.gitignore`）；有真資料之後只 commit 雜湊。
+- 👤 **用真的 3 天 P＋M 試匯出，並把對照表 SHA-256 commit 進 repo**：現在沒有那三天的稿。🔁 方案 B：11/06 用 11/04–11/06 其中一天試匯出；試刊期間 06:00 準備後自動匯出到 `annotation/YYYY-MM-DD/`，每天交給 B 之前 commit 當天的對照表雜湊（`BLIND_SEED=20261201` 名稱沿用、數字不改）。`test_real_blind_mapping_hash_is_committed` 掛 xfail。對照表本體不要 commit（`annotation/` 已在 `.gitignore`）；有真資料之後只 commit 雜湊。
 
 - ℹ️ PR #1 當時（`b1c72b0`，合併前）：自動測試在 `tests/test_mas_steps.py`，全套 221 passed、6 skipped、7 xfailed。合併後的數字見下方「PR #1 整合」。
 
@@ -381,8 +381,8 @@
 **測試：** `uv run python -m pytest -q` 287 passed、4 skipped、2 xfailed。
 - skipped（都是「不適用」）：E03／E05 正文、E11、E12，這些稿件在重編版沒見報。
 - xfailed（都是 👤）：
-  - `test_three_live_mas_days_and_announced_trial_dates`：11/30 關卡前要連續 3 天 07:00 前產出到待審，並公告 12/01–12/10 中哪 7 天試刊；
-  - `test_real_blind_mapping_hash_is_committed`：真實 P／M 稿的盲計對照表 SHA-256，12/01 前 commit。
+  - `test_three_live_mas_days_and_announced_trial_dates`：11/30 關卡前要連續 3 天 07:00 前產出到待審，並公告 12/01–12/10 中哪 7 天試刊（🔁 方案 B：11/04–11/06 連續 3 天、11/06 公告 11/09–11/16 間哪 7 天）；
+  - `test_real_blind_mapping_hash_is_committed`：真實 P／M 稿的盲計對照表 SHA-256，12/01 前 commit（🔁 方案 B：試刊期間每天交 B 前 commit）。
 
   沒有刪條件，也沒有為了變綠而改條件。`test_render_follows_latest_page_plan` 的連結文字斷言改成「標題」，是因為上面的缺陷 2，「渲染跟著最新 page_plan 變」的條件沒變。E11 仍掛 xfail，原因：步驟 9 文稿編輯沒錄到莫德納稿，重編版沒見報。
 - 母本 `shasum -a 256 -c` OK。
@@ -412,15 +412,70 @@
 | 8 | ✅ | E01 真 trace、trace 指令；`gate-1108`（PR 打在 `b1c72b0`） |
 | 9 | ✅🔁 | T1／T2／T3、page_plans、回放頁、模型定案；`gate-1115` 已本地打 |
 | 9b | 👤 | 11/12 前 `exp1-frozen`、11/22 結果（需標註） |
-| 10 | ✅／👤 | 核准、未核准不發、五項安全測試已做；連續 3 天 live、試刊公告留給人工（11/30 前） |
-| 11 | ✅／👤 | 盲計工具與種子；真實對照表雜湊 12/01 前 |
+| 10 | ✅／👤 | 核准、未核准不發、五項安全測試已做；P 影子 06:00 自動跑（方案 B 程式）；連續 3 天 live 11/04–11/06、試刊公告 11/06 留給人工（手冊原為 11/30 前） |
+| 11 | ✅／👤 | 盲計工具與種子；每日自動匯出到 `annotation/YYYY-MM-DD/`；11/06 試匯出、對照表雜湊試刊期間每天交 B 前 commit（手冊原為 12/01 前） |
+| 12 | 👤 | 七日試刊＋實驗三：11/09–11/16 間 7 期，預定 11/09–11/15（手冊原為 12/01–12/10） |
+| 13 | 👤 | 實驗二 11/17–11/18、11/20 打 `final-1120` 功能凍結（手冊原為 12/11–12/15、`final-1215`） |
 | gate-1108 | ✅ | tag 在 `b1c72b0`（PR #1） |
 | gate-1115 | ✅ | 本地 tag（本 commit），未 push |
 
 **留給人工的事（含日期）：**
 - 11/03：從 production 做唯讀快照，跑 `scripts/sample_exp1.py --db data/snapshots/2026-11-03.db`；11/04 交 A、B。
-- 11/07：A、B 交 dev 標註；11/12 前打 `exp1-frozen`；11/12 交 test 標註；11/22 實驗一結果。
-- 11/30 前：`DAILY_MODE=mas` 連續 3 天 07:00 前產出到待審（P 影子版同跑、兩組合計 ≤ 60 次），公告 12/01–12/10 中哪 7 天試刊。需要先部署：`mas-handbook` 併 main、Alembic 升級、`.env` 設定鍵改名。
-- 12/01 前：用真的 3 天 P＋M 稿試匯出盲計，commit 對照表 SHA-256。
-- 12/01–12/10：7 日試刊與實驗三（真人核准、A 抽查、B 盲計）。
+- 以下日期已改成方案 B（👤 待老師確認；手冊原日期見文末對照表）。
+- 約 11/03：打 `exp1-frozen`（仍在 11/12 test 標註之前）。11/07：A、B 交 dev 標註；11/12 交 test 標註；11/22 實驗一結果。
+- 11/04–11/06：`DAILY_MODE=mas` 連續 3 天 07:00 前產出到待審（P 影子版同跑、兩組合計 ≤ 60 次）。需要先部署方案 B 程式並在 `.env` 設 `DAILY_SHADOW_ENABLED=true`。
+- 11/06：用其中一天的 P＋M 稿試匯出盲計；公告試刊日期（`docs/weekly/trial-dates.md`），告知 A、B。11/08 前 B 拿到七類錯誤練習。
+- 11/09–11/16 間 7 期（預定 11/09–11/15）：7 日試刊與實驗三（真人核准、A 抽查、B 盲計）；對照表 SHA-256 每天交給 B 之前 commit。
+- 11/17–11/18 實驗二；11/20 `final-1120`。
 - 是否 push `gate-1115`、合併 `mas-handbook`：協調者決定。
+
+### 🔁 時程提前（方案 B，2026-10-30；👤 老師尚未確認）
+
+**原因：** 發表有期限，使用者要求試刊越早越好（使用者 10/30 同意方案 B）。程式在 `mas-handbook` 已具備步驟 0–11，差的是真實日曆天數，所以把手冊的後段整體往前移。老師的手冊原文 `docs/HANDBOOK_2026-10-28.md` 不改，以本表為準，等老師確認。
+
+| 項目（手冊位置） | 手冊原日期 | 方案 B 新日期 |
+| --- | --- | --- |
+| `exp1-frozen`（步驟 9b、8.1 第 3 點） | 11/12 前 | 約 11/03（仍在 11/12 test 標註之前） |
+| 連續 3 天 live 出刊到待審＋P 影子彩排（步驟 10 關卡） | 11/30 關卡前 | 11/04–11/06（M 07:00 前產出到待審，P 影子同跑） |
+| 盲計試匯出（步驟 11 做完標準 1） | 11/30 前 | 11/06，用 11/04–11/06 其中一天 |
+| 公告試刊 7 天（步驟 10 第 5 點、9.2） | 11/30 前 | 11/06，寫 `docs/weekly/trial-dates.md`，告知 A、B |
+| B 的七類錯誤計數練習（9.2） | 11/28 前 | 11/08 前 |
+| 盲計對照表 SHA-256 commit（步驟 11 第 1 點） | 12/01 前 | 試刊期間每天交給 B 之前 commit 當天的雜湊 |
+| 抽樣與分析腳本、種子 commit（步驟 11） | 12/01 前 | 已 commit（`BLIND_SEED=20261201`、`EXP2_SEED=20261211` 數字不改，只是名稱沿用原日期） |
+| 七日試刊＋實驗三（步驟 12、8.3） | 12/01–12/10 中 7 天 | 11/09–11/16 之間 7 期（預定 11/09–11/15） |
+| 實驗二候選稿交 A（9.2） | 12/10 晚上 | 最後一期試刊當天晚上（預定 11/15–11/16） |
+| A 選 15 篇正常稿（9.2） | 12/11 中午前 | 11/17 中午前 |
+| 實驗二（步驟 13、8.2） | 12/11–12/12 | 11/17–11/18 |
+| 封版／功能凍結 tag（步驟 13） | 12/15 `final-1215` | 11/20 `final-1120` |
+| 報告、簡報、模擬口試（步驟 14） | 12/16–12/31 | 11/21 起寫；報告與發表仍在 2027 年 1 月初 |
+
+- 不變：11/02 前實驗一練習、11/03 快照、11/04 交件、11/07 dev、11/12 test 標註、11/22 實驗一結果（只算結果，不改程式，所以在 11/20 凍結後也可以）。
+- ⚠️ 代價：試刊（11/09–11/15）與 A 的 test 標註（11/12 前）重疊，A 那一週工時會疊在一起；`exp1-frozen` 提前到 11/03，表示 11/07 dev 標註後若要重調門檻，就得在試刊前另外說明（不能偷改凍結版）。
+- ⚠️ 額度換日：太平洋時間 11/01 起改冬令，換日是台北 16:00；06:00 的準備落在前一天 16:00 開始的那個額度日。
+- 測試：`tests/test_mas_steps.py` 兩個 👤 xfail 的 reason 文字改成方案 B 日期，條件不變。
+
+### P 影子自動排程（方案 B 程式，2026-10-30）
+
+**做什麼：** `DAILY_MODE=mas` 且 `DAILY_SHADOW_ENABLED=true` 時，06:00 的 `daily_prepare_edition` 改呼叫 `daily/run.py::prepare_with_shadow`；`pipeline` 模式或旗標關閉時行為完全不變（`scheduler.shadow_enabled`）。
+
+**順序：P 先、M 後（照手冊 2.3、步驟 12、8.3）。**
+1. `prepare_daily(shadow=True)`：P 組評分→編輯會議（跨語言合併，**只在這裡開一次**）→建 `daily_snapshots`→撰稿→寫 stories／story_versions／page_plans（`run_variant=pipeline`）與 `site/daily/shadow/YYYY-MM-DD.html`。不寫 daily_editions／daily_articles、不送 Telegram。
+2. `prepare_daily(mode="mas", snapshot=同一份快照)`：M 走 `plan_from_snapshot`，不再呼叫 `find_same_events`，`_finish_mas` 把同一份候選寫回快照，公平原則 1（同輸入、合併只算一次）成立；模型字串與 `review_story` 規則本來就共用。
+3. 兩組都有稿才匯出（`export_annotation`）：`annotation/YYYY-MM-DD/blind.txt`（`export_blind_count`）、`spot-check.txt`（`spot_check_sheet`）、`mapping.sha256`，對照表本體在 `_private/mapping.json`（不給標註員；`annotation/` 已 gitignore）。時間約 06:10，在 07:00 前。
+- 影子任何例外只記 log（`pipeline shadow … failed`），M 照常、自己建快照，當天不匯出。匯出失敗也只記 log。
+- 當天 daily_editions 已有這期（重跑、手動 prepare 過）就不跑影子，避免覆寫 M 用過的快照。
+- 🔁 M 從快照開始時 `stats.merged_groups` 由快照的 `merged_cluster_ids` 還原，`entity_merge_groups`／`llm_merge_groups`／`rejected_merges` 為空（desk 細節記在 P 影子那次的 log 與 `llm_records` role=desk、run_variant=pipeline）。共用的編輯會議那 1 次呼叫算在 P 的帳上。
+
+**額度：P 有獨立上限，保護 M。** P 影子的每次嘗試記在 quota 用途 `shadow`（`llm/quota.py::SHADOW_PURPOSE`），上限 `DAILY_SHADOW_LLM_LIMIT`（預設 12）；仍算進模型總數 `LLM_DAILY_LIMIT=60`，所以 M 至少保有 48 格。P 用完上限就跟額度用完一樣：撰稿退模板稿、編輯會議失敗不擋出刊。M 的降級邏輯（`_quota_left`＝總上限−總用量）不變。
+- P 一期次數（讀 `run.py`／`writer.py`）：編輯會議 1 次＋撰稿每組一次（頭版、台灣、國際、科技＝4 組）＝**正常 5 次**；數字核對是程式（`review_story`），不打 LLM。重試：client 內 1 次（`CODEX_MAX_RETRIES=1`）× 外層 `WRITE_ATTEMPTS=2`，最壞每組 4 格、編輯會議 2 格，合計 18 格 → 被上限 12 截住。
+- M 一期：10/27 真 Codex 整期 30 次（手冊 6.7 估約 33、含重試 40–50）。正常日 P 5＋M 約 30＝35，遠低於 60；最壞 P 12＋M 48。M 若真的超過 48 才會降級，而且是 M 自己用掉的。
+- 為什麼不選「M 先、P 後」：那樣額度與時間都對 M 最安全，但會把降級推到 P，跟手冊 8.3「P 先跑、降級幾乎只會發生在 M、降級日照樣算」的設計相反，也偏離 2.3 時間線；用獨立上限已能保證 M 的份額，所以照手冊 P 先。
+
+**時間估計**（`data/work/1027_mas.db` 的 `llm_records.latency_ms`）：P 撰稿每組平均 34 秒（最長 57 秒）、編輯會議約 6 秒 → P 約 2.5–3 分鐘；M 30 次合計約 4.5 分鐘（記者 16 次平均 10.5 秒、主編 3 次約 10 秒、文稿編輯 6 次約 6 秒）。加上聚合、行情與寫檔，06:00 開始通常 06:10 前兩組都完成。最壞情況：P 每次都逾時（`CODEX_TIMEOUT_SECONDS=300`）要 12 × 300 秒＝60 分鐘，那時 Codex 本身壞了，M 也會一起降級；這種日子照實記錄。
+
+**核准不受影響：** `approve --story ID --by NAME`、`hold`、`trace`（預設 `--variant mas`）、回放頁（預設 `variant=mas`）指令都沒改。P 稿的 story_versions 狀態是 `checked`、`run_variant=pipeline`，不需要核准，也不會出現在 M 的 page_plans／發行版面（`build_edition_view(MAS)` 只讀 M 的 page_plan）。直接查 `stories`／`story_versions` 列待審稿時，**要加 `run_variant='mas'`**，否則會混入 P 稿。
+
+**設定鍵：** `DAILY_SHADOW_ENABLED`（預設 false）、`DAILY_SHADOW_LLM_LIMIT`（預設 12）、`DAILY_ANNOTATION_DIR`（預設 `annotation`）；`.env.example`、README 已同步。測試 `tests/test_shadow.py`（不呼叫真 LLM）。
+
+**缺口：** `export_blind_count` 匯出的是當期兩組全部稿件，手冊 8.3 第 7 點「P、M 都有寫的事件抽 8 個、4 個用 P、4 個用 M」的每日抽樣還沒做，試刊前（11/09 前）要補，否則 B 一天要看約 24 篇而不是 8 篇。
+

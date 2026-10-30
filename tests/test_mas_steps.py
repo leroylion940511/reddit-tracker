@@ -692,11 +692,11 @@ def test_live_codex_t2a_on_1027_copy(session):
     assert "CHALLENGE" in trace and "REVISION_DONE" in trace and "v2" in trace
 
 
-@pytest.mark.xfail(reason="連續 3 天 live 出刊，以及 12/01–12/10 的試刊日期，要等人做並寫進週報", strict=False)
+@pytest.mark.xfail(reason="連續 3 天 live 出刊（方案 B：11/04–11/06），以及 11/06 公告 11/09–11/16 間的 7 天試刊日期，要等人做並寫進週報", strict=False)
 def test_three_live_mas_days_and_announced_trial_dates():
     assert Path("docs/weekly/trial-dates.md").is_file()
 
 
-@pytest.mark.xfail(reason="真實 P／M 稿的盲計對照表 SHA-256 要等有資料後、12/01 前才 commit", strict=False)
+@pytest.mark.xfail(reason="真實 P／M 稿的盲計對照表 SHA-256 要等有資料後才 commit（方案 B：11/09 起試刊期間每天交 B 前）", strict=False)
 def test_real_blind_mapping_hash_is_committed():
     assert Path("docs/eval/blind_mapping.sha256").is_file()

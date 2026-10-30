@@ -1,6 +1,6 @@
 """從 M 組稿用固定種子抽 25 篇，給標註員 A 挑 15 篇正常稿。
 
-    uv run python scripts/sample_exp2.py --dates 2026-12-01,2026-12-02
+    uv run python scripts/sample_exp2.py --dates 2026-11-09,2026-11-10
 """
 
 from __future__ import annotations

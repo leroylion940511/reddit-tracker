@@ -1,8 +1,9 @@
 """匯出盲計稿。對照表本體不寫進這個目錄，只寫 SHA-256。
 
-    uv run python scripts/export_blind_count.py --dates 2026-12-01 --out annotation/2026-12-01
+    uv run python scripts/export_blind_count.py --dates 2026-11-09 --out annotation/2026-11-09
 
-真人对照表請另存在不進 git 的地方。12/01 前把印出的雜湊 commit 進 repo。
+真人對照表請另存在不進 git 的地方。每天交給 B 之前把印出的雜湊 commit 進 repo（方案 B；手冊原為 12/01 前）。
+06:00 自動排程（DAILY_SHADOW_ENABLED=true）已會匯出到 annotation/YYYY-MM-DD/，這支腳本給手動補匯出用。
 """
 
 from __future__ import annotations
