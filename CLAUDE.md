@@ -3,7 +3,8 @@
 ## Project State
 
 - Always read `PROGRESS.md` at session start — it is the single source of truth for what's done, what's in progress, the immediate next step, and gotchas. Update it whenever the state actually changes (not every commit).
-- For v5 AI Newsroom work, also read `docs/v5/README.md` and the task-relevant linked specification before editing. `docs/v5/WORKING_AGREEMENT.md` is the shared Codex/Claude Code operating contract.
+- The project is the v2.0 AI daily edition (multi-source collection → clustering → `DAILY_MODE=pipeline|mas` → human approval → Telegram); the package name `reddit_tracker` is historical. Overview and commands: `README.md`.
+- For daily edition / MAS newsroom work, also read `docs/v5/README.md` and the task-relevant linked specification before editing; for handbook steps read `docs/HANDBOOK_ADAPTATION.md`. `docs/v5/WORKING_AGREEMENT.md` is the shared Codex/Claude Code operating contract.
 
 ## Working Style
 

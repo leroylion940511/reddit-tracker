@@ -22,6 +22,7 @@
   - 11/12 前打 `exp1-frozen`。
   - 11/30 前連續 3 天 `DAILY_MODE=mas` 產出到待審，並公告試刊 7 天。
   - 12/01 前 commit 真實盲計對照表的雜湊。
+- ℹ️ 2026-10-30 docs：README／簡介重寫（v2 綜合日報＋MAS），`docs/v5/README.md`、`DAILY_EDITION.md` 開頭、CLAUDE.md／AGENTS.md 概述、`pyproject.toml` description 同步；程式行為未改。
 
 ## 目前狀態（2026-10-27 起）
 
