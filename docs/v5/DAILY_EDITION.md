@@ -79,7 +79,7 @@ score = 10·log2(1 + outlet_count)
 ## 4. 撰稿
 
 - Provider 由 `DAILY_WRITER` 決定，預設 `codex`；只允許 `codex`／`gemini`／`template`／`fake`（`config.LLM_PROVIDERS`，設定驗證會拒絕 `web`；網頁備援已移除）。`fake`（`llm/fake.py`）離線、不扣額度，給開發測試用。只建立被選用的 client，日報預設不建 GeminiClient。頭版一次請求、三個內版各一次（只寫非頭版的稿），加上編輯會議一次，一期最多 5 次（＋重試）；短訊 0 次。
-- **Codex**（`reddit_tracker/llm/codex.py`）：subprocess 呼叫 ChatGPT.app 內建的 `codex exec`，吃本機 ChatGPT 訂閱登入（`~/.codex/auth.json`），不用 API key。模型 `CODEX_MODEL`（預設 `gpt-6.1-sol`、reasoning `low`），逾時 `CODEX_TIMEOUT_SECONDS`=300。輸出用 `--output-schema` 強制 JSON 形狀（`writer.STORIES_SCHEMA`／`GROUPS_SCHEMA`）。每次固定約 16k input tokens 的 agent 開銷，與使用者自己互動用 Codex 共用額度。
+- **Codex**（`reddit_tracker/llm/codex.py`）：subprocess 呼叫 Homebrew 的 `codex exec`（`CODEX_BIN`＝`/opt/homebrew/bin/codex`，2026-10-31 前是 ChatGPT.app 內建 CLI），吃本機 ChatGPT 訂閱登入（`~/.codex/auth.json`），不用 API key。模型 `CODEX_MODEL`（預設 `gpt-6.1-sol`、reasoning `low`），逾時 `CODEX_TIMEOUT_SECONDS`=300。輸出用 `--output-schema` 強制 JSON 形狀（`writer.STORIES_SCHEMA`／`GROUPS_SCHEMA`）。每次固定約 16k input tokens 的 agent 開銷，與使用者自己互動用 Codex 共用額度。
 - **Codex 安全邊界**：證據是外部不可信內容，Codex 又是 agent，所以每次都在空暫存目錄、`-s read-only`、`--ephemeral --ignore-user-config --ignore-rules` 下執行，關掉 shell／code mode／子 agent／外掛／瀏覽器等工具（`_DISABLED_FEATURES`；CLI 升版新增工具類 feature 要補關），並丟棄含 Telegram token、Gemini／RSSHub key 的輸出。找不到 `CODEX_BIN` 時整期改用模板稿。
 - **額度**（`llm/quota.py` 的 `ModelQuotaGuard`）：以 **model 字串**為鍵，同一模型所有用途（`purpose`）共用一個每日計數，`LLM_DAILY_LIMIT` 預設 60，太平洋時間換日，跨 process 共用 `LLM_QUOTA_STATE_PATH` state 檔。每次嘗試（含重試）扣一格；Codex 失敗重試 `CODEX_MAX_RETRIES`=1、Gemini 429 重試 `GEMINI_MAX_429_RETRIES`=1，外層 `WRITE_ATTEMPTS`=2，一版最壞吃 4 格。額度用完拋 `QuotaExhausted`，該版直接改模板稿、不再重試。
 - **Gemini**（備用，`purpose="daily"`，`GeminiQuotaGuard` 是 `ModelQuotaGuard` 加每分鐘上限）。
@@ -259,7 +259,7 @@ uv run python -m reddit_tracker.daily blind-export --dates YYYY-MM-DD --out DIR
 - `stats.role_calls`、`llm_requests` 統計本期本組 Codex 嘗試（包含重試），`degraded` 順序為文稿編輯、查核員 LLM、記者模板；`injection_log` 留下被擋的來源指示。文稿編輯 CHALLENGE 會交給記者修稿並重驗；缺乏可驗證來源則 HOLD。
 - `llm/records.py` 是唯一紀錄入口。`RecordingCodexClient` 只查快取、設定 metadata、委派 `CodexClient.complete`；`scripts/llm_recorder.py` 僅保留相容 import，不另有重試或 INSERT。Replay 不呼叫真模型。
 - `b8d4f0a17c33` 先檢查欄位與 index，只補缺少的；舊列保留、無 hash 的舊列不能 replay。降回 `a6c9e2f31d84` 會移除新增表／錄音欄位，保留舊列基礎欄位；如需回復錄音必須事先備份複本。
-- 模型固定為 `gpt-6.1-sol | codex-cli 0.164.0-alpha.11.1 | reasoning_effort=low`（本機實測）。數字檢查只放行明確單位換算，純數字 14／140 不放行，也不把 published_at 當數字證據。
+- 模型固定為 `gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low`（2026-10-31 由 ChatGPT.app 0.164.0-alpha.11.1 改為 Homebrew 0.166.0）。`llm/codex_version.py` 在排程啟動與每天準備前比對 `codex --version`，不一致或讀不到記 ERROR＋Telegram 警告、照常出刊；`llm_records.model_version` 的 `codex-cli` 段是 client 實測版本（讀不到寫 `codex-cli unknown(locked 0.166.0)`）。replay 的 `request_hash` 不含 CLI 版本。數字檢查只放行明確單位換算，純數字 14／140 不放行，也不把 published_at 當數字證據。
 - MAS 發行時依最新 page plan 與核准狀態重新渲染，未核准只能印標題短訊。P 影子版只存不發。舊 v5 Reddit 日報程式已移除，沒有雙排程並行。
 - 無人值守檢查使用 `REDDIT_TRACKER_NO_DOTENV=1`，Settings 不開啟 dotenv；不要從 production 取得設定。
 - `scripts/verify_mas_merge.py --stage t2a|mas [--live]` 只用 `data/work` 複本，已有目的 DB 就拒絕覆寫。`--live` 才能呼叫 Codex，固定 `LLM_QUOTA_STATE_PATH=data/work/llm-quota-merge.json`、`LLM_DAILY_LIMIT=40`；先完成回歸重播檢查再執行。T2a 專用證據刻意保留原始 E01 足球來源，正式編採仍先過濾。

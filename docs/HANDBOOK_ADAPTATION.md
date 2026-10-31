@@ -493,3 +493,11 @@
 
 **缺口（已補，2026-10-30）：** 原本 `export_blind_count` 匯出當期兩組全部稿件；現在依手冊 8.3 第 7 點每天只抽 8 篇（見步驟 11「每日抽樣」）。對照表原本在 `annotation/YYYY-MM-DD/_private/`，交 B 時要先移走；2026-10-30 改放 `annotation/_private/YYYY-MM-DD/`，當天資料夾可以整個分享。
 
+
+### Codex CLI 改用 Homebrew＋版本守門（2026-10-31）
+
+- 🔁 CLI 由 ChatGPT.app 內建的 `codex-cli 0.164.0-alpha.11.1` 改為 Homebrew cask 的 `codex-cli 0.166.0`：`CODEX_BIN` 預設 `/opt/homebrew/bin/codex`，`DAILY_MODEL_VERSION` 預設 `gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low`。模型與 reasoning effort 不變，P／M 仍共用同一個字串。上面步驟 7、9、10 記的 0.164.0-alpha.11.1 是當時實測值，10/30 以前的錄音照舊保留那個字串。
+- 理由：ChatGPT.app 自動更新會在無預警下換 CLI（alpha），試刊與實驗期間版本要固定；Homebrew 版只在手動 `brew upgrade` 時變。**11/20 `final-1120` 凍結前不要 `brew upgrade codex`**；codex 是 cask，`brew pin` 沒有作用。
+- 版本守門 `reddit_tracker/llm/codex_version.py`：排程啟動與每天 06:00 準備前跑 `codex --version`（不是 LLM 呼叫），和 `DAILY_MODEL_VERSION` 的 `codex-cli` 段比對；一致記 INFO，不一致或讀不到記 ERROR＋Telegram 警告，照常出刊。`DAILY_WRITER` 不是 codex 時跳過。
+- `llm_records.model_version`：`CodexClient` 用鎖定字串時，`codex-cli` 段換成該 client 實測的版本（每個 client 問一次）；讀不到寫成 `codex-cli unknown(locked 0.166.0)`。
+- replay 的 `request_hash`＝sha256(system＋prompt＋model＋schema)，**不含 CLI 版本**；換 CLI 不會讓錄音失效，但同一個 hash 的回應可能來自不同 CLI 版本，要看 `model_version` 分辨。

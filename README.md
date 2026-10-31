@@ -85,18 +85,19 @@ flowchart TD
 
 | 檔案 | 用途 |
 | --- | --- |
-| `llm/codex.py` | 預設 provider：subprocess 呼叫本機 ChatGPT.app 內建的 `codex exec`（吃 ChatGPT 訂閱登入，不需 API key）。每次在空暫存目錄、read-only sandbox、忽略使用者 config／rules 下執行，關閉 shell／子 agent 等工具，輸出含本機機密就丟棄 |
+| `llm/codex.py` | 預設 provider：subprocess 呼叫本機 Homebrew 的 `codex exec`（`/opt/homebrew/bin/codex`）（吃 ChatGPT 訂閱登入，不需 API key）。每次在空暫存目錄、read-only sandbox、忽略使用者 config／rules 下執行，關閉 shell／子 agent 等工具，輸出含本機機密就丟棄 |
+| `llm/codex_version.py` | Codex CLI 版本守門：排程啟動與每天 06:00 準備前跑 `codex --version`，和 `DAILY_MODEL_VERSION` 的 `codex-cli` 段比對；不一致或讀不到記 ERROR＋Telegram 警告，不擋出刊。`llm_records.model_version` 記實測版本（讀不到寫 `codex-cli unknown(locked X)`） |
 | `llm/gemini.py` | 備用 provider（`DAILY_WRITER=gemini`）；日報預設不建立它 |
 | `llm/fake.py` | 離線、不扣額度，給開發測試 |
 | `llm/quota.py` | `ModelQuotaGuard`：以 model 字串為鍵，所有用途共用一個每日計數（`LLM_DAILY_LIMIT`，預設 60），太平洋時間換日，跨 process 共用 state 檔；**每次嘗試（含重試）扣一格**，用完就改模板稿 |
 | `llm/records.py` | 每一次 subprocess 嘗試寫一筆 `llm_records`：`request_hash`、`prompt_text`、`response_text`、`latency_ms`、`ok`、`error`、`role`、`run_variant`、`edition_date`、`story_id`、`model_version` |
 | `llm/replay.py` | 以 `request_hash`（sha256(system＋prompt＋model＋schema)）找回錄好的回應重播；**找不到就丟 `ReplayMissing`，不會默默呼叫真模型** |
 
-`DAILY_WRITER` 只允許 `codex`／`gemini`／`template`／`fake`（`config.LLM_PROVIDERS`；網頁備援已移除且禁止）。找不到 `CODEX_BIN` 時整期改用模板稿。目前定案的模型字串：`gpt-6.1-sol | codex-cli 0.164.0-alpha.11.1 | reasoning_effort=low`。
+`DAILY_WRITER` 只允許 `codex`／`gemini`／`template`／`fake`（`config.LLM_PROVIDERS`；網頁備援已移除且禁止）。找不到 `CODEX_BIN` 時整期改用模板稿。目前定案的模型字串：`gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low`（2026-10-31 起 Homebrew codex；11/20 凍結前不要 `brew upgrade codex`，cask 不能 `brew pin`）。replay 的 `request_hash` 不含 CLI 版本。
 
 ## 快速開始
 
-需求：macOS、Python ≥ 3.11、[`uv`](https://docs.astral.sh/uv/)；撰稿需本機 ChatGPT.app 的 Codex CLI；收集 RSSHub 路由需本機 RSSHub（`~/rsshub`，只綁 127.0.0.1:1200）。
+需求：macOS、Python ≥ 3.11、[`uv`](https://docs.astral.sh/uv/)；撰稿需本機 Homebrew 的 Codex CLI（`brew install --cask codex`，0.166.0）；收集 RSSHub 路由需本機 RSSHub（`~/rsshub`，只綁 127.0.0.1:1200）。
 
 ```bash
 uv sync --all-groups
@@ -126,7 +127,7 @@ uv run python -m reddit_tracker.web
 | `DAILY_EDITION_ENABLED` | `false` | true 才註冊 06:00 準備／08:35 發行兩個 job |
 | `DAILY_MODE` | `pipeline` | `pipeline` 或 `mas`，其他值啟動即報錯 |
 | `DAILY_WRITER` | `codex` | `codex`／`gemini`／`template`／`fake` |
-| `DAILY_MODEL_VERSION` | `gpt-6.1-sol \| codex-cli 0.164.0-alpha.11.1 \| reasoning_effort=low` | P／M 共用的完整模型版本字串 |
+| `DAILY_MODEL_VERSION` | `gpt-6.1-sol \| codex-cli 0.166.0 \| reasoning_effort=low` | P／M 共用的完整模型版本字串；`codex-cli` 段是版本守門的鎖定值 |
 | `DAILY_PREPARE_HOUR`／`_MINUTE` | `6`／`0` | 準備時間 |
 | `DAILY_DELIVERY_HOUR`／`_MINUTE` | `8`／`35` | 發行時間 |
 | `DAILY_SITE_DIR` | `site/daily` | HTML 輸出目錄（不進版控） |
@@ -136,7 +137,7 @@ uv run python -m reddit_tracker.web
 | `NEWSROOM_DELIVERY_TIMEZONE` | `Asia/Taipei` | 排程時區 |
 | `LLM_DAILY_LIMIT` | `60` | 每個模型每日嘗試次數上限（所有用途共用） |
 | `LLM_QUOTA_STATE_PATH` | `/tmp/reddit-tracker-llm-quota.json` | 額度 state 檔 |
-| `CODEX_BIN` | `/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex` | Codex CLI 路徑 |
+| `CODEX_BIN` | `/opt/homebrew/bin/codex` | Codex CLI 路徑（Homebrew cask） |
 | `CODEX_MODEL` | `gpt-6.1-sol` | |
 | `CODEX_REASONING_EFFORT` | `low` | |
 | `CODEX_TIMEOUT_SECONDS` | `300` | |

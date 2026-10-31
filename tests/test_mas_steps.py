@@ -190,7 +190,8 @@ def test_model_version_is_locked(monkeypatch):
     from reddit_tracker.llm.codex import CodexClient
 
     settings = get_settings()
-    assert settings.daily_model_version == "gpt-6.1-sol | codex-cli 0.164.0-alpha.11.1 | reasoning_effort=low"
+    assert settings.daily_model_version == "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low"
+    assert settings.codex_bin == "/opt/homebrew/bin/codex"
     monkeypatch.setattr(codex_version, "probe_cli_version", lambda binary, **kw: codex_version.locked_cli_version(settings.daily_model_version))
     client = CodexClient()
     if client.model == settings.codex_model:

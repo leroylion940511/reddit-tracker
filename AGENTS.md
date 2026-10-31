@@ -28,7 +28,7 @@
 - Python: `uv` with the project-local `.venv`; tests: `REDDIT_TRACKER_NO_DOTENV=1 uv run python -m pytest -q`.
 - Resident service: launchd `com.leroy.reddit-tracker.newsroom` runs `caffeinate -i uv run python -m reddit_tracker.newsroom.scheduler` (APScheduler; log `newsroom.log`).
 - RSSHub: separate launchd `com.leroy.reddit-tracker.rsshub` runs Homebrew `node dist/index.mjs` in `~/rsshub`, listening only on `127.0.0.1:1200` (`RSSHUB_BASE_URL` default `http://127.0.0.1:1200`; install via `deploy/install_launchd.sh rsshub-install`). No Docker / docker-compose.
-- Codex CLI: `CODEX_BIN` defaults to `/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex`; `CODEX_MODEL` defaults to `gpt-6.1-sol` (see `reddit_tracker/config.py`).
+- Codex CLI: `CODEX_BIN` defaults to Homebrew `/opt/homebrew/bin/codex` (cask, codex-cli 0.166.0 since 2026-10-31); `CODEX_MODEL` defaults to `gpt-6.1-sol` (see `reddit_tracker/config.py`). The version guard (`reddit_tracker/llm/codex_version.py`) compares `codex --version` with the `codex-cli` segment of `DAILY_MODEL_VERSION` at scheduler start and before each 06:00 prepare. Do not `brew upgrade codex` before the 11/20 freeze (`brew pin` does not work for casks).
 - Preferred editor: VS Code
 
 ## Language And Tooling Defaults

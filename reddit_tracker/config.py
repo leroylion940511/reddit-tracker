@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     llm_quota_state_path: str = "/tmp/reddit-tracker-llm-quota.json"
 
     # --- Codex CLI（綜合日報撰稿預設 provider；吃本機 ChatGPT 訂閱登入，不用 API key）---
-    codex_bin: str = "/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex"
+    codex_bin: str = "/opt/homebrew/bin/codex"
     codex_model: str = "gpt-6.1-sol"
     codex_reasoning_effort: str = "low"
     codex_timeout_seconds: float = 300.0
@@ -84,8 +84,9 @@ class Settings(BaseSettings):
     daily_mode: str = "pipeline"
     daily_writer: str = "codex"                 # codex / gemini / template / fake（不得是 web）
     # 11/15 定案：P 與 M 共用 Codex CLI 這一個模型字串（不是 Gemini）。之後不換。
-    # PR #1 整合在 Mac 實測的 CLI 版本；11/15 前模型定案。
-    daily_model_version: str = "gpt-6.1-sol | codex-cli 0.164.0-alpha.11.1 | reasoning_effort=low"
+    # 2026-10-31 CLI 由 ChatGPT.app 0.164.0-alpha.11.1 改為 Homebrew 0.166.0；codex-cli 段由
+    # llm/codex_version.py 守門（啟動與每天準備前比對 `codex --version`），llm_records 記實測版本。
+    daily_model_version: str = "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low"
     daily_prepare_hour: int = 6
     daily_prepare_minute: int = 0
     daily_delivery_hour: int = 8

@@ -4,7 +4,15 @@
 > 現行企劃見 `docs/AI_NEWS_COMPANY_PROPOSAL.md`、規格入口見 `docs/v5/README.md`。
 > 2026-10-27 以前的段落是 v4／v5 歷史紀錄，裡面提到的 bot、scrapers、services、v5 newsroom 模組都已移除。
 
-**Last updated:** 2026-10-30（`mas-handbook` 併入 main 並部署 production，`DAILY_MODE=mas`；之後在 `mas-handbook` 加方案 B 的 P 影子自動排程，未部署）
+**Last updated:** 2026-10-31（`feat/codex-version-guard`：Codex CLI 改 Homebrew 0.166.0＋版本守門，未部署）
+
+## 本次變更（2026-10-31 — Codex CLI 版本守門，`feat/codex-version-guard`，未部署）
+
+- ✅ CLI 由 ChatGPT.app `0.164.0-alpha.11.1` 改為 Homebrew cask `0.166.0`：`CODEX_BIN` 預設 `/opt/homebrew/bin/codex`、`DAILY_MODEL_VERSION` 預設 `gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low`（本機 `codex --version` 實測 0.166.0）。
+- ✅ 版本守門 `llm/codex_version.py`：排程啟動與每天 06:00 準備前比對 `codex --version` 與鎖定版本；不一致或讀不到記 ERROR＋Telegram 警告，不擋出刊。`llm_records.model_version` 改記實測 CLI 版本（讀不到寫 `codex-cli unknown(locked 0.166.0)`）。replay 的 `request_hash` 不含 CLI 版本。細節見 ADAPTATION「Codex CLI 改用 Homebrew＋版本守門」。
+- ⚠️ **11/20 凍結前不要 `brew upgrade codex`**；Homebrew codex 是 cask，`brew pin` 沒用。
+- ⚠️ 部署時 production `.env` 若有寫 `CODEX_BIN`／`DAILY_MODEL_VERSION` 要一起改（或刪掉用預設）；重啟 newsroom 後 log 應有 `codex version guard ok: codex-cli 0.166.0`。
+- ✅ 全套 334 passed／7 skipped／2 xfailed（worktree 沒有母本快照，多 3 個 skip）。
 
 ## 目前狀態（2026-10-30，`mas-handbook`：手冊步驟 0–11 的程式都在）
 
