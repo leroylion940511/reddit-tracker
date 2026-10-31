@@ -61,3 +61,11 @@ def _isolated_llm_quota(tmp_path, monkeypatch):
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def _no_codex_version_probe(monkeypatch):
+    """`codex --version` 也會被 llm_guard 擋；預設當成讀不到版本。要測實測版本的測試自己再 patch。"""
+    from reddit_tracker.llm import codex_version
+
+    monkeypatch.setattr(codex_version, "probe_cli_version", lambda binary, **kw: None)

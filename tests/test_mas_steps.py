@@ -184,12 +184,14 @@ def test_gemini_retries_write_one_llm_record_each(session, monkeypatch, tmp_path
     assert rows[0].model_version
 
 
-def test_model_version_is_locked():
+def test_model_version_is_locked(monkeypatch):
     from reddit_tracker.config import get_settings
+    from reddit_tracker.llm import codex_version
     from reddit_tracker.llm.codex import CodexClient
 
     settings = get_settings()
     assert settings.daily_model_version == "gpt-6.1-sol | codex-cli 0.164.0-alpha.11.1 | reasoning_effort=low"
+    monkeypatch.setattr(codex_version, "probe_cli_version", lambda binary, **kw: codex_version.locked_cli_version(settings.daily_model_version))
     client = CodexClient()
     if client.model == settings.codex_model:
         assert client.model_version == settings.daily_model_version

@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from ..config import get_settings
+from . import codex_version
 from .quota import ModelQuotaGuard, purpose_limits_from_settings
 from .records import note_attempt
 
@@ -92,9 +93,24 @@ class CodexClient:
             if s and len(s) >= 8
         ]
         locked = getattr(settings, "daily_model_version", None)
-        self.model_version = locked if locked and self.model == settings.codex_model else (
-            f"{self.model}+effort={self.reasoning_effort}"
+        # 用鎖定字串時，codex-cli 段在第一次讀 model_version 時換成 `binary --version` 的實測版本
+        # （每個 client 只問一次）；讀不到寫 `codex-cli unknown(locked X)`。
+        self._locked_version = locked if locked and self.model == settings.codex_model else None
+        self._model_version: str | None = (
+            None if self._locked_version else f"{self.model}+effort={self.reasoning_effort}"
         )
+
+    @property
+    def model_version(self) -> str:
+        if self._model_version is None:
+            actual = codex_version.probe_cli_version(self.binary)
+            self._model_version = codex_version.actual_model_version(self._locked_version, actual)
+        return self._model_version
+
+    @model_version.setter
+    def model_version(self, value: str) -> None:
+        # 錄音腳本（records.RecordingCodexClient）會自己指定
+        self._model_version = value
 
     def command(self, *, workdir: Path, schema_path: Path | None, output_path: Path) -> list[str]:
         cmd = [

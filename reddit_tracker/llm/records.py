@@ -11,7 +11,6 @@ from __future__ import annotations
 import time
 import json
 import sqlite3
-import subprocess
 from pathlib import Path
 
 from .quota import QuotaExhausted
@@ -230,12 +229,11 @@ def ensure_llm_records(db_path: str | Path) -> None:
 
 
 def cli_version(binary: str) -> str:
-    """`codex --version`（不是 LLM 呼叫）。"""
-    try:
-        out = subprocess.run([binary, "--version"], capture_output=True, text=True, timeout=30)
-    except (OSError, subprocess.TimeoutExpired):
-        return "codex-cli unknown"
-    return (out.stdout or out.stderr).strip() or "codex-cli unknown"
+    """`codex --version`（不是 LLM 呼叫），格式 `codex-cli 0.166.0`；讀不到回 `codex-cli unknown`。"""
+    from .codex_version import probe_cli_version
+
+    version = probe_cli_version(binary)
+    return f"codex-cli {version}" if version else "codex-cli unknown"
 
 
 def model_version(codex, version: str) -> str:

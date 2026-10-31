@@ -19,6 +19,7 @@ from ..collection.collector import collect_due_sources
 from ..config import get_settings
 from ..daily.run import prepare_daily, prepare_with_shadow, publish_daily
 from ..db import session_scope
+from ..llm.codex_version import check_codex_version
 from ..seeds.news_sources import load_registry
 
 logger = logging.getLogger(__name__)
@@ -76,6 +77,8 @@ def _run_source_collection() -> None:
 def _prepare_daily_today() -> None:
     settings = get_settings()
     today = datetime.now(ZoneInfo(settings.newsroom_delivery_timezone)).date()
+    # 版本不一致只記 ERROR＋Telegram 警告，照常出刊
+    check_codex_version(settings)
     if shadow_enabled(settings):
         # 手冊步驟 10、12：P 影子先跑、M 後跑，同一份快照；影子失敗只記 log
         edition_id = prepare_with_shadow(today)
@@ -172,6 +175,7 @@ def main() -> int:
         settings.daily_delivery_minute,
         settings.newsroom_delivery_timezone,
     )
+    check_codex_version(settings)
     scheduler.start()
     try:
         while True:
