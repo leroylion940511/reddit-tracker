@@ -29,7 +29,8 @@ sources:
 | `requires_key` | str | | 需要的 `.env` 變數名（只寫名稱，不寫值） |
 | `time_offset_hours` | float | | 修正已知時區錯誤，加到解析出的發布時間上；預設 0 |
 | `general_feed` | bool | | 綜合 feed（各類新聞混在一起）；`section` 只是預設值，不參與事件板塊投票。預設 false |
-| `notes` | str | | 停用原因、資料品質備註 |
+| `keep_items` | bool | | 只對停用來源有意義：`true`＝上游擋掉、不再抓，但以前收到的素材照常參與聚合、選題與證據包；`false`（預設）＝編輯決定排除（例如社群來源），舊素材也排除（`disabled_source_ids()`） |
+| `notes` | str | | 停用原因、資料品質備註；替代來源寫明替代誰、哪天加入 |
 
 ## Loader 介面
 
@@ -57,3 +58,11 @@ NewsSource.request_url(rsshub_base_url: str, rsshub_access_key: str | None) -> s
 - `.env` 需 `ACCESS_KEY`、`CACHE_TYPE=memory`、`LISTEN_INADDR_ANY=0`。
 - 常駐：launchd `com.leroy.reddit-tracker.rsshub`（2026-10-26 依使用者同意安裝），由 `deploy/install_launchd.sh rsshub-install`／`rsshub-uninstall` 管理；plist 內再次固定 `LISTEN_INADDR_ANY=0` 與 `NODE_ENV=production`，log 在 `~/rsshub/rsshub.log`。
 - 更新 RSSHub：`git -C ~/rsshub pull`、重新 install／build，再執行 `deploy/install_launchd.sh rsshub-install`。
+
+## 停用與替代紀錄
+
+- **2026-11-01（收集驗收期間）**：上游對本機（RSSHub 與直接 curl 都一樣）擋掉，RSSHub 上游也沒有比本機更新的修正。停用並設 `keep_items: true`（已收的稿保留）：
+  - `reuters-world`、`reuters-tech`、`reuters-business`：reuters.com 回 401（pf api）／404（outboundfeeds），10/29 起 0 成功；
+  - `apnews-top`：apnews.com 回 403，11/01 03:29 起 0 成功；
+  - `cw-today`：cw.com.tw 回 403，10/30 起 0 成功；官方 RSS `cw_content.xml` 停在 2021 年。**沒有替代來源。**
+- 同日加入官方 RSS 替代（T2、en，本機實測有新稿；七天驗收報告標「11/01 加入」）：`cbsnews-world`（替代 reuters-world）、`abcnews-intl`（替代 apnews-top）、`bbc-business`（財經，替代 reuters-business）、`guardian-tech`（科技，替代 reuters-tech）。另外實測可用但未加入：BBC Technology、Guardian Business、France 24。

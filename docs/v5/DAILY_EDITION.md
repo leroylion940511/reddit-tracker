@@ -64,6 +64,8 @@ score = 10·log2(1 + outlet_count)
 - **編輯會議**（`daily/desk.py`，手冊步驟 3 第 4 點）：各版取配額兩倍的候選（`desk_pool`），合併報導同一具體事件的組，證據取兩邊聯集。
   - **程式合併（主要）**：中文事件 × 外文事件，某一對成員標題用譯名表統一成中文後有 ≥ `CLUSTER_CROSS_LANG_MIN_ENTITIES`（預設 2）個共同實體就合併（E06 巴西、E07 塞爾維亞）。不需要 LLM，模板模式也會做。
   - **LLM 第二意見**：`find_same_events` 一次請求（有 LLM writer 時）。它說要合併的組，程式逐對確認共同實體 ≥ `CLUSTER_LLM_MERGE_MIN_ENTITIES`（預設 1），沒有共同實體的配對剔除並記在 `stats.rejected_merges`（E01：美式足球稿不再被併進塞爾維亞）。LLM 失敗就只用程式合併。
+  - 給 LLM 看的標題是每個事件**證據包的 S1**（`run.lead_titles`，記者實際會寫的那篇），沒有證據才用事件代表標題（2026-11-01 起）。代表稿可能過時：11/01 事件 13410 的代表稿是 10/29 高雄市長辯論，25 篇成員有 23 篇是台北市長辯論，S1 也是台北，LLM 只看到「高雄」就沒和台北辯論 18416 併，同一場辯論見報兩次。
+  - 確認 LLM 的組時，標題對不上再看成員**摘要裡的別名**（`EntityLexicon.summary_names`：譯名表名字、中文摘要裡的英文名，例如「幣安（Binance）」），一邊有別名、另一邊的標題名字或別名也有，就算共同實體（2026-11-01 起；10/31 LLM 正確提出中文幣安＋英文 Binance，卻因譯名表沒有幣安被剔除，國際版、科技版各刊一篇）。程式合併（上一點）不看摘要，實驗一方法 C 不受影響。
   - 兩個事件的共同實體＝兩邊成員標題兩兩比對時最多的那一對（共同實體規則見 CLUSTERING.md）。
   - `apply_merges`：合併組可以重疊（A＋B、A＋C），被吸收的事件之前併入的事件會一起帶過去。
   - `stats`：`merged_groups`（實際套用）、`entity_merge_groups`（程式）、`llm_merge_groups`（LLM 原始回應）、`rejected_merges`（`{group, cluster_id, title, reason}`）。
@@ -202,13 +204,16 @@ plan_edition(session, *, edition_date, now, writer, registry) -> EditionPlan   #
 #   EditionPlan(candidates: list[ScoredCluster], candidate_count, merged_groups, planned: list[Planned(key, selection, evidence, notes)], desk: DeskMerges, context: EntityContext, briefs: list[dict])
 # reddit_tracker/daily/desk.py
 desk_merges(session, pool, llm_groups, *, lexicon, rules, disabled_sources=frozenset(), context_cluster_ids=None) -> DeskMerges
+alias_shared(a: ClusterTitles, b: ClusterTitles, context) -> set[str]   # 至少一邊來自摘要別名的共同名字（只給 confirm_groups）
+lead_titles(session, pool, registry, context=None) -> dict[int, str]   # run.py：編輯會議給 LLM 看的標題＝證據包 S1
+EntityLexicon.summary_names(text, is_zh) -> frozenset[str]   # collection/entities.py：摘要裡的譯名表名字＋中文摘要裡的英文名
 #   DeskMerges(groups, entity_groups, llm_groups, rejected: list[{group, cluster_id, title, reason}])
 apply_merges(scored, groups) -> list[ScoredCluster]   # scoring.py；重疊的組會把已併入的事件一起帶過去
 story_evidence(session, cluster: ScoredCluster, registry, context=None) -> EvidencePack   # 選題與回歸集共用
 prepare_daily(edition_date, *, writer_mode=None, refresh=False, now=None, writer=None, mode=None, shadow=False, snapshot=None) -> int
 #   mode 預設讀 DAILY_MODE（pipeline／mas）。shadow=True：P 組寫 site/daily/shadow，不寫 daily_editions。
 #   DAILY_MODE=mas 時 publish_daily 若沒有準備好的期數就失敗，不重跑 prepare。
-#   shadow=True 時撰稿 client 的額度用途是 SHADOW_PURPOSE（DailyWriter(name, purpose=...)）。
+#   shadow=True 時撰稿 client 的額度用途是 SHADOW_PURPOSE（DailyWriter(name, purpose=...)），llm_records.purpose 也記 shadow（2026-11-01 前撰稿誤記 daily）。
 prepare_with_shadow(edition_date, *, now=None) -> int   # DAILY_MODE=mas＋DAILY_SHADOW_ENABLED：P 影子先跑建快照，M 用同一份快照；回傳 M 的 edition id
 #   影子失敗只記 log（M 自建快照、不匯出）；當天已有 daily_editions 就不跑影子
 export_annotation(edition_date, out_root) -> Path | None   # P、M 都有稿才寫 out_root/YYYY-MM-DD/{blind.txt,spot-check.txt,mapping.sha256} 與 out_root/_private/YYYY-MM-DD/mapping.json
@@ -221,6 +226,9 @@ build_edition_view(session, edition_date, run_variant, sections, *, for_publish=
 view_from_edition(edition, sections) -> EditionView   # 還沒有 page_plans 的舊物件
 # reddit_tracker/daily/mas/orchestrator.py
 run_mas(session, *, edition_date, snapshot, registry, client, now, pitches=None) -> MasResult
+irrelevant_sources(evidence) -> list[(S 編號, EvidenceItem)]   # 查核員程式工具：標題與 S1 沒有共同名字（句首字要包內佐證）＝可疑
+checker_says_same_event(assessment: str | None) -> bool          # 查核員 LLM 回 action=OK＝每個來源都和 S1 同一事件
+cleared_item_ids(session, story_id) -> set[int]                  # 查核員判定同一事件而保留的素材 id（修稿後重驗跳過）
 # reddit_tracker/daily/blind.py
 export_blind_count(session, dates, *, seed=BLIND_SEED) -> (text, mapping, sha256)
 #   BLIND_SEED = 20261201；EXP2_SEED = 20261211
@@ -256,6 +264,7 @@ uv run python -m reddit_tracker.daily blind-export --dates YYYY-MM-DD --out DIR
 - `prepare_daily(..., snapshot=None)`：提供 `DailySnapshot` 或 `{"candidates": [...]}` 時跳過評分與編輯會議，使用凍結的證據 id。兩組共用一份快照；`shadow=True` 即使當天已有 M 組版次也會產生 P 影子版（手動執行時會改寫快照；自動排程的 `prepare_with_shadow` 在已有版次時不跑影子）。
 - `run_mas`：三內版共用 `select_articles` 正式稿名額；三次分版主編呼叫只改角度／推薦。版面編輯提出異議，總編裁決頭版。決定只能引用本期正式稿，不能讓 HOLD 上頭版；保留內版其他稿，頭版／內版連結只落一筆 `daily_articles`，保留 `merged_cluster_ids`。
 - `EditionView` 把同一正式稿展開成頭版全文與內版連結；渲染不重寫正文。P／M 都保留步驟 4 的六則頭版全文，其餘版面標題短訊來自 `stats.briefs`，不送 LLM。舊期 anchor 用 cluster id，新版 page plan 用 story id。
+- **查核員刪來源**（2026-11-01 起）：`irrelevant_sources` 只挑「可疑」來源——標題與 S1 沒有共同名字（譯名表、句中大寫英文字、3 位數以上數字；句首大寫字要同一證據包其他標題在句中也大寫才算，例如 Binance、Oleshky）；不比中文片段（高雄、台北兩場辯論都有「市長選戰」）。有可疑來源或沒出處的數字才叫查核員 LLM 一次；LLM 回 `OK`（提示要求無關來源必須異議）就保留可疑來源，RELEASE／CHALLENGE 的 payload 記 `cleared_sids`、`cleared_item_ids`，修稿後重驗不再點名它們；LLM 回 CHALLENGE、失敗或額度用完才照程式刪。沒出處的數字仍不能被 LLM 的 OK 放行。10/31、11/01 兩期原本刪掉 21 個來源（11/01 有 8 篇剩 1 家），重算後只刪 3 個（`scripts/recheck_factcheck.py`）。
 - `stats.role_calls`、`llm_requests` 統計本期本組 Codex 嘗試（包含重試），`degraded` 順序為文稿編輯、查核員 LLM、記者模板；`injection_log` 留下被擋的來源指示。文稿編輯 CHALLENGE 會交給記者修稿並重驗；缺乏可驗證來源則 HOLD。
 - `llm/records.py` 是唯一紀錄入口。`RecordingCodexClient` 只查快取、設定 metadata、委派 `CodexClient.complete`；`scripts/llm_recorder.py` 僅保留相容 import，不另有重試或 INSERT。Replay 不呼叫真模型。
 - `b8d4f0a17c33` 先檢查欄位與 index，只補缺少的；舊列保留、無 hash 的舊列不能 replay。降回 `a6c9e2f31d84` 會移除新增表／錄音欄位，保留舊列基礎欄位；如需回復錄音必須事先備份複本。

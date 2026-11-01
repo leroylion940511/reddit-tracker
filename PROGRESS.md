@@ -4,9 +4,23 @@
 > 現行企劃見 `docs/AI_NEWS_COMPANY_PROPOSAL.md`、規格入口見 `docs/v5/README.md`。
 > 2026-10-27 以前的段落是 v4／v5 歷史紀錄，裡面提到的 bot、scrapers、services、v5 newsroom 模組都已移除。
 
-**Last updated:** 2026-10-31（`feat/codex-version-guard`：Codex CLI 改 Homebrew 0.166.0＋版本守門，未部署）
+**Last updated:** 2026-11-01（`fix/newsroom-1101`：查核員刪來源、重複見報、影子用途、來源替換；尚未部署，待操作者）
 
-## 本次變更（2026-10-31 — Codex CLI 版本守門，`feat/codex-version-guard`，未部署）
+## 本次變更（2026-11-01 — 10/31、11/01 兩期 M 組問題修正，`fix/newsroom-1101`）
+
+- ⏳ **部署狀態：尚未部署（待操作者）。** 分支自 main `3d78ec1`，4 個修正 commit＋本文件 commit。
+- ✅ **11/01 M 組（12 則：5327 5328 5329 5330 5331 5332 5334 5337 5395 5404 5452 5455）由志晨於 2026-11-01 約 17:22（台北）補核准**；08:35 發行時尚未核准，所以當天只送出標題短訊。
+- ✅ **查核員刪過頭**：根因是 `irrelevant_sources` 用 `shared(..., None)` 比標題，句首字（Binance、Oleshky）不算名字、中文標題沒有譯名表名字就比不到；查核員 LLM 每次都回 OK（同一事件）卻不能覆蓋程式。10/31、11/01 共刪 21 個來源，11/01 有 8／12 篇剩 1 家、正文最短 49 字。修正：句首字要包內佐證；可疑來源要 LLM 沒回 OK 才刪，保留的記 `cleared_item_ids`、修稿重驗跳過；數字仍只看程式。重算（`scripts/recheck_factcheck.py`，輸出在 `reddit_tracker-fixes-1101-data/recheck-factcheck.txt`）：21 → 3 個（5330 高雄稿、5455 Microsoft 稿照刪；5330 的央廣台北稿 S2 仍被刪，因 LLM 回 CHALLENGE 時沒有逐來源判斷）。
+- ✅ **同一事件見報兩次**：10/31 幣安（國際 14963 中文／科技 14305+16914 英文）是 LLM 提對了、程式確認因譯名表沒有「幣安」剔除 → 確認時加看摘要別名「幣安(Binance)」；11/01 台北辯論（5327／5330）是事件 13410 代表稿為高雄辯論、成員與 S1 卻是台北，LLM 被代表標題誤導 → 編輯會議改給 LLM 看證據包 S1 標題。程式合併、聚合、譯名表都沒改（實驗一方法 C 不變）。
+- ✅ **P 影子 `llm_records.purpose`**：額度本來就扣在 `shadow`（M 的 48 格沒被吃），只是撰稿紀錄被 `llm_log_meta(purpose="daily")` 改寫成 daily（11/01：shadow 1、daily 4）；改為記 shadow。
+- ✅ **來源**：停用 `reuters-world`／`reuters-tech`／`reuters-business`（401／404，10/29 起 0 成功）、`apnews-top`（403，11/01 03:29 起）、`cw-today`（403，10/30 起；官方 RSS 停在 2021，無替代），設 `keep_items: true`（不再抓、已收的稿照用）；加 `cbsnews-world`、`abcnews-intl`、`bbc-business`、`guardian-tech`（官方 RSS，11/01 中途加入）。七天報告新增「停用來源」表並標中途加入日期；複本預覽在 `reddit_tracker-fixes-1101-data/report-preview.md`（不 commit）。
+- ✅ 新測試 29 個（查核員 20、編輯會議 5、影子 1、報表 1、登錄表 2；另改 1 個報表斷言）；全套 363 passed／7 skipped／2 xfailed。細節見 ADAPTATION 文末「10/31、11/01 兩期 M 組的修正」。
+- ⚠️ 部署後 11/03 的 `collection report --days 7` 期間是 10/28–11/03：四個替代來源只有 11/01 起的數字（報表會標「11/01 加入」），停用的五個來源列在「停用來源」表。
+- 👤 待決定：要讓查核員逐來源回報（改 CHECKER schema＋重錄 `1027_t2a_records.json`，需呼叫 Codex）才能救回 5330 S2 這類「同一則 CHALLENGE 裡一個對一個錯」的情況；同語言重複仍靠 LLM 第二意見，LLM 沒提就可能重複。
+
+## 本次變更（2026-10-31 — Codex CLI 版本守門，`feat/codex-version-guard`，已部署）
+
+- ✅ **已併入 main 並部署（2026-10-31 08:59 台北，main `3d78ec1`）。**
 
 - ✅ CLI 由 ChatGPT.app `0.164.0-alpha.11.1` 改為 Homebrew cask `0.166.0`：`CODEX_BIN` 預設 `/opt/homebrew/bin/codex`、`DAILY_MODEL_VERSION` 預設 `gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low`（本機 `codex --version` 實測 0.166.0）。
 - ✅ 版本守門 `llm/codex_version.py`：排程啟動與每天 06:00 準備前比對 `codex --version` 與鎖定版本；不一致或讀不到記 ERROR＋Telegram 警告，不擋出刊。`llm_records.model_version` 改記實測 CLI 版本（讀不到寫 `codex-cli unknown(locked 0.166.0)`）。replay 的 `request_hash` 不含 CLI 版本。細節見 ADAPTATION「Codex CLI 改用 Homebrew＋版本守門」。

@@ -480,7 +480,7 @@
 - 當天 daily_editions 已有這期（重跑、手動 prepare 過）就不跑影子，避免覆寫 M 用過的快照。
 - 🔁 M 從快照開始時 `stats.merged_groups` 由快照的 `merged_cluster_ids` 還原，`entity_merge_groups`／`llm_merge_groups`／`rejected_merges` 為空（desk 細節記在 P 影子那次的 log 與 `llm_records` role=desk、run_variant=pipeline）。共用的編輯會議那 1 次呼叫算在 P 的帳上。
 
-**額度：P 有獨立上限，保護 M。** P 影子的每次嘗試記在 quota 用途 `shadow`（`llm/quota.py::SHADOW_PURPOSE`），上限 `DAILY_SHADOW_LLM_LIMIT`（預設 12）；仍算進模型總數 `LLM_DAILY_LIMIT=60`，所以 M 至少保有 48 格。P 用完上限就跟額度用完一樣：撰稿退模板稿、編輯會議失敗不擋出刊。M 的降級邏輯（`_quota_left`＝總上限−總用量）不變。
+**額度：P 有獨立上限，保護 M。** P 影子的每次嘗試記在 quota 用途 `shadow`（`llm/quota.py::SHADOW_PURPOSE`；`llm_records.purpose` 自 2026-11-01 起也記 shadow，見文末「10/31、11/01 兩期 M 組的修正」），上限 `DAILY_SHADOW_LLM_LIMIT`（預設 12）；仍算進模型總數 `LLM_DAILY_LIMIT=60`，所以 M 至少保有 48 格。P 用完上限就跟額度用完一樣：撰稿退模板稿、編輯會議失敗不擋出刊。M 的降級邏輯（`_quota_left`＝總上限−總用量）不變。
 - P 一期次數（讀 `run.py`／`writer.py`）：編輯會議 1 次＋撰稿每組一次（頭版、台灣、國際、科技＝4 組）＝**正常 5 次**；數字核對是程式（`review_story`），不打 LLM。重試：client 內 1 次（`CODEX_MAX_RETRIES=1`）× 外層 `WRITE_ATTEMPTS=2`，最壞每組 4 格、編輯會議 2 格，合計 18 格 → 被上限 12 截住。
 - M 一期：10/27 真 Codex 整期 30 次（手冊 6.7 估約 33、含重試 40–50）。正常日 P 5＋M 約 30＝35，遠低於 60；最壞 P 12＋M 48。M 若真的超過 48 才會降級，而且是 M 自己用掉的。
 - 為什麼不選「M 先、P 後」：那樣額度與時間都對 M 最安全，但會把降級推到 P，跟手冊 8.3「P 先跑、降級幾乎只會發生在 M、降級日照樣算」的設計相反，也偏離 2.3 時間線；用獨立上限已能保證 M 的份額，所以照手冊 P 先。
@@ -501,3 +501,19 @@
 - 版本守門 `reddit_tracker/llm/codex_version.py`：排程啟動與每天 06:00 準備前跑 `codex --version`（不是 LLM 呼叫），和 `DAILY_MODEL_VERSION` 的 `codex-cli` 段比對；一致記 INFO，不一致或讀不到記 ERROR＋Telegram 警告，照常出刊。`DAILY_WRITER` 不是 codex 時跳過。
 - `llm_records.model_version`：`CodexClient` 用鎖定字串時，`codex-cli` 段換成該 client 實測的版本（每個 client 問一次）；讀不到寫成 `codex-cli unknown(locked 0.166.0)`。
 - replay 的 `request_hash`＝sha256(system＋prompt＋model＋schema)，**不含 CLI 版本**；換 CLI 不會讓錄音失效，但同一個 hash 的回應可能來自不同 CLI 版本，要看 `model_version` 分辨。
+
+
+### 10/31、11/01 兩期 M 組的修正（2026-11-01，`fix/newsroom-1101`）
+
+查證用 production 複本 `prod-copy-20261101.db`（唯讀），沒有呼叫 Codex。測試 363 passed／7 skipped／2 xfailed。
+
+- 🔁 **查核員刪來源（手冊 6.1「程式工具＋可疑時才呼叫 LLM」）**。原因：`irrelevant_sources` 用 `shared(..., None)` 比 S1 與來源的標題，句首大寫字一律不算名字（`Binance hack: …`）、中文標題沒有譯名表名字就什麼都比不到；查核員 LLM 每次都回 `OK`（同一事件），但程式結果不能被 OK 覆蓋，所以 10/31、11/01 共刪了 21 個來源，11/01 有 8／12 篇剩 1 家、正文最短 49 字。真的無關的只有 5330（台北辯論稿裡的高雄辯論）與 5455（Amazon 財報稿裡的 Microsoft 財報），LLM 這兩篇都回 CHALLENGE。
+  - 改法：程式工具只挑「可疑」來源（句首字要同一證據包其他標題在句中也大寫才算名字，與聚合同一規則；不比中文片段，因為「市長選戰」高雄、台北都有）。可疑來源要查核員 LLM **沒有**回 `OK` 才刪；回 OK 就保留，payload 記 `cleared_sids`／`cleared_item_ids`，修稿重驗跳過。**沒出處的數字仍不能被 OK 放行**（原設計保留）。LLM 失敗、額度用完時照程式刪（與修正前相同）。
+  - 為什麼不改提示詞讓 LLM 逐一回報來源：會改到查核員請求的 `request_hash`，`1027_t2a_records.json` 錄音就對不上，要重錄（要呼叫 Codex）。所以沿用原提示詞，只解讀 action。代價：LLM 回 CHALLENGE 時程式點名的都刪，11/01 5330 的央廣台北辯論稿（S2，和 S1 同一場）仍被刪。👤 要逐來源判斷就得改 schema＋重錄 T2a。
+  - `scripts/recheck_factcheck.py --db 複本 --dates 2026-10-31,2026-11-01` 逐（稿, 來源）列舊／新決定：當期刪 21 個 → 新規則刪 3 個（5330 S2、S3，5455 S2）。回歸 fixture `tests/regression/fixtures/factcheck_1031_1101.json`（10 篇），測試 `tests/test_factcheck_relevance.py`。
+- 🔁 **同一事件見報兩次（手冊步驟 3 第 4 點，編輯會議）**。
+  - 10/31 幣安：LLM 第二意見正確提出 `[[14963, 16914, 14305]]`（中文國際版＋英文科技版），程式確認時中文標題只有「幣安」、譯名表沒有 → 14963 被剔除。改法：`confirm_groups` 標題對不上時看成員摘要裡的別名（譯名表名字、中文摘要括號裡的英文名「幣安(Binance)」）。只用在確認 LLM 提的組；程式自己的跨語言合併不看摘要，實驗一方法 C（`desk_merges(..., [])`）不受影響。譯名表沒改（`exp1-frozen` 前也不加名字，加了會改到撰稿提示與錄音）。
+  - 11/01 台北市長辯論（5327、5330）：事件 13410 的代表稿是 10/29 高雄辯論，25 篇成員 23 篇是台北辯論（聚合把台北的賽前稿串進高雄事件），證據包 S1 也是台北；LLM 只看到代表標題「高雄…」，沒和台北辯論 18416 併。改法：編輯會議給 LLM 看每個事件證據包的 S1 標題（`run.lead_titles`）。聚合本身沒改（實驗一凍結前不動門檻）。
+  - 刻意不做「同語言、共同實體夠多就程式合併」：11/01 複本實測日月光與光寶科兩則 Q3 財報標題共有 3 個實體（EPS、創新高、第三季），會錯併。所以同語言重複仍靠 LLM 第二意見＋程式確認，⚠️ LLM 沒提就仍可能重複。測試 `tests/test_desk_duplicates.py`（fixture `desk_1031_1101.json`）。
+- 🔁 **P 影子的 `llm_records.purpose`**：額度本來就對（`CodexClient(purpose=shadow)` 從 `shadow` 扣、上限 12，總數共用 60，M 至少 48），但 `prepare_daily` 把撰稿包在 `llm_log_meta(purpose="daily")`，紀錄被改寫成 daily（10/31、11/01 各 4 筆；只有編輯會議那筆是 shadow）。改成影子版記 `shadow`。測試用假 client 走真的 `ModelQuotaGuard`。
+- 🔁 **來源替換（收集驗收期間）**：Reuters×3、AP Top、天下停用（`keep_items: true`：不再抓，已收的稿照常用，10/27 回歸重編不變），加 CBS／ABC／BBC Business／Guardian Tech 官方 RSS；七天報告把期間內停用的來源另列一表、中途加入的標日期。細節見 SOURCE_REGISTRY「停用與替代紀錄」、COLLECTION「七天收集驗收用的統計」。
