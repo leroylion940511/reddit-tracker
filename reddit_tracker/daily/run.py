@@ -91,10 +91,16 @@ def _today() -> date:
 
 
 def _editorial_meeting(
-    session, scored, writer: DailyWriter | None, disabled_sources: frozenset[str] = frozenset()
+    session,
+    scored,
+    writer: DailyWriter | None,
+    disabled_sources: frozenset[str] = frozenset(),
+    lead_titles: dict[int, str] | None = None,
 ) -> tuple[list, DeskMerges]:
     """跨語言同一事件：程式用譯名表＋共同實體合併；LLM（find_same_events）只當第二意見，
-    它說合併的組也要程式確認有共同實體（手冊步驟 3 第 4 點）。LLM 失敗不擋出刊。"""
+    它說合併的組也要程式確認有共同實體（手冊步驟 3 第 4 點）。LLM 失敗不擋出刊。
+
+    `lead_titles`：給 LLM 看的標題（`lead_titles()`，證據包 S1）；沒有的才用事件代表標題。"""
     pool = desk_pool(scored)
     llm_groups: list[list[int]] = []
     if writer is not None and pool:
@@ -103,6 +109,7 @@ def _editorial_meeting(
                 select(StoryCluster.id, StoryCluster.title).where(StoryCluster.id.in_([s.cluster_id for s in pool]))
             ).all()
         )
+        titles.update(lead_titles or {})
         try:
             llm_groups = writer.find_same_events([(s.cluster_id, titles.get(s.cluster_id) or "") for s in pool])
         except Exception as exc:  # noqa: BLE001 — 編輯會議失敗不擋出刊，只是可能重複
@@ -289,6 +296,22 @@ def story_evidence(
     )
 
 
+def lead_titles(
+    session, pool: list[ScoredCluster], registry: SourceRegistry, context: EntityContext | None = None
+) -> dict[int, str]:
+    """編輯會議給 LLM 看的標題＝證據包 S1，也就是記者實際會寫的那篇。
+
+    事件代表標題可能過時：2026-11-01 事件 13410 的代表稿是 10/29 高雄市長辯論，後來併進的 23 篇都是
+    台北市長辯論，S1 也是台北；LLM 只看到「高雄」就沒把它和台北辯論 18416 併成一則，同一場辯論見報兩次。
+    """
+    titles = {}
+    for cluster in pool:
+        items = story_evidence(session, cluster, registry, context).items
+        if items and items[0].title:
+            titles[cluster.cluster_id] = items[0].title
+    return titles
+
+
 def plan_edition(
     session, *, edition_date: date, now: datetime, writer: DailyWriter | None, registry: SourceRegistry
 ) -> EditionPlan:
@@ -302,8 +325,9 @@ def plan_edition(
     )
     candidate_count = len(scored)
     scored = rewrite_sections(session, scored, registry=registry)  # 併版：兩岸、財經、教育社會改寫到三個內版
-    scored, desk = _editorial_meeting(session, scored, writer, registry.disabled_source_ids())
     context = title_context(session, now, load_lexicon(), registry.disabled_source_ids())
+    leads = lead_titles(session, desk_pool(scored), registry, context) if writer is not None else {}
+    scored, desk = _editorial_meeting(session, scored, writer, registry.disabled_source_ids(), leads)
     planned = []
     selections = select_articles(scored)
     for key, selection in enumerate(selections, start=1):

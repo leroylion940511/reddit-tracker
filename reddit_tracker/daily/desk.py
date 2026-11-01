@@ -4,6 +4,8 @@
   ≥ `cross_lang_min_entities` 個共同實體，就視為同一事件。
 - 第二意見：`find_same_events`（LLM）說要合併的組，程式逐對確認共同實體
   ≥ `llm_merge_min_entities`，沒有共同實體的邊剔除（E01：美式足球稿不會再被併進塞爾維亞）。
+  標題對不上時再看成員摘要裡的別名（譯名表名字、中文摘要括號裡的英文名，例如「幣安（Binance）」）：
+  2026-10-31 LLM 正確提出中文「幣安」與英文 Binance 同一事件，但譯名表沒有幣安、被程式剔除。
 
 兩個事件的共同實體＝兩邊成員標題兩兩比對時，共同實體最多的那一對。
 """
@@ -28,6 +30,7 @@ class ClusterTitles:
     titles: list[str]
     entities: list[TitleEntities]
     names: frozenset[str]  # 所有成員名字的聯集（快速排除不可能的配對）
+    aliases: frozenset[str] = frozenset()  # 成員摘要裡的別名（`EntityLexicon.summary_names`），只給確認 LLM 合併用
 
 
 @dataclass
@@ -47,15 +50,17 @@ def load_cluster_titles(
     disabled_sources: frozenset[str] = frozenset(),
 ) -> dict[int, ClusterTitles]:
     rows = session.execute(
-        select(SourceItem.cluster_id, SourceItem.title, SourceItem.lang).where(
+        select(SourceItem.cluster_id, SourceItem.title, SourceItem.lang, SourceItem.summary).where(
             SourceItem.cluster_id.in_(cluster_ids),
             SourceItem.duplicate_of_id.is_(None),
             SourceItem.source_id.not_in(sorted(disabled_sources)),
         )
     ).all()
     grouped: dict[int, list[tuple[str, str]]] = {}
-    for cluster_id, title, lang in rows:
+    aliases: dict[int, set[str]] = {}
+    for cluster_id, title, lang, summary in rows:
         grouped.setdefault(cluster_id, []).append((title or "", lang_group(lang)))
+        aliases.setdefault(cluster_id, set()).update(lexicon.summary_names(summary or "", lang_group(lang) == "zh"))
     result = {}
     for cluster_id, members in grouped.items():
         titles = list(dict.fromkeys(title for title, _ in members))
@@ -64,7 +69,7 @@ def load_cluster_titles(
         lang_of = dict(members)
         entities = [lexicon.entities(t, lang_of[t] == "zh") for t in titles]
         names = frozenset().union(*(e.names | e.leads for e in entities))
-        result[cluster_id] = ClusterTitles(cluster_id, lang, titles, entities, names)
+        result[cluster_id] = ClusterTitles(cluster_id, lang, titles, entities, names, frozenset(aliases[cluster_id]))
     return result
 
 
@@ -79,6 +84,13 @@ def best_shared(
             if len(shared) > len(best[0]):
                 best = (shared, ta, tb)
     return best
+
+
+def alias_shared(a: ClusterTitles, b: ClusterTitles, context: EntityContext) -> set[str]:
+    """至少一邊來自摘要別名的共同名字（另一邊可以是標題名字或別名）。"""
+    names_a = set().union(*(context.names(e) for e in a.entities)) | a.aliases
+    names_b = set().union(*(context.names(e) for e in b.entities)) | b.aliases
+    return (a.aliases & names_b) | (b.aliases & names_a)
 
 
 def _components(edges: list[tuple[int, int]], order: list[int]) -> list[list[int]]:
@@ -135,7 +147,7 @@ def confirm_groups(
         for x, a in enumerate(members):
             for b in members[x + 1 :]:
                 shared, ta, tb = best_shared(titles[a], titles[b], lexicon, context)
-                if len(shared) >= min_entities:
+                if len(shared) >= min_entities or len(alias_shared(titles[a], titles[b], context)) >= min_entities:
                     edges.append((a, b))
         kept = _components(edges, members)
         confirmed += kept

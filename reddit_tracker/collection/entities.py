@@ -155,6 +155,19 @@ class EntityLexicon:
         wanted = set(self.glossary_names(text))
         return [entry for entry in self.glossary if entry.zh in wanted]
 
+    def summary_names(self, text: str, is_zh: bool) -> frozenset[str]:
+        """摘要裡的別名：譯名表名字，加上中文摘要裡的英文名字（「幣安（Binance）」的 binance）。
+
+        只給編輯會議確認 LLM 提的合併用（`daily/desk.confirm_groups`），不參與聚合與程式合併。
+        """
+        folded = fold(text)
+        names = set(self.glossary_names(folded))
+        if is_zh or _HAS_CJK.search(folded):
+            if self._names is not None:
+                folded = self._names.sub(f" {_PLACEHOLDER} ", folded)
+            names.update(self._latin_names_in_cjk(folded))
+        return frozenset(names)
+
     def _entities(self, title: str, is_zh: bool) -> TitleEntities:
         text = fold(title)
         names: set[str] = set()
