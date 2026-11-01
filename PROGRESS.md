@@ -4,11 +4,14 @@
 > 現行企劃見 `docs/AI_NEWS_COMPANY_PROPOSAL.md`、規格入口見 `docs/v5/README.md`。
 > 2026-10-27 以前的段落是 v4／v5 歷史紀錄，裡面提到的 bot、scrapers、services、v5 newsroom 模組都已移除。
 
-**Last updated:** 2026-11-01（`fix/newsroom-1101`：查核員刪來源、重複見報、影子用途、來源替換；尚未部署，待操作者）
+**Last updated:** 2026-11-01（`fix/newsroom-1101`：查核員刪來源、重複見報、影子用途、來源替換；18:00 已部署，main `6edfc5e`）
 
 ## 本次變更（2026-11-01 — 10/31、11/01 兩期 M 組問題修正，`fix/newsroom-1101`）
 
-- ⏳ **部署狀態：尚未部署（待操作者）。** 分支自 main `3d78ec1`，4 個修正 commit＋本文件 commit。
+- ✅ **已部署（2026-11-01 18:00 台北）**：`fix/newsroom-1101` fast-forward 併入 main（`3d78ec1`→`6edfc5e`）並 push。備份 `~/Documents/Developer/Lab/reddit_tracker_backups/fixes-20261101/`（production DB 用 sqlite `.backup`、integrity ok；`.env`、`news_sources.yaml`、newsroom plist 複本）；不需要 migration。只用 `deploy/install_launchd.sh newsroom-reload` 重載 `com.leroy.reddit-tracker.newsroom` 一次（18:00:46），rsshub 未動。
+  - log 有 `codex version guard ok: codex-cli 0.166.0`；scheduler Python process 只有 1 個；3 個 job 已註冊。首輪收集 18:00:46 ok 12/12：`cbsnews-world` 30、`abcnews-intl` 25、`bbc-business` 51、`guardian-tech` 32 筆（全部 HTTP 200；首次抓取，含部分舊稿）；停用的 feed 不再抓。
+  - 部署前驗證：全套 363 passed／7 skipped／2 xfailed（基準 334／7／2）；DB 複本重算 10/31＋11/01 查核員決定，刪除 21 → 3。編輯會議：在 Lab DB 複本（另用額度檔，非 production）把 11/01 存下的 desk 提示（`llm_records` id 41）裡 13410 的過時高雄代表標題換成 S1 標題，**真 Codex 1 次**，回 `[[18416, 13410]]`，即台北辯論重複會被合併（`confirm_groups` 會接受，見 `tests/test_desk_duplicates.py`）。
+  - 👀 **下一個檢查**：11/02 06:00 是第一期套用這些修正——看 `trace`、單一來源稿數、`merged_groups`、`llm_records.purpose`（P 影子撰稿列應為 `shadow`）。
 - ✅ **11/01 M 組（12 則：5327 5328 5329 5330 5331 5332 5334 5337 5395 5404 5452 5455）由志晨於 2026-11-01 約 17:22（台北）補核准**；08:35 發行時尚未核准，所以當天只送出標題短訊。
 - ✅ **查核員刪過頭**：根因是 `irrelevant_sources` 用 `shared(..., None)` 比標題，句首字（Binance、Oleshky）不算名字、中文標題沒有譯名表名字就比不到；查核員 LLM 每次都回 OK（同一事件）卻不能覆蓋程式。10/31、11/01 共刪 21 個來源，11/01 有 8／12 篇剩 1 家、正文最短 49 字。修正：句首字要包內佐證；可疑來源要 LLM 沒回 OK 才刪，保留的記 `cleared_item_ids`、修稿重驗跳過；數字仍只看程式。重算（`scripts/recheck_factcheck.py`，輸出在 `reddit_tracker-fixes-1101-data/recheck-factcheck.txt`）：21 → 3 個（5330 高雄稿、5455 Microsoft 稿照刪；5330 的央廣台北稿 S2 仍被刪，因 LLM 回 CHALLENGE 時沒有逐來源判斷）。
 - ✅ **同一事件見報兩次**：10/31 幣安（國際 14963 中文／科技 14305+16914 英文）是 LLM 提對了、程式確認因譯名表沒有「幣安」剔除 → 確認時加看摘要別名「幣安(Binance)」；11/01 台北辯論（5327／5330）是事件 13410 代表稿為高雄辯論、成員與 S1 卻是台北，LLM 被代表標題誤導 → 編輯會議改給 LLM 看證據包 S1 標題。程式合併、聚合、譯名表都沒改（實驗一方法 C 不變）。

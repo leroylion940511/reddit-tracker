@@ -505,7 +505,11 @@
 
 ### 10/31、11/01 兩期 M 組的修正（2026-11-01，`fix/newsroom-1101`）
 
-查證用 production 複本 `prod-copy-20261101.db`（唯讀），沒有呼叫 Codex。測試 363 passed／7 skipped／2 xfailed。
+查證用 production 複本 `prod-copy-20261101.db`（唯讀），開發時沒有呼叫 Codex。測試 363 passed／7 skipped／2 xfailed。
+
+- ✅ **已部署（2026-11-01 18:00 台北）**：fast-forward 併入 main（`3d78ec1`→`6edfc5e`）並 push；備份 `~/Documents/Developer/Lab/reddit_tracker_backups/fixes-20261101/`（DB `.backup` integrity ok、`.env`、`news_sources.yaml`、newsroom plist）；不需 migration；只 `newsroom-reload` 一次（18:00:46），rsshub 未動。版本守門 ok（`codex-cli 0.166.0`）、scheduler 1 個 process、3 個 job；首輪收集 12/12 ok，四個替代來源都 HTTP 200（30／25／51／32 筆），停用 feed 不再抓。
+- ✅ **部署前驗證**：重算查核員決定 21 → 3；編輯會議在 Lab 複本（另用額度檔）重播 11/01 desk 提示（`llm_records` id 41），13410 改用 S1 標題，真 Codex 1 次回 `[[18416, 13410]]`，台北辯論重複會被合併。
+- 👀 11/02 06:00 是第一期：看 `trace`、單一來源稿數、`merged_groups`、`llm_records.purpose`（P 影子撰稿應為 `shadow`）。
 
 - 🔁 **查核員刪來源（手冊 6.1「程式工具＋可疑時才呼叫 LLM」）**。原因：`irrelevant_sources` 用 `shared(..., None)` 比 S1 與來源的標題，句首大寫字一律不算名字（`Binance hack: …`）、中文標題沒有譯名表名字就什麼都比不到；查核員 LLM 每次都回 `OK`（同一事件），但程式結果不能被 OK 覆蓋，所以 10/31、11/01 共刪了 21 個來源，11/01 有 8／12 篇剩 1 家、正文最短 49 字。真的無關的只有 5330（台北辯論稿裡的高雄辯論）與 5455（Amazon 財報稿裡的 Microsoft 財報），LLM 這兩篇都回 CHALLENGE。
   - 改法：程式工具只挑「可疑」來源（句首字要同一證據包其他標題在句中也大寫才算名字，與聚合同一規則；不比中文片段，因為「市長選戰」高雄、台北都有）。可疑來源要查核員 LLM **沒有**回 `OK` 才刪；回 OK 就保留，payload 記 `cleared_sids`／`cleared_item_ids`，修稿重驗跳過。**沒出處的數字仍不能被 OK 放行**（原設計保留）。LLM 失敗、額度用完時照程式刪（與修正前相同）。
