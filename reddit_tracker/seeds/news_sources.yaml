@@ -45,7 +45,7 @@ sources:
   - {id: storm, name: 風傳媒, section: taiwan, tier: T2, method: rsshub, url: /storm, lang: zh-Hant, interval_min: 120, general_feed: true}
   - {id: thenewslens-news, name: 關鍵評論網 新聞, section: taiwan, tier: T2, method: rsshub, url: /thenewslens/news, lang: zh-Hant, enabled: false, notes: "RSSHub 路由回傳空白（2026-10-26）；改用 thenewslens-feed"}
   - {id: thenewslens-feed, name: 關鍵評論網, section: taiwan, tier: T2, method: rss, url: "https://feeds.feedburner.com/TheNewsLens", lang: zh-Hant, general_feed: true}
-  - {id: cw-today, name: 天下雜誌 今日, section: taiwan, tier: T2, method: rsshub, url: /cw/today, lang: zh-Hant, interval_min: 240, notes: "RSSHub 逐篇抓文章頁，上游會回 429（2026-10-26），降低頻率"}
+  - {id: cw-today, name: 天下雜誌 今日, section: taiwan, tier: T2, method: rsshub, url: /cw/today, lang: zh-Hant, interval_min: 240, enabled: false, keep_items: true, notes: "2026-11-01 停用：cw.com.tw 對本機回 403（RSSHub 與直接 curl 都是），10/30 起 0 成功；官方 RSS cw_content.xml 停在 2021 年，RSSHub 上游也沒有更新的修正。無替代來源。（舊註：RSSHub 逐篇抓文章頁，上游會回 429，2026-10-26 降低頻率）"}
   - {id: ettoday-realtime, name: ETtoday 即時, section: taiwan, tier: T2, method: rss, url: "https://feeds.feedburner.com/ettoday/realtime", lang: zh-Hant, general_feed: true}
   - {id: setn, name: 三立新聞, section: taiwan, tier: T2, method: rsshub, url: /setn, lang: zh-Hant, time_offset_hours: -8, notes: "發布時間把台灣時間標成 UTC（2026-10-26 探測偏 +7.8h）", interval_min: 120, general_feed: true}
   - {id: mirrormedia-political, name: 鏡週刊 政治, section: taiwan, tier: T2, method: rsshub, url: /mirrormedia/category/political, lang: zh-Hant, interval_min: 120}
@@ -67,8 +67,10 @@ sources:
   - {id: voa-chinese, name: 美國之音 中文, section: world, tier: T2, method: rss, url: "https://www.voachinese.com/api/zm_yql-vomx-tpeybti", lang: zh, general_feed: true}
   - {id: un-news-zh, name: 聯合國新聞 中文, section: world, tier: T1, method: rss, url: "https://news.un.org/feed/subscribe/zh/news/all/rss.xml", lang: zh}
   - {id: bbc-world, name: BBC World, section: world, tier: T2, method: rss, url: "https://feeds.bbci.co.uk/news/world/rss.xml", lang: en}
-  - {id: reuters-world, name: Reuters World, section: world, tier: T2, method: rsshub, url: /reuters/world, lang: en}
-  - {id: apnews-top, name: AP Top News, section: world, tier: T2, method: rsshub, url: /apnews/topics/apf-topnews, lang: en}
+  - {id: reuters-world, name: Reuters World, section: world, tier: T2, method: rsshub, url: /reuters/world, lang: en, enabled: false, keep_items: true, notes: "2026-11-01 停用：reuters.com 對本機回 401（pf api）／404（outboundfeeds），RSSHub 與直接 curl 都一樣，10/29 起 0 成功；RSSHub 上游沒有更新的修正。由 cbsnews-world 替代"}
+  - {id: cbsnews-world, name: CBS News World, section: world, tier: T2, method: rss, url: "https://www.cbsnews.com/latest/rss/world", lang: en, notes: "2026-11-01 起替代 reuters-world（官方 RSS，本機實測有新稿）；收集驗收期間中途加入"}
+  - {id: apnews-top, name: AP Top News, section: world, tier: T2, method: rsshub, url: /apnews/topics/apf-topnews, lang: en, enabled: false, keep_items: true, notes: "2026-11-01 停用：apnews.com 對本機回 403（RSSHub 與直接 curl 都是），11/01 03:29 起 0 成功；RSSHub 上游沒有更新的修正。由 abcnews-intl 替代"}
+  - {id: abcnews-intl, name: ABC News International, section: world, tier: T2, method: rss, url: "https://abcnews.go.com/abcnews/internationalheadlines", lang: en, notes: "2026-11-01 起替代 apnews-top（官方 RSS，本機實測有新稿）；收集驗收期間中途加入"}
   - {id: apnews-world, name: AP World, section: world, tier: T2, method: rsshub, url: /apnews/rss/world-news, lang: en, enabled: false, notes: "上游 403（2026-10-26）"}
   - {id: guardian-world, name: The Guardian World, section: world, tier: T2, method: rss, url: "https://www.theguardian.com/world/rss", lang: en}
   - {id: aljazeera, name: Al Jazeera, section: world, tier: T2, method: rss, url: "https://www.aljazeera.com/xml/rss/all.xml", lang: en, general_feed: true}
@@ -99,7 +101,8 @@ sources:
   - {id: cbc-news, name: 中央銀行 新聞稿, section: finance, tier: T1, method: rss, url: "https://www.cbc.gov.tw/tw/rss-302-1.xml", lang: zh-Hant}
   - {id: cnbc-top, name: CNBC Top News, section: finance, tier: T2, method: rss, url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114", lang: en}
   - {id: cnbc-hub, name: CNBC（RSSHub）, section: finance, tier: T2, method: rsshub, url: /cnbc/rss, lang: en}
-  - {id: reuters-business, name: Reuters Business, section: finance, tier: T2, method: rsshub, url: /reuters/business, lang: en}
+  - {id: reuters-business, name: Reuters Business, section: finance, tier: T2, method: rsshub, url: /reuters/business, lang: en, enabled: false, keep_items: true, notes: "2026-11-01 停用：reuters.com 對本機回 401（pf api）／404（outboundfeeds），RSSHub 與直接 curl 都一樣，10/29 起 0 成功；RSSHub 上游沒有更新的修正。由 bbc-business 替代"}
+  - {id: bbc-business, name: BBC Business, section: finance, tier: T2, method: rss, url: "https://feeds.bbci.co.uk/news/business/rss.xml", lang: en, notes: "2026-11-01 起替代 reuters-business（官方 RSS，本機實測有新稿）；收集驗收期間中途加入"}
   - {id: ft-home, name: Financial Times, section: finance, tier: T2, method: rss, url: "https://www.ft.com/rss/home", lang: en}
   - {id: economist-finance, name: The Economist 財經, section: finance, tier: T2, method: rss, url: "https://www.economist.com/finance-and-economics/rss.xml", lang: en}
   - {id: economist-latest, name: The Economist 最新, section: finance, tier: T2, method: rsshub, url: /economist/latest, lang: en, enabled: false, notes: "RSSHub 抓全文時上游 403（2026-10-26）"}
@@ -117,7 +120,8 @@ sources:
   - {id: theverge, name: The Verge, section: tech, tier: T2, method: rss, url: "https://www.theverge.com/rss/index.xml", lang: en}
   - {id: arstechnica, name: Ars Technica, section: tech, tier: T2, method: rss, url: "https://feeds.arstechnica.com/arstechnica/index", lang: en}
   - {id: techcrunch, name: TechCrunch, section: tech, tier: T2, method: rss, url: "https://techcrunch.com/feed/", lang: en}
-  - {id: reuters-tech, name: Reuters Technology, section: tech, tier: T2, method: rsshub, url: /reuters/technology, lang: en}
+  - {id: reuters-tech, name: Reuters Technology, section: tech, tier: T2, method: rsshub, url: /reuters/technology, lang: en, enabled: false, keep_items: true, notes: "2026-11-01 停用：reuters.com 對本機回 401（pf api）／404（outboundfeeds），RSSHub 與直接 curl 都一樣，10/29 起 0 成功；RSSHub 上游沒有更新的修正。由 guardian-tech 替代"}
+  - {id: guardian-tech, name: The Guardian Technology, section: tech, tier: T2, method: rss, url: "https://www.theguardian.com/uk/technology/rss", lang: en, notes: "2026-11-01 起替代 reuters-tech（官方 RSS，本機實測有新稿）；收集驗收期間中途加入"}
   - {id: mit-tech-review, name: MIT Technology Review, section: tech, tier: T2, method: rss, url: "https://www.technologyreview.com/feed/", lang: en}
   - {id: hn-frontpage, name: Hacker News 首頁, section: tech, tier: T3, method: rss, url: "https://hnrss.org/frontpage?points=100", lang: en}
   - {id: hn-api-top, name: Hacker News 官方 API, section: tech, tier: T3, method: json, url: "https://hacker-news.firebaseio.com/v0/topstories.json", lang: en}

@@ -34,6 +34,9 @@ class NewsSource(BaseModel):
     time_offset_hours: float = 0
     # 綜合 feed（各類新聞混在一起）：section 只是預設值，不參與事件板塊投票。
     general_feed: bool = False
+    # 停用但保留已收素材：只是上游擋掉、不再抓（例如 2026-11-01 的 Reuters／AP），以前收到的稿仍是有效新聞，
+    # 照常參與聚合、選題與證據包。編輯決定排除的來源（社群）不設，舊素材一起排除。
+    keep_items: bool = False
     notes: str | None = None
 
     @model_validator(mode="after")
@@ -81,8 +84,8 @@ class SourceRegistry(BaseModel):
         return frozenset(s.id for s in self.sources if s.general_feed)
 
     def disabled_source_ids(self) -> frozenset[str]:
-        """已停用的來源；DB 裡它們以前抓到的素材不得再進入聚合、選題與證據包。"""
-        return frozenset(s.id for s in self.sources if not s.enabled)
+        """已停用的來源；DB 裡它們以前抓到的素材不得再進入聚合、選題與證據包（`keep_items` 的除外）。"""
+        return frozenset(s.id for s in self.sources if not s.enabled and not s.keep_items)
 
 
 def load_registry(path: str | Path = DEFAULT_REGISTRY_PATH) -> SourceRegistry:

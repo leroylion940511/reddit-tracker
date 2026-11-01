@@ -71,3 +71,36 @@ def test_duplicate_ids_and_unknown_sections_are_rejected():
         SourceRegistry(version=1, sections={"taiwan": "台灣"}, sources=[_source(), _source()])
     with pytest.raises(ValidationError):
         SourceRegistry(version=1, sections={"taiwan": "台灣"}, sources=[_source(section="world")])
+
+
+def test_blocked_feeds_are_disabled_and_replaced_by_direct_rss():
+    """2026-11-01：reuters／apnews／cw 對本機回 401／403／404，改用官方 RSS（cw 沒有替代）。"""
+    registry = load_registry()
+    by_id = {s.id: s for s in registry.sources}
+    replaced = {
+        "reuters-world": ("cbsnews-world", "world"),
+        "apnews-top": ("abcnews-intl", "world"),
+        "reuters-business": ("bbc-business", "finance"),
+        "reuters-tech": ("guardian-tech", "tech"),
+    }
+    for old, (new, section) in replaced.items():
+        assert not by_id[old].enabled and by_id[old].notes.startswith("2026-11-01 停用") and new in by_id[old].notes
+        source = by_id[new]
+        assert source.enabled and source.method == "rss" and source.section == section
+        assert (source.tier, source.lang) == ("T2", "en")
+        assert old in source.notes and "中途加入" in source.notes
+    assert not by_id["cw-today"].enabled and "無替代" in by_id["cw-today"].notes
+    # 只是上游擋掉：不再抓，但以前收到的稿仍參與聚合與證據包（10/27 回歸重編不受影響）
+    blocked = {*replaced, "cw-today"}
+    assert all(by_id[i].keep_items for i in blocked)
+    assert not blocked & {s.id for s in registry.enabled()}
+    assert not blocked & registry.disabled_source_ids()
+
+
+def test_keep_items_only_stops_collection():
+    registry = SourceRegistry(version=1, sections={"taiwan": "台灣"}, sources=[
+        _source(id="blocked", enabled=False, keep_items=True, notes="上游 403"),
+        _source(id="excluded", enabled=False, notes="不在 MVP"),
+    ])
+    assert registry.enabled() == []
+    assert registry.disabled_source_ids() == {"excluded"}

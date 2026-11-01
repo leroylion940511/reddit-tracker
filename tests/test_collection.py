@@ -226,7 +226,44 @@ def test_report_counts_unique_items_per_section_day_and_source_health(session):
 
     assert "| 台灣 | 0 | 1 | 1 |" in report
     assert "| **其中重複** | 0 | 1 | 1 |" in report
-    assert "| `c` | 國際 | 1 | 0% | — | 1 | 0 | HTTPError: 503 / upstream |" in report
+    # 報表第一天（10/26）之後才第一次抓取，標成中途加入
+    assert "| `c`（10/27 加入） | 國際 | 1 | 0% | — | 1 | 0 | HTTPError: 503 / upstream |" in report
+    assert "啟用 3 個來源，其中 3 個在報表期間中途加入" in report
+    # 報表第一天就有抓取的來源不標
+    assert "| `c` | 國際 | 1 | 0% |" in build_collection_report(session, registry, days=1, now=NOW)
+
+
+def test_report_keeps_sources_disabled_during_the_window_and_marks_new_ones(session):
+    """驗收中途停用的失敗來源不能從報表消失；中途加入的替代來源要標首次抓取日。"""
+    start = NOW - timedelta(days=3)
+    old = _src("reuters-world", section="world")
+    replacement = _src("cbsnews-world", section="world")
+    for day in range(3):  # 10/24 起：前兩天成功、之後失敗
+        at = start + timedelta(days=day)
+        outcome = _ok(FetchedEntry(url=f"https://r.com/{day}", guid=str(day), title=f"國際新聞第{day}則完整標題"),
+                      started_at=at) if day < 2 else FetchOutcome(
+            started_at=at, ok=False, http_status=503, error="HTTPError: 503 | upstream 401")
+        collect_due_sources(session, _registry(old), now=at, fetcher=lambda s, p, o=outcome: o)
+    collect_due_sources(session, _registry(old, replacement), now=NOW,
+                        fetcher=lambda s, p: _ok(started_at=NOW) if s.id == "cbsnews-world" else FetchOutcome(
+                            started_at=NOW, ok=False, http_status=503, error="HTTPError: 503 | upstream 401"))
+    # 之後在登錄表停用 reuters-world
+    note = "2026-11-01 停用：reuters.com 回 401"
+    registry = _registry(_src("reuters-world", section="world", enabled=False, notes=note), replacement)
+
+    report = build_collection_report(session, registry, days=7, now=NOW)
+
+    assert "| `cbsnews-world`（10/27 加入） | 國際 | 1 | 100% |" in report
+    assert "啟用 1 個來源，其中 1 個在報表期間中途加入（`cbsnews-world`）；另有 1 個現已停用" in report
+    disabled = report.split("## 停用來源（報表期間內有抓取紀錄）", 1)[1]
+    row = next(line for line in disabled.splitlines() if line.startswith("| `reuters-world`"))
+    cells = [c.strip() for c in row.strip("|").split("|")]
+    assert cells[0] == "`reuters-world`（10/24 加入）" and cells[2:7] == ["4", "50%", "10/25 10:00", "2", "2"]
+    assert cells[7] == "HTTPError: 503 / upstream 401" and cells[8] == "10/27 10:00" and cells[9] == note
+    # 停用前沒在期間內抓過的來源不列；啟用但還沒抓過的標出來
+    later = build_collection_report(
+        session, _registry(_src("gone", enabled=False, notes="x"), replacement, _src("fresh")), days=1, now=NOW)
+    assert "`gone`" not in later and "| `fresh`（尚未抓取） | 台灣 | 0 | — |" in later
 
 
 # ── scheduler ────────────────────────────────────────────────────────────

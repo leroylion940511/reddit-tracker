@@ -1,4 +1,8 @@
-"""七天收集驗收用的 Markdown 報表（Asia/Taipei 日曆日）。"""
+"""七天收集驗收用的 Markdown 報表（Asia/Taipei 日曆日）。
+
+來源健康表列出現在啟用的來源；報表第一天之後才第一次抓取的來源標「MM/DD 加入」，還沒抓過的標「尚未抓取」。現在已停用、但報表期間內
+有抓取紀錄的來源另列一表（含登錄表備註），驗收期間中途停用的失敗來源不會從報表消失。
+"""
 
 from __future__ import annotations
 
@@ -6,7 +10,7 @@ from collections import Counter, defaultdict
 from datetime import date, datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..models import SourceFetchRun, SourceItem
@@ -88,26 +92,67 @@ def build_collection_report(
         "",
         "## 各來源健康",
         "",
+    ]
+    first_run = dict(
+        session.execute(select(SourceFetchRun.source_id, func.min(SourceFetchRun.started_at)).group_by(SourceFetchRun.source_id)).all()
+    )
+
+    def joined(source_id: str) -> str:
+        """報表第一天之後才第一次抓取＝期間中途加入（數字不滿整段期間）。"""
+        first = first_run.get(source_id)
+        if first is None:
+            return "（尚未抓取）"
+        return f"（{_day(first):%m/%d} 加入）" if _day(first) > day_list[0] else ""
+
+    collectable = [s for s in registry.sources if s.method in COLLECTABLE_METHODS]
+    enabled = [s for s in collectable if s.enabled]
+    disabled = [s for s in collectable if not s.enabled and runs_by_source.get(s.id)]
+    new_ids = [s.id for s in enabled if joined(s.id)]  # 含尚未抓取
+    lines += [
+        f"啟用 {len(enabled)} 個來源，其中 {len(new_ids)} 個在報表期間中途加入"
+        + (f"（{'、'.join(f'`{i}`' for i in new_ids)}）" if new_ids else "")
+        + f"；另有 {len(disabled)} 個現已停用、但期間內有抓取紀錄，列在下方「停用來源」。",
+        "",
         "| 來源 | 板塊 | 抓取次數 | 成功率 | 最後成功 | 連續失敗 | 唯一項目 | 最近錯誤 |",
         "| --- | --- | ---: | ---: | --- | ---: | ---: | --- |",
     ]
-    for source in registry.enabled():
-        if source.method not in COLLECTABLE_METHODS:
-            continue
-        runs = runs_by_source.get(source.id, [])
-        ok_runs = [run for run in runs if run.ok]
-        streak = 0
-        for run in reversed(runs):
-            if run.ok:
-                break
-            streak += 1
-        last_ok = (
-            f"{as_utc(ok_runs[-1].started_at).astimezone(TAIPEI):%m/%d %H:%M}" if ok_runs else "—"
-        )
-        rate = f"{len(ok_runs) / len(runs):.0%}" if runs else "—"
-        last_error = next((run.error for run in reversed(runs) if run.error), "")
-        lines.append(
-            f"| `{source.id}` | {registry.sections[source.section]} | {len(runs)} | {rate} | {last_ok} "
-            f"| {streak} | {unique_by_source[source.id]} | {(last_error or '')[:80].replace('|', '/')} |"
-        )
+    for source in enabled:
+        lines.append("| " + " | ".join(_health(source, registry, runs_by_source, unique_by_source, joined(source.id))) + " |")
+    if disabled:
+        lines += [
+            "",
+            "## 停用來源（報表期間內有抓取紀錄）",
+            "",
+            "現在登錄表 `enabled: false`；下列數字是停用前在報表期間內的抓取。",
+            "",
+            "| 來源 | 板塊 | 抓取次數 | 成功率 | 最後成功 | 連續失敗 | 唯一項目 | 最近錯誤 | 最後抓取 | 登錄表備註 |",
+            "| --- | --- | ---: | ---: | --- | ---: | ---: | --- | --- | --- |",
+        ]
+        for source in disabled:
+            runs = runs_by_source[source.id]
+            cells = _health(source, registry, runs_by_source, unique_by_source, joined(source.id))
+            cells += [_ts(runs[-1].started_at), (source.notes or "").replace("|", "/")]
+            lines.append("| " + " | ".join(cells) + " |")
     return "\n".join(lines) + "\n"
+
+
+def _ts(dt: datetime) -> str:
+    return f"{as_utc(dt).astimezone(TAIPEI):%m/%d %H:%M}"
+
+
+def _health(source, registry: SourceRegistry, runs_by_source, unique_by_source, joined: str) -> list[str]:
+    """來源健康表的前 8 欄：來源、板塊、抓取次數、成功率、最後成功、連續失敗、唯一項目、最近錯誤。"""
+    runs = runs_by_source.get(source.id, [])
+    ok_runs = [run for run in runs if run.ok]
+    streak = 0
+    for run in reversed(runs):
+        if run.ok:
+            break
+        streak += 1
+    last_ok = _ts(ok_runs[-1].started_at) if ok_runs else "—"
+    rate = f"{len(ok_runs) / len(runs):.0%}" if runs else "—"
+    last_error = next((run.error for run in reversed(runs) if run.error), "")
+    return [
+        f"`{source.id}`{joined}", registry.sections[source.section], str(len(runs)), rate, last_ok, str(streak),
+        str(unique_by_source[source.id]), (last_error or "")[:80].replace("|", "/"),
+    ]
