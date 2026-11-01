@@ -602,7 +602,9 @@ def prepare_daily(
         raise DailyEditionError("沒有可刊登的事件；請確認收集與聚合是否正常")
 
     if mode == PIPELINE:
-        with bind_log_factory(session_scope), llm_log_meta(role="writer", run_variant=PIPELINE, edition_date=edition_date, purpose="daily"):
+        # llm_records.purpose 要跟額度用途一致：影子版是 SHADOW_PURPOSE（2026-11-01 前誤記成 daily，額度本身沒算錯）
+        purpose = SHADOW_PURPOSE if shadow else "daily"
+        with bind_log_factory(session_scope), llm_log_meta(role="writer", run_variant=PIPELINE, edition_date=edition_date, purpose=purpose):
             written = _write_all(planned, sections, writer)
     else:
         written = {}

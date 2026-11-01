@@ -77,6 +77,57 @@ def test_shadow_writer_uses_the_shadow_purpose(shadow_env, monkeypatch):
     assert seen == [SHADOW_PURPOSE, "daily"]
 
 
+class GuardedFake:
+    """像 CodexClient：每次嘗試先扣 `purpose` 的額度、再自己寫 llm_records；內容用離線 FakeClient。"""
+
+    logs_attempts = True
+    model = "m"
+
+    def __init__(self, guard, purpose):
+        from reddit_tracker.llm.fake import FakeClient
+
+        self.guard, self.purpose, self.inner = guard, purpose, FakeClient()
+
+    def complete(self, **kwargs):
+        from reddit_tracker.llm.records import note_attempt
+
+        self.guard.acquire(model=self.model, purpose=self.purpose)
+        note = dict(
+            provider="codex", model=self.model, model_version="m", purpose=self.purpose, system=kwargs["system"],
+            messages=kwargs["messages"], schema=kwargs.get("json_schema"), latency_ms=0,
+        )
+        try:
+            result = self.inner.complete(**kwargs)
+        except Exception as exc:  # FakeClient 看不懂某些角色的 prompt；跟 Codex 一樣失敗也記一筆
+            note_attempt(**note, ok=False, response_text=None, error=str(exc))
+            raise
+        note_attempt(**note, ok=True, response_text=result.content, error=None)
+        return result
+
+
+def test_shadow_calls_are_recorded_and_counted_as_shadow_and_mas_keeps_its_reserve(shadow_env, monkeypatch, tmp_path):
+    from reddit_tracker.daily.writer import DailyWriter
+    from reddit_tracker.models import LLMRecord
+
+    guard = ModelQuotaGuard(state_path=tmp_path / "q.json", daily_limit=10, purpose_limits={SHADOW_PURPOSE: 2})
+    monkeypatch.setattr(
+        run_module, "DailyWriter",
+        lambda name, purpose="daily", **kw: DailyWriter("fake", client=GuardedFake(guard, purpose)),
+    )
+    run_module.prepare_with_shadow(EDITION, now=NOW)
+    rows = shadow_env.session.scalars(select(LLMRecord)).all()
+    shadow_rows = [r for r in rows if r.run_variant == "pipeline"]
+    mas_rows = [r for r in rows if r.run_variant == "mas"]
+    # P 影子要 3 次（編輯會議＋2 個版），上限 2：第 3 次 QuotaExhausted 退模板稿，不記嘗試
+    assert len(shadow_rows) == 2 and {r.purpose for r in shadow_rows} == {SHADOW_PURPOSE}
+    assert {r.role for r in shadow_rows} == {"desk", "writer"}
+    assert guard.used_by("m", SHADOW_PURPOSE) == 2
+    # M 組照常用其餘額度，不被影子吃掉；它的紀錄用角色當用途、額度算在 daily
+    assert mas_rows and SHADOW_PURPOSE not in {r.purpose for r in mas_rows}
+    assert guard.used_by("m", "daily") == len(mas_rows)
+    assert guard.used("m") == len(rows) <= 10
+
+
 def test_settings_defaults_keep_shadow_off():
     from reddit_tracker.config import Settings
 
