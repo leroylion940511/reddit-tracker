@@ -12,7 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ...collection.clustering import domain_of
-from ...collection.entities import load_lexicon
+from ...collection.entities import EntityContext, load_lexicon
 from ...llm.quota import QuotaExhausted
 from ...llm.records import bind_log_session, complete_logged, llm_log_meta
 from ...models import AgentMessage, PagePlan, Story, StoryVersion
@@ -239,18 +239,48 @@ def _parse(text: str | None, model: type[BaseModel]):
 
 
 def irrelevant_sources(evidence: list[EvidenceItem]) -> list[tuple[int, EvidenceItem]]:
-    """跟代表標題（S1）沒有共同實體的來源。查核員的程式工具，不花 LLM。"""
+    """跟代表標題（S1）沒有共同名字的來源（只看標題）。查核員的程式工具，不花 LLM。
+
+    名字＝譯名表、句中大寫的英文字、3 位數以上數字；句首大寫字要同一證據包其他標題在句中
+    也把它大寫才算（與聚合同一規則，例如「Binance hack: …」的 Binance）。不比中文片段：
+    「市長選戰」這種片段高雄、台北辯論都有，分不出來。這裡挑出來的只是「可疑」，
+    刪不刪由 `_check_and_maybe_revise` 依查核員判斷決定。
+    """
     if len(evidence) < 2:
         return []
     lexicon = load_lexicon()
-    anchor = evidence[0]
-    anchor_ent = lexicon.entities(anchor.title, (anchor.lang or "").startswith("zh"))
+    entities = [lexicon.entities(item.title, (item.lang or "").startswith("zh")) for item in evidence]
+    context = EntityContext(entities)
+    anchor = context.names(entities[0])
     bad = []
-    for index, item in enumerate(evidence[1:], start=2):
-        ent = lexicon.entities(item.title, (item.lang or "").startswith("zh"))
-        if not lexicon.shared(anchor_ent, ent, None):
+    for index, (item, ent) in enumerate(zip(evidence[1:], entities[1:]), start=2):
+        if not anchor & context.names(ent):
             bad.append((index, item))
     return bad
+
+
+def checker_says_same_event(assessment: str | None) -> bool:
+    """查核員 LLM 回 action=OK：提示詞要它「無關來源必須提出異議」，OK 就是判定每個來源都和 S1 同一事件。
+
+    CHALLENGE、沒有回應或格式錯都不算（照程式結果刪來源）。
+    """
+    parsed = _parse(assessment, _Checker)
+    return parsed is not None and parsed.action.strip().upper() == "OK"
+
+
+def cleared_item_ids(session: Session, story_id: int) -> set[int]:
+    """查核員判定同一事件而保留的可疑來源（素材 id）；修稿後重驗不再把它們當無關來源。"""
+    rows = session.scalars(select(AgentMessage.payload).where(
+        AgentMessage.story_id == story_id, AgentMessage.sender_role.in_(("fact_checker", "system")),
+    ))
+    return {int(i) for payload in rows for i in (payload or {}).get("cleared_item_ids") or []}
+
+
+def _cleared_payload(cleared: list[tuple[int, EvidenceItem]]) -> dict:
+    return {
+        "cleared_sids": [index for index, _ in cleared],
+        "cleared_item_ids": [item.item_id for _, item in cleared if item.item_id is not None],
+    }
 
 
 def _percent_values(evidence: list[EvidenceItem], body: str) -> set[float]:
@@ -307,9 +337,12 @@ def _check_and_maybe_revise(session, *, edition_date, story, evidence, version, 
     evidence_text = " ".join(f"{item.title} {item.summary}" for item in evidence)
     bad = call_tool("fact_checker", "check_relevance", irrelevant_sources, evidence)
     numbers = call_tool("fact_checker", "check_numbers", unsupported_numbers, version.body, evidence_text)
+    assessment = None
+    cleared: list[tuple[int, EvidenceItem]] = []
     if bad or numbers:
-        # 可疑時才請查核員判斷；程式查核結果不能被模型的 OK 覆蓋。
-        assessment = None
+        # 可疑時才請查核員判斷。數字：程式結果不能被模型的 OK 覆蓋。
+        # 來源：程式只看標題、抓不到中文與跨語言的同一事件（2026-10-31／11-01 把多來源稿刪到剩 1 家），
+        # 所以查核員 LLM 判定「每個來源都同一事件」（OK）時保留；CHALLENGE 或沒有判斷才照程式刪。
         if "fact_checker" not in degraded and _quota_left(client) != 0:
             assessment = _ask(
                 session, client, role="fact_checker", story_id=story.id, edition_date=edition_date,
@@ -319,22 +352,28 @@ def _check_and_maybe_revise(session, *, edition_date, story, evidence, version, 
             )
         elif _quota_left(client) == 0:
             _degrade(degraded, "fact_checker")
+        if bad and checker_says_same_event(assessment):
+            cleared, bad = bad, []
+    if bad or numbers:
         detail_parts = []
         if bad:
             listed = "、".join(f"S{index}（{item.display_name}｜{item.title}）" for index, item in bad)
             detail_parts.append(f"{listed}與事件沒有共同實體")
         if numbers:
             detail_parts.append(f"證據中找不到的數字：{', '.join(numbers[:5])}")
+        payload = {
+            "problem": "IRRELEVANT_SOURCE" if bad else "UNSUPPORTED_NUMBER",
+            "detail": "；".join(detail_parts),
+            "required_action": "刪除無關來源並確認正文沒有引用" if bad else "刪掉沒有出處的數字",
+            "drop_sids": [index for index, _ in bad],
+            "llm_assessment": assessment,
+        }
+        if cleared:
+            payload |= _cleared_payload(cleared)
         message = post_message(
             session, run_variant=MAS, edition_date=edition_date, sender="fact_checker", recipient="reporter",
             type="CHALLENGE", now=clock.tick(), story_id=story.id, target_version=version.version,
-            correlation_id=corr, payload={
-                "problem": "IRRELEVANT_SOURCE" if bad else "UNSUPPORTED_NUMBER",
-                "detail": "；".join(detail_parts),
-                "required_action": "刪除無關來源並確認正文沒有引用" if bad else "刪掉沒有出處的數字",
-                "drop_sids": [index for index, _ in bad],
-                "llm_assessment": assessment,
-            },
+            correlation_id=corr, payload=payload,
         )
         if claim_message(session, message.id):
             mark_handled(session, message.id)
@@ -342,6 +381,9 @@ def _check_and_maybe_revise(session, *, edition_date, story, evidence, version, 
         return _revise(session, edition_date=edition_date, story=story, evidence=kept, removed=[item for _, item in bad],
                        version=version, client=client, clock=clock, corr=corr, challenge=message, degraded=degraded)
     percents = _percent_values(evidence, version.body)
+    if cleared:
+        # 查核員這次已經看過整篇（含數字），不再為百分比多問一次。
+        percents = set()
     if len(percents) >= 2 and "fact_checker" not in degraded and _quota_left(client) != 0:
         return _checker_llm(
             session, edition_date=edition_date, story=story, evidence=evidence, version=version, client=client,
@@ -358,10 +400,17 @@ def _check_and_maybe_revise(session, *, edition_date, story, evidence, version, 
         return latest_version(session, story.id) or version
     version.status = "checked"
     session.flush()
+    release = {"detail": "重驗：來源都有共同實體、數字都找得到"}
+    if cleared:
+        listed = "、".join(f"S{index}" for index, _ in cleared)
+        release = {
+            "detail": f"重驗：{listed} 與 S1 沒有共同名字，查核員判定同一事件，保留；數字都找得到",
+            "llm_assessment": assessment, **_cleared_payload(cleared),
+        }
     post_message(
         session, run_variant=MAS, edition_date=edition_date, sender="system", recipient="eic", type="RELEASE",
         now=clock.tick(), story_id=story.id, target_version=version.version, correlation_id=corr,
-        payload={"detail": "重驗：來源都有共同實體、數字都找得到"},
+        payload=release,
     )
     # RELEASE 不該把 checked 改掉；hold_story 只在 HOLD。system RELEASE 是放行紀錄。
     version.status = "checked"
@@ -407,7 +456,8 @@ def _revise(session, *, edition_date, story, evidence, removed, version, client,
     )
     if claim_message(session, done.id):
         mark_handled(session, done.id)
-    still_bad = irrelevant_sources(evidence) or unsupported_numbers(
+    keep = cleared_item_ids(session, story.id)
+    still_bad = [x for x in irrelevant_sources(evidence) if x[1].item_id not in keep] or unsupported_numbers(
         new.body, " ".join(f"{item.title} {item.summary}" for item in evidence)
     )
     if still_bad:

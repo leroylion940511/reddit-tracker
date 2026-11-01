@@ -1,0 +1,777 @@
+[
+ {
+  "story_id": 14,
+  "edition_date": "2026-10-31",
+  "keeper_cluster_id": 15159,
+  "section": "taiwan",
+  "kind": "report",
+  "evidence": [
+   {
+    "outlet": "pts-dailynews",
+    "source_id": "pts-dailynews",
+    "source_name": "公視 即時",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "立院三讀加重毒駕刑責 10年內累犯致死者可判死刑",
+    "summary": "基隆一名7旬老翁去（2025）年外出倒垃圾，遭毒駕男子撞死，肇事陳姓男子一審遭判7年8個月，家屬痛批無法接受，決定提出上訴。為遏止毒駕悲劇，立法院今（30）日在國民黨和民眾黨團聯手下，三讀通過《刑法》第185條之3修正案，大幅加重毒駕刑責，毒駕累犯10年內再犯致人於死，最重可處死刑。 才剛踏出法院，女子情緒失控，蹲在地上嚎啕大哭。因為她的爸爸，去年12月外出倒垃圾，被毒駕上路的33歲陳姓男子撞死。基隆地院一審判決，依毒駕致人於死等罪，判處陳男7年8個月有期徒刑。 死者女兒指出，「他有14次的通緝紀錄，他吸毒，吸毒吸了10年了，他有可能會因為這幾年出來就戒毒嗎？他還是一樣，那下一個受害者家屬在哪裡？一定還會再有。所以我沒有辦法接受7年8個月，我真的沒辦法接受。」 死者女兒無法接受判決結果，認為刑度過輕，擔心陳男服刑後再度犯案，強調一定會提出上訴。 而同案另一名遭撞傷的騎士，也對判決難以信服。",
+    "url": "https://news.pts.org.tw/article/833697",
+    "published_at": "2026-10-30T11:44",
+    "reprinted_by": [],
+    "item_id": 31860
+   },
+   {
+    "outlet": "rti-news",
+    "source_id": "rti-news",
+    "source_name": "中央廣播電台",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "[政治] 立院三讀毒駕累犯致死最重可判死 藍白批綠縱容 綠營反控扭曲程序質疑",
+    "summary": "立法院會30日三讀通過《刑法》第185條之3修正條文，毒駕10年內再犯致人於死，最重可處死刑，得併科新台幣1,000萬元以下罰金。藍白強調提高刑責能有效嚇阻毒駕；民進黨立委莊瑞雄則反駁，民進黨支持嚴懲毒駕，但修法過度倉促，並批評藍白扭曲程序質疑。 因毒駕事件頻傳，立法院院會30日三讀通過藍白提《刑法》第185條之3修正草案。根據三讀條文，毒駕處6個月以上、5年以下有期徒刑，得併科新台幣50萬元以下罰金；毒駕致人於死，處7年以上有期徒刑，得併科700萬元以下罰金；致人重傷則處5年以上、12年以下有期徒刑，得併科500萬元以下罰金。 至於經判決有罪確定後，10年內再犯毒駕致人於死，處死刑、無期徒刑或10年以上有期徒刑，得併科1,000萬元以下罰金；再犯致人重傷，則處7年以上有期徒刑，得併科700萬元以下罰金。 國民黨團立委洪孟楷表示，毒駕零容忍不能只是口號，必須化為實際行動。他說：『(原音)我",
+    "url": "https://www.rti.org.tw/news?uid=3&pid=240877",
+    "published_at": "2026-10-30T07:56",
+    "reprinted_by": [],
+    "item_id": 30953
+   }
+  ],
+  "challenge": {
+   "problem": "IRRELEVANT_SOURCE",
+   "drop_sids": [
+    2
+   ],
+   "llm_assessment": "{\"action\":\"OK\",\"problem\":\"NONE\",\"detail\":\"各刑度與罰金分屬不同犯罪情節，個案判刑亦未與修法刑度混同，S2與S1為同一修法事件。\",\"required_action\":\"無須分寫或釐清。\"}"
+  },
+  "v1": {
+   "headline": "立院三讀加重毒駕刑責　10年內再犯致死最重可判死",
+   "deck": "毒駕致死處7年以上有期徒刑；藍白主張提高刑責嚇阻，民進黨立委質疑修法倉促。",
+   "body": "立法院院會30日三讀通過《刑法》第185條之3修正條文，經判決有罪確定後，10年內再犯毒駕致人於死，可處死刑、無期徒刑或10年以上有期徒刑，得併科新台幣1,000萬元以下罰金。[S2]\n\n根據三讀條文，毒駕處6個月以上、5年以下有期徒刑，得併科50萬元以下罰金；致人於死，處7年以上有期徒刑，得併科700萬元以下罰金；致人重傷，處5年以上、12年以下有期徒刑，得併科500萬元以下罰金。10年內再犯毒駕致人重傷，則處7年以上有期徒刑，得併科700萬元以下罰金。[S2]\n\n修正案由國民黨與民眾黨團聯手推動通過。藍白主張提高刑責能有效嚇阻毒駕；民進黨立委莊瑞雄表示支持嚴懲毒駕，但質疑修法過度倉促，並批評藍白扭曲程序質疑。[S1][S2]\n\n基隆一名7旬老翁2025年12月外出倒垃圾時，遭毒駕的33歲陳姓男子撞死。基隆地院一審依毒駕致人於死等罪，判處陳男7年8個月有期徒刑。死者女兒認為刑度過輕，擔心陳男服刑後再犯，表示將提出上訴；同案另一名遭撞傷的騎士也對判決難以信服。[S1]",
+   "why_it_matters": "修正條文提高毒駕及再犯致死、重傷的刑責，朝野對嚴懲毒駕與修法程序的討論也浮上檯面。[S2]",
+   "source_ids": [
+    31860,
+    30953
+   ]
+  },
+  "v2": {
+   "headline": "立院三讀加重毒駕刑責　10年內累犯致死最重可判死刑",
+   "deck": "《刑法》第185條之3修正案三讀通過，加重毒駕刑責。[S1]",
+   "body": "立法院30日在國民黨與民眾黨團聯手下，三讀通過《刑法》第185條之3修正案。毒駕累犯10年內再犯致人於死，最重可處死刑。[S1]\n\n基隆一名7旬老翁2025年12月外出倒垃圾時，遭33歲陳姓男子毒駕撞死。基隆地院一審依毒駕致人於死等罪，判處陳男7年8個月有期徒刑。[S1]\n\n死者女兒認為刑度過輕，擔心陳男服刑後再度犯案，表示一定會提出上訴。同案另一名遭撞傷的騎士，也對判決難以信服。[S1]",
+   "why_it_matters": "修正案加重毒駕刑責，其中10年內累犯致死者，最重可處死刑。[S1]",
+   "source_ids": [
+    31860
+   ]
+  }
+ },
+ {
+  "story_id": 15,
+  "edition_date": "2026-10-31",
+  "keeper_cluster_id": 14963,
+  "section": "world",
+  "kind": "report",
+  "evidence": [
+   {
+    "outlet": "yahoo-tw-stock",
+    "source_id": "yahoo-tw-stock",
+    "source_name": "Yahoo 股市新聞",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "最大加密盜竊之一波及63億美元　幣安證實遭複雜攻擊現多處漏洞",
+    "summary": "（中央社紐約2026年10月30日綜合外電報導）全球每日交易量最大加密貨幣交易所幣安今天表示，正努力處理一起波及約63億美元資金、涉及多個入侵點的「複雜攻擊」，已經凍結其中約半數資金，以防止大規模竊盜",
+    "url": "https://tw.stock.yahoo.com/news/%E6%9C%80%E5%A4%A7%E5%8A%A0%E5%AF%86%E7%9B%9C%E7%AB%8A%E4%B9%8B-%E6%B3%A2%E5%8F%8A63%E5%84%84%E7%BE%8E%E5%85%83-%E5%B9%A3%E5%AE%89%E8%AD%89%E5%AF%A6%E9%81%AD%E8%A4%87%E9%9B%9C%E6%94%BB%E6%93%8A%E7%8F%BE%E5%A4%9A%E8%99%95%E6%BC%8F%E6%B4%9E-125239867.html",
+    "published_at": "2026-10-30T12:52",
+    "reprinted_by": [],
+    "item_id": 32601
+   },
+   {
+    "outlet": "technews-tw",
+    "source_id": "technews-tw",
+    "source_name": "科技新報",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "史上最大加密幣竊案？幣安疑遭駭  比特幣失守 8 萬",
+    "summary": "全球最大加密貨幣交易所幣安（Binance）疑似遭駭，穩定幣發行商 Tether、Circle 緊急凍結可疑資 […]",
+    "url": "https://infosecu.technews.tw/2026/10/30/binance-suspected-hack-sends-bitcoin-below-80000/",
+    "published_at": "2026-10-30T03:50",
+    "reprinted_by": [],
+    "item_id": 28600
+   },
+   {
+    "outlet": "rti-news",
+    "source_id": "rti-news",
+    "source_name": "中央廣播電台",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "[國際] 全球最大加密貨幣交易所幣安疑遭駭 凍結逾30億美元",
+    "summary": "全球最大加密貨幣交易所幣安(Binance)29日表示，該公司凍結超過30億美元資產，避免遭大規模竊盜，並正在調查可能的安全漏洞事件。 幣安是全球每日交易量最大的加密貨幣交易所，該公司在X發布了一系列有時自相矛盾的訊息，堅持「用戶資金完全安全」，但也表示將「負擔所有損失」。 目前還不清楚這起事件的規模，但區塊鏈研究公司Chainalysis表示，目前估計被竊取的金額約59.12億美元。 這幾乎是至今規模最大同類網路攻擊事件被竊取金額的4倍。2025年2月Bybit平台被竊取15億美元，這事件被認為是與北韓有關聯的駭客所為。 在台灣時間今天(30日)上午8時30分，幣安表示所有存款和提款已暫時中止，「我們的團隊將進行安全檢查、凍結資產，並與執法單位合作」。 幣安指出：「隨著我們的團隊與執法單位、發行商、區塊鏈情報公司和產業夥伴密切合作，追蹤和凍結其他資產，這個數字可能持續增加。」 幣安和產業",
+    "url": "https://www.rti.org.tw/news?uid=3&pid=240784",
+    "published_at": "2026-10-30T02:56",
+    "reprinted_by": [],
+    "item_id": 28496
+   }
+  ],
+  "challenge": {
+   "problem": "IRRELEVANT_SOURCE",
+   "drop_sids": [
+    2,
+    3
+   ],
+   "llm_assessment": "{\"action\":\"OK\",\"problem\":\"NONE\",\"detail\":\"稿件已區分波及約63億美元、估計被竊59.12億美元與凍結約半數資金，且S1、S2、S3均指向同一事件。\",\"required_action\":\"無須修改或另行分寫。\"}"
+  },
+  "v1": {
+   "headline": "幣安遭複雜攻擊波及約63億美元　凍結約半數資金",
+   "deck": "幣安暫停所有存提款並進行安全檢查，事件規模仍待釐清。",
+   "body": "全球每日交易量最大的加密貨幣交易所幣安表示，正處理一起涉及多個入侵點的「複雜攻擊」，波及約63億美元資金，已凍結其中約半數，以防止大規模竊盜。[S1]\n\n幣安在台灣時間10月30日上午8時30分表示，所有存款與提款已暫時中止，團隊將進行安全檢查、凍結資產，並與執法單位合作。[S3]\n\n事件規模仍未明朗。中央廣播電台報導，區塊鏈研究公司Chainalysis估計，被竊取金額約59.12億美元；此估計與幣安所稱波及約63億美元資金的範圍不同。[S1][S3]\n\n幣安在X發布訊息，宣稱「用戶資金完全安全」，同時表示將「負擔所有損失」。公司並指出，隨著團隊與執法單位、發行商、區塊鏈情報公司及產業夥伴合作追蹤其他資產，凍結金額可能持續增加。[S3]",
+   "why_it_matters": "幣安已暫停所有存提款，事件涉及數十億美元資產，實際損失與可凍結金額仍待釐清。[S1][S3]",
+   "source_ids": [
+    32601,
+    28600,
+    28496
+   ]
+  },
+  "v2": {
+   "headline": "幣安證實遭複雜攻擊　波及約63億美元資金",
+   "deck": "幣安表示已凍結其中約半數資金，以防止大規模竊盜。",
+   "body": "中央社10月30日報導，全球每日交易量最大的加密貨幣交易所幣安表示，正努力處理一起涉及多個入侵點的「複雜攻擊」，波及約63億美元資金。[S1]\n\n幣安表示，已凍結其中約半數資金，以防止大規模竊盜。[S1]",
+   "why_it_matters": "此次攻擊波及約63億美元資金，幣安正透過凍結資金防止大規模竊盜。[S1]",
+   "source_ids": [
+    32601
+   ]
+  }
+ },
+ {
+  "story_id": 18,
+  "edition_date": "2026-10-31",
+  "keeper_cluster_id": 14305,
+  "section": "tech",
+  "kind": "report",
+  "evidence": [
+   {
+    "outlet": "cnbc-top",
+    "source_id": "cnbc-top",
+    "source_name": "CNBC Top News",
+    "tier": "T2",
+    "lang": "en",
+    "title": "Binance hack: Investigators in a 'cat and mouse game' to recover $6.3 billion in stolen funds",
+    "summary": "More than $6 billion in crypto was stolen from Binance, setting off a race to recover the funds before North Korea-linked hackers can launder them into cash.",
+    "url": "https://www.cnbc.com/2026/10/30/binance-hack-stolen-crypto-recovery.html",
+    "published_at": "2026-10-30T18:08",
+    "reprinted_by": [],
+    "item_id": 33341
+   },
+   {
+    "outlet": "npr-news",
+    "source_id": "npr-news",
+    "source_name": "NPR News",
+    "tier": "T2",
+    "lang": "en",
+    "title": "Blockchain intelligence firms link North Korea to $6.3B hack on Binance",
+    "summary": "The world's biggest cryptocurrency exchange reported Thursday that approximately $6.3 billion was impacted in an apparent hack.",
+    "url": "https://www.npr.org/2026/10/30/g-s1-150902/blockchain-intelligence-firms-link-north-korea-to-6-3b-hack-on-binance",
+    "published_at": "2026-10-30T13:01",
+    "reprinted_by": [],
+    "item_id": 32427
+   },
+   {
+    "outlet": "dw-en",
+    "source_id": "dw-en",
+    "source_name": "DW English",
+    "tier": "T2",
+    "lang": "en",
+    "title": "Binance crypto platform suspends trades amid suspected hack",
+    "summary": "The platform suspended some trading while crypto companies froze billions in their respective currencies. The full extent of the possible hack was not yet clear.",
+    "url": "https://www.dw.com/en/binance-crypto-platform-suspends-trades-amid-suspected-hack/a-79803280?maca=en-rss-en-all-1573-rdf",
+    "published_at": "2026-10-30T00:55",
+    "reprinted_by": [],
+    "item_id": 27897
+   },
+   {
+    "outlet": "aljazeera",
+    "source_id": "aljazeera",
+    "source_name": "Al Jazeera",
+    "tier": "T2",
+    "lang": "en",
+    "title": "Binance says $2.54bn in crypto funds frozen amid ‘potential security issue’",
+    "summary": "Binance founder says world's largest crypto exchange appears to have been hacked.",
+    "url": "https://www.aljazeera.com/economy/2026/10/30/binance-says-2-54bn-in-crypto-funds-frozen-amid-potential-security-issue?traffic_source=rss",
+    "published_at": "2026-10-30T00:29",
+    "reprinted_by": [],
+    "item_id": 27890
+   },
+   {
+    "outlet": "guardian-world",
+    "source_id": "guardian-world",
+    "source_name": "The Guardian World",
+    "tier": "T2",
+    "lang": "en",
+    "title": "World’s largest crypto exchange investigating reports of potential hack",
+    "summary": "Binance said the extent of damages was not known and had not confirmed whether funds had been pilfered Binance, the world’s largest cryptocurrency exchange, said on Thursday it is investigating reports of a potential security issue as its founder said the incident “does look like a hack on Binance”. It wasn’t immediately clear the extent of the damage hackers might have been able to accomplish and",
+    "url": "https://www.theguardian.com/business/2026/oct/29/binance-crypto-exchange-hack",
+    "published_at": "2026-10-30T00:02",
+    "reprinted_by": [],
+    "item_id": 27603
+   },
+   {
+    "outlet": "yahoo-finance",
+    "source_id": "yahoo-finance",
+    "source_name": "Yahoo Finance",
+    "tier": "T2",
+    "lang": "en",
+    "title": "Binance probes possible $5.7 billion crypto hack, possibly the biggest in history",
+    "summary": "Changpeng Zhao, co-founder of Binance, during the Bitcoin Asia conference in August. Photo: Chan Long Hei/Bloomberg via Getty Images Crypto exchange Binance is investigating what could be the biggest crypto hack in history as users saw upwards of $5.7 billion in funds drained from wallets Thursday afternoon. Why it matters : The suspected hack comes after a wave of high-profile cyberattacks and da",
+    "url": "https://finance.yahoo.com/markets/crypto/articles/binance-probes-possible-5-7-234755783.html",
+    "published_at": "2026-10-29T23:47",
+    "reprinted_by": [],
+    "item_id": 27698
+   }
+  ],
+  "challenge": {
+   "problem": "IRRELEVANT_SOURCE",
+   "drop_sids": [
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "llm_assessment": "{\"action\":\"OK\",\"problem\":\"NONE\",\"detail\":\"各來源均與S1屬同一事件，稿件已區分63億美元受影響資產、逾57億美元流出資金與25.4億美元凍結資金，未視為同一損失金額。\",\"required_action\":\"無須修改。\"}"
+  },
+  "v1": {
+   "headline": "Binance疑遭駭客入侵，受影響資金規模仍待釐清",
+   "deck": "多家媒體報導涉及數十億美元加密資產，部分交易暫停，調查人員追查資金流向。",
+   "body": "加密貨幣交易所Binance正調查疑似安全事件。據NPR報導，交易所週四通報，約63億美元資產受到疑似駭客攻擊影響；《衛報》則報導，Binance表示損失程度尚不清楚，也尚未證實資金是否遭竊。[S2][S5]\n\n各媒體對涉及金額的報導不同。Yahoo Finance報導，用戶週四下午發現逾57億美元資金從錢包流出；Al Jazeera則報導，Binance表示已有25.4億美元加密資金遭凍結。上述數字分別涉及資金流出與凍結，不能視為同一損失金額。[S6][S4]\n\n據DW報導，平台已暫停部分交易，加密貨幣公司也凍結各自幣種中價值數十億美元的資產，但疑似攻擊的完整影響仍不明朗。[S3]\n\nNPR報導，區塊鏈情報公司將這起事件與北韓連結。CNBC則報導，調查人員正追查資金，試圖趕在與北韓有關聯的駭客將加密資產洗成現金前追回款項。[S2][S1]",
+   "why_it_matters": "事件涉及數十億美元加密資產，並已造成部分交易暫停；資金能否追回及實際損失規模仍待釐清。[S1][S3][S5]",
+   "source_ids": [
+    33341,
+    32427,
+    27897,
+    27890,
+    27603,
+    27698
+   ]
+  },
+  "v2": {
+   "headline": "Binance逾60億美元加密資產遭竊，調查人員追討資金",
+   "deck": "CNBC報導，調查人員正爭取在與北韓有關的駭客將資金洗成現金前追回失款。",
+   "body": "據CNBC報導，Binance遭竊的加密資產超過60億美元；報導標題將遭竊資金列為63億美元。[S1]\n\n調查人員正追討資金，力求在與北韓有關的駭客將資金洗成現金前追回失款。[S1]",
+   "why_it_matters": "資金追討面臨時間壓力，駭客可能將遭竊加密資產洗成現金。[S1]",
+   "source_ids": [
+    33341
+   ]
+  }
+ },
+ {
+  "story_id": 33,
+  "edition_date": "2026-10-31",
+  "keeper_cluster_id": 4170,
+  "section": "world",
+  "kind": "report",
+  "evidence": [
+   {
+    "outlet": "aljazeera",
+    "source_id": "aljazeera",
+    "source_name": "Al Jazeera",
+    "tier": "T2",
+    "lang": "en",
+    "title": "Why is Netanyahu accusing Palestinian Israeli parties of fraud?",
+    "summary": "Prime Minister claims the parties accepted foreign funding.",
+    "url": "https://www.aljazeera.com/video/inside-story/2026/10/30/why-is-netanyahu-accusing-palestinian-israeli-parties-of-fraud?traffic_source=rss",
+    "published_at": "2026-10-30T19:34",
+    "reprinted_by": [],
+    "item_id": 33439
+   },
+   {
+    "outlet": "guardian-world",
+    "source_id": "guardian-world",
+    "source_name": "The Guardian World",
+    "tier": "T2",
+    "lang": "en",
+    "title": "Israel election results live: count of absentee ballots under way as coalition talks set to begin",
+    "summary": "With the final count unlikely to shift results significantly, experts say Gadi Eisenkot’s hopes of unseating Benjamin Netanyahu rest on his willingness to work with Palestinian parties Full report: Coalition talks loom in Israel Analysis: Israel’s choice: Netanyahu remaining in power or a Palestinian-backed coalition Hours before the final results from Israel’s elections were in, several things we",
+    "url": "https://www.theguardian.com/world/live/2026/oct/29/israel-election-results-live-updates-poll-netanyahu-eisenkot-bloc-coalition-latest-news",
+    "published_at": "2026-10-29T05:25",
+    "reprinted_by": [],
+    "item_id": 22860
+   },
+   {
+    "outlet": "nytimes-home",
+    "source_id": "nytimes-home",
+    "source_name": "NYT Home",
+    "tier": "T2",
+    "lang": "en",
+    "title": "Israel’s High-Stakes Election: What to Know",
+    "summary": "Israelis head to the polls on Tuesday for an election that will determine the country’s next prime minister. But it can take weeks, months or longer to form a new government.",
+    "url": "https://www.nytimes.com/2026/10/25/world/middleeast/israel-election-guide-netanyahu-eisenkot.html",
+    "published_at": "2026-10-25T09:01",
+    "reprinted_by": [],
+    "item_id": 11158
+   }
+  ],
+  "challenge": {
+   "problem": "IRRELEVANT_SOURCE",
+   "drop_sids": [
+    2,
+    3
+   ],
+   "llm_assessment": "{\"action\":\"OK\",\"problem\":\"NONE\",\"detail\":\"稿件未混同不同數字，三個來源均涉及以色列選舉及組閣，內容未顯示為不同事件。\",\"required_action\":\"無須分寫或修改。\"}"
+  },
+  "v1": {
+   "headline": "以色列選舉計票持續，納坦雅胡指控巴勒斯坦裔政黨收受外國資金",
+   "deck": "缺席選票正在清點，組閣協商即將展開。",
+   "body": "以色列選舉缺席選票清點工作正在進行，組閣協商即將展開。《衛報》報導，最終計票結果不太可能大幅改變選舉結果。[S2]\n\n半島電視台報導，總理納坦雅胡指控以色列的巴勒斯坦裔政黨涉及舞弊，聲稱這些政黨接受外國資金。[S1]\n\n《衛報》引述專家指出，Gadi Eisenkot能否讓納坦雅胡下台，取決於他是否願意與巴勒斯坦裔政黨合作。[S2]\n\n《紐約時報》指出，這場選舉將決定以色列下一任總理，但籌組新政府可能需要數週、數月或更長時間。[S3]",
+   "why_it_matters": "巴勒斯坦裔政黨可能成為組閣關鍵；專家認為，Gadi Eisenkot挑戰納坦雅胡的希望，繫於與這些政黨合作的意願。[S2]",
+   "source_ids": [
+    33439,
+    22860,
+    11158
+   ]
+  },
+  "v2": {
+   "headline": "納坦雅胡指控巴勒斯坦裔以色列政黨接受外國資金",
+   "deck": "Al Jazeera 報導，總理納坦雅胡以接受外國資金為由，指控相關政黨舞弊。",
+   "body": "據 Al Jazeera 報導，總理納坦雅胡指控巴勒斯坦裔以色列政黨舞弊，聲稱這些政黨接受外國資金。[S1]",
+   "why_it_matters": "",
+   "source_ids": [
+    33439
+   ]
+  }
+ },
+ {
+  "story_id": 34,
+  "edition_date": "2026-10-31",
+  "keeper_cluster_id": 13200,
+  "section": "world",
+  "kind": "report",
+  "evidence": [
+   {
+    "outlet": "yahoo-tw-stock",
+    "source_id": "yahoo-tw-stock",
+    "source_name": "Yahoo 股市新聞",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "歐洲央行總裁拉加德坦言無法再保持中立　將提前卸任",
+    "summary": "（中央社法蘭克福2026年10月29日綜合外電報導）歐洲中央銀行（ECB）總裁拉加德（Christine Lagarde）今天指出，她將提前卸下總裁職務，以便能夠自由針對貨幣政策以外的重要議題公開發聲",
+    "url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E6%B4%B2%E5%A4%AE%E8%A1%8C%E7%B8%BD%E8%A3%81%E6%8B%89%E5%8A%A0%E5%BE%B7%E5%9D%A6%E8%A8%80%E7%84%A1%E6%B3%95%E5%86%8D%E4%BF%9D%E6%8C%81%E4%B8%AD%E7%AB%8B-%E5%B0%87%E6%8F%90%E5%89%8D%E5%8D%B8%E4%BB%BB-055833789.html",
+    "published_at": "2026-10-30T05:58",
+    "reprinted_by": [],
+    "item_id": 29287
+   },
+   {
+    "outlet": "rti-news",
+    "source_id": "rti-news",
+    "source_name": "中央廣播電台",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "[國際] 歐銀總裁拉加德提前卸任原因曝光 坦言無法再保持中立",
+    "summary": "歐洲中央銀行(ECB)總裁拉加德(Christine Lagarde)29日指出，她將提前卸下總裁職務，以便能夠自由針對貨幣政策以外的重要議題公開發聲。 路透社報導，拉加德將於明年2月7日離職，讓現任歐盟領袖有時間選出接班人，趕在法國總統大選前完成交接。 民調顯示，極右翼法國總統候選人雷朋(Marine Le Pen)目前被看好勝選。拉加德原定任期於2027年10月屆滿。 拉加德的決定終結了外界數個月來對她未來動向的揣測。歐洲此際正進入經濟波動加劇、選舉政治日益分化的時期，尤其是她的祖國法國。 這項消息公布前不久，歐洲央行才宣布維持利率不變，但保留12月可能再次升息的預期，並警告能源成本居高不下且持續上升，正加劇通膨風險。 媒體詢問拉加德，為何之前表示，在通膨風險尚未消退之際不能離開歐洲央行，如今卻決定提前卸任。她表示，職務要求的中立立場，讓她無法針對影響歐洲及其他地區的重要議題公開表態。",
+    "url": "https://www.rti.org.tw/news?uid=3&pid=240826",
+    "published_at": "2026-10-30T05:42",
+    "reprinted_by": [],
+    "item_id": 29217
+   },
+   {
+    "outlet": "ltn-business",
+    "source_id": "ltn-business",
+    "source_name": "自由時報 財經",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "無法繼續在世界局勢保持中立 歐央總裁拉加德宣布提前卸任",
+    "summary": "〔財經頻道／綜合報導〕歐洲央行總裁拉加德（Christine Lagarde）週四（29日）表示，他將提前卸任，以便能夠自由地就貨幣政策以外的重要議題發表意見。 《路透》報導，拉加德將在2月...…",
+    "url": "https://ec.ltn.com.tw/article/breakingnews/5623427",
+    "published_at": "2026-10-30T03:36",
+    "reprinted_by": [],
+    "item_id": 28512
+   },
+   {
+    "outlet": "technews-tw",
+    "source_id": "technews-tw",
+    "source_name": "科技新報",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "歐洲央行總裁拉加德請辭，提前於 2027 年 2 月卸任",
+    "summary": "歐洲中央銀行（European Central Bank）29 日發布聲明指出，歐洲央行總裁拉加德（Chris […]",
+    "url": "https://technews.tw/2026/10/30/ecbs-lagarde-steps-down/",
+    "published_at": "2026-10-30T01:00",
+    "reprinted_by": [],
+    "item_id": 28039
+   },
+   {
+    "outlet": "yahoo-tw-stock",
+    "source_id": "yahoo-tw-stock",
+    "source_name": "Yahoo 股市新聞",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "歐洲央行利率按兵不動 聚焦能源通膨與拉加德繼任人選",
+    "summary": "ECB維持存款利率2.50%、主要再融資2.65%、邊際貸款2.90%，完全符合市場預期 總裁拉加德宣布將於明年2月提前卸任，較原定任期提早數月，繼任者競逐已提前展開 伊朗戰爭推升能源價格，歐元區9月",
+    "url": "https://tw.stock.yahoo.com/news/%E6%AD%90%E6%B4%B2%E5%A4%AE%E8%A1%8C%E5%88%A9%E7%8E%87%E6%8C%89%E5%85%B5%E4%B8%8D%E5%8B%95-%E8%81%9A%E7%84%A6%E8%83%BD%E6%BA%90%E9%80%9A%E8%86%A8%E8%88%87%E6%8B%89%E5%8A%A0%E5%BE%B7%E7%B9%BC%E4%BB%BB%E4%BA%BA%E9%81%B8-133630373.html",
+    "published_at": "2026-10-29T13:36",
+    "reprinted_by": [],
+    "item_id": 25965
+   }
+  ],
+  "challenge": {
+   "problem": "IRRELEVANT_SOURCE",
+   "drop_sids": [
+    2,
+    3,
+    4,
+    5
+   ],
+   "llm_assessment": "{\"action\":\"OK\",\"problem\":\"NONE\",\"detail\":\"各來源均涉及拉加德提前卸任，2027年2月7日離職與原定2027年10月任滿已清楚區分，未混用不同數字。\",\"required_action\":\"無須修改。\"}"
+  },
+  "v1": {
+   "headline": "拉加德宣布提前卸任歐洲央行總裁　盼自由就貨幣政策以外議題發聲",
+   "deck": "預計2027年2月7日離職，原定任期於同年10月屆滿。",
+   "body": "歐洲中央銀行總裁拉加德（Christine Lagarde）10月29日表示，她將提前卸任，以便能夠自由針對貨幣政策以外的重要議題公開發聲。她指出，職務要求的中立立場，讓她無法就影響歐洲及其他地區的重要議題公開表態。[S1][S2]\n\n中央廣播電台引述路透社報導，拉加德將於2027年2月7日離職，讓現任歐盟領袖有時間選出接班人，趕在法國總統大選前完成交接。她原定任期於2027年10月屆滿。[S2]\n\n消息公布前不久，歐洲央行宣布維持利率不變，但保留12月可能再次升息的預期，並警告能源成本居高不下且持續上升，正加劇通膨風險。[S2]",
+   "why_it_matters": "拉加德提前離任，使歐洲央行須在法國總統大選前安排接班與交接；與此同時，央行仍面臨能源成本上升帶來的通膨風險。[S2]",
+   "source_ids": [
+    29287,
+    29217,
+    28512,
+    28039,
+    25965
+   ]
+  },
+  "v2": {
+   "headline": "拉加德將提前卸任歐洲央行總裁　盼自由就貨幣政策外議題發聲",
+   "deck": "拉加德坦言無法再保持中立，將提前卸下總裁職務。",
+   "body": "歐洲中央銀行（ECB）總裁拉加德（Christine Lagarde）2026年10月29日指出，她將提前卸下總裁職務，以便能夠自由針對貨幣政策以外的重要議題公開發聲。[S1]",
+   "why_it_matters": "拉加德將提前卸任的決定，與她希望自由針對貨幣政策以外議題公開發聲有關。[S1]",
+   "source_ids": [
+    29287
+   ]
+  }
+ },
+ {
+  "story_id": 5327,
+  "edition_date": "2026-11-01",
+  "keeper_cluster_id": 18416,
+  "section": "taiwan",
+  "kind": "report",
+  "evidence": [
+   {
+    "outlet": "ltn-politics",
+    "source_id": "ltn-politics",
+    "source_name": "自由時報 政治",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "LIVE - 沈伯洋VS.蔣萬安！台北市長候選人電視辯論會",
+    "summary": "…",
+    "url": "https://news.ltn.com.tw/news/politics/breakingnews/5624514",
+    "published_at": "2026-10-31T03:30",
+    "reprinted_by": [],
+    "item_id": 34496
+   },
+   {
+    "outlet": "twreporter-hub",
+    "source_id": "twreporter-hub",
+    "source_name": "報導者（RSSHub）",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "2026台北市長候選人電視辯論：蔣萬安、沈伯洋互批雙重標準、迴避問題，學者評蔣表現穩健、沈打正面選戰",
+    "summary": "備受矚目的2026年台北市長電視辯論會10月31日中午12點登場，國民黨候選人蔣萬安（左）特別戴上「台北安可」徽章、民進黨候選人沈伯洋（右）則呼應下午登場的同志大遊行而別上「彩虹台灣」徽章參加。（照片提供／台北市長電視辯論會主辦單位） 備受矚目的台北市長電視辯論會今天（10月31日）中午12點登場，國民黨候選人蔣萬安、民進黨候選人沈伯洋近期因「洋流」現象及各家民調差距拉近而緊張對峙，近日傳出生病的蔣萬安特別戴上「台北安可」徽章出席，沈伯洋則呼應下午登場的同志大遊行而別上「彩虹台灣」徽章參加。 在雙方各自申論重要政見後，這場辯論會進入相互詰問火線交鋒。在各項全國性及市政議題上，雙方多次抨擊對方「對市政不熟」、「沒有回答問題」、「雙重標準」，這些形容成為雙方共同的攻勢用語。 整體而言，蔣萬安先主打個案，例如 信維整宅 、 虎林街60巷 等都更案執行成效，再趁沈伯洋無法回答細節時直指「不懂市政」",
+    "url": "https://www.twreporter.org/a/2026-local-elections-taipei-mayoral-televised-debate",
+    "published_at": "2026-10-30T16:00",
+    "reprinted_by": [],
+    "item_id": 35577
+   }
+  ],
+  "challenge": {
+   "problem": "IRRELEVANT_SOURCE",
+   "drop_sids": [
+    2
+   ],
+   "llm_assessment": "{\"action\":\"OK\",\"problem\":\"NONE\",\"detail\":\"S1與S2為同一場台北市長候選人電視辯論會，稿件未混同不同數字。\",\"required_action\":\"無須分寫或釐清。\"}"
+  },
+  "v1": {
+   "headline": "台北市長候選人電視辯論　蔣萬安、沈伯洋交鋒市政議題",
+   "deck": "兩人相互詰問，多次批評對方未回答問題、雙重標準。",
+   "body": "2026年台北市長候選人電視辯論會於10月31日中午12點登場，國民黨候選人蔣萬安與民進黨候選人沈伯洋在各自申論重要政見後，進入相互詰問，針對全國性及市政議題交鋒。[S2]\n\n辯論過程中，雙方多次以「對市政不熟」、「沒有回答問題」、「雙重標準」批評對手。蔣萬安以信維整宅、虎林街60巷等都更案執行成效為題，並在沈伯洋未能回答細節時，批評他「不懂市政」。[S2]\n\n蔣萬安佩戴「台北安可」徽章出席；沈伯洋則呼應當天下午登場的同志大遊行，別上「彩虹台灣」徽章參加。[S2]",
+   "why_it_matters": "辯論讓兩名候選人就政見與市政執行相互詰問，都更案細節成為交鋒焦點之一。[S2]",
+   "source_ids": [
+    34496,
+    35577
+   ]
+  },
+  "v2": {
+   "headline": "台北市長候選人電視辯論會：沈伯洋對上蔣萬安",
+   "deck": "自由時報政治刊出辯論會直播標題。",
+   "body": "自由時報政治以「LIVE - 沈伯洋VS.蔣萬安！台北市長候選人電視辯論會」為題刊出內容。[S1]",
+   "why_it_matters": "",
+   "source_ids": [
+    34496
+   ]
+  }
+ },
+ {
+  "story_id": 5328,
+  "edition_date": "2026-11-01",
+  "keeper_cluster_id": 17096,
+  "section": "world",
+  "kind": "report",
+  "evidence": [
+   {
+    "outlet": "guardian-world",
+    "source_id": "guardian-world",
+    "source_name": "The Guardian World",
+    "tier": "T2",
+    "lang": "en",
+    "title": "Oleshky evacuees reunite with families after truce allows crossing into Ukraine",
+    "summary": "Residents of nearby villages line highway waving flags to greet the evacuees’ convoy from the Russian-occupied city Evacuees from Russian-occupied Oleshky have been reunited with their families after crossing into Ukrainian-held territory on Saturday. The major rescue operation began on Friday and was carried out under the most significant truce since Russia’s full-scale invasion of Ukraine four a",
+    "url": "https://www.theguardian.com/world/2026/oct/31/oleshky-evacuees-reunite-with-families-after-truce-allows-crossing-into-ukraine",
+    "published_at": "2026-10-31T19:17",
+    "reprinted_by": [],
+    "item_id": 37011
+   },
+   {
+    "outlet": "aljazeera",
+    "source_id": "aljazeera",
+    "source_name": "Al Jazeera",
+    "tier": "T2",
+    "lang": "en",
+    "title": "Evacuees of Russian-occupied Oleshky reunited with families",
+    "summary": "Ukrainian residents evacuated from Russian-occupied city of Oleshky have arrived in Ukrainian-controlled territory.",
+    "url": "https://www.aljazeera.com/video/newsfeed/2026/10/31/aje-onl-nf_evacuees-from-oleshky-reunite-w-families-in-ukraine-311026?traffic_source=rss",
+    "published_at": "2026-10-31T18:32",
+    "reprinted_by": [],
+    "item_id": 37015
+   },
+   {
+    "outlet": "dw-en",
+    "source_id": "dw-en",
+    "source_name": "DW English",
+    "tier": "T2",
+    "lang": "en",
+    "title": "Ukraine news: Evacuees from Russian-occupied Oleshky reach Kyiv-controlled territory",
+    "summary": "After Melania Trump reportedly brokered a localized truce, residents of Ukraine's Oleshky managed to leave the occupied city. Meanwhile, Kyiv claimed a hit on a Russian rocket fuel plant. DW has more.",
+    "url": "https://www.dw.com/en/ukraine-news-evacuees-from-russian-occupied-oleshky-reach-kyiv-controlled-territory/live-79815409?maca=en-rss-en-all-1573-rdf",
+    "published_at": "2026-10-31T15:47",
+    "reprinted_by": [],
+    "item_id": 36840
+   }
+  ],
+  "challenge": {
+   "problem": "IRRELEVANT_SOURCE",
+   "drop_sids": [
+    2,
+    3
+   ],
+   "llm_assessment": "{\"action\":\"OK\",\"problem\":\"NONE\",\"detail\":\"稿件未混同不同數字，S1、S2、S3均涉及奧萊什基居民撤離至烏克蘭控制區的同一事件。\",\"required_action\":\"無需修改。\"}"
+  },
+  "v1": {
+   "headline": "俄占奧萊什基居民撤抵烏方控制區 與家人團聚",
+   "deck": "撤離行動在停火安排下展開，附近村莊居民沿公路揮旗迎接車隊。",
+   "body": "從俄羅斯占領的烏克蘭城市奧萊什基撤出的居民，週六抵達烏克蘭控制區，並與家人團聚。[S1][S2]\n\n這場大型救援行動於週五開始，在停火安排下進行。撤離車隊沿途受到附近村莊居民迎接，人們站在公路旁揮舞旗幟。[S1]",
+   "why_it_matters": "停火安排讓居民得以離開俄占城市，抵達烏方控制區與家人重聚。[S1] more?",
+   "source_ids": [
+    37011,
+    37015,
+    36840
+   ]
+  },
+  "v2": {
+   "headline": "俄占奧萊什基撤離居民抵烏方控制區　與家人團聚",
+   "deck": "附近村莊居民沿公路揮旗，迎接撤離車隊。",
+   "body": "俄羅斯占領的奧萊什基居民週六撤離至烏克蘭控制區後，與家人團聚。[S1]\n\n這項大規模救援行動於週五展開，在停火安排下進行。附近村莊的居民沿公路揮舞旗幟，迎接撤離車隊。[S1]",
+   "why_it_matters": "",
+   "source_ids": [
+    37011
+   ]
+  }
+ },
+ {
+  "story_id": 5330,
+  "edition_date": "2026-11-01",
+  "keeper_cluster_id": 13410,
+  "section": "taiwan",
+  "kind": "report",
+  "evidence": [
+   {
+    "outlet": "ltn-local",
+    "source_id": "ltn-local",
+    "source_name": "自由時報 地方",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "台北市長選戰首場辯論12:00登場  蔣萬安、沈伯洋正面攻防",
+    "summary": "2026年台北市長選舉首場電視辯論會今（31）日中午12時至下午2時登場，由TVBS與三立電視聯合主辦。因身體不適取消公開行程的台北市長蔣萬安也將如期參加，以完成輝達落腳北士科...…",
+    "url": "https://news.ltn.com.tw/news/Taipei/breakingnews/5624536",
+    "published_at": "2026-10-31T01:19",
+    "reprinted_by": [],
+    "item_id": 34131
+   },
+   {
+    "outlet": "rti-news",
+    "source_id": "rti-news",
+    "source_name": "中央廣播電台",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "[政治] 台北市長選舉電視辯論會31日登場 交叉詰問規劃「追問」機制",
+    "summary": "台北市長候選人電視辯論會31日中午12時至下午2時登場，尋求連任的國民黨台北市長蔣萬安與民進黨候選人沈伯洋將正面交鋒。主辦方表示，規劃政見申論、交叉詰問、媒體提問及結論4階段。 由TVBS與三立聯合舉辦的台北市長候選人電視辯論會31日登場，TVBS今天(30日)晚間發布新聞稿表示，辯論會全程約2小時，規劃政見申論、交叉詰問、媒體提問及結論4大階段。主持人為TVBS主播黃星樺、三立主播李文儀，媒體提問人由TVBS新聞部副理樊啓明、三立新聞網資深總監黃彥怡擔任。 開場申論由雙方各自闡述理念及政見，每人8分鐘，沈伯洋率先發表，蔣萬安接續登台。交叉詰問分2階段、共8題，每人提問4題，由主持人先說明流程，包含提問人1分鐘，對方回答2分鐘；回答完，提問人再追問1分鐘，對方再回答1分半，1題共5分30秒，每4題結束後由主持人小結。 TVBS說明，交叉詰問特別規劃「追問」機制，讓提問者能針對候選人的回答進",
+    "url": "https://www.rti.org.tw/news?uid=3&pid=240998",
+    "published_at": "2026-10-30T13:59",
+    "reprinted_by": [],
+    "item_id": 32764
+   },
+   {
+    "outlet": "pts-dailynews",
+    "source_id": "pts-dailynews",
+    "source_name": "公視 即時",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "高雄市長選戰辯論會週五登場 申論、提問及交叉詰問1.5小時",
+    "summary": "高雄市長選舉首場辯論會將在明（30）日晚間8時舉行，這是這屆選舉全國第一場市長辯論，全程1個半小時，包含候選人申論、媒體提問、交叉詰問及結論，屆時藍綠2位候選人將有激烈交鋒。民進黨候選人賴瑞隆表示，為了辯論努力準備，聲音沙啞；國民黨候選人柯志恩則期許，辯論以闡述政策理念為主。 會場中，工作人員測試相關設備，主持人也到場彩排，確保活動流暢無虞。30日晚間8時將舉行高雄市長選舉首場辯論會，高雄市民大多認同候選人透過辯論闡述理念，也認為這是一種了解未來城市走向的方式。 高雄市民王先生表示，「透過辯論來知道，就是11月28日的這個選舉，就是他們會帶給我們怎樣的政見，或是他們可能之後對高雄的看法是什麼這樣，所以會對我們算是普通民眾來說，幫助是蠻大的。」 高雄市民黃小姐認為，「就是我覺得主題要一樣嘛，不是說只是發表自己的政見，因為我覺得這樣會很分散。對，我是希望可以知道每個人的立場是什麼，就他對同一個",
+    "url": "https://news.pts.org.tw/article/833517",
+    "published_at": "2026-10-29T11:40",
+    "reprinted_by": [],
+    "item_id": 25838
+   }
+  ],
+  "challenge": {
+   "problem": "IRRELEVANT_SOURCE",
+   "drop_sids": [
+    2,
+    3
+   ],
+   "llm_assessment": "{\"action\":\"CHALLENGE\",\"problem\":\"NEEDS_CLARIFICATION\",\"detail\":\"S2與S1為同一場台北市長辯論，數字一致；S3則是高雄市長辯論，其1.5小時與台北場2小時屬不同事件。\",\"required_action\":\"排除S3作為本稿佐證；若引用，須分寫高雄場次與時長。\"}"
+  },
+  "v1": {
+   "headline": "台北市長選舉辯論31日登場　交叉詰問設追問機制",
+   "deck": "蔣萬安、沈伯洋正面交鋒，辯論規劃政見申論、交叉詰問、媒體提問及結論四階段。",
+   "body": "台北市長候選人電視辯論會訂於31日中午12時至下午2時舉行，由TVBS與三立聯合主辦，尋求連任的國民黨台北市長蔣萬安與民進黨候選人沈伯洋將正面交鋒。[S2]\n\n辯論全程約2小時，分為政見申論、交叉詰問、媒體提問及結論四階段。開場申論每人8分鐘，由沈伯洋先發表，蔣萬安接續登台。[S2]\n\n交叉詰問分兩階段、共8題，每人提問4題。每題由提問者先提問1分鐘，對方回答2分鐘，再由提問者追問1分鐘，對方回答1分半，每題合計5分30秒，每4題結束後由主持人小結。[S2]\n\n辯論由TVBS主播黃星樺與三立主播李文儀主持，媒體提問人為TVBS新聞部副理樊啓明、三立新聞網資深總監黃彥怡。[S2]",
+   "why_it_matters": "交叉詰問設有追問機制，讓提問者能針對候選人的回答進一步提問。[S2]",
+   "source_ids": [
+    34131,
+    32764,
+    25838
+   ]
+  },
+  "v2": {
+   "headline": "台北市長選戰首場電視辯論31日登場",
+   "deck": "TVBS與三立電視聯合主辦，時間為中午12時至下午2時。",
+   "body": "2026年台北市長選舉首場電視辯論會於31日中午12時至下午2時舉行，由TVBS與三立電視聯合主辦，蔣萬安、沈伯洋正面攻防。[S1]\n\n台北市長蔣萬安因身體不適取消公開行程，仍將如期參加辯論會。[S1]",
+   "why_it_matters": "",
+   "source_ids": [
+    34131
+   ]
+  }
+ },
+ {
+  "story_id": 5331,
+  "edition_date": "2026-11-01",
+  "keeper_cluster_id": 19855,
+  "section": "world",
+  "kind": "report",
+  "evidence": [
+   {
+    "outlet": "un-news-zh",
+    "source_id": "un-news-zh",
+    "source_name": "聯合國新聞 中文",
+    "tier": "T1",
+    "lang": "zh",
+    "title": "聯合國駐索馬利亞政治特派團結束任務，雙方合作開啟新篇章",
+    "summary": "應索馬利亞聯邦政府請求，聯合國索馬利亞過渡時期援助團於10月31日完成為期兩年的過渡安排，正式結束任務。自1995年以來，聯合國先後通過多個政治特派團，支持索馬利亞恢復國家治理、重建機構、推進和平與和解。此次結束任務後，相關工作將由索馬利亞有關部門和聯合國駐地機構繼續承擔。",
+    "url": "https://news.un.org/feed/view/zh/story/2026/10/1143105",
+    "published_at": "2026-10-31T12:00",
+    "reprinted_by": [],
+    "item_id": 37142
+   },
+   {
+    "outlet": "rti-news",
+    "source_id": "rti-news",
+    "source_name": "中央廣播電台",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "[國際] 聯合國結束索馬利亞政治任務 逾30年行動告終",
+    "summary": "聯合國在索馬利亞的政治任務在歷經兩年的過渡期後，於今天（31日）正式結束，也為聯合國在這個東非國家長達30多年的和平建設行動劃下句點。 聯合國駐索馬利亞援助團（UNSOM）於2013年由聯合國安全理事會成立，旨在協助索馬利亞當局在經歷20多年涉及民兵組織、伊斯蘭主義團體及犯罪幫派的衝突後，推動民主轉型及法治建設。 這項任務最早於1995年以「聯合國索馬利亞政治辦公室」（United Nations Political Office for Somalia，UNPOS）的名稱展開。 2024年5月，索馬利亞總統穆罕默德（Hassan Sheikh Mohamud）要求聯合國在當年10月任務期限屆滿前結束這項任務。之後，他修改原先要求，提議設立為期兩年的過渡期。 過渡期間，聯合國索馬利亞援助團更名為「聯合國索馬利亞過渡援助團」（UNTMIS）。 UNTMIS代理團長、聯合國秘書長駐索馬利亞副特",
+    "url": "https://www.rti.org.tw/news?uid=3&pid=241114",
+    "published_at": "2026-10-31T12:45",
+    "reprinted_by": [],
+    "item_id": 36324
+   }
+  ],
+  "challenge": {
+   "problem": "IRRELEVANT_SOURCE",
+   "drop_sids": [
+    2
+   ],
+   "llm_assessment": "{\"action\":\"OK\",\"problem\":\"NONE\",\"detail\":\"兩個來源均涉及同一任務結束事件，稿件已區分兩年過渡期、1995年起的政治特派團歷史與2013年成立UNSOM。\",\"required_action\":\"無需修改。\"}"
+  },
+  "v1": {
+   "headline": "聯合國索馬利亞政治特派團結束任務　相關工作交由當地部門與駐地機構承接",
+   "deck": "應索馬利亞聯邦政府請求，過渡援助團於10月31日完成兩年過渡安排，正式結束任務。",
+   "body": "聯合國索馬利亞過渡時期援助團應索馬利亞聯邦政府請求，於10月31日完成為期兩年的過渡安排，正式結束任務。相關工作將由索馬利亞有關部門及聯合國駐地機構繼續承擔。[S1]\n\n自1995年以來，聯合國先後透過多個政治特派團，支持索馬利亞恢復國家治理、重建機構，並推進和平與和解。[S1] 聯合國安全理事會於2013年成立聯合國駐索馬利亞援助團（UNSOM），協助索馬利亞當局推動民主轉型及法治建設。[S2]\n\n2024年5月，索馬利亞總統穆罕默德要求聯合國在當年10月任務期限屆滿前結束任務，之後修改要求，提議設立兩年過渡期。過渡期間，援助團更名為聯合國索馬利亞過渡援助團（UNTMIS）。[S2]",
+   "why_it_matters": "此次任務結束，意味聯合國政治特派團承擔的相關工作，將轉由索馬利亞有關部門與聯合國駐地機構繼續推進。[S1]",
+   "source_ids": [
+    37142,
+    36324
+   ]
+  },
+  "v2": {
+   "headline": "聯合國駐索馬利亞政治特派團結束任務",
+   "deck": "兩年過渡安排完成，相關工作由索馬利亞有關部門與聯合國駐地機構接續承擔。",
+   "body": "應索馬利亞聯邦政府請求，聯合國索馬利亞過渡時期援助團於10月31日完成為期兩年的過渡安排，正式結束任務。[S1]\n\n自1995年以來，聯合國先後透過多個政治特派團，支持索馬利亞恢復國家治理、重建機構，以及推進和平與和解。[S1]\n\n任務結束後，相關工作將由索馬利亞有關部門和聯合國駐地機構繼續承擔。[S1]",
+   "why_it_matters": "此次任務結束後，支持索馬利亞的相關工作將由索馬利亞有關部門與聯合國駐地機構接續承擔。[S1]",
+   "source_ids": [
+    37142
+   ]
+  }
+ },
+ {
+  "story_id": 5455,
+  "edition_date": "2026-11-01",
+  "keeper_cluster_id": 6229,
+  "section": "tech",
+  "kind": "report",
+  "evidence": [
+   {
+    "outlet": "yahoo-finance",
+    "source_id": "yahoo-finance",
+    "source_name": "Yahoo Finance",
+    "tier": "T2",
+    "lang": "en",
+    "title": "Wall Street analysts like Amazon's AWS outlook",
+    "summary": "Amazon ( AMZN ) reported mixed results after the bell on Thursday, missing Wall Street's targets on earnings per share and revenue , but posting better-than-anticipated Q3 AWS revenue. Operating income topped the company's own estimates. Amazon stock fell more than 7% in premarket action Friday, but pared much of those losses as the trading day went on. For the quarter, Amazon saw earnings per sha",
+    "url": "https://finance.yahoo.com/technology/article/wall-street-analysts-like-amazons-aws-outlook-172030532.html",
+    "published_at": "2026-10-30T17:20",
+    "reprinted_by": [],
+    "item_id": 33188
+   },
+   {
+    "outlet": "cnbc-top",
+    "source_id": "cnbc-top",
+    "source_name": "CNBC Top News",
+    "tier": "T2",
+    "lang": "en",
+    "title": "Microsoft earnings will land after the close",
+    "summary": "Microsoft will report Azure revenue in dollars for the first time as it spends heavily to expand artificial intelligence infrastructure capacity.",
+    "url": "https://www.cnbc.com/2026/10/28/microsoft-msft-q1-earnings-report-2027.html",
+    "published_at": "2026-10-28T16:00",
+    "reprinted_by": [],
+    "item_id": 19672
+   }
+  ],
+  "challenge": {
+   "problem": "IRRELEVANT_SOURCE",
+   "drop_sids": [
+    2
+   ],
+   "llm_assessment": "{\"action\":\"CHALLENGE\",\"problem\":\"NEEDS_CLARIFICATION\",\"detail\":\"S2是Microsoft財報預告，與S1的Amazon財報事件無關。\",\"required_action\":\"將Microsoft相關內容另案分寫。\"}"
+  },
+  "v1": {
+   "headline": "Amazon AWS營收優於預期，整體營收與每股盈餘未達華爾街目標",
+   "deck": "Amazon營業利益超越公司自身預估；Microsoft將首度以美元金額揭露Azure營收。",
+   "body": "Amazon週四盤後公布財報，整體營收與每股盈餘未達華爾街目標，但第三季AWS營收優於預期，營業利益也超越公司自身預估。[S1]\n\nAmazon股價週五盤前一度下跌逾7%，隨後在當日交易期間收復大部分跌幅。[S1]\n\nMicrosoft將於收盤後公布財報，並首度以美元金額揭露Azure營收。目前，該公司正大舉投入資金，擴充人工智慧基礎設施容量。[S2]",
+   "why_it_matters": "AWS營收優於預期，與Amazon整體營收及每股盈餘未達目標形成對比；Microsoft首度以美元金額揭露Azure營收，則是另一項雲端業務財報焦點。[S1][S2]",
+   "source_ids": [
+    33188,
+    19672
+   ]
+  },
+  "v2": {
+   "headline": "Amazon財報未達預期，AWS第三季營收優於預期",
+   "deck": "每股盈餘與營收低於華爾街預估，營業利益超越公司自身預期。",
+   "body": "Amazon週四盤後公布財報，每股盈餘與營收未達華爾街預估，但第三季AWS營收優於預期，營業利益也超過公司自身預估。[S1]\n\nAmazon股價週五盤前下跌逾7%，隨著交易日進行，跌幅大幅收斂。[S1]",
+   "why_it_matters": "整體財報表現不一，AWS營收仍優於預期，成為此次業績的亮點。[S1]",
+   "source_ids": [
+    33188
+   ]
+  }
+ }
+]
