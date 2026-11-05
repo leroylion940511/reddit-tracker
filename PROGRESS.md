@@ -5,7 +5,7 @@
 > 2026-10-27 以前的段落是 v4／v5 歷史紀錄，裡面提到的 bot、scrapers、services、v5 newsroom 模組都已移除；v4 的段落已搬到 `docs/archive/PROGRESS_v4.md`。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-06（E11 錄音入口已接上）；上次部署 2026-11-06 15:54（`fix/newsroom-1106`，main `f252c8b`，見下節）
+**Last updated:** 2026-11-06（E11 錄音／fixtures 與 `feat/checker-per-source` 已併入 `main`，旗標預設關閉）；上次部署 2026-11-06 15:54（`fix/newsroom-1106`，main `f252c8b`，見下節）
 
 ## 下一步（2026-11-06 現況）
 
@@ -15,8 +15,8 @@
 2. 👤 **請老師確認** `trial-dates.md` 的時程（試刊 11/09–11/15、實驗二 11/17–11/18、11/20 `final-1120`）與用本機 Codex 當 LLM（手冊 6.9 第 1 條要正式 API，模型 11/15 前定案），並告知 A、B。
 3. 👤 **11/08 前**：B 拿到七類錯誤計數練習（老師）。
 4. 👀 **`fix/newsroom-1106` 已部署（11/06 15:54）**：11/07 06:00 是第一期套用——看準備是否在 `DAILY_PREPARE_DEADLINE` 前結束、分版與來源列是否正確。
-5. **`feat/checker-per-source` 待 review**（查核員逐來源回報；本 worktree 看不到這個分支）：決定要不要在試刊前併入，併入要重錄 `1027_t2a_records.json`（需呼叫 Codex）。
-6. 👤 **E11 錄音**（11/15 前）：入口是 `uv run python scripts/record_e11.py --live`（Mac，只寫 `data/work/1027_e11.db`，額度檔 `data/work/llm-quota-e11.json`，上限 5 次 Codex，不讀 `.env`）。錄完 commit `1027_e11_evidence.json` 與 `1027_e11_records.json`，`tests/test_e11_replay.py` 才會離線重播；在那之前該測試 skip，回歸 xfail 維持。不要只拿掉 xfail。否則 `test_overdue_cases_are_not_xfail` 11/15 起失敗。
+5. 👤 **`FACT_CHECKER_PER_SOURCE` 預設關閉**（程式已併入 `main`，見 `docs/pr/checker-per-source.md`）：**11/09 試刊前**決定要不要開；開了會改實驗二 (c) 組，最晚 11/17 前定案。要有逐來源的真錄音另需 Codex 2 次（最壞 4）。
+6. 👤 **E11**（11/15 前）：錄音入口與 replay fixtures 已在 `main`（`scripts/record_e11.py`、`1027_e11_evidence.json`／`1027_e11_records.json`）。新的 replay 測試可離線跑；回歸重編條件仍 skip，原 xfail 維持。11/15 前決定要不要拿掉原 xfail（不要只刪 xfail 而不處理條件）。否則 `test_overdue_cases_are_not_xfail` 11/15 起失敗。
 7. 👤 **試刊 11/09–11/15 每天**：06:00 準備後核准 M 組稿；交 B 盲計資料夾之前用 `scripts/collect_blind_hashes.py --write` 把當天雜湊寫進 `docs/eval/blind_mapping.sha256` 並 commit（步驟見 trial-dates.md）。
 8. 實驗二 11/17–11/18（A 11/17 中午前選 15 篇正常稿）。
 9. 11/20 打 `final-1120` 功能凍結；之前不要 `brew upgrade codex`。
@@ -27,10 +27,15 @@
 ## 本次變更（2026-11-06 — E11 錄音入口）
 
 - ✅ `scripts/record_e11.py`：只處理回歸重編沒入選的莫德納稿（MarketWatch item 2736，單一來源，財經改判 world）。`--live` 在 `data/work/1027_e11.db` 走 M 組記者→（可疑才）查核→文稿編輯，新的 Codex 呼叫上限 5，額度檔 `data/work/llm-quota-e11.json`。不讀 `.env`、不開 production DB。匯出 `tests/regression/fixtures/1027_e11_evidence.json` 與 `1027_e11_records.json`。
-- ✅ `tests/test_e11_replay.py`：沒有這兩個 fixture 就 skip；有了才用 `request_hash` 離線重播並套 `headline_must_not_match`。pytest 不呼叫 Codex。
-- ⚠️ STAT item 3875（刊出稿的另一家，摘要才有 “expected in 2027”）現在是另一個 cluster，這次錄音不併回去。回歸集 E11 的 xfail／重編 skip 維持，直到 Mac 錄完再決定要不要拿掉 xfail。
-- 👤 Mac：`uv run python scripts/record_e11.py --live`，然後 `--check`。重錄前刪 `data/work/1027_e11.db`、`data/work/llm-quota-e11.json` 與兩個 fixture。
-- ✅ 離線全套 391 passed／8 skipped／1 xfailed／1 xpassed。多出來的 skip 是還沒錄的 E11 重播；回歸條件本身仍 skip，xfail 還在。
+- ✅ `tests/test_e11_replay.py`：沒有這兩個 fixture 就 skip；有了才用 `request_hash` 離線重播並套 `headline_must_not_match`。pytest 不呼叫 Codex。fixtures 已錄完並併入 `main`。
+- ⚠️ STAT item 3875（刊出稿的另一家，摘要才有 “expected in 2027”）現在是另一個 cluster，這次錄音不併回去。回歸集 E11 的 xfail／重編 skip 維持。
+- ✅ 離線全套在錄音後為 392 passed／7 skipped／1 xfailed／1 xpassed（新 replay 通過；回歸重編 E11 仍 skip）。
+
+## feat/checker-per-source（已併入 `main`，旗標預設關閉）
+
+- ✅ 查核員可對每個程式點名的可疑來源回 `KEEP`／`REMOVE`（`CHECKER_PER_SOURCE_SCHEMA`、`checker_source_verdicts`），新舊格式都收。旗標 `FACT_CHECKER_PER_SOURCE` 預設 false＝請求逐字不變，`1027_t2a_records.json` 照常重播；開啟時 T2a 重播有 2 個 miss（查核員＋記者修稿）。數字規則、LLM 失敗／額度用完不變。
+- ✅ 假 client 重現 11/01 5330：S2 留、S3 刪。沒有呼叫 Codex。
+- 👤 決定要不要把旗標打開與時程、實驗二影響：`docs/pr/checker-per-source.md`；設計：ADAPTATION「查核員逐來源判斷」。
 
 ## fix/newsroom-1106（已部署）
 
@@ -58,7 +63,7 @@
 - ✅ **來源**：停用 `reuters-world`／`reuters-tech`／`reuters-business`（401／404，10/29 起 0 成功）、`apnews-top`（403，11/01 03:29 起）、`cw-today`（403，10/30 起；官方 RSS 停在 2021，無替代），設 `keep_items: true`（不再抓、已收的稿照用）；加 `cbsnews-world`、`abcnews-intl`、`bbc-business`、`guardian-tech`（官方 RSS，11/01 中途加入）。七天報告新增「停用來源」表並標中途加入日期；複本預覽在 `reddit_tracker-fixes-1101-data/report-preview.md`（不 commit）。
 - ✅ 新測試 29 個（查核員 20、編輯會議 5、影子 1、報表 1、登錄表 2；另改 1 個報表斷言）；全套 363 passed／7 skipped／2 xfailed。細節見 ADAPTATION 文末「10/31、11/01 兩期 M 組的修正」。
 - ⚠️ 部署後 11/03 的 `collection report --days 7` 期間是 10/28–11/03：四個替代來源只有 11/01 起的數字（報表會標「11/01 加入」），停用的五個來源列在「停用來源」表。
-- 👤 待決定：要讓查核員逐來源回報（改 CHECKER schema＋重錄 `1027_t2a_records.json`，需呼叫 Codex）才能救回 5330 S2 這類「同一則 CHALLENGE 裡一個對一個錯」的情況；同語言重複仍靠 LLM 第二意見，LLM 沒提就可能重複。
+- 👤 待決定（2026-11-06 已做成旗標，見 `feat/checker-per-source`）：要讓查核員逐來源回報（改 CHECKER schema＋重錄 `1027_t2a_records.json`，需呼叫 Codex）才能救回 5330 S2 這類「同一則 CHALLENGE 裡一個對一個錯」的情況；同語言重複仍靠 LLM 第二意見，LLM 沒提就可能重複。
 
 ## 本次變更（2026-10-31 — Codex CLI 版本守門，`feat/codex-version-guard`，已部署）
 

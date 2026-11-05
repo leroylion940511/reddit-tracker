@@ -136,6 +136,7 @@ uv run python -m reddit_tracker.web
 | `DAILY_SHADOW_ENABLED` | `false` | 只在 `DAILY_MODE=mas` 生效：06:00 先跑 P 影子、M 再從同一份快照跑；影子失敗只記 log |
 | `DAILY_SHADOW_LLM_LIMIT` | `12` | P 影子每日最多用幾格額度（含編輯會議與重試）；M 至少保有 `LLM_DAILY_LIMIT` 減這個數 |
 | `DAILY_ANNOTATION_DIR` | `annotation` | 影子＋M 都有稿時匯出盲計稿／抽查稿到 `YYYY-MM-DD/`（可整個交給 B；對照表在 `_private/YYYY-MM-DD/mapping.json`，不給 B、不進版控） |
+| `FACT_CHECKER_PER_SOURCE` | `false` | M 組查核員對程式點名的每個可疑來源回 KEEP／REMOVE（關閉＝舊的全域 OK／CHALLENGE）；開啟會改查核員請求的 `request_hash`，見 `docs/pr/checker-per-source.md` |
 | `NEWSROOM_DELIVERY_TIMEZONE` | `Asia/Taipei` | 排程時區 |
 | `LLM_DAILY_LIMIT` | `60` | 每個模型每日嘗試次數上限（所有用途共用） |
 | `LLM_QUOTA_STATE_PATH` | `/tmp/reddit-tracker-llm-quota.json` | 額度 state 檔 |
