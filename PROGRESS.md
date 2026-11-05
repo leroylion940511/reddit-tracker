@@ -5,7 +5,7 @@
 > 2026-10-27 以前的段落是 v4／v5 歷史紀錄，裡面提到的 bot、scrapers、services、v5 newsroom 模組都已移除；v4 的段落已搬到 `docs/archive/PROGRESS_v4.md`。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-06（`fix/newsroom-1106` 未部署，見下節）；上次部署 2026-11-01 18:00（`fix/newsroom-1101`，main `6edfc5e`）
+**Last updated:** 2026-11-06（`fix/newsroom-1106` 未部署；`feat/checker-per-source` 待 review，見下兩節）；上次部署 2026-11-01 18:00（`fix/newsroom-1101`，main `6edfc5e`）
 
 ## 下一步（2026-11-06 現況）
 
@@ -15,7 +15,7 @@
 2. 👤 **請老師確認** `trial-dates.md` 的時程（試刊 11/09–11/15、實驗二 11/17–11/18、11/20 `final-1120`）與用本機 Codex 當 LLM（手冊 6.9 第 1 條要正式 API，模型 11/15 前定案），並告知 A、B。
 3. 👤 **11/08 前**：B 拿到七類錯誤計數練習（老師）。
 4. **部署 `fix/newsroom-1106`**（未部署，內容見下節）：要在 11/09 試刊第一期前。部署前先查 production `.env` 有沒有寫 `CODEX_TIMEOUT_SECONDS`。
-5. **`feat/checker-per-source` 待 review**（查核員逐來源回報；本 worktree 看不到這個分支）：決定要不要在試刊前併入，併入要重錄 `1027_t2a_records.json`（需呼叫 Codex）。
+5. 👤 **`feat/checker-per-source` 待 review**（查核員逐來源回報，旗標 `FACT_CHECKER_PER_SOURCE` 預設關閉，併入不用重錄）：**11/09 試刊前**決定要不要開；開了會改實驗二 (c) 組，最晚 11/17 前定案。要有逐來源的真錄音另需 Codex 2 次（最壞 4）。見 `docs/pr/checker-per-source.md`。
 6. 👤 **E11 xfail 在 11/15 前決定**：錄一次真 Codex 加重播測試，或拿掉 xfail 註明不適用；否則 `test_overdue_cases_are_not_xfail` 11/15 起失敗。
 7. 👤 **試刊 11/09–11/15 每天**：06:00 準備後核准 M 組稿；交 B 盲計資料夾之前用 `scripts/collect_blind_hashes.py --write` 把當天雜湊寫進 `docs/eval/blind_mapping.sha256` 並 commit（步驟見 trial-dates.md）。
 8. 實驗二 11/17–11/18（A 11/17 中午前選 15 篇正常稿）。
@@ -23,6 +23,12 @@
 
 - ℹ️ `docs/weekly/trial-dates.md` 已寫，`test_three_live_mas_days_and_announced_trial_dates` 會變 XPASS；`blind_mapping.sha256` 還沒有（試刊才有資料）。兩個 xfail 等老師確認時程、第一個雜湊 commit 後再拿掉。
 - ⚠️ 11/04、11/05 M 組稿 08:35 前沒核准，讀者只收到標題短訊；11/06 排定 06:25 由自動化流程核准（志晨授權）。報告照實記。
+
+## feat/checker-per-source（待 review，基於 fix/newsroom-1106，未部署）
+
+- ✅ 查核員可對每個程式點名的可疑來源回 `KEEP`／`REMOVE`（`CHECKER_PER_SOURCE_SCHEMA`、`checker_source_verdicts`），新舊格式都收。旗標 `FACT_CHECKER_PER_SOURCE` 預設 false＝請求逐字不變，`1027_t2a_records.json` 照常重播；開啟時 T2a 重播有 2 個 miss（查核員＋記者修稿）。數字規則、LLM 失敗／額度用完不變。
+- ✅ 假 client 重現 11/01 5330：S2 留、S3 刪。全套 392 passed／7 skipped／1 xfailed／1 xpassed（基準 385／7／1／1）。沒有呼叫 Codex。
+- 👤 決定開不開與時程、實驗二影響：`docs/pr/checker-per-source.md`；設計：ADAPTATION「查核員逐來源判斷」。
 
 ## fix/newsroom-1106（未部署）
 
@@ -48,7 +54,7 @@
 - ✅ **來源**：停用 `reuters-world`／`reuters-tech`／`reuters-business`（401／404，10/29 起 0 成功）、`apnews-top`（403，11/01 03:29 起）、`cw-today`（403，10/30 起；官方 RSS 停在 2021，無替代），設 `keep_items: true`（不再抓、已收的稿照用）；加 `cbsnews-world`、`abcnews-intl`、`bbc-business`、`guardian-tech`（官方 RSS，11/01 中途加入）。七天報告新增「停用來源」表並標中途加入日期；複本預覽在 `reddit_tracker-fixes-1101-data/report-preview.md`（不 commit）。
 - ✅ 新測試 29 個（查核員 20、編輯會議 5、影子 1、報表 1、登錄表 2；另改 1 個報表斷言）；全套 363 passed／7 skipped／2 xfailed。細節見 ADAPTATION 文末「10/31、11/01 兩期 M 組的修正」。
 - ⚠️ 部署後 11/03 的 `collection report --days 7` 期間是 10/28–11/03：四個替代來源只有 11/01 起的數字（報表會標「11/01 加入」），停用的五個來源列在「停用來源」表。
-- 👤 待決定：要讓查核員逐來源回報（改 CHECKER schema＋重錄 `1027_t2a_records.json`，需呼叫 Codex）才能救回 5330 S2 這類「同一則 CHALLENGE 裡一個對一個錯」的情況；同語言重複仍靠 LLM 第二意見，LLM 沒提就可能重複。
+- 👤 待決定（2026-11-06 已做成旗標，見 `feat/checker-per-source`）：要讓查核員逐來源回報（改 CHECKER schema＋重錄 `1027_t2a_records.json`，需呼叫 Codex）才能救回 5330 S2 這類「同一則 CHALLENGE 裡一個對一個錯」的情況；同語言重複仍靠 LLM 第二意見，LLM 沒提就可能重複。
 
 ## 本次變更（2026-10-31 — Codex CLI 版本守門，`feat/codex-version-guard`，已部署）
 

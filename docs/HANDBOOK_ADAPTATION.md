@@ -534,3 +534,22 @@
 - 🔁 **來源列同一家出現兩次**：11/05 聯發科（MAS story 21819）證據包是 Yahoo 自家稿＋Yahoo 刊的中央社稿（證據包顯示「中央社（Yahoo 股市新聞轉載）」），但 `view._sources_for` 用 `source_id` 當出處，兩列都是 `yahoo-tw-stock`。改用 `evidence.source_outlet`（同證據包規則＋登錄表名稱）。不刪列：正文 `[n]` 照位置對來源。盲計匯出（`blind._sources`）刻意不改，試刊期間格式不變。
 - 🔁 **06:00 準備的上限**：見 PROGRESS「fix/newsroom-1106」的分析。`llm/deadline.py`、`DAILY_PREPARE_DEADLINE=08:20`、`DAILY_SHADOW_MAX_MINUTES=30`、`CODEX_TIMEOUT_SECONDS` 300→150。
 - 🔁 **E11**：xfail 原因過時（文稿編輯、`llm_records` 都已實作）。實際狀況是重編 10/27 時莫德納稿（MarketWatch 單一來源，聚合變嚴後自成一則、判 world）沒入選，條件 `NotApplicable`，pytest 回報的是 skip。離線無法驗證；要驗證得錄一次真 Codex（M 組記者→查核→文稿編輯），否則 11/15 前拿掉 xfail 並註明不適用。
+
+### 查核員逐來源判斷（2026-11-06，`feat/checker-per-source`，未部署、待 review）
+
+接 11/01「查核員刪來源」的 👤 待決定。沒有呼叫 Codex；測試全用假 client。
+
+- 🔁 **問題（手冊 6.1「每個問題要指出是哪個來源」）**：`CHECKER_SCHEMA` 只有全域 `action`。程式點名多個可疑來源、查核員回 CHALLENGE 時全部刪。11/01 story 5330：S2 央廣稿和 S1 是同一場台北辯論，S3 公視稿是高雄辯論，查核員的 detail 其實寫了「S2 與 S1 為同一場」，但 S2 還是跟 S3 一起被刪。
+- **改法**：新增設定 `FACT_CHECKER_PER_SOURCE`（預設 `false`）。開啟時，可疑時那一次查核員請求改用 `CHECKER_PER_SOURCE_SCHEMA`（舊四欄＋`sources[{sid, verdict: KEEP|REMOVE, reason}]`），system 加一段逐來源說明，user 開頭列「程式點名的可疑來源：S2、S3」。
+- **解讀** `checker_source_verdicts(assessment, flagged)`，新舊格式都收：
+  - 逐來源判斷照它：KEEP 保留（記 `cleared_sids`／`cleared_item_ids`，修稿重驗跳過），REMOVE 刪；
+  - 點名了但沒提到的來源、舊格式（只有全域 action）：OK 留、其他刪，和 11/01 規則相同；
+  - 沒點名的來源 LLM 說 REMOVE 不算：刪來源仍要程式先點名；
+  - 沒回應、格式錯、額度用完、`fact_checker` 已降級：照程式全刪（不變）；
+  - **沒出處的數字仍只看程式**，KEEP／OK 都不能放行；
+  - 百分比的第二次查核（`_checker_llm`）只在全域 OK 時跳過；全域 CHALLENGE 但來源都 KEEP 時，照原規則再問一次。
+- **為什麼用旗標、預設關閉**（不用 replay fallback）：`request_hash`＝sha256(system＋prompt＋model＋schema)，改提示詞或 schema 就換 hash。旗標關閉時請求和 11/01 前逐字相同（測試 `test_per_source_flag_off_sends_the_old_request` 鎖住），`1027_t2a_records.json`、`1027_mas_records.json` 不用動。replay fallback（找不到新 hash 就改用舊 hash 的回應）會讓重播的請求和錄到的請求不一樣，違反 `llm/replay.py`「找不到就失敗」的規則，所以不做。
+- **離線驗證**：`FACT_CHECKER_PER_SOURCE=true` 跑 `test_live_codex_t2a_on_1027_copy` 會有 2 個 miss（查核員 1＋記者修稿 1；記者修稿的提示含 CHALLENGE payload，所以也換 hash）。記者初稿 hash 不變。
+- 👤 **重錄估計**：要在旗標開啟時也有 T2a 真錄音，需真 Codex **2 次**（查核員 1＋記者修稿 1，記者初稿重用舊錄音）；每次最多重試 1 次（`CODEX_MAX_RETRIES=1`），最壞 4 次。建議另存 `1027_t2a_per_source_records.json`，不覆蓋舊檔，兩條路徑都能重播。`1027_mas_records.json` 有 2 筆查核員紀錄，旗標開啟時整期重播（`verify_mas_merge.py`）另需最多 2＋2 次（最壞 8 次）。
+- 測試：`tests/test_factcheck_relevance.py` 新增 7 個（5330 重現 S2 留、S3 刪；新舊格式解析；旗標關閉時請求不變；旗標由設定讀；旗標開但回舊格式；KEEP 不能放行數字；查核員失敗照程式刪）。`scripts/recheck_factcheck.py` 改用同一個解讀函式（fixture 結果不變：5330 S2、S3，5455 S2）。全套 392 passed／7 skipped／1 xfailed／1 xpassed（基準 385／7／1／1）。
+- 對實驗二（查核員開關）的影響與決定期限，見 `docs/pr/checker-per-source.md`。
