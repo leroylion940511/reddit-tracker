@@ -4,7 +4,18 @@
 > 現行企劃見 `docs/AI_NEWS_COMPANY_PROPOSAL.md`、規格入口見 `docs/v5/README.md`。
 > 2026-10-27 以前的段落是 v4／v5 歷史紀錄，裡面提到的 bot、scrapers、services、v5 newsroom 模組都已移除。
 
-**Last updated:** 2026-11-01（`fix/newsroom-1101`：查核員刪來源、重複見報、影子用途、來源替換；18:00 已部署，main `6edfc5e`）
+**Last updated:** 2026-11-06（`fix/newsroom-1106` 未部署，見下節）；上次部署 2026-11-01 18:00（`fix/newsroom-1101`，main `6edfc5e`）
+
+## fix/newsroom-1106（未部署）
+
+11/01–11/05 觀察到的五個問題；查證用唯讀複本 `~/Documents/Developer/Lab/rt-data-1106/prod-copy-20261105.db`，沒有呼叫 Codex、沒動 production。細節見 ADAPTATION「11/01–11/05 的五個小修正」。
+
+- ✅ **補核准後重畫網頁**：`daily approve`／`hold`（CLI 與回放頁）commit 後重畫 `site/daily/YYYY-MM-DD.html`（已發行照發行規則、草稿照預覽），**不重送 Telegram**。部署後要讓 11/01 的網頁變對：對當期任一則已核准稿再跑一次 `approve` 即可重畫。
+- ✅ **分版**：財經改寫加「過半標題有政治詞→國際」（排在科技詞後）、台灣公共基金詞、台灣上市櫃公司名（只蓋過國際詞）。11/05 Talarico→國際、11/04 環球晶兩則→台灣、11/03 勞動基金→台灣。⚠️ 會改到實驗一方法 C 的編輯會議候選池；已正式抽樣的話不要用這版重跑抽樣（用 `84186b9`）。
+- ✅ **來源列同一家兩次**：M 組／page_plans 版面的出處改用證據包同一套名稱（「中央社（Yahoo 股市新聞轉載）」），不再用 `source_id`。
+- ✅ **06:00 準備的上限**（分析）：10/31–11/05 正常時 06:00 開始、06:06 前畫完；成功的呼叫最長 45 秒（P 撰稿），M 角色最長 16 秒。11/05 的兩次 300 秒都是卡住，重試 10 秒就好，整期 06:15 畫完。但修正前沒有整體上限：每次嘗試都可能卡滿逾時，60 格額度最壞約 5 小時。改法：排程的 06:00 準備綁 `DAILY_PREPARE_DEADLINE`（預設 08:20）——每次 Codex 嘗試前檢查，剩不到 20 秒就丟 `DeadlinePassed`（不扣額度、不重試、不開 subprocess），單次逾時不超過剩餘秒數；M 組把過了截止當成額度 0 照既有順序降級（記進 `stats.degraded`），P 撰稿直接退模板稿；P 影子另限 30 分鐘（`DAILY_SHADOW_MAX_MINUTES`），卡住也留時間給 M。`CODEX_TIMEOUT_SECONDS` 預設 300→150。LLM 呼叫因此保證 08:20 前結束，之後只剩寫 DB／畫 HTML（秒級）與行情（20 秒逾時）。codex 版本沒動。⚠️ 若 production `.env` 有寫 `CODEX_TIMEOUT_SECONDS`，會蓋過新預設。手動 `daily prepare`（CLI）不綁截止。
+- ⚠️ **E11（11/15 到期）**：xfail 原因已更新；離線無法驗證（重編版莫德納稿沒入選，pytest 實際回報 skip）。👤 要嘛錄一次真 Codex（M 組記者→查核→文稿編輯，約 3–5 次）並加重播測試，要嘛 11/15 前拿掉 xfail 註明不適用，否則 `test_overdue_cases_are_not_xfail` 會在 11/15 失敗。
+- ✅ 全套 380 passed／7 skipped／2 xfailed（基準 363／7／2）。不需要 migration。
 
 ## 本次變更（2026-11-01 — 10/31、11/01 兩期 M 組問題修正，`fix/newsroom-1101`）
 

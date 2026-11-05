@@ -521,3 +521,16 @@
   - 刻意不做「同語言、共同實體夠多就程式合併」：11/01 複本實測日月光與光寶科兩則 Q3 財報標題共有 3 個實體（EPS、創新高、第三季），會錯併。所以同語言重複仍靠 LLM 第二意見＋程式確認，⚠️ LLM 沒提就仍可能重複。測試 `tests/test_desk_duplicates.py`（fixture `desk_1031_1101.json`）。
 - 🔁 **P 影子的 `llm_records.purpose`**：額度本來就對（`CodexClient(purpose=shadow)` 從 `shadow` 扣、上限 12，總數共用 60，M 至少 48），但 `prepare_daily` 把撰稿包在 `llm_log_meta(purpose="daily")`，紀錄被改寫成 daily（10/31、11/01 各 4 筆；只有編輯會議那筆是 shadow）。改成影子版記 `shadow`。測試用假 client 走真的 `ModelQuotaGuard`。
 - 🔁 **來源替換（收集驗收期間）**：Reuters×3、AP Top、天下停用（`keep_items: true`：不再抓，已收的稿照常用，10/27 回歸重編不變），加 CBS／ABC／BBC Business／Guardian Tech 官方 RSS；七天報告把期間內停用的來源另列一表、中途加入的標日期。細節見 SOURCE_REGISTRY「停用與替代紀錄」、COLLECTION「七天收集驗收用的統計」。
+
+### 11/01–11/05 的五個小修正（2026-11-06，`fix/newsroom-1106`，未部署）
+
+查證用 production 複本 `rt-data-1106/prod-copy-20261105.db`（唯讀）；沒有呼叫 Codex。
+
+- 🔁 **補核准後網頁沒重畫**：11/01 下午補核准，`site/daily/2026-11-01.html` 還是「未核准」。`approve`／`hold`（CLI、回放頁 decision 路由）只改 `story_versions`。改成 commit 之後用 `run.refresh_edition_html` 重畫：已發行的期數照發行規則（`for_publish`），草稿照 06:00 預覽。**不重送 Telegram**，也沒有加重送旗標（要重送屬於另一個決定）。
+- 🔁 **分版**（`daily/sections.py`＋`seeds/section_rules.yaml`）：財經改寫順序改成 台灣詞（新增勞動基金、勞退、勞保、國安基金）→ 科技詞 → **一半以上標題有政治詞 → 國際** → 科技版來源 → 全繁中且沒有國際詞，**或有台灣上市櫃公司名**（`taiwan_company_terms`）→ 台灣 → 國際。三則錯誤（11/05 Talarico 科技、11/04 環球晶兩則國際、11/03 勞動基金科技）匯出成 `tests/regression/fixtures/sections_1103_1105.json`。
+  - 一開始把公司名放進台灣詞、政治詞放在科技詞之前，複本比對發現會把台廠 AI 稿（廣達、緯創）從科技搬到台灣、把美股 AI 選後稿從科技搬到國際，所以收窄：公司名只蓋過國際詞、不蓋過科技詞；政治詞排在科技詞後面，且要過半標題命中。
+  - 複本 10/31–11/05 六份快照重算：新規則造成的改版每天 2–21 則（11/05 美國期中選舉日最多），主要是美國選舉財經稿 台灣→國際、台廠財報（環球晶、緯創、中信金、友達 ADR）國際→台灣。可疑的少數：「臺日韓股…美選舉明朗」「財報、選舉、利率三考驗」由台灣改國際。
+  - ⚠️ **會改到實驗一方法 C**：`eval/exp1._desk_groups` 先跑 `rewrite_sections` 再取 `desk_pool`（每內版取前 8），財經事件換版會改變進編輯會議的候選，進而可能改變方法 C 的跨語言合併組。方法 A 不受影響。若 11/03 已正式抽樣，**不要用這版重跑 `scripts/sample_exp1.py`**；要重現抽樣請用 `84186b9` 或之前的 commit。
+- 🔁 **來源列同一家出現兩次**：11/05 聯發科（MAS story 21819）證據包是 Yahoo 自家稿＋Yahoo 刊的中央社稿（證據包顯示「中央社（Yahoo 股市新聞轉載）」），但 `view._sources_for` 用 `source_id` 當出處，兩列都是 `yahoo-tw-stock`。改用 `evidence.source_outlet`（同證據包規則＋登錄表名稱）。不刪列：正文 `[n]` 照位置對來源。盲計匯出（`blind._sources`）刻意不改，試刊期間格式不變。
+- 🔁 **06:00 準備的上限**：見 PROGRESS「fix/newsroom-1106」的分析。`llm/deadline.py`、`DAILY_PREPARE_DEADLINE=08:20`、`DAILY_SHADOW_MAX_MINUTES=30`、`CODEX_TIMEOUT_SECONDS` 300→150。
+- 🔁 **E11**：xfail 原因過時（文稿編輯、`llm_records` 都已實作）。實際狀況是重編 10/27 時莫德納稿（MarketWatch 單一來源，聚合變嚴後自成一則、判 world）沒入選，條件 `NotApplicable`，pytest 回報的是 skip。離線無法驗證；要驗證得錄一次真 Codex（M 組記者→查核→文稿編輯），否則 11/15 前拿掉 xfail 並註明不適用。
