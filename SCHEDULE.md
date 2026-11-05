@@ -1,5 +1,7 @@
 # Reddit Tracker v4 — 任務級里程碑
 
+> ⚠️ **已過時（2026-11-06 標註）**：本檔是 v4 Reddit Tracker 的里程碑，程式 2026-10-27 已刪除。現況與下一步看 [`PROGRESS.md`](PROGRESS.md)。
+
 > 與 `reddit_tracker_proposal.md` §七 對應，展開到可勾選任務粒度。
 > 每個里程碑「完成判準」全部達標後才進下一個。沒有週數，只看任務。
 

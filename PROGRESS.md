@@ -2,9 +2,27 @@
 
 > 跨 session 的單一狀態真相。每次有實質進展就更新。
 > 現行企劃見 `docs/AI_NEWS_COMPANY_PROPOSAL.md`、規格入口見 `docs/v5/README.md`。
-> 2026-10-27 以前的段落是 v4／v5 歷史紀錄，裡面提到的 bot、scrapers、services、v5 newsroom 模組都已移除。
+> 2026-10-27 以前的段落是 v4／v5 歷史紀錄，裡面提到的 bot、scrapers、services、v5 newsroom 模組都已移除；v4 的段落已搬到 `docs/archive/PROGRESS_v4.md`。
+> 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
 **Last updated:** 2026-11-06（`fix/newsroom-1106` 未部署，見下節）；上次部署 2026-11-01 18:00（`fix/newsroom-1101`，main `6edfc5e`）
+
+## 下一步（2026-11-06 現況）
+
+日期都是方案 B，👤 老師尚未確認，見 [`docs/weekly/trial-dates.md`](docs/weekly/trial-dates.md)。依期限排：
+
+1. 👤 **實驗一交件**（志晨）：快照 `data/snapshots/2026-11-05.db`（11/05 23:25，原訂 11/03），抽樣 commit `5f31fab`，A 100 組／B 30 組、沒有不足的層，見 [`docs/eval/EXP1_SAMPLING.md`](docs/eval/EXP1_SAMPLING.md)「實際執行紀錄」。要做：檢查輸出 → 自己打 `exp1-frozen` → xlsx 交 A、B（`_private/` 不給）。A、B dev 標註 11/07、test 標註 11/12；結果 11/22 前寫進 `docs/eval/`。⚠️ 不要用 `fix/newsroom-1106` 重跑抽樣。
+2. 👤 **請老師確認** `trial-dates.md` 的時程（試刊 11/09–11/15、實驗二 11/17–11/18、11/20 `final-1120`）與用本機 Codex 當 LLM（手冊 6.9 第 1 條要正式 API，模型 11/15 前定案），並告知 A、B。
+3. 👤 **11/08 前**：B 拿到七類錯誤計數練習（老師）。
+4. **部署 `fix/newsroom-1106`**（未部署，內容見下節）：要在 11/09 試刊第一期前。部署前先查 production `.env` 有沒有寫 `CODEX_TIMEOUT_SECONDS`。
+5. **`feat/checker-per-source` 待 review**（查核員逐來源回報；本 worktree 看不到這個分支）：決定要不要在試刊前併入，併入要重錄 `1027_t2a_records.json`（需呼叫 Codex）。
+6. 👤 **E11 xfail 在 11/15 前決定**：錄一次真 Codex 加重播測試，或拿掉 xfail 註明不適用；否則 `test_overdue_cases_are_not_xfail` 11/15 起失敗。
+7. 👤 **試刊 11/09–11/15 每天**：06:00 準備後核准 M 組稿；交 B 盲計資料夾之前用 `scripts/collect_blind_hashes.py --write` 把當天雜湊寫進 `docs/eval/blind_mapping.sha256` 並 commit（步驟見 trial-dates.md）。
+8. 實驗二 11/17–11/18（A 11/17 中午前選 15 篇正常稿）。
+9. 11/20 打 `final-1120` 功能凍結；之前不要 `brew upgrade codex`。
+
+- ℹ️ `docs/weekly/trial-dates.md` 已寫，`test_three_live_mas_days_and_announced_trial_dates` 會變 XPASS；`blind_mapping.sha256` 還沒有（試刊才有資料）。兩個 xfail 等老師確認時程、第一個雜湊 commit 後再拿掉。
+- ⚠️ 11/04、11/05 M 組稿 08:35 前沒核准，讀者只收到標題短訊；11/06 排定 06:25 由自動化流程核准（志晨授權）。報告照實記。
 
 ## fix/newsroom-1106（未部署）
 
