@@ -6,6 +6,8 @@
 
 ## 11/03 正式抽樣（👤 開發者，需要日曆時間）
 
+> 原訂步驟，實際在 11/05 做，見下節「實際執行紀錄」。
+
 1. **11/03 早上（10/31–11/02 三期都已收集完、11/03 06:00 那期準備之後）**，由開發者從 production 做一份新的唯讀快照。做法與 10/27 母本相同：用 SQLite online backup 複製，放到 `data/snapshots/2026-11-03.db`，`chmod 444`，記下 `shasum -a 256` 到 `.sha256`。**本工具與實作代理都不碰 production DB。**
 2. 抽樣（約 4–8 分鐘，素材越多越久）：
 
@@ -20,6 +22,14 @@
    - `merge_replay`：哪幾期有 `merged_groups` 可重播；
    - `commit`：要等於抽樣當下的 HEAD，並寫進報告。
 4. **11/04** 把 `exp1_A_100.xlsx`（或 `.csv`）交給 A、`exp1_B_30.xlsx` 交給 B（放進共用的 `annotation/exp1/`）。`_private/` **不要給標註員**。
+
+## 實際執行紀錄（2026-11-05）
+
+- **快照**：`data/snapshots/2026-11-05.db`，11/05 23:25 從 production 線上備份（`chmod 444`），**不是**原訂的 11/03。sha256 記在 `data/snapshots/2026-11-05.db.sha256`（`2347e089…6fed2c3d`）；快照與 `.sha256` 都在 production checkout 的 `data/snapshots/`，不進 repo。
+- **抽樣 commit**：`5f31fab`（`fix/exp1-xlsx`）。它在 `84186b9` 上只多一個修正：xlsx 儲存格去掉 openpyxl 不接受的控制字元（台北市長抽籤那則摘要會讓 `write_xlsx` 丟 `IllegalCharacterError`，CSV 寫完後 xlsx 與 manifest 都沒產出）；抽樣、RNG 順序、列與 CSV 都沒變。CSV 與在 `84186b9` 跑出來的逐位元相同。報告的抽樣 commit 寫 `5f31fab`。
+- **結果**：A 100 組、B 複標 30 組，`shortages` 沒有不足的層。
+- ⚠️ **不要用 `fix/newsroom-1106` 重跑抽樣**：那個分支改了 `seeds/section_rules.yaml` 的分版（政治詞→國際、台灣基金／上市櫃公司→台灣），會改到方法 C 編輯會議的候選池。要重現就 checkout `5f31fab`（或 `84186b9`）、用同一份快照。
+- 👤 **還沒做（志晨）**：檢查 `annotation/exp1/` 輸出與 manifest → 自己打 tag `exp1-frozen`（建議打在抽樣 commit `5f31fab`）→ 把 `exp1_A_100.xlsx` 交 A、`exp1_B_30.xlsx` 交 B（`_private/` 不給）。期限：dev 標註 11/07、test 標註 11/12，結果寫進 `docs/eval/` 在 11/22 前。
 
 ## 輸出
 
