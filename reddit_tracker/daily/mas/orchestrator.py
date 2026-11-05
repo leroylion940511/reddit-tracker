@@ -12,6 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ...collection.clustering import domain_of
+from ...config import get_settings
 from ...collection.entities import EntityContext, load_lexicon
 from ...llm.deadline import deadline_reached
 from ...llm.quota import QuotaExhausted
@@ -83,6 +84,27 @@ CHECKER_SCHEMA = {
     "required": ["action", "problem", "detail", "required_action"],
     "additionalProperties": False,
 }
+# 逐來源版（FACT_CHECKER_PER_SOURCE=true 才用）：多一個 sources，每個程式點名的來源一個判斷。
+CHECKER_PER_SOURCE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        **CHECKER_SCHEMA["properties"],
+        "sources": {"type": "array", "items": {
+            "type": "object", "properties": {
+                "sid": {"type": "integer"},
+                "verdict": {"type": "string", "enum": ["KEEP", "REMOVE"]},
+                "reason": {"type": "string"}},
+            "required": ["sid", "verdict", "reason"], "additionalProperties": False}},
+    },
+    "required": [*CHECKER_SCHEMA["required"], "sources"],
+    "additionalProperties": False,
+}
+CHECKER_RELEVANCE_SUFFIX = "\n另檢查每個來源與 S1 是否同一事件；無關來源必須提出異議。"
+CHECKER_PER_SOURCE_SUFFIX = (
+    "\n另外在 sources 對每個被點名的來源各回一個判斷："
+    '{"sid":2,"verdict":"KEEP|REMOVE","reason":"一句話"}；與 S1 同一事件填 KEEP，不同事件填 REMOVE。'
+    "有任何 REMOVE 時 action 填 CHALLENGE。"
+)
 EIC_SCHEMA = {
     "type": "object",
     "properties": {
@@ -130,6 +152,7 @@ class _Checker(BaseModel):
     problem: str = "NONE"
     detail: str = ""
     required_action: str = ""
+    sources: list[dict] = Field(default_factory=list)
 
 
 class _Decision(BaseModel):
@@ -272,6 +295,30 @@ def checker_says_same_event(assessment: str | None) -> bool:
     return parsed is not None and parsed.action.strip().upper() == "OK"
 
 
+def _sid(value) -> int | None:
+    text = str(value).strip().upper().removeprefix("S")
+    return int(text) if text.isdigit() else None
+
+
+def checker_source_verdicts(assessment: str | None, flagged: list[int]) -> dict[int, bool]:
+    """查核員對每個程式點名來源的判斷：{sid: True＝保留}。
+
+    有逐來源判斷（`sources`）的照它；沒提到的點名來源、或舊格式只有全域 action 的回應，
+    照 `checker_says_same_event`（OK 保留、其他刪）。沒點名的來源 LLM 說 REMOVE 也不算：
+    刪來源仍要程式先點名。沒有回應或格式錯＝全刪（照程式結果）。
+    """
+    parsed = _parse(assessment, _Checker)
+    default = parsed is not None and parsed.action.strip().upper() == "OK"
+    verdicts = {}
+    for entry in (parsed.sources if parsed is not None else []):
+        if not isinstance(entry, dict):
+            continue
+        sid, verdict = _sid(entry.get("sid")), str(entry.get("verdict", "")).strip().upper()
+        if sid in flagged and verdict in ("KEEP", "REMOVE"):
+            verdicts[sid] = verdict == "KEEP"
+    return {sid: verdicts.get(sid, default) for sid in flagged}
+
+
 def cleared_item_ids(session: Session, story_id: int) -> set[int]:
     """查核員判定同一事件而保留的可疑來源（素材 id）；修稿後重驗不再把它們當無關來源。"""
     rows = session.scalars(select(AgentMessage.payload).where(
@@ -309,9 +356,15 @@ def review_one(
     client,
     now: datetime,
     degraded: list[str] | None = None,
+    per_source: bool | None = None,
 ) -> StoryVersion:
-    """記者寫 v1，程式查核；有問題才 CHALLENGE，通過則 checked。"""
+    """記者寫 v1，程式查核；有問題才 CHALLENGE，通過則 checked。
+
+    `per_source` 沒給就看 `FACT_CHECKER_PER_SOURCE`（預設 false＝舊提示詞與舊 schema）。
+    """
     degraded = degraded if degraded is not None else []
+    if per_source is None:
+        per_source = get_settings().fact_checker_per_source
     clock = Clock(now)
     corr = correlation_id("T2", edition_date, story.id)
     source_ids = [item.item_id for item in evidence if item.item_id is not None]
@@ -333,11 +386,23 @@ def review_one(
     )
     return _check_and_maybe_revise(
         session, edition_date=edition_date, story=story, evidence=evidence, version=version, client=client,
-        clock=clock, corr=corr, degraded=degraded,
+        clock=clock, corr=corr, degraded=degraded, per_source=per_source,
     )
 
 
-def _check_and_maybe_revise(session, *, edition_date, story, evidence, version, client, clock, corr, degraded) -> StoryVersion:
+def _checker_relevance_prompt(version, evidence, bad, per_source: bool) -> tuple[str, str, dict]:
+    """可疑時那一次查核員請求（system, user, schema）。per_source=False 時與 2026-11-01 前逐字相同。"""
+    system = CHECKER_SYSTEM + CHECKER_RELEVANCE_SUFFIX
+    user = f"稿件：{version.body}\n\n{_evidence_block(evidence)}"
+    if not per_source:
+        return system, user, CHECKER_SCHEMA
+    listed = "、".join(f"S{index}" for index, _ in bad) or "（沒有）"
+    return (system + CHECKER_PER_SOURCE_SUFFIX, f"程式點名的可疑來源：{listed}\n\n{user}",
+            CHECKER_PER_SOURCE_SCHEMA)
+
+
+def _check_and_maybe_revise(session, *, edition_date, story, evidence, version, client, clock, corr, degraded,
+                            per_source: bool = False) -> StoryVersion:
     evidence_text = " ".join(f"{item.title} {item.summary}" for item in evidence)
     bad = call_tool("fact_checker", "check_relevance", irrelevant_sources, evidence)
     numbers = call_tool("fact_checker", "check_numbers", unsupported_numbers, version.body, evidence_text)
@@ -346,18 +411,20 @@ def _check_and_maybe_revise(session, *, edition_date, story, evidence, version, 
     if bad or numbers:
         # 可疑時才請查核員判斷。數字：程式結果不能被模型的 OK 覆蓋。
         # 來源：程式只看標題、抓不到中文與跨語言的同一事件（2026-10-31／11-01 把多來源稿刪到剩 1 家），
-        # 所以查核員 LLM 判定「每個來源都同一事件」（OK）時保留；CHALLENGE 或沒有判斷才照程式刪。
+        # 所以查核員 LLM 判定同一事件時保留：逐來源判斷 KEEP 的，或舊格式回 OK（全部）；
+        # REMOVE、CHALLENGE 或沒有判斷才照程式刪。
         if "fact_checker" not in degraded and _quota_left(client) != 0:
+            system, user, schema = _checker_relevance_prompt(version, evidence, bad, per_source)
             assessment = _ask(
                 session, client, role="fact_checker", story_id=story.id, edition_date=edition_date,
-                system=CHECKER_SYSTEM + "\n另檢查每個來源與 S1 是否同一事件；無關來源必須提出異議。",
-                user=f"稿件：{version.body}\n\n{_evidence_block(evidence)}",
-                schema=CHECKER_SCHEMA, temperature=0,
+                system=system, user=user, schema=schema, temperature=0,
             )
         elif _quota_left(client) == 0:
             _degrade(degraded, "fact_checker")
-        if bad and checker_says_same_event(assessment):
-            cleared, bad = bad, []
+        if bad:
+            keep = checker_source_verdicts(assessment, [index for index, _ in bad])
+            cleared = [x for x in bad if keep[x[0]]]
+            bad = [x for x in bad if not keep[x[0]]]
     if bad or numbers:
         detail_parts = []
         if bad:
@@ -385,8 +452,8 @@ def _check_and_maybe_revise(session, *, edition_date, story, evidence, version, 
         return _revise(session, edition_date=edition_date, story=story, evidence=kept, removed=[item for _, item in bad],
                        version=version, client=client, clock=clock, corr=corr, challenge=message, degraded=degraded)
     percents = _percent_values(evidence, version.body)
-    if cleared:
-        # 查核員這次已經看過整篇（含數字），不再為百分比多問一次。
+    if cleared and checker_says_same_event(assessment):
+        # 查核員這次已經看過整篇（含數字）且回 OK，不再為百分比多問一次。
         percents = set()
     if len(percents) >= 2 and "fact_checker" not in degraded and _quota_left(client) != 0:
         return _checker_llm(

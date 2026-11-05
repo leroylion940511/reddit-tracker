@@ -105,6 +105,9 @@ class Settings(BaseSettings):
     daily_shadow_llm_limit: int = 12
     # 影子跑完後，盲計稿與抽查稿匯出到這裡的 YYYY-MM-DD/（已 gitignore；對照表在 _private/）
     daily_annotation_dir: str = "annotation"
+    # M 組查核員逐來源回報（每個程式點名的可疑來源回 KEEP／REMOVE）。會改到查核員請求的 request_hash，
+    # 預設關閉＝沿用舊提示詞與舊 schema，既有錄音（1027_t2a_records.json）照常重播。
+    fact_checker_per_source: bool = False
     gemini_daily_model: str = "gemini-3.5-flash-lite"
 
     # --- 舊排程（候選探索、舊版日報編採與發送）已在 commit 2d95c07 移除；設 true 也不會復活 ---
