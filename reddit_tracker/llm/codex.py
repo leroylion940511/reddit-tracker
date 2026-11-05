@@ -21,6 +21,7 @@ from typing import Any
 
 from ..config import get_settings
 from . import codex_version
+from .deadline import attempt_timeout
 from .quota import ModelQuotaGuard, purpose_limits_from_settings
 from .records import note_attempt
 
@@ -144,6 +145,9 @@ class CodexClient:
             prompt += "\n\n只輸出 JSON。"
 
         for attempt in range(self.max_retries + 1):
+            # 準備截止（llm/deadline.py）：剩不到一次嘗試的時間就丟 DeadlinePassed，不扣額度、不重試；
+            # 還有時間的話，這次逾時不超過離截止的秒數。
+            self._attempt_timeout = attempt_timeout(self.timeout)
             # 預扣額度在 subprocess 之前；額度用完（QuotaExhausted）直接往外拋，不重試、也不記嘗試。
             self.guard.acquire(model=self.model, purpose=self.purpose)
             started = time.perf_counter()
@@ -174,6 +178,7 @@ class CodexClient:
         )
 
     def _run_once(self, prompt: str, json_schema: dict | None) -> CodexResult:
+        timeout = getattr(self, "_attempt_timeout", None) or self.timeout
         with tempfile.TemporaryDirectory(prefix="reddit-tracker-codex-") as tmp:
             root = Path(tmp)
             workdir = root / "work"
@@ -186,12 +191,12 @@ class CodexClient:
             try:
                 proc = subprocess.run(
                     self.command(workdir=workdir, schema_path=schema_path, output_path=output_path),
-                    input=prompt, capture_output=True, text=True, timeout=self.timeout, cwd=workdir,
+                    input=prompt, capture_output=True, text=True, timeout=timeout, cwd=workdir,
                 )
             except FileNotFoundError as exc:
                 raise CodexError(f"找不到 codex：{self.binary}") from exc
             except subprocess.TimeoutExpired as exc:
-                raise CodexError(f"codex exec 超過 {self.timeout:.0f} 秒") from exc
+                raise CodexError(f"codex exec 超過 {timeout:.0f} 秒") from exc
             if proc.returncode != 0:
                 raise CodexError(f"codex exec exit {proc.returncode}：{proc.stderr.strip()[-300:]}")
             try:

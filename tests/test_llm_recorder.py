@@ -38,6 +38,7 @@ class FakeCodex(CodexClient):
     reasoning_effort = "low"
     purpose = "daily"
     max_retries = 1
+    timeout = 5.0
 
     def __init__(self, outcomes):
         self.outcomes = list(outcomes)

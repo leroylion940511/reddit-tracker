@@ -47,7 +47,9 @@ class Settings(BaseSettings):
     codex_bin: str = "/opt/homebrew/bin/codex"
     codex_model: str = "gpt-6.1-sol"
     codex_reasoning_effort: str = "low"
-    codex_timeout_seconds: float = 300.0
+    # 單次嘗試逾時。2026-11-05 前是 300；10/31–11/05 成功的呼叫最長 45 秒（P 撰稿），逾時都是卡住，
+    # 重試一次 10 秒內就好，所以降到 150（仍是最長成功的 3 倍）。整期另有 DAILY_PREPARE_DEADLINE。
+    codex_timeout_seconds: float = 150.0
     # 失敗只重試 1 次；每次 subprocess 嘗試都扣一格額度。
     codex_max_retries: int = 1
 
@@ -91,6 +93,10 @@ class Settings(BaseSettings):
     daily_prepare_minute: int = 0
     daily_delivery_hour: int = 8
     daily_delivery_minute: int = 35
+    # 06:00 準備的 LLM 截止時間（出刊時區 HH:MM）：之後不再呼叫模型，角色降級成模板稿，08:35 照常發行
+    daily_prepare_deadline: str = "08:20"
+    # P 影子最多跑幾分鐘（平常 2 分鐘）；超過就停止呼叫模型，留時間給 M 組
+    daily_shadow_max_minutes: int = 30
     daily_site_dir: str = "site/daily"
     # P 組影子版（手冊步驟 10、12、8.3）：DAILY_MODE=mas 時 06:00 先跑 P 影子、M 再從同一份快照跑。
     # 影子不寫 daily_editions、不發 Telegram；預設關閉，pipeline 模式不看這個旗標。
@@ -121,6 +127,14 @@ class Settings(BaseSettings):
         if value < 1:
             raise ValueError("DAILY_SHADOW_LLM_LIMIT 至少要 1")
         return value
+
+    @field_validator("daily_prepare_deadline")
+    @classmethod
+    def _check_deadline(cls, value: str) -> str:
+        hour, _, minute = value.strip().partition(":")
+        if not (hour.isdigit() and minute.isdigit() and 0 <= int(hour) < 24 and 0 <= int(minute) < 60):
+            raise ValueError(f"DAILY_PREPARE_DEADLINE 要是 HH:MM：{value!r}")
+        return f"{int(hour):02d}:{int(minute):02d}"
 
     @field_validator("daily_mode")
     @classmethod

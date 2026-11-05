@@ -13,7 +13,7 @@ import logging
 import shutil
 import time
 from dataclasses import dataclass, field
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -23,6 +23,7 @@ from ..collection.clustering import ClusterRunStats, cluster_recent_items
 from ..collection.entities import EntityContext, MergeRules, load_lexicon
 from ..config import LLM_PROVIDERS, get_settings
 from ..db import session_scope
+from ..llm.deadline import DeadlinePassed, llm_deadline
 from ..llm.quota import SHADOW_PURPOSE, QuotaExhausted
 from ..llm.records import bind_log_factory, bind_log_session, llm_log_meta
 from ..models import DailyArticle, DailyEdition, DailySnapshot, LLMRecord, Story, StoryCluster, StoryVersion
@@ -152,8 +153,8 @@ def _write_all(
                 except Exception as exc:  # noqa: BLE001 — JSON 壞掉、503 過載都值得重試；最後才退模板稿
                     failure = f"{writer.name} 撰稿失敗（{attempt} 次）：{type(exc).__name__}: {str(exc)[:160]}"
                     logger.warning("daily writer failed for %s: %s", group, failure)
-                    if isinstance(exc, QuotaExhausted):
-                        break  # 額度用完重試也沒用，直接退模板稿
+                    if isinstance(exc, (QuotaExhausted, DeadlinePassed)):
+                        break  # 額度用完、過了準備截止，重試也沒用，直接退模板稿
                     if attempt < WRITE_ATTEMPTS:
                         time.sleep(RETRY_DELAY_SECONDS)
         for p in items:
@@ -775,9 +776,11 @@ def prepare_with_shadow(edition_date: date, *, now: datetime | None = None) -> i
     - 額度：P 影子的每次嘗試記在 `SHADOW_PURPOSE`，上限 `DAILY_SHADOW_LLM_LIMIT`；M 至少保有其餘額度。
     - 影子失敗只記 log，M 照常（此時 M 自己建快照）；匯出失敗也只記 log。
     - 當天 daily_editions 已有這期（重跑、手動 prepare 過）就不跑影子，避免覆寫 M 用過的快照。
+    - 影子最多呼叫模型 `DAILY_SHADOW_MAX_MINUTES` 分鐘（`llm_deadline`，平常 2 分鐘），卡住也留時間給 M。
     """
     settings = get_settings()
     now = now or datetime.now(timezone.utc)
+    shadow_until = datetime.now(timezone.utc) + timedelta(minutes=getattr(settings, "daily_shadow_max_minutes", 30))
     snapshot = None
     with session_scope() as session:
         existing = session.scalar(select(DailyEdition.status).where(DailyEdition.edition_date == edition_date))
@@ -785,7 +788,8 @@ def prepare_with_shadow(edition_date: date, *, now: datetime | None = None) -> i
         logger.info("pipeline shadow %s skipped: edition already %s", edition_date, existing)
     else:
         try:
-            prepare_daily(edition_date, now=now, shadow=True)
+            with llm_deadline(shadow_until):
+                prepare_daily(edition_date, now=now, shadow=True)
             with session_scope() as session:
                 row = session.scalar(select(DailySnapshot).where(DailySnapshot.edition_date == edition_date))
                 snapshot = {"candidates": list(row.candidates)} if row is not None else None

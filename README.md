@@ -130,6 +130,8 @@ uv run python -m reddit_tracker.web
 | `DAILY_MODEL_VERSION` | `gpt-6.1-sol \| codex-cli 0.166.0 \| reasoning_effort=low` | P／M 共用的完整模型版本字串；`codex-cli` 段是版本守門的鎖定值 |
 | `DAILY_PREPARE_HOUR`／`_MINUTE` | `6`／`0` | 準備時間 |
 | `DAILY_DELIVERY_HOUR`／`_MINUTE` | `8`／`35` | 發行時間 |
+| `DAILY_PREPARE_DEADLINE` | `08:20` | 06:00 準備的 LLM 截止（出刊時區）：之後不再呼叫模型，角色照額度用完的順序降級成模板稿（`llm/deadline.py`） |
+| `DAILY_SHADOW_MAX_MINUTES` | `30` | P 影子最多呼叫模型幾分鐘（平常約 2 分鐘），卡住也留時間給 M |
 | `DAILY_SITE_DIR` | `site/daily` | HTML 輸出目錄（不進版控） |
 | `DAILY_SHADOW_ENABLED` | `false` | 只在 `DAILY_MODE=mas` 生效：06:00 先跑 P 影子、M 再從同一份快照跑；影子失敗只記 log |
 | `DAILY_SHADOW_LLM_LIMIT` | `12` | P 影子每日最多用幾格額度（含編輯會議與重試）；M 至少保有 `LLM_DAILY_LIMIT` 減這個數 |
@@ -140,7 +142,7 @@ uv run python -m reddit_tracker.web
 | `CODEX_BIN` | `/opt/homebrew/bin/codex` | Codex CLI 路徑（Homebrew cask） |
 | `CODEX_MODEL` | `gpt-6.1-sol` | |
 | `CODEX_REASONING_EFFORT` | `low` | |
-| `CODEX_TIMEOUT_SECONDS` | `300` | |
+| `CODEX_TIMEOUT_SECONDS` | `150` | 單次嘗試逾時（2026-11-06 前是 300；成功的呼叫最長約 45 秒） |
 | `CODEX_MAX_RETRIES` | `1` | 失敗重試次數（每次嘗試都扣額度） |
 | `GEMINI_API_KEY` | （空） | 只在 `DAILY_WRITER=gemini` 時需要 |
 | `GEMINI_DAILY_MODEL` | `gemini-3.5-flash-lite` | |

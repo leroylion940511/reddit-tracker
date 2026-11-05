@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from ...collection.clustering import domain_of
 from ...collection.entities import EntityContext, load_lexicon
+from ...llm.deadline import deadline_reached
 from ...llm.quota import QuotaExhausted
 from ...llm.records import bind_log_session, complete_logged, llm_log_meta
 from ...models import AgentMessage, PagePlan, Story, StoryVersion
@@ -193,6 +194,9 @@ def _evidence_block(evidence: list[EvidenceItem]) -> str:
 
 
 def _quota_left(client) -> int | None:
+    """剩幾格額度；過了準備截止（llm/deadline.py）也當成 0，照額度用完的順序降級。"""
+    if deadline_reached():
+        return 0
     guard = getattr(client, "guard", None)
     model = getattr(client, "model", None)
     if guard is None or model is None:
