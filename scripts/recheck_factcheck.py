@@ -6,7 +6,7 @@
 - 舊程式：修正前 `irrelevant_sources`（標題共同名字、不看句首字佐證）是否點名；
 - 當期實際：`agent_messages` 的 IRRELEVANT_SOURCE CHALLENGE 有沒有刪它（`drop_sids`）；
 - 新程式：現在的 `irrelevant_sources` 是否點名；
-- 查核員：當期存下的 `llm_assessment` 是否判定同一事件（`checker_says_same_event`）；
+- 查核員：當期存下的 `llm_assessment` 是否判定同一事件（`checker_source_verdicts`：逐來源 KEEP／REMOVE，舊格式看全域 OK）；
 - 新決定：點名且查核員沒有判定同一事件才刪（`_check_and_maybe_revise` 的規則）。
 
     uv run python scripts/recheck_factcheck.py --db 複本.db --dates 2026-10-31,2026-11-01
@@ -34,7 +34,7 @@ from sqlalchemy.orm import Session  # noqa: E402
 
 from reddit_tracker.collection.entities import load_lexicon  # noqa: E402
 from reddit_tracker.daily.evidence import EVIDENCE_SUMMARY_CHARS, EvidenceItem  # noqa: E402
-from reddit_tracker.daily.mas.orchestrator import checker_says_same_event, irrelevant_sources  # noqa: E402
+from reddit_tracker.daily.mas.orchestrator import checker_source_verdicts, irrelevant_sources  # noqa: E402
 from reddit_tracker.models import AgentMessage, SourceItem, Story, StoryVersion  # noqa: E402
 from reddit_tracker.seeds.news_sources import load_registry  # noqa: E402
 
@@ -124,10 +124,11 @@ def recheck(records: list[dict]) -> list[dict]:
         assessment = challenge.get("llm_assessment")
         legacy = legacy_irrelevant(evidence)
         flagged = {index for index, _ in irrelevant_sources(evidence)}
-        same = checker_says_same_event(assessment)
+        keep = checker_source_verdicts(assessment, sorted(flagged))  # 逐來源回應與舊全域回應都收
         for index, item in enumerate(evidence, start=1):
             if index == 1:
                 continue
+            same = keep.get(index, False)
             new_cut = index in flagged and not same
             rows.append({
                 "story_id": record["story_id"], "edition_date": record["edition_date"], "sid": index,

@@ -18,8 +18,11 @@ from sqlalchemy import select
 
 from reddit_tracker.daily.evidence import EvidenceItem
 from reddit_tracker.daily.mas.orchestrator import (
+    CHECKER_PER_SOURCE_SCHEMA,
+    CHECKER_SCHEMA,
     REPORTER_SYSTEM,
     checker_says_same_event,
+    checker_source_verdicts,
     irrelevant_sources,
     review_one,
 )
@@ -101,6 +104,7 @@ class Replay:
         self.record = record
         self.assessment = record["challenge"]["llm_assessment"] if assessment == "stored" else assessment
         self.calls: list[str] = []
+        self.checker_requests: list[dict] = []
 
     def complete(self, **kwargs):
         user = kwargs["messages"][-1]["content"]
@@ -114,13 +118,14 @@ class Replay:
             }, ensure_ascii=False)
         else:
             self.calls.append("fact_checker")
+            self.checker_requests.append(kwargs)
             if self.assessment is None:
                 raise RuntimeError("checker down")
             content = self.assessment
         return SimpleNamespace(content=content, input_tokens=1, output_tokens=1, cached_tokens=0)
 
 
-def _review(session, story_id: int, client) -> tuple:
+def _review(session, story_id: int, client, **kwargs) -> tuple:
     record = RECORDS[story_id]
     story = add_story(session, edition_date=date.fromisoformat(record["edition_date"]), run_variant=MAS, spec={
         "keeper_cluster_id": record["keeper_cluster_id"], "section": record["section"], "kind": record["kind"],
@@ -128,6 +133,7 @@ def _review(session, story_id: int, client) -> tuple:
     })
     version = review_one(
         session, edition_date=story.edition_date, story=story, evidence=_evidence(story_id), client=client, now=NOW,
+        **kwargs,
     )
     messages = session.scalars(select(AgentMessage).where(AgentMessage.story_id == story.id)).all()
     return version, messages
@@ -172,3 +178,99 @@ def test_cleared_sources_survive_a_number_challenge_and_recheck(session):
     # 修稿後重驗不把查核員已判定同一事件的 S2 當成無關（不會 STILL_BAD）
     assert version.status == "checked" and version.source_ids == record["v1"]["source_ids"]
     assert not [m for m in messages if (m.payload or {}).get("problem") == "STILL_BAD"]
+
+
+# ── 逐來源判斷（FACT_CHECKER_PER_SOURCE，預設關閉）────────────────────────────
+
+# 11/01 5330：S1 自由時報台北辯論、S2 央廣台北辯論（同一場）、S3 公視高雄辯論（無關）
+PER_SOURCE_5330 = json.dumps({
+    "action": "CHALLENGE", "problem": "NEEDS_CLARIFICATION",
+    "detail": "S3 是高雄市長辯論，與 S1 的台北市長辯論不同。", "required_action": "排除 S3。",
+    "sources": [
+        {"sid": 2, "verdict": "KEEP", "reason": "同一場台北市長辯論"},
+        {"sid": 3, "verdict": "REMOVE", "reason": "高雄市長辯論"},
+    ],
+}, ensure_ascii=False)
+
+
+def test_per_source_verdict_parsing():
+    assert checker_source_verdicts(PER_SOURCE_5330, [2, 3]) == {2: True, 3: False}
+    # 舊格式（只有全域 action）：OK 全留、CHALLENGE 全刪
+    assert checker_source_verdicts('{"action":"OK","problem":"NONE"}', [2, 3]) == {2: True, 3: True}
+    assert checker_source_verdicts(RECORDS[5330]["challenge"]["llm_assessment"], [2, 3]) == {2: False, 3: False}
+    # 沒提到的點名來源照全域 action；"S2" 寫法也收；沒點名的 REMOVE 不算（刪來源要程式先點名）
+    partial = '{"action":"OK","sources":[{"sid":"S3","verdict":"remove","reason":""},{"sid":4,"verdict":"REMOVE"}]}'
+    assert checker_source_verdicts(partial, [2, 3]) == {2: True, 3: False}
+    # 判斷值不認得就當沒提到
+    assert checker_source_verdicts('{"action":"CHALLENGE","sources":[{"sid":2,"verdict":"MAYBE"}]}', [2]) == {2: False}
+    # 沒有回應或格式錯＝照程式全刪
+    assert checker_source_verdicts(None, [2, 3]) == {2: False, 3: False}
+    assert checker_source_verdicts("not json", [2]) == {2: False}
+
+
+def test_5330_per_source_keeps_same_debate_and_drops_kaohsiung(session):
+    record = RECORDS[5330]
+    s1, s2, s3 = record["v1"]["source_ids"]
+    client = Replay(record, assessment=PER_SOURCE_5330)
+    version, messages = _review(session, 5330, client, per_source=True)
+    assert version.version == 2 and version.status == "checked"
+    assert version.source_ids == [s1, s2]  # 當期只剩 [s1]
+    challenge = next(m for m in messages if m.type == "CHALLENGE")
+    assert challenge.payload["problem"] == "IRRELEVANT_SOURCE" and challenge.payload["drop_sids"] == [3]
+    assert challenge.payload["cleared_sids"] == [2] and challenge.payload["cleared_item_ids"] == [s2]
+    # 修稿後重驗不把查核員判 KEEP 的 S2 再點名
+    assert not [m for m in messages if (m.payload or {}).get("problem") == "STILL_BAD"]
+    assert client.calls == ["reporter", "fact_checker", "reporter"]
+    request = client.checker_requests[0]
+    assert request["json_schema"] == CHECKER_PER_SOURCE_SCHEMA
+    assert "程式點名的可疑來源：S2、S3" in request["messages"][0]["content"]
+
+
+def test_per_source_flag_off_sends_the_old_request(session):
+    # 預設關閉：提示詞與 schema 跟 11/01 前逐字相同，request_hash 不變（1027_t2a 錄音靠這個重播）
+    client = Replay(RECORDS[5330])
+    version, _ = _review(session, 5330, client)
+    request = client.checker_requests[0]
+    assert request["json_schema"] == CHECKER_SCHEMA and "sources" not in request["json_schema"]["properties"]
+    assert request["messages"][0]["content"].startswith("稿件：")
+    assert request["system"].endswith("另檢查每個來源與 S1 是否同一事件；無關來源必須提出異議。")
+    assert version.source_ids == [RECORDS[5330]["v1"]["source_ids"][0]]  # 舊行為：S2、S3 一起刪
+
+
+def test_per_source_flag_comes_from_settings(session, monkeypatch):
+    from reddit_tracker.config import get_settings
+    monkeypatch.setenv("FACT_CHECKER_PER_SOURCE", "true")
+    get_settings.cache_clear()
+    client = Replay(RECORDS[5330], assessment=PER_SOURCE_5330)
+    version, _ = _review(session, 5330, client)
+    assert client.checker_requests[0]["json_schema"] == CHECKER_PER_SOURCE_SCHEMA
+    assert len(version.source_ids) == 2
+
+
+def test_per_source_mode_still_accepts_old_global_answers(session):
+    # 旗標開了但模型回舊格式（當期存下的全域 CHALLENGE）：照舊全刪
+    version, messages = _review(session, 5330, Replay(RECORDS[5330]), per_source=True)
+    assert version.source_ids == [RECORDS[5330]["v1"]["source_ids"][0]]
+    assert next(m for m in messages if m.type == "CHALLENGE").payload["drop_sids"] == [2, 3]
+    # 全域 OK：全留，跟關閉時一樣
+    version, messages = _review(session, 5327, Replay(RECORDS[5327]), per_source=True)
+    assert version.status == "checked" and version.source_ids == RECORDS[5327]["v1"]["source_ids"]
+
+
+def test_per_source_keep_cannot_clear_unsupported_numbers(session):
+    record = json.loads(json.dumps(RECORDS[5330]))
+    record["v1"]["body"] += " 現場約有 4321 人。"  # 證據裡沒有的數字
+    record["v2"] = dict(record["v1"], body=RECORDS[5330]["v1"]["body"])
+    all_keep = json.dumps({"action": "OK", "problem": "NONE", "detail": "", "required_action": "", "sources": [
+        {"sid": 2, "verdict": "KEEP", "reason": ""}, {"sid": 3, "verdict": "KEEP", "reason": ""}]})
+    version, messages = _review(session, 5330, Replay(record, assessment=all_keep), per_source=True)
+    challenge = next(m for m in messages if m.type == "CHALLENGE")
+    assert challenge.payload["problem"] == "UNSUPPORTED_NUMBER" and challenge.payload["drop_sids"] == []
+    assert challenge.payload["cleared_sids"] == [2, 3]
+    assert version.version == 2 and "4321" not in version.body
+
+
+def test_per_source_mode_checker_failure_falls_back_to_program(session):
+    version, messages = _review(session, 5330, Replay(RECORDS[5330], assessment=None), per_source=True)
+    assert version.source_ids == [RECORDS[5330]["v1"]["source_ids"][0]]
+    assert next(m for m in messages if m.type == "CHALLENGE").payload["drop_sids"] == [2, 3]
