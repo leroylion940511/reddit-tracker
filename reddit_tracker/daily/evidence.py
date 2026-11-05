@@ -49,9 +49,7 @@ class EvidenceItem:
     @property
     def display_name(self) -> str:
         """來源列顯示的名稱；轉載併成一列，例如「中央社（中央廣播電台轉載）」。"""
-        if not self.reprinted_by:
-            return self.source_name
-        return f"{short_outlet(self.source_name)}（{'、'.join(map(short_outlet, self.reprinted_by))}轉載）"
+        return outlet_label(self.source_name, self.reprinted_by)
 
     def as_source(self) -> dict:
         source = {
@@ -72,6 +70,17 @@ class EvidencePack:
     items: list[EvidenceItem]
     # 寫進稿件 review_notes 的紀錄（例如相關性過濾剔除的來源）
     notes: list[str] = field(default_factory=list)
+
+
+def outlet_label(name: str, reprinted_by: list[str]) -> str:
+    if not reprinted_by:
+        return name
+    return f"{short_outlet(name)}（{'、'.join(map(short_outlet, reprinted_by))}轉載）"
+
+
+def source_outlet(member: SourceItem, source_names: dict[str, str]) -> str:
+    """一篇素材在來源列的名稱，規則同證據包：別家網站刊的中央社稿是「中央社（某某轉載）」。"""
+    return outlet_label(*_display_source(member, source_names))
 
 
 def short_outlet(name: str) -> str:

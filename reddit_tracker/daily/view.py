@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date, datetime
+from functools import lru_cache
+from pathlib import Path
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -238,22 +240,47 @@ def _view_story(
     )
 
 
+def _source_names() -> dict[str, str]:
+    """登錄表的來源名稱（source_id → 名稱）；讀不到登錄表就回空 dict，來源列改顯示 source_id。"""
+    from ..config import get_settings
+
+    try:
+        path = Path(get_settings().news_sources_path)
+        return dict(_cached_names(str(path), path.stat().st_mtime_ns))
+    except Exception:  # noqa: BLE001 — 名稱只影響顯示
+        return {}
+
+
+@lru_cache(maxsize=2)
+def _cached_names(path: str, mtime_ns: int) -> tuple[tuple[str, str], ...]:
+    from ..seeds.news_sources import load_registry
+
+    return tuple((s.id, s.name) for s in load_registry(path).sources)
+
+
 def _sources_for(session: Session, story: Story, version: StoryVersion) -> list[dict]:
-    """版本上記的素材 id 對回標題。沒有 id 時留空，渲染仍可出標題。"""
+    """版本上記的素材 id 對回標題。沒有 id 時留空，渲染仍可出標題。
+
+    出處名稱跟證據包同一套規則（`evidence.source_outlet`）：2026-11-05 聯發科稿的證據包是
+    Yahoo 自家稿＋Yahoo 刊的中央社稿（證據包顯示「中央社（Yahoo 股市新聞轉載）」），這裡卻用
+    source_id，來源列出現兩次 yahoo-tw-stock。
+    """
     from ..models import SourceItem
+    from .evidence import source_outlet
 
     ids = list(version.source_ids or [])
     if not ids:
         return []
     rows = session.scalars(select(SourceItem).where(SourceItem.id.in_(ids))).all()
     by_id = {row.id: row for row in rows}
+    names = _source_names()
     sources = []
     for item_id in ids:
         row = by_id.get(item_id)
         if row is None:
             continue
         sources.append({
-            "outlet": row.source_id,
+            "outlet": source_outlet(row, names),
             "source_id": row.source_id,
             "title": row.title or "",
             "url": row.url,

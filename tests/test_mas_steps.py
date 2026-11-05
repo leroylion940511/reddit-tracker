@@ -599,6 +599,42 @@ def test_approval_before_publish_keeps_draft_preview(session, monkeypatch, tmp_p
     assert run_module.refresh_edition_html(session, date(2026, 10, 28)) is None
 
 
+def test_mas_sources_list_each_outlet_once(session):
+    """2026-11-05 聯發科稿（MAS story 21819）：Yahoo 自家稿＋Yahoo 刊的中央社稿，來源列出現兩次
+    yahoo-tw-stock。出處要跟證據包同一套規則：後者是「中央社（Yahoo 股市新聞轉載）」。"""
+    from reddit_tracker.daily.evidence import build_evidence_from_ids
+    from reddit_tracker.daily.view import _source_names
+
+    own = _item(session, "聯發科挖角英特爾資歷37年前高層！深化台積電等供應鏈合作",
+                "聯發科（2454）今（4）日宣布延攬擁有37年半導體設計工程經驗的前英特爾執行副總裁。",
+                url="https://tw.stock.yahoo.com/news/a-1", source_id="yahoo-tw-stock")
+    wire = _item(session, "聯發科延攬英特爾前主管　深化供應鏈夥伴合作",
+                 "（中央社記者張建中新竹2026年11月4日電）IC設計廠聯發科技(2454)今天宣布，英特爾前主管將出任。",
+                 url="https://tw.stock.yahoo.com/news/b-2", source_id="yahoo-tw-stock")
+    udn = _item(session, "聯發科AI ASIC布局再補強 延攬英特爾37年封裝大將",
+                "聯發科積極搶攻AI資料中心ASIC商機。", url="https://money.udn.com/money/story/1", source_id="udn-money")
+    ids = [own.id, wire.id, udn.id]
+    names = _source_names()
+    pack = build_evidence_from_ids(session, ids, names)
+    assert len(pack.items) == 3  # 證據包本來就把兩篇 Yahoo 當成兩個出處（Yahoo、中央社）
+
+    story = _story(session, 32729, section="tech")
+    write_story_version(
+        session, story_id=story.id, run_variant=MAS, expected_latest=0,
+        headline="聯發科延攬英特爾前高層", body="正文 [1][2][3]。", now=NOW, status="approved", source_ids=ids,
+    )
+    add_page_plan(
+        session, edition_date=DAY, run_variant=MAS,
+        slots={"front": {"lead": story.id, "second": [], "briefs": []}, "sections": {}}, now=NOW,
+    )
+    [article] = build_edition_view(session, DAY, MAS, SECTIONS, for_publish=True).articles
+    outlets = [s["outlet"] for s in article.sources]
+    assert len(outlets) == len(set(outlets)) == 3
+    assert outlets == [item.display_name for item in sorted(pack.items, key=lambda e: ids.index(e.item_id))]
+    assert outlets[1].startswith("中央社（") and "轉載" in outlets[1]
+    assert [s["source_id"] for s in article.sources] == ["yahoo-tw-stock", "yahoo-tw-stock", "udn-money"]
+
+
 def test_mas_publish_without_edition_fails(session, monkeypatch):
     @contextmanager
     def scope():
