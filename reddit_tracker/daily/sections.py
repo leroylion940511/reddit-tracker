@@ -5,8 +5,9 @@
 規則全部由程式判斷，詞表在 `seeds/section_rules.yaml`：
 
 - `cross_strait` → `taiwan`（與台灣直接相關：標題有台灣詞，或有台灣官方 T1 來源）；否則 `world`。
-- `finance` → 依序：台灣詞或台灣官方來源 → `taiwan`；科技詞或有科技版來源 → `tech`；
-  素材全是繁體中文（台灣媒體）且沒有國際詞 → `taiwan`；其餘 → `world`。
+- `finance` → 依序：台灣詞或台灣官方來源 → `taiwan`；科技詞 → `tech`；一半以上標題有政治詞
+  （選舉、國會）→ `world`；有科技版來源 → `tech`；素材全是繁體中文（台灣媒體）且沒有國際詞、
+  或有台灣上市櫃公司名 → `taiwan`；其餘 → `world`。
 - `life_env`（`society_sections`）的教育、社會類（E14）：社會詞＋（台灣詞、台灣官方來源或全是繁中）→ `taiwan`。
 - 其他版（科學、生活、文化、體育）不改，只由 `select_briefs` 挑去頭版當標題短訊，不呼叫 LLM。
 
@@ -71,7 +72,9 @@ class Terms:
 class SectionRules:
     taiwan: Terms
     tech: Terms
+    politics: Terms
     world_finance: Terms
+    taiwan_company: Terms
     society: Terms
     tech_source_sections: frozenset[str]
     society_sections: frozenset[str]
@@ -83,7 +86,9 @@ def load_section_rules(path: str | Path = DEFAULT_RULES_PATH) -> SectionRules:
     return SectionRules(
         taiwan=Terms.build(data.get("taiwan_terms")),
         tech=Terms.build(data.get("tech_terms")),
+        politics=Terms.build(data.get("politics_terms")),
         world_finance=Terms.build(data.get("world_finance_terms")),
+        taiwan_company=Terms.build(data.get("taiwan_company_terms")),
         society=Terms.build(data.get("society_terms")),
         tech_source_sections=frozenset(data.get("tech_source_sections", [])),
         society_sections=frozenset(data.get("society_sections", [])),
@@ -114,11 +119,17 @@ def classify(section: str, members: Members, rules: SectionRules) -> tuple[str, 
         tech_hits = rules.tech.hits(members.titles)
         if tech_hits:
             return "tech", f"財經→科技：科技詞 {'、'.join(tech_hits[:3])}"
+        politics = [t for t in members.titles if rules.politics.hits([t])]
+        if members.titles and 2 * len(politics) >= len(members.titles):
+            return "world", f"財經→國際：政治詞 {'、'.join(rules.politics.hits(politics)[:3])}"
         if members.source_sections & rules.tech_source_sections:
             return "tech", "財經→科技：有科技版來源"
         world_hits = rules.world_finance.hits(members.titles)
         if domestic and not world_hits:
             return "taiwan", "財經→台灣：台灣媒體的中文財經稿、沒有國際詞"
+        company_hits = rules.taiwan_company.hits(members.titles)
+        if domestic and company_hits:
+            return "taiwan", f"財經→台灣：台灣上市櫃公司 {'、'.join(company_hits[:3])}"
         return "world", f"財經→國際：{'國際詞 ' + '、'.join(world_hits[:3]) if world_hits else '外文來源'}"
     if section in rules.society_sections:
         society_hits = rules.society.hits(members.titles)

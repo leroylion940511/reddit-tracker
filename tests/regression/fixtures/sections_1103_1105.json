@@ -1,0 +1,294 @@
+[
+ {
+  "edition_date": "2026-11-05",
+  "cluster_id": 27015,
+  "section": "finance",
+  "title": "Texas Senate candidates Paxton and Talarico make final appeals",
+  "expected": "world",
+  "note": "Talarico 贏得德州聯邦參議員（MAS story 21812 誤入科技版：theverge 一篇讓財經事件判科技）",
+  "production_rule": "財經→科技：有科技版來源",
+  "items": [
+   {
+    "id": 47924,
+    "source_id": "aljazeera",
+    "section": "world",
+    "tier": "T2",
+    "lang": "en",
+    "title": "Texas Senate candidates Paxton and Talarico make final appeals"
+   },
+   {
+    "id": 54558,
+    "source_id": "guardian-world",
+    "section": "world",
+    "tier": "T2",
+    "lang": "en",
+    "title": "James Talarico wins Texas Senate race in historic victory for Democrats"
+   },
+   {
+    "id": 54568,
+    "source_id": "aljazeera",
+    "section": "world",
+    "tier": "T2",
+    "lang": "en",
+    "title": "Talarico wins Texas Senate race, ending decades of Republican dominance"
+   },
+   {
+    "id": 55566,
+    "source_id": "ft-home",
+    "section": "finance",
+    "tier": "T2",
+    "lang": "en",
+    "title": "James Talarico’s historic Texas Senate victory deals blow to Elon Musk"
+   },
+   {
+    "id": 55812,
+    "source_id": "bbc-world",
+    "section": "world",
+    "tier": "T2",
+    "lang": "en",
+    "title": "James Talarico becomes first Democrat to win Texas Senate seat since 1988"
+   },
+   {
+    "id": 56221,
+    "source_id": "aljazeera",
+    "section": "world",
+    "tier": "T2",
+    "lang": "en",
+    "title": "Republicans fuming after Democrat Talarico flips Texas Senate blue"
+   },
+   {
+    "id": 56228,
+    "source_id": "aljazeera",
+    "section": "world",
+    "tier": "T2",
+    "lang": "en",
+    "title": "‘We defeated Goliath’: Texas Democrat James Talarico wins Senate seat"
+   },
+   {
+    "id": 57930,
+    "source_id": "bbc-business",
+    "section": "finance",
+    "tier": "T2",
+    "lang": "en",
+    "title": "Elon Musk's millions fail to deliver Texas for the Republicans in fierce midterms"
+   },
+   {
+    "id": 58156,
+    "source_id": "yahoo-finance",
+    "section": "finance",
+    "tier": "T2",
+    "lang": "en",
+    "title": "Elon Musk's business empire braces for Democratic wave as Texas flips blue"
+   },
+   {
+    "id": 58444,
+    "source_id": "theverge",
+    "section": "tech",
+    "tier": "T2",
+    "lang": "en",
+    "title": "Not even $200 million could help Elon Musk buy Texas"
+   },
+   {
+    "id": 63182,
+    "source_id": "bbc-business",
+    "section": "finance",
+    "tier": "T2",
+    "lang": "en",
+    "title": "Elon Musk's millions failed to deliver Republican wins in fierce midterms"
+   }
+  ]
+ },
+ {
+  "edition_date": "2026-11-04",
+  "cluster_id": 27715,
+  "section": "finance",
+  "title": "環球晶發5億美元可轉債美光全額認購 深化10年合作",
+  "expected": "taiwan",
+  "note": "環球晶私募可轉債（MAS story 16047 誤入國際版：國際詞「美元」）",
+  "production_rule": "財經→國際：國際詞 美元",
+  "items": [
+   {
+    "id": 49151,
+    "source_id": "cna-stock",
+    "section": "finance",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "環球晶發5億美元可轉債美光全額認購 深化10年合作"
+   },
+   {
+    "id": 49185,
+    "source_id": "udn-money",
+    "section": "finance",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "環球晶發5億美元可轉債美光全額認購　深化10年合作"
+   },
+   {
+    "id": 50754,
+    "source_id": "ltn-business",
+    "section": "finance",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "環球晶擬發5億美元私募可轉債  美光全額認購"
+   },
+   {
+    "id": 51188,
+    "source_id": "yahoo-tw-stock",
+    "section": "finance",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "環球晶擬發行5億美元私募可轉債 美光全數認購"
+   },
+   {
+    "id": 51466,
+    "source_id": "yahoo-tw-stock",
+    "section": "finance",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "美光砸160億元包下可轉債 環球晶前3季賺15元產能全滿明年掀漲價潮"
+   },
+   {
+    "id": 52514,
+    "source_id": "udn-money",
+    "section": "finance",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "環球晶 163 億私募 美光全認 董座徐秀蘭：本季動能比預期好"
+   }
+  ]
+ },
+ {
+  "edition_date": "2026-11-04",
+  "cluster_id": 27729,
+  "section": "finance",
+  "title": "環球晶前3季每股賺15元、逼近去年全年 上半年擬配息6元",
+  "expected": "taiwan",
+  "note": "環球晶前三季財報（MAS story 16049 誤入國際版：國際詞「美國」）",
+  "production_rule": "財經→國際：國際詞 美國",
+  "items": [
+   {
+    "id": 49162,
+    "source_id": "ltn-business",
+    "section": "finance",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "環球晶前3季每股賺15元、逼近去年全年 上半年擬配息6元"
+   },
+   {
+    "id": 51189,
+    "source_id": "yahoo-tw-stock",
+    "section": "finance",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "〈環球晶法說〉前三季EPS 15元、上半年擬配息6元 美國12吋SOI需求超預期評估再擴產"
+   },
+   {
+    "id": 51952,
+    "source_id": "storm",
+    "section": "taiwan",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "環球晶前三季EPS 15元、上半年擬配6元！義大利火災影響Q3，徐秀蘭看Q4改善"
+   },
+   {
+    "id": 52515,
+    "source_id": "udn-money",
+    "section": "finance",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "環球晶 Q3 獲利減六成 EPS 3.13 元"
+   }
+  ]
+ },
+ {
+  "edition_date": "2026-11-03",
+  "cluster_id": 22768,
+  "section": "finance",
+  "title": "勞動基金前9月狂賺2.4兆！ 新制勞退平均每人分紅逾13萬",
+  "expected": "taiwan",
+  "note": "勞動基金前9月賺2.44兆（MAS story 11646 誤入科技版：一篇標題有「AI」）",
+  "production_rule": "財經→科技：科技詞 AI",
+  "items": [
+   {
+    "id": 41368,
+    "source_id": "yahoo-tw-stock",
+    "section": "finance",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "勞動基金9月再賺1178億元！新制勞退平均分紅衝破13萬元"
+   },
+   {
+    "id": 41621,
+    "source_id": "rti-news",
+    "section": "taiwan",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "[財經] 勞動基金前9月賺2.44兆元 收益率30.73%"
+   },
+   {
+    "id": 41660,
+    "source_id": "ltn-business",
+    "section": "finance",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "勞動基金前9月大賺逾2.4兆 收益率衝破30％"
+   },
+   {
+    "id": 41694,
+    "source_id": "yahoo-tw-stock",
+    "section": "finance",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "勞動基金前9月賺2.44兆元 收益率30.73%"
+   },
+   {
+    "id": 41699,
+    "source_id": "yahoo-tw-stock",
+    "section": "finance",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "〈勞動基金績效〉前9月收益率30%！新制勞退分紅創紀錄 1310萬戶均領13萬元"
+   },
+   {
+    "id": 42898,
+    "source_id": "cna-life",
+    "section": "life_env",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "勞動基金9月賺1178億 前9月收益2.4兆元"
+   },
+   {
+    "id": 43270,
+    "source_id": "cna-headlines",
+    "section": "taiwan",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "勞動基金9月賺1178億 前9月收益2.4兆元"
+   },
+   {
+    "id": 43411,
+    "source_id": "setn",
+    "section": "taiwan",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "勞動基金前9月狂賺2.4兆！ 新制勞退平均每人分紅逾13萬"
+   },
+   {
+    "id": 44203,
+    "source_id": "yahoo-tw-stock",
+    "section": "finance",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "AI太強勁! 勞動基金前9月大賺2.44兆 勞工分紅13萬創紀錄"
+   },
+   {
+    "id": 45987,
+    "source_id": "yahoo-tw-stock",
+    "section": "finance",
+    "tier": "T2",
+    "lang": "zh-Hant",
+    "title": "勞動基金前9月賺2.44兆　勞工分紅首破13萬元"
+   }
+  ]
+ }
+]

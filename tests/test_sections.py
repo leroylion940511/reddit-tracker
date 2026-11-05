@@ -209,3 +209,43 @@ def test_select_never_exceeds_twelve_or_writes_front_twice():
     selections = select_articles(scored)
     assert len(selections) == 12 and sum(s.is_front for s in selections) == 6
     assert len({s.cluster.cluster_id for s in selections}) == 12
+
+
+# ── 2026-11-03～11-05 分錯版的三則（production 複本匯出，fixtures/sections_1103_1105.json）──────
+
+
+def _production_cases():
+    import json
+    from pathlib import Path
+
+    path = Path(__file__).parent / "regression" / "fixtures" / "sections_1103_1105.json"
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize("case", _production_cases(), ids=lambda c: f"{c['edition_date']}-{c['cluster_id']}")
+def test_misplaced_production_stories_get_sensible_sections(session, case):
+    """11/05 Talarico 選舉（科技→國際）、11/04 環球晶兩則（國際→台灣）、11/03 勞動基金（科技→台灣）。
+
+    用線上登錄表＋事件全部成員重跑 `rewrite_sections`；`production_rule` 是當天的錯誤判斷。"""
+    from reddit_tracker.config import get_settings
+    from reddit_tracker.seeds.news_sources import load_registry
+
+    registry = load_registry(get_settings().news_sources_path)
+    for item in case["items"]:
+        session.add(SourceItem(
+            id=item["id"], source_id=item["source_id"], section=item["section"], tier=item["tier"],
+            item_key=str(item["id"]), url=f"https://example.com/{item['id']}", canonical_url=f"https://example.com/{item['id']}",
+            title=item["title"], lang=item["lang"], cluster_id=case["cluster_id"],
+            first_seen_at=NOW, published_at=NOW,
+        ))
+    session.flush()
+    scored = [ScoredCluster(case["cluster_id"], case["section"], "report", 10.0, {}, [])]
+    [result] = rewrite_sections(session, scored, registry=registry)
+    assert result.section == case["expected"], (result.signals.get("section_rule"), case["production_rule"])
+    assert result.signals["section_rule"] != case["production_rule"]
+
+
+def test_politics_rule_does_not_steal_plain_tech_or_taiwan_finance():
+    assert classify("finance", _m("Musk's xAI raises $20bn for data centers", langs=("en",)), RULES)[0] == "tech"
+    assert classify("finance", _m("立法院三讀 台股收盤"), RULES)[0] == "taiwan"
+    assert classify("finance", _m("Republicans push tariff bill as stocks slide", langs=("en",)), RULES)[0] == "world"

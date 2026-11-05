@@ -48,9 +48,12 @@ score = 10·log2(1 + outlet_count)
   | --- | --- | --- |
   | `cross_strait` | 標題有台灣詞（台灣、陸委會、國台辦、立法院、台股、Taiwan…），或有台灣官方來源（登錄表 taiwan 版的 T1） | `taiwan` |
   | | 其他 | `world` |
-  | `finance` | 台灣詞或台灣官方來源 | `taiwan` |
-  | | 科技詞（晶片、輝達、微軟、AI、Microsoft、SpaceX…），或事件裡有登錄表科技版的來源 | `tech` |
+  | `finance` | 台灣詞或台灣官方來源（台灣詞含勞動基金、勞退、勞保、國安基金） | `taiwan` |
+  | | 科技詞（晶片、輝達、微軟、AI、Microsoft、SpaceX…） | `tech` |
+  | | 一半以上的標題有政治詞（選舉、參議員、國會、民主黨、Senate、midterms…；2026-11-06 加） | `world` |
+  | | 事件裡有登錄表科技版的來源 | `tech` |
   | | 素材全是 `zh-Hant`（台灣媒體），而且沒有國際詞（美股、美國、歐盟、中國…） | `taiwan` |
+  | | 素材全是 `zh-Hant`，有台灣上市櫃公司名（`taiwan_company_terms`：環球晶、日月光、中信金…；2026-11-06 加） | `taiwan` |
   | | 其他（外文來源或有國際詞） | `world` |
   | `life_env`（`society_sections`） | 教育、社會詞（教育部、學校、警方、地檢署、詐騙…），而且有台灣詞、台灣官方來源，或全是 `zh-Hant`（E14） | `taiwan` |
   | 其他版（科學、生活、文化、體育） | 不改 | 只出頭版標題短訊 |
