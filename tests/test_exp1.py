@@ -219,6 +219,27 @@ def test_annotation_export_has_no_leaking_columns(tmp_path):
     assert wb["dev"]["A2"].value == "D417"
 
 
+def test_xlsx_strips_control_characters_but_csv_and_rows_are_unchanged(tmp_path):
+    items = {
+        1: _item(1, "台北市長號次抽籤\x08", summary="抽籤結果\x01出爐\x1f"),
+        2: _item(2, "Taipei mayoral ballot draw", lang="en", summary="ok", seen=T0 + timedelta(hours=1)),
+    }
+    pair = Pair(1, 2, "dev", "cross", True, False, 0.5, stratum="only_a")
+    rows = exp1.annotation_rows([pair], items, {pair.key: "D001"}, random.Random(0))
+    before = [list(r) for r in rows]
+    assert any("\x01" in c for c in rows[0])
+
+    exp1.write_csv(tmp_path / "a.csv", rows)
+    exp1.write_xlsx(tmp_path / "a.xlsx", {"dev": rows}, exp1.INSTRUCTIONS)
+    assert rows == before
+    with (tmp_path / "a.csv").open(encoding="utf-8-sig", newline="") as fh:
+        assert list(csv.reader(fh))[1] == before[0]
+    from openpyxl import load_workbook
+
+    values = [c.value for c in load_workbook(tmp_path / "a.xlsx")["dev"][2]]
+    assert "台北市長號次抽籤" in values and "抽籤結果出爐" in values
+
+
 def test_annotation_rows_are_shuffled_reproducibly():
     items = {i: _item(i, f"title {i}") for i in range(1, 41)}
     pairs = [Pair(i, i + 1, "dev", "same", False, False, 0.2, stratum="neither") for i in range(1, 40, 2)]
