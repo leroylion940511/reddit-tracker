@@ -247,6 +247,10 @@ uv run python -m reddit_tracker.daily hold --date YYYY-MM-DD --story ID --by 名
 uv run python -m reddit_tracker.daily blind-export --dates YYYY-MM-DD --out DIR
 ```
 
+`approve`／`hold`（CLI 與回放頁 decision 路由）commit 後會用 `run.refresh_edition_html` 重畫這期的
+`site/daily/YYYY-MM-DD.html`：已發行的期數照發行規則（核准的出全文、其餘「未核准」），草稿照 06:00 預覽；
+**不會重送 Telegram**。重畫失敗只記 log，核准不受影響。
+
 `--now`（手冊步驟 3 第 8 點）：把「現在」固定在某個時間，評分、選題時間窗、證據包相關性的當天素材、
 版次 `prepared_at` 都用它；加 `--recluster` 時先用**同一個** `now` 聚合一輪。沒給 `--date` 時出刊日＝`now` 的台北日期。
 重編 10/27：`DATABASE_URL=sqlite:///data/work/1027_rebuild.db … prepare --now 2026-10-27T06:00 --recluster --refresh`；

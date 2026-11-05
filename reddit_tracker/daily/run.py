@@ -534,7 +534,7 @@ def _finish_mas(
     return edition.id
 
 
-def _publication_view(session, edition: DailyEdition, sections: dict, mode: str):
+def _publication_view(session, edition: DailyEdition, sections: dict, mode: str, *, for_publish: bool = True):
     variant = MAS if mode == MAS else PIPELINE
     try:
         return build_edition_view(
@@ -545,10 +545,50 @@ def _publication_view(session, edition: DailyEdition, sections: dict, mode: str)
             market=(edition.stats or {}).get("market"),
             stats=edition.stats,
             published_at=edition.published_at,
-            for_publish=mode == MAS,
+            for_publish=for_publish and mode == MAS,
         )
     except LookupError:
         return view_from_edition(edition, sections)
+
+
+PUBLISHED_STATES = ("publishing", "published", "delivery_failed")
+
+
+def refresh_edition_html(session, edition_date: date) -> Path | None:
+    """核准／HOLD 改變後重畫這期的網頁版（`site/daily/YYYY-MM-DD.html`），不送 Telegram。
+
+    發行時沒核准的稿印成「未核准，本期不發行全文。」；2026-11-01 下午補核准後網頁沒重畫，
+    還是寫未核准。已發行（或發行中、投遞失敗）的期數照發行規則重畫：核准的出全文。還沒發行的
+    草稿照 06:00 準備時的預覽重畫（全文、不標核准狀態），發行時才套核准關卡。沒有這期就回 None。
+    """
+    edition = session.scalar(select(DailyEdition).where(DailyEdition.edition_date == edition_date))
+    if edition is None:
+        return None
+    settings = get_settings()
+    registry = load_registry(settings.news_sources_path)
+    mode = (edition.stats or {}).get("run_variant") or _mode(None)
+    view = _publication_view(session, edition, registry.sections, mode, for_publish=edition.status in PUBLISHED_STATES)
+    if edition.html_path:
+        path = Path(edition.html_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(render_html(view), encoding="utf-8")
+    else:
+        path = _write_edition_html(settings.daily_site_dir, edition_date, view)
+        edition.html_path = str(path)
+        session.flush()
+    write_history_index(path.parent)
+    logger.info("daily edition %s html refreshed after review decision: %s", edition_date, path)
+    return path
+
+
+def refresh_after_review(edition_date: date, *, scope=None) -> Path | None:
+    """核准／HOLD 已 commit 之後才重畫，重畫失敗只記 log，不會把核准一起 rollback。"""
+    try:
+        with (scope or session_scope)() as session:
+            return refresh_edition_html(session, edition_date)
+    except Exception:  # noqa: BLE001 — 網頁沒重畫可以手動重跑，核准不能丟
+        logger.exception("daily edition %s html refresh failed", edition_date)
+        return None
 
 
 def prepare_daily(
@@ -893,6 +933,8 @@ def main(argv: list[str] | None = None) -> int:
         with session_scope() as session:
             row = approve_story(session, args.story, by=args.by, now=datetime.now(timezone.utc))
             print(f"story={row.story_id} v{row.version} status={row.status} approved_by={row.approved_by}")
+            story_date = session.get(Story, args.story).edition_date
+        print(f"html={refresh_after_review(story_date)}（不重送 Telegram）")
         return 0
     if args.command == "hold":
         from .mas.protocol import post_message
@@ -905,6 +947,8 @@ def main(argv: list[str] | None = None) -> int:
             )
             row = hold_story(session, args.story)
             print(f"story={row.story_id} v{row.version} status={row.status}")
+            story_date = session.get(Story, args.story).edition_date
+        print(f"html={refresh_after_review(story_date)}（不重送 Telegram）")
         return 0
     if args.command == "blind-export":
         days = [date.fromisoformat(part) for part in args.dates.split(",") if part]

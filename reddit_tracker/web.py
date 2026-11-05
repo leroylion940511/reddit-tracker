@@ -77,6 +77,9 @@ def newsroom_decision(
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    from .daily.run import refresh_after_review
+
+    refresh_after_review(edition_date, scope=session_scope)  # 網頁版跟著核准狀態重畫，不重送 Telegram
     return RedirectResponse(f"/daily/{edition_date.isoformat()}/newsroom?variant={variant}&story={story_id}", status_code=303)
 
 

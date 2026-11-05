@@ -520,6 +520,85 @@ def test_approval_gate_withholds_until_human(session, monkeypatch, tmp_path):
     assert len(sent) == 1 and "秘密正文" in sent[0]
 
 
+def test_late_approval_rerenders_site_html_without_resend(session, monkeypatch, tmp_path):
+    """2026-11-01：08:35 發行後下午才核准，site/daily/2026-11-01.html 仍寫「未核准」。
+    核准／HOLD 之後要重畫網頁版，但不能再送 Telegram。"""
+    story = _story(session, 1)
+    write_story_version(
+        session, story_id=story.id, run_variant=MAS, expected_latest=0,
+        headline="待審標題", body="這是發行後才核准的正文。", now=NOW, status="checked",
+    )
+    add_page_plan(
+        session, edition_date=DAY, run_variant=MAS,
+        slots={"front": {"lead": story.id, "second": [], "briefs": []}, "sections": {}}, now=NOW,
+    )
+    html_path = tmp_path / "2026-10-27.html"
+    session.add(DailyEdition(
+        edition_date=DAY, status="drafted", writer="mas", created_at=NOW, updated_at=NOW,
+        prepared_at=NOW, window_start=NOW, html_path=str(html_path), stats={"run_variant": MAS},
+    ))
+    session.flush()
+    sent = []
+
+    async def fake_send(token, chat_id, text, path, filename):
+        sent.append(text)
+        return [7]
+
+    @contextmanager
+    def scope():
+        yield session
+        session.commit()
+
+    settings = SimpleNamespace(
+        daily_mode="mas", telegram_bot_token="t", telegram_chat_id="9", log_level="WARNING",
+        news_sources_path="unused", daily_site_dir=str(tmp_path), newsroom_delivery_timezone="Asia/Taipei",
+    )
+    monkeypatch.setattr(run_module, "session_scope", scope)
+    monkeypatch.setattr(run_module, "get_settings", lambda: settings)
+    monkeypatch.setattr(run_module, "load_registry", lambda path: _registry())
+    monkeypatch.setattr(run_module, "_send", fake_send)
+    run_module.publish_daily(DAY, now=NOW)
+    assert "未核准，本期不發行全文" in html_path.read_text(encoding="utf-8")
+
+    assert run_module.main(["approve", "--story", str(story.id), "--by", "張志晨"]) == 0
+    page = html_path.read_text(encoding="utf-8")
+    assert "發行後才核准的正文" in page and "未核准" not in page
+    assert (tmp_path / "index.html").exists()
+
+    assert run_module.main(["hold", "--story", str(story.id), "--date", DAY.isoformat(), "--by", "張志晨"]) == 0
+    page = html_path.read_text(encoding="utf-8")
+    assert "未核准，本期不發行全文" in page and "發行後才核准的正文" not in page
+    assert len(sent) == 1  # 只有 08:35 那次；核准／HOLD 不重送
+    assert session.scalar(select(DailyEdition.status)) == "published"
+
+
+def test_approval_before_publish_keeps_draft_preview(session, monkeypatch, tmp_path):
+    """還沒發行的草稿：重畫照 06:00 預覽（全文），發行時才套核准關卡。"""
+    story = _story(session, 1)
+    write_story_version(
+        session, story_id=story.id, run_variant=MAS, expected_latest=0,
+        headline="待審標題", body="草稿預覽正文。", now=NOW, status="checked",
+    )
+    add_page_plan(
+        session, edition_date=DAY, run_variant=MAS,
+        slots={"front": {"lead": story.id, "second": [], "briefs": []}, "sections": {}}, now=NOW,
+    )
+    session.add(DailyEdition(
+        edition_date=DAY, status="drafted", writer="mas", created_at=NOW, updated_at=NOW,
+        prepared_at=NOW, window_start=NOW, html_path=None, stats={"run_variant": MAS},
+    ))
+    session.flush()
+    monkeypatch.setattr(run_module, "get_settings", lambda: SimpleNamespace(
+        daily_mode="mas", news_sources_path="unused", daily_site_dir=str(tmp_path),
+    ))
+    monkeypatch.setattr(run_module, "load_registry", lambda path: _registry())
+    path = run_module.refresh_edition_html(session, DAY)
+    assert path == tmp_path / "2026-10-27.html"
+    assert "草稿預覽正文" in path.read_text(encoding="utf-8")
+    assert session.scalar(select(DailyEdition.html_path)) == str(path)
+    assert run_module.refresh_edition_html(session, date(2026, 10, 28)) is None
+
+
 def test_mas_publish_without_edition_fails(session, monkeypatch):
     @contextmanager
     def scope():
