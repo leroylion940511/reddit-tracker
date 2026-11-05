@@ -584,6 +584,13 @@ def write_csv(path: Path, rows: list[list[str]]) -> None:
         writer.writerows(rows)
 
 
+def _xlsx_safe(value):
+    """openpyxl 拒收的控制字元（ILLEGAL_CHARACTERS_RE）直接拿掉；只影響 xlsx，CSV 不變。"""
+    from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
+
+    return ILLEGAL_CHARACTERS_RE.sub("", value) if isinstance(value, str) else value
+
+
 def write_xlsx(path: Path, sheets: dict[str, list[list[str]]], instructions: list[str]) -> None:
     from openpyxl import Workbook
     from openpyxl.styles import Alignment, Font
@@ -593,7 +600,7 @@ def write_xlsx(path: Path, sheets: dict[str, list[list[str]]], instructions: lis
     info = wb.active
     info.title = "說明"
     for line in instructions:
-        info.append([line])
+        info.append([_xlsx_safe(line)])
     info.column_dimensions["A"].width = 110
     widths = (8, 40, 60, 17, 40, 60, 17, 10, 30)
     for name, rows in sheets.items():
@@ -602,7 +609,7 @@ def write_xlsx(path: Path, sheets: dict[str, list[list[str]]], instructions: lis
         for cell in ws[1]:
             cell.font = Font(bold=True)
         for row in rows:
-            ws.append(row)
+            ws.append([_xlsx_safe(v) for v in row])
         for col, width in zip("ABCDEFGHI", widths):
             ws.column_dimensions[col].width = width
         for row in ws.iter_rows(min_row=2):
