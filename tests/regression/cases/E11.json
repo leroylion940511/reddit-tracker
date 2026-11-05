@@ -15,6 +15,6 @@
   "expected": "標題不得把「2027 年審查」寫成「2027 年申請 FDA」",
   "due": "2026-11-15",
   "xfail": {
-    "headline_must_not_match": "文稿編輯尚未實作（步驟 9）；尚無錄好的 LLM 回應（步驟 7 建 llm_records 後錄製 fixtures/1027_llm_records.json）"
+    "headline_must_not_match": "2026-11-06 狀態：文稿編輯（M 組 copy_editor）與 llm_records 都已實作；但離線重編 10/27（P 組）時莫德納稿（MarketWatch 單一來源，聚合變嚴後自成一則、改判 world）沒入選，條件不適用，pytest 實際回報 skip、不是 xfail。要驗證得在 data/work 複本用真 Codex 讓這則走 M 組記者→查核→文稿編輯（約 3–5 次）錄音、匯出 fixture，另寫重播測試檢查標題；不錄音就只能在 11/15 前拿掉 xfail 並註明不適用"
   }
 }
