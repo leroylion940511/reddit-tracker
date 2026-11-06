@@ -1,0 +1,64 @@
+{
+ "case_id": "E11",
+ "anchor_item_id": 2736,
+ "anchor_title": "The excitement around Moderna’s cancer vaccine is cooling. Here’s why.",
+ "cluster_id": 1803,
+ "member_ids": [
+  2736
+ ],
+ "section": "world",
+ "kind": "single_source",
+ "original_section": "finance",
+ "section_rule": "財經→國際：外文來源",
+ "source_ids": [
+  "marketwatch-top"
+ ],
+ "stat_item_id": 3875,
+ "stat_same_cluster": false,
+ "spec": {
+  "keeper_cluster_id": 1803,
+  "merged_cluster_ids": [],
+  "section": "world",
+  "kind": "single_source",
+  "score": 0,
+  "evidence_item_ids": [
+   2736
+  ],
+  "anchor_item_id": 2736
+ },
+ "evidence": [
+  {
+   "outlet": "marketwatch.com",
+   "source_id": "marketwatch-top",
+   "source_name": "MarketWatch",
+   "tier": "T2",
+   "lang": "en",
+   "title": "The excitement around Moderna’s cancer vaccine is cooling. Here’s why.",
+   "summary": "Investors had “incredibly high” expectations around the Phase 3 data for the drugmaker’s experimental cancer treatment.",
+   "url": "https://www.marketwatch.com/story/the-excitement-around-modernas-cancer-vaccine-is-cooling-heres-why-994b205f?mod=mw_rss_topstories",
+   "published_at": "2026-10-26T21:50+08:00",
+   "reprinted_by": [],
+   "item_id": 2736
+  }
+ ],
+ "source_items": [
+  {
+   "id": 2736,
+   "source_id": "marketwatch-top",
+   "section": "finance",
+   "tier": "T2",
+   "item_key": "2736",
+   "url": "https://www.marketwatch.com/story/the-excitement-around-modernas-cancer-vaccine-is-cooling-heres-why-994b205f?mod=mw_rss_topstories",
+   "canonical_url": "https://marketwatch.com/story/the-excitement-around-modernas-cancer-vaccine-is-cooling-heres-why-994b205f?mod=mw_rss_topstories",
+   "title": "The excitement around Moderna’s cancer vaccine is cooling. Here’s why.",
+   "summary": "Investors had “incredibly high” expectations around the Phase 3 data for the drugmaker’s experimental cancer treatment.",
+   "lang": "en",
+   "published_at": "2026-10-26T13:50:00",
+   "published_at_estimated": false,
+   "first_seen_at": "2026-10-26T14:42:16.366666",
+   "title_fingerprint": "d849d4f4c9f010e36faef6c7c84ef9fc1fd346b0",
+   "duplicate_of_id": null
+  }
+ ],
+ "note": "MarketWatch item 2736 自成 cluster 1803，分版 finance→world（財經→國際：外文來源）。STAT item 3875（刊出稿的另一家，摘要才有 2027 FDA）在 cluster 1776，不併進這包證據。"
+}
