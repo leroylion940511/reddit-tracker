@@ -279,3 +279,4 @@ uv run python -m reddit_tracker.daily blind-export --dates YYYY-MM-DD --out DIR
 - MAS 發行時依最新 page plan 與核准狀態重新渲染，未核准只能印標題短訊。P 影子版只存不發。舊 v5 Reddit 日報程式已移除，沒有雙排程並行。
 - 無人值守檢查使用 `REDDIT_TRACKER_NO_DOTENV=1`，Settings 不開啟 dotenv；不要從 production 取得設定。
 - `scripts/verify_mas_merge.py --stage t2a|mas [--live]` 只用 `data/work` 複本，已有目的 DB 就拒絕覆寫。`--live` 才能呼叫 Codex，固定 `LLM_QUOTA_STATE_PATH=data/work/llm-quota-merge.json`、`LLM_DAILY_LIMIT=40`；先完成回歸重播檢查再執行。T2a 專用證據刻意保留原始 E01 足球來源，正式編採仍先過濾。
+- E11（莫德納，MarketWatch item 2736，單一來源、財經改判國際，重編沒入選）不走整期 MAS。`uv run python scripts/record_e11.py --live` 只把這一則送進記者→（可疑才）查核員→文稿編輯，寫 `data/work/1027_e11.db`，額度檔 `data/work/llm-quota-e11.json`，新的 Codex 呼叫上限 5，不讀 `.env`、不開 production DB。匯出 `tests/regression/fixtures/1027_e11_evidence.json` 與 `1027_e11_records.json`。沒有這兩個檔時 `tests/test_e11_replay.py` skip；`--check` 只重播。
