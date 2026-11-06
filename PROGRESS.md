@@ -5,7 +5,7 @@
 > 2026-10-27 以前的段落是 v4／v5 歷史紀錄，裡面提到的 bot、scrapers、services、v5 newsroom 模組都已移除；v4 的段落已搬到 `docs/archive/PROGRESS_v4.md`。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-06（`fix/newsroom-1106` 未部署，見下節）；上次部署 2026-11-01 18:00（`fix/newsroom-1101`，main `6edfc5e`）
+**Last updated:** 2026-11-06；上次部署 2026-11-06 15:54（`fix/newsroom-1106`，main `f252c8b`，見下節）
 
 ## 下一步（2026-11-06 現況）
 
@@ -14,7 +14,7 @@
 1. 👤 **實驗一交件**（志晨）：快照 `data/snapshots/2026-11-05.db`（11/05 23:25，原訂 11/03），抽樣 commit `5f31fab`，A 100 組／B 30 組、沒有不足的層，見 [`docs/eval/EXP1_SAMPLING.md`](docs/eval/EXP1_SAMPLING.md)「實際執行紀錄」。要做：檢查輸出 → 自己打 `exp1-frozen` → xlsx 交 A、B（`_private/` 不給）。A、B dev 標註 11/07、test 標註 11/12；結果 11/22 前寫進 `docs/eval/`。⚠️ 不要用 `fix/newsroom-1106` 重跑抽樣。
 2. 👤 **請老師確認** `trial-dates.md` 的時程（試刊 11/09–11/15、實驗二 11/17–11/18、11/20 `final-1120`）與用本機 Codex 當 LLM（手冊 6.9 第 1 條要正式 API，模型 11/15 前定案），並告知 A、B。
 3. 👤 **11/08 前**：B 拿到七類錯誤計數練習（老師）。
-4. **部署 `fix/newsroom-1106`**（未部署，內容見下節）：要在 11/09 試刊第一期前。部署前先查 production `.env` 有沒有寫 `CODEX_TIMEOUT_SECONDS`。
+4. 👀 **`fix/newsroom-1106` 已部署（11/06 15:54）**：11/07 06:00 是第一期套用——看準備是否在 `DAILY_PREPARE_DEADLINE` 前結束、分版與來源列是否正確。
 5. **`feat/checker-per-source` 待 review**（查核員逐來源回報；本 worktree 看不到這個分支）：決定要不要在試刊前併入，併入要重錄 `1027_t2a_records.json`（需呼叫 Codex）。
 6. 👤 **E11 xfail 在 11/15 前決定**：錄一次真 Codex 加重播測試，或拿掉 xfail 註明不適用；否則 `test_overdue_cases_are_not_xfail` 11/15 起失敗。
 7. 👤 **試刊 11/09–11/15 每天**：06:00 準備後核准 M 組稿；交 B 盲計資料夾之前用 `scripts/collect_blind_hashes.py --write` 把當天雜湊寫進 `docs/eval/blind_mapping.sha256` 並 commit（步驟見 trial-dates.md）。
@@ -24,15 +24,17 @@
 - ℹ️ `docs/weekly/trial-dates.md` 已寫，`test_three_live_mas_days_and_announced_trial_dates` 會變 XPASS；`blind_mapping.sha256` 還沒有（試刊才有資料）。兩個 xfail 等老師確認時程、第一個雜湊 commit 後再拿掉。
 - ⚠️ 11/04、11/05 M 組稿 08:35 前沒核准，讀者只收到標題短訊；11/06 排定 06:25 由自動化流程核准（志晨授權）。報告照實記。
 
-## fix/newsroom-1106（未部署）
+## fix/newsroom-1106（已部署）
+
+- ✅ **已部署（2026-11-06 15:54 台北）**：`fix/newsroom-1106` fast-forward 併入 production main（`84186b9`→`f252c8b`）並 push origin/main。備份 `~/Documents/Developer/Lab/reddit_tracker_backups/fixes-20261106/`；`uv sync` 後只跑一次 `deploy/install_launchd.sh newsroom-reload`（launchd LastExitStatus 0）。production `.env` 沒寫 `CODEX_TIMEOUT_SECONDS`，新預設 150 秒生效。對 11/01 M 組 5327 v2 重新核准以重畫網頁，**沒有重送 Telegram**。
 
 11/01–11/05 觀察到的五個問題；查證用唯讀複本 `~/Documents/Developer/Lab/rt-data-1106/prod-copy-20261105.db`，沒有呼叫 Codex、沒動 production。細節見 ADAPTATION「11/01–11/05 的五個小修正」。
 
-- ✅ **補核准後重畫網頁**：`daily approve`／`hold`（CLI 與回放頁）commit 後重畫 `site/daily/YYYY-MM-DD.html`（已發行照發行規則、草稿照預覽），**不重送 Telegram**。部署後要讓 11/01 的網頁變對：對當期任一則已核准稿再跑一次 `approve` 即可重畫。
+- ✅ **補核准後重畫網頁**：`daily approve`／`hold`（CLI 與回放頁）commit 後重畫 `site/daily/YYYY-MM-DD.html`（已發行照發行規則、草稿照預覽），**不重送 Telegram**。11/01 的網頁已於部署後用 5327 v2 重新核准重畫。
 - ✅ **分版**：財經改寫加「過半標題有政治詞→國際」（排在科技詞後）、台灣公共基金詞、台灣上市櫃公司名（只蓋過國際詞）。11/05 Talarico→國際、11/04 環球晶兩則→台灣、11/03 勞動基金→台灣。⚠️ 會改到實驗一方法 C 的編輯會議候選池；已正式抽樣的話不要用這版重跑抽樣（用 `84186b9`）。
 - ✅ **來源列同一家兩次**：M 組／page_plans 版面的出處改用證據包同一套名稱（「中央社（Yahoo 股市新聞轉載）」），不再用 `source_id`。
-- ✅ **06:00 準備的上限**（分析）：10/31–11/05 正常時 06:00 開始、06:06 前畫完；成功的呼叫最長 45 秒（P 撰稿），M 角色最長 16 秒。11/05 的兩次 300 秒都是卡住，重試 10 秒就好，整期 06:15 畫完。但修正前沒有整體上限：每次嘗試都可能卡滿逾時，60 格額度最壞約 5 小時。改法：排程的 06:00 準備綁 `DAILY_PREPARE_DEADLINE`（預設 08:20）——每次 Codex 嘗試前檢查，剩不到 20 秒就丟 `DeadlinePassed`（不扣額度、不重試、不開 subprocess），單次逾時不超過剩餘秒數；M 組把過了截止當成額度 0 照既有順序降級（記進 `stats.degraded`），P 撰稿直接退模板稿；P 影子另限 30 分鐘（`DAILY_SHADOW_MAX_MINUTES`），卡住也留時間給 M。`CODEX_TIMEOUT_SECONDS` 預設 300→150。LLM 呼叫因此保證 08:20 前結束，之後只剩寫 DB／畫 HTML（秒級）與行情（20 秒逾時）。codex 版本沒動。⚠️ 若 production `.env` 有寫 `CODEX_TIMEOUT_SECONDS`，會蓋過新預設。手動 `daily prepare`（CLI）不綁截止。
-- ⚠️ **E11（11/15 到期）**：xfail 原因已更新；離線無法驗證（重編版莫德納稿沒入選，pytest 實際回報 skip）。👤 要嘛錄一次真 Codex（M 組記者→查核→文稿編輯，約 3–5 次）並加重播測試，要嘛 11/15 前拿掉 xfail 註明不適用，否則 `test_overdue_cases_are_not_xfail` 會在 11/15 失敗。
+- ✅ **06:00 準備的上限**（分析）：10/31–11/05 正常時 06:00 開始、06:06 前畫完；成功的呼叫最長 45 秒（P 撰稿），M 角色最長 16 秒。11/05 的兩次 300 秒都是卡住，重試 10 秒就好，整期 06:15 畫完。但修正前沒有整體上限：每次嘗試都可能卡滿逾時，60 格額度最壞約 5 小時。改法：排程的 06:00 準備綁 `DAILY_PREPARE_DEADLINE`（預設 08:20）——每次 Codex 嘗試前檢查，剩不到 20 秒就丟 `DeadlinePassed`（不扣額度、不重試、不開 subprocess），單次逾時不超過剩餘秒數；M 組把過了截止當成額度 0 照既有順序降級（記進 `stats.degraded`），P 撰稿直接退模板稿；P 影子另限 30 分鐘（`DAILY_SHADOW_MAX_MINUTES`），卡住也留時間給 M。`CODEX_TIMEOUT_SECONDS` 預設 300→150。LLM 呼叫因此保證 08:20 前結束，之後只剩寫 DB／畫 HTML（秒級）與行情（20 秒逾時）。codex 版本沒動。production `.env` 沒寫 `CODEX_TIMEOUT_SECONDS`（11/06 部署時確認），新預設生效。手動 `daily prepare`（CLI）不綁截止。
+- ⚠️ **E11（11/15 到期）**：xfail 原因已更新；離線無法驗證（重編版莫德納稿沒入選，pytest 實際回報 skip）。👤 要嘛錄一次真 Codex（M 組記者→查核→文稿編輯，約 3–5 次）並加重播測試，要嘛 11/15 前拿掉 xfail 註明不適用，否則 `test_overdue_cases_are_not_xfail` 會在 11/15 失敗。錄製／重播工具與 fixtures 在未併入的 PR [#2](https://github.com/leroylion940511/reddit-tracker/pull/2)（`cursor/e11-recording-replay-0465`，fixture commit `5723517`），main 上還沒有。
 - ✅ 全套 380 passed／7 skipped／2 xfailed（基準 363／7／2）。不需要 migration。
 
 ## 本次變更（2026-11-01 — 10/31、11/01 兩期 M 組問題修正，`fix/newsroom-1101`）
