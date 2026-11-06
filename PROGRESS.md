@@ -5,7 +5,7 @@
 > 2026-10-27 以前的段落是 v4／v5 歷史紀錄，裡面提到的 bot、scrapers、services、v5 newsroom 模組都已移除；v4 的段落已搬到 `docs/archive/PROGRESS_v4.md`。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-06；上次部署 2026-11-06 15:54（`fix/newsroom-1106`，main `f252c8b`，見下節）
+**Last updated:** 2026-11-06（E11 錄音入口已接上）；上次部署 2026-11-06 15:54（`fix/newsroom-1106`，main `f252c8b`，見下節）
 
 ## 下一步（2026-11-06 現況）
 
@@ -16,13 +16,21 @@
 3. 👤 **11/08 前**：B 拿到七類錯誤計數練習（老師）。
 4. 👀 **`fix/newsroom-1106` 已部署（11/06 15:54）**：11/07 06:00 是第一期套用——看準備是否在 `DAILY_PREPARE_DEADLINE` 前結束、分版與來源列是否正確。
 5. **`feat/checker-per-source` 待 review**（查核員逐來源回報；本 worktree 看不到這個分支）：決定要不要在試刊前併入，併入要重錄 `1027_t2a_records.json`（需呼叫 Codex）。
-6. 👤 **E11 xfail 在 11/15 前決定**：錄一次真 Codex 加重播測試，或拿掉 xfail 註明不適用；否則 `test_overdue_cases_are_not_xfail` 11/15 起失敗。
+6. 👤 **E11 錄音**（11/15 前）：入口是 `uv run python scripts/record_e11.py --live`（Mac，只寫 `data/work/1027_e11.db`，額度檔 `data/work/llm-quota-e11.json`，上限 5 次 Codex，不讀 `.env`）。錄完 commit `1027_e11_evidence.json` 與 `1027_e11_records.json`，`tests/test_e11_replay.py` 才會離線重播；在那之前該測試 skip，回歸 xfail 維持。不要只拿掉 xfail。否則 `test_overdue_cases_are_not_xfail` 11/15 起失敗。
 7. 👤 **試刊 11/09–11/15 每天**：06:00 準備後核准 M 組稿；交 B 盲計資料夾之前用 `scripts/collect_blind_hashes.py --write` 把當天雜湊寫進 `docs/eval/blind_mapping.sha256` 並 commit（步驟見 trial-dates.md）。
 8. 實驗二 11/17–11/18（A 11/17 中午前選 15 篇正常稿）。
 9. 11/20 打 `final-1120` 功能凍結；之前不要 `brew upgrade codex`。
 
 - ℹ️ `docs/weekly/trial-dates.md` 已寫，`test_three_live_mas_days_and_announced_trial_dates` 會變 XPASS；`blind_mapping.sha256` 還沒有（試刊才有資料）。兩個 xfail 等老師確認時程、第一個雜湊 commit 後再拿掉。
 - ⚠️ 11/04、11/05 M 組稿 08:35 前沒核准，讀者只收到標題短訊；11/06 排定 06:25 由自動化流程核准（志晨授權）。報告照實記。
+
+## 本次變更（2026-11-06 — E11 錄音入口）
+
+- ✅ `scripts/record_e11.py`：只處理回歸重編沒入選的莫德納稿（MarketWatch item 2736，單一來源，財經改判 world）。`--live` 在 `data/work/1027_e11.db` 走 M 組記者→（可疑才）查核→文稿編輯，新的 Codex 呼叫上限 5，額度檔 `data/work/llm-quota-e11.json`。不讀 `.env`、不開 production DB。匯出 `tests/regression/fixtures/1027_e11_evidence.json` 與 `1027_e11_records.json`。
+- ✅ `tests/test_e11_replay.py`：沒有這兩個 fixture 就 skip；有了才用 `request_hash` 離線重播並套 `headline_must_not_match`。pytest 不呼叫 Codex。
+- ⚠️ STAT item 3875（刊出稿的另一家，摘要才有 “expected in 2027”）現在是另一個 cluster，這次錄音不併回去。回歸集 E11 的 xfail／重編 skip 維持，直到 Mac 錄完再決定要不要拿掉 xfail。
+- 👤 Mac：`uv run python scripts/record_e11.py --live`，然後 `--check`。重錄前刪 `data/work/1027_e11.db`、`data/work/llm-quota-e11.json` 與兩個 fixture。
+- ✅ 離線全套 391 passed／8 skipped／1 xfailed／1 xpassed。多出來的 skip 是還沒錄的 E11 重播；回歸條件本身仍 skip，xfail 還在。
 
 ## fix/newsroom-1106（已部署）
 
@@ -34,7 +42,7 @@
 - ✅ **分版**：財經改寫加「過半標題有政治詞→國際」（排在科技詞後）、台灣公共基金詞、台灣上市櫃公司名（只蓋過國際詞）。11/05 Talarico→國際、11/04 環球晶兩則→台灣、11/03 勞動基金→台灣。⚠️ 會改到實驗一方法 C 的編輯會議候選池；已正式抽樣的話不要用這版重跑抽樣（用 `84186b9`）。
 - ✅ **來源列同一家兩次**：M 組／page_plans 版面的出處改用證據包同一套名稱（「中央社（Yahoo 股市新聞轉載）」），不再用 `source_id`。
 - ✅ **06:00 準備的上限**（分析）：10/31–11/05 正常時 06:00 開始、06:06 前畫完；成功的呼叫最長 45 秒（P 撰稿），M 角色最長 16 秒。11/05 的兩次 300 秒都是卡住，重試 10 秒就好，整期 06:15 畫完。但修正前沒有整體上限：每次嘗試都可能卡滿逾時，60 格額度最壞約 5 小時。改法：排程的 06:00 準備綁 `DAILY_PREPARE_DEADLINE`（預設 08:20）——每次 Codex 嘗試前檢查，剩不到 20 秒就丟 `DeadlinePassed`（不扣額度、不重試、不開 subprocess），單次逾時不超過剩餘秒數；M 組把過了截止當成額度 0 照既有順序降級（記進 `stats.degraded`），P 撰稿直接退模板稿；P 影子另限 30 分鐘（`DAILY_SHADOW_MAX_MINUTES`），卡住也留時間給 M。`CODEX_TIMEOUT_SECONDS` 預設 300→150。LLM 呼叫因此保證 08:20 前結束，之後只剩寫 DB／畫 HTML（秒級）與行情（20 秒逾時）。codex 版本沒動。production `.env` 沒寫 `CODEX_TIMEOUT_SECONDS`（11/06 部署時確認），新預設生效。手動 `daily prepare`（CLI）不綁截止。
-- ⚠️ **E11（11/15 到期）**：xfail 原因已更新；離線無法驗證（重編版莫德納稿沒入選，pytest 實際回報 skip）。👤 要嘛錄一次真 Codex（M 組記者→查核→文稿編輯，約 3–5 次）並加重播測試，要嘛 11/15 前拿掉 xfail 註明不適用，否則 `test_overdue_cases_are_not_xfail` 會在 11/15 失敗。錄製／重播工具與 fixtures 在未併入的 PR [#2](https://github.com/leroylion940511/reddit-tracker/pull/2)（`cursor/e11-recording-replay-0465`，fixture commit `5723517`），main 上還沒有。
+- ⚠️ **E11（11/15 到期）**：重編版莫德納稿沒入選（MarketWatch item 2736 單一來源、改判 world；STAT item 3875 另成一 cluster），回歸條件仍是 skip，xfail 維持。錄音入口 `scripts/record_e11.py` 已接上（`--live` 才呼叫 Codex，上限 5；`--check` 與 `tests/test_e11_replay.py` 只重播，沒有 fixture 就 skip）。👤 11/15 前在 Mac 的 `data/work` 複本錄完並 commit 兩個 fixture，或拿掉 xfail 註明不適用。不要只拿掉 xfail。
 - ✅ 全套 380 passed／7 skipped／2 xfailed（基準 363／7／2）。不需要 migration。
 
 ## 本次變更（2026-11-01 — 10/31、11/01 兩期 M 組問題修正，`fix/newsroom-1101`）

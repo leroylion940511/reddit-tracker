@@ -15,6 +15,6 @@
   "expected": "標題不得把「2027 年審查」寫成「2027 年申請 FDA」",
   "due": "2026-11-15",
   "xfail": {
-    "headline_must_not_match": "2026-11-06 狀態：文稿編輯（M 組 copy_editor）與 llm_records 都已實作；但離線重編 10/27（P 組）時莫德納稿（MarketWatch 單一來源，聚合變嚴後自成一則、改判 world）沒入選，條件不適用，pytest 實際回報 skip、不是 xfail。要驗證得在 data/work 複本用真 Codex 讓這則走 M 組記者→查核→文稿編輯（約 3–5 次）錄音、匯出 fixture，另寫重播測試檢查標題；不錄音就只能在 11/15 前拿掉 xfail 並註明不適用"
+    "headline_must_not_match": "2026-11-06：離線重編（P 組）仍不適用。莫德納稿是 MarketWatch item 2736 單一來源，聚合後自成一則、財經改判 world，沒入選，pytest 回報 skip、不是 xfail。STAT item 3875（摘要才有 expected in 2027）是另一個 cluster，錄音不併回。錄音入口是 scripts/record_e11.py --live（只寫 data/work/1027_e11.db，上限 5 次 Codex，不讀 .env）。fixture 還沒錄，tests/test_e11_replay.py 會 skip。11/15 前要嘛在 Mac 錄完再拿掉這條 xfail，要嘛拿掉 xfail 並註明不適用；不要只為了讓逾期檢查變綠而拿掉"
   }
 }

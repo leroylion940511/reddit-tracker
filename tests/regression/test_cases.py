@@ -113,6 +113,18 @@ def test_e09_is_not_an_error(published):
     assert "is_error" in case and case["is_error"] is False
 
 
+def test_e11_rebuilt_event_is_unpublished_marketwatch(rebuilt):
+    """E11 在重編版沒見報：MarketWatch 自成一則、改判 world。錄音另走 record_e11，不靠這條。"""
+    case = next(c for c in CASES if c["case_id"] == "E11")
+    events = rebuilt.events_with(case["event_titles"])
+    assert len(events) == 1
+    event = events[0]
+    assert event.published is False
+    assert event.section == "world"
+    assert event.kind == "single_source"
+    assert [source["source_id"] for source in event.sources] == ["marketwatch-top"]
+
+
 def test_rebuild_replays_merges_without_real_llm(rebuilt):
     """重編版有跑到撰稿，而且所有撰稿請求都走 replay：有 miss 才會全部是模板稿。"""
     assert rebuilt.published
