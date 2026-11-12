@@ -464,6 +464,39 @@ def test_newsroom_replay_shows_messages_and_diff(session):
     assert f'data-story-id="{story.id}"' in html
 
 
+def test_newsroom_page_lists_only_written_stories_and_readable_sections(session):
+    written = _story(session, 501, section="culture")
+    for k in range(502, 507):
+        _story(session, k)
+    write_story_version(
+        session, story_id=written.id, run_variant=MAS, expected_latest=0,
+        headline="文化版甲稿", body="正文", now=NOW, status="checked",
+    )
+    for i in range(3):
+        post_message(
+            session, run_variant=MAS, edition_date=DAY, sender="section_editor", recipient="eic",
+            type="PITCH", now=NOW + timedelta(seconds=i), payload={"detail": "提案內文不該逐則列出"},
+        )
+    post_message(
+        session, run_variant=MAS, edition_date=DAY, sender="fact_checker", recipient="reporter",
+        type="CHALLENGE", now=NOW, story_id=written.id, payload={"detail": "<b>數字不符</b>"},
+    )
+    add_page_plan(
+        session, edition_date=DAY, run_variant=MAS,
+        slots={"front": {"lead": written.id, "second": [], "briefs": []}, "sections": {}}, now=NOW,
+    )
+    html = render_newsroom(session, DAY, MAS)
+    assert "尚無稿" not in html
+    assert "文化版甲稿" in html and "文化" in html and "有異議" in html  # CHALLENGE 讓狀態轉 challenged
+    assert "另有 5 個候選事件未寫稿" in html
+    assert "PITCH 提案共 3 則" in html and "提案內文不該逐則列出" not in html
+    assert "<b>數字不符</b>" not in html and "&lt;b&gt;數字不符&lt;/b&gt;" in html
+    # NOW = 2026-10-26 22:00 UTC → 台北 10-27 06:00
+    assert "10-27 06:00:00" in html and "22:00:00" not in html
+    # page_plan 表格用標題而非 story_id
+    assert "<td>文化版甲稿</td>" in html and "<details>" in html
+
+
 # ── 步驟 10：核准與安全 ──────────────────────────────────────────────────
 
 
