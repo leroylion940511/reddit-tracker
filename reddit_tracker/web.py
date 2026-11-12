@@ -12,10 +12,12 @@ from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 
 from .config import get_settings
 from .daily.newsroom_page import render_newsroom
+from .daily.office_page import VENDOR_THREE, render_office
+from .daily.replay import build_replay
 from .daily.store import approve_story, hold_story
 from .db import session_scope
 
@@ -25,6 +27,14 @@ app = FastAPI(title="AI 綜合日報", docs_url=None, redoc_url=None)
 @app.get("/", include_in_schema=False)
 def index() -> RedirectResponse:
     return RedirectResponse("/daily/")
+
+
+@app.get("/daily/_static/three.module.js", include_in_schema=False)
+def vendored_three() -> FileResponse:
+    """本機那份 three.js（有放才有；沒放時 3D 頁從 CDN 載入）。要比 /daily/{edition_date} 先註冊。"""
+    if not VENDOR_THREE.is_file():
+        raise HTTPException(status_code=404, detail="沒有本機的 three.js")
+    return FileResponse(VENDOR_THREE, media_type="text/javascript")
 
 
 @app.get("/daily/", include_in_schema=False)
@@ -54,6 +64,8 @@ def _newsroom_bar(edition_date: date) -> str:
     return (
         '<nav id="rt-newsroom-bar" style="position:fixed;right:16px;bottom:16px;z-index:9999;'
         'display:flex;gap:8px;font:14px/1.4 system-ui,-apple-system,\'PingFang TC\',sans-serif">'
+        f'<a href="/daily/{d}/newsroom/office?variant=mas" style="background:#1f1c18;color:#ffe9b8;padding:8px 14px;'
+        'border-radius:20px;text-decoration:none;box-shadow:0 2px 6px rgba(0,0,0,.25)">3D 編輯室</a>'
         f'<a href="/daily/{d}/newsroom?variant=mas" style="background:#7a2a12;color:#fff;padding:8px 14px;'
         'border-radius:20px;text-decoration:none;box-shadow:0 2px 6px rgba(0,0,0,.25)">編輯室回放（M 組）</a>'
         f'<a href="/daily/{d}/newsroom?variant=pipeline" style="background:#fff;color:#7a2a12;padding:8px 14px;'
@@ -76,6 +88,28 @@ def newsroom_page(edition_date: date, variant: str = "mas", story: int | None = 
     with session_scope() as session:
         html = render_newsroom(session, edition_date, variant, story)
     return HTMLResponse(html)
+
+
+def _check_variant(variant: str) -> None:
+    if variant not in ("pipeline", "mas"):
+        raise HTTPException(status_code=400, detail="variant 只允許 pipeline 或 mas")
+
+
+@app.get("/daily/{edition_date}/newsroom/office", include_in_schema=False)
+def newsroom_office(edition_date: date, variant: str = "mas") -> HTMLResponse:
+    """編輯室 3D 回放：把這一期的收集、角色呼叫、訊息、版本、版面一步一步演出來。唯讀。"""
+    _check_variant(variant)
+    with session_scope() as session:
+        html = render_office(session, edition_date, variant)
+    return HTMLResponse(html)
+
+
+@app.get("/daily/{edition_date}/newsroom/replay.json", include_in_schema=False)
+def newsroom_replay(edition_date: date, variant: str = "mas") -> JSONResponse:
+    """3D 回放用的時間線資料（docs/v5/DAILY_EDITION.md「回放時間線」）。"""
+    _check_variant(variant)
+    with session_scope() as session:
+        return JSONResponse(build_replay(session, edition_date, variant))
 
 
 @app.api_route("/daily/{edition_date}/newsroom/decision", methods=["GET", "POST"], include_in_schema=False)

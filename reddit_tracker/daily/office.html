@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>編輯室 3D 回放 __DATE__</title>
+<style>
+:root{--bg:#efe9dd;--panel:#fffdf8;--ink:#1f1c18;--muted:#6f675b;--rule:#d9d0bf;--accent:#8a1c1c;--ok:#1f7a3a;--warn:#b45309;--bad:#b3261e;--chip:#efe7d6}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.55 system-ui,-apple-system,"PingFang TC","Noto Sans TC",sans-serif;overflow:hidden}
+#app{display:grid;grid-template-columns:minmax(0,1fr) 380px;grid-template-rows:auto minmax(0,1fr) auto;height:100vh;height:100dvh}
+#top{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--rule)}
+#top h1{font-size:16px;margin:0;letter-spacing:.04em}
+#top a{color:var(--accent);text-decoration:none;font-size:13px}
+#top a:hover{text-decoration:underline}
+#top .note{color:var(--muted);font-size:12px}
+#phases{display:flex;flex-wrap:wrap;gap:4px;margin-left:auto}
+#phases button{font:inherit;font-size:12px;border:1px solid var(--rule);background:#fff;color:var(--muted);border-radius:14px;padding:2px 10px;cursor:pointer}
+#phases button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+#phases button.done{color:var(--ink);background:var(--chip)}
+#stage{position:relative;min-width:0;min-height:0;overflow:hidden;background:linear-gradient(#e7edf0,#efe9dd 60%)}
+#scene{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+#scene:active{cursor:grabbing}
+#bubbles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.bubble{position:absolute;left:0;top:0;max-width:min(300px,62%);padding:8px 11px;border-radius:14px;background:#fff;color:var(--ink);box-shadow:0 4px 14px rgba(40,30,10,.22);border:1.5px solid #2b2620;font-size:13px;line-height:1.45;transform:translate(-50%,-100%);transition:opacity .25s;will-change:transform}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-8px;width:13px;height:13px;background:inherit;border-right:1.5px solid #2b2620;border-bottom:1.5px solid #2b2620;transform:translateX(-50%) rotate(45deg)}
+.bubble .who{display:block;font-size:11px;font-weight:700;color:var(--accent);margin-bottom:1px}
+.bubble.think{border-style:dashed;border-radius:22px;background:#f4f7ff;color:#27324a}
+.bubble.think::after{width:9px;height:9px;border-radius:50%;border:1.5px dashed #2b2620;transform:translateX(-50%);bottom:-13px;background:#f4f7ff}
+.bubble.tool{background:#eefaf0;border-color:#1f7a3a}
+.bubble.tool::after{border-color:#1f7a3a}
+.bubble.bad{background:#fff1ef;border-color:var(--bad)}
+.bubble.bad::after{border-color:var(--bad)}
+.bubble.old{opacity:.42}
+.dots span{display:inline-block;width:6px;height:6px;margin:0 2px;border-radius:50%;background:#5b6b8c;animation:dot 1s infinite}
+.dots span:nth-child(2){animation-delay:.18s}.dots span:nth-child(3){animation-delay:.36s}
+@keyframes dot{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
+#hud{position:absolute;left:12px;top:10px;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+#clock{font:700 22px/1 ui-monospace,Menlo,monospace;background:rgba(31,28,24,.82);color:#ffe9b8;padding:7px 10px;border-radius:8px;width:max-content}
+#clock small{display:block;font:500 11px/1.2 system-ui,sans-serif;color:#d8cdb8;margin-bottom:3px}
+#hint{font-size:11px;color:var(--muted);background:rgba(255,253,248,.8);padding:3px 8px;border-radius:6px;width:max-content;max-width:60vw}
+#fallback{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:24px;text-align:center;color:var(--muted)}
+#start{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(239,233,221,.35)}
+#start button{font:700 18px/1 inherit;padding:16px 28px;border-radius:40px;border:0;background:var(--accent);color:#fff;cursor:pointer;box-shadow:0 8px 24px rgba(138,28,28,.35)}
+#panel{grid-row:2/4;grid-column:2;display:flex;flex-direction:column;min-height:0;background:var(--panel);border-left:1px solid var(--rule)}
+#now{padding:12px 14px;border-bottom:1px solid var(--rule);max-height:52%;overflow:auto}
+#now .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--muted)}
+#now h2{font-size:15px;margin:4px 0 4px}
+#now p{margin:0 0 6px}
+.pill{display:inline-block;border-radius:10px;padding:0 8px;font-size:11px;line-height:18px;background:var(--chip);color:var(--ink);white-space:nowrap}
+.pill.draft{background:#e8edf5;color:#2d4263}.pill.challenged{background:#fde7c7;color:#8a4b00}.pill.hold{background:#fbd5d0;color:#8a1c1c}
+.pill.checked{background:#d9efdd;color:#17602d}.pill.approved{background:#1f7a3a;color:#fff}.pill.rejected{background:#fbd5d0;color:#8a1c1c}
+.pill.type{background:#2b2620;color:#fff}
+details{margin:4px 0}summary{cursor:pointer;color:var(--accent);font-size:12px}
+pre{margin:4px 0 0;padding:8px;background:#f6f1e6;border:1px solid var(--rule);border-radius:6px;font:11.5px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-word;max-height:220px;overflow:auto}
+pre .add{color:#17602d;background:#e3f3e6;display:block}pre .del{color:#8a1c1c;background:#fbe5e2;display:block}
+ul.kv{list-style:none;margin:4px 0;padding:0;font-size:12.5px}ul.kv li{padding:2px 0;border-bottom:1px dotted var(--rule)}
+#tabs{display:flex;border-bottom:1px solid var(--rule)}
+#tabs button{flex:1;font:inherit;font-size:13px;padding:7px 4px;border:0;background:none;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent}
+#tabs button.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:700}
+#lists{flex:1;min-height:0;overflow:auto}
+#log,#stories{list-style:none;margin:0;padding:0}
+#log li{display:grid;grid-template-columns:58px 1fr;gap:6px;padding:5px 12px;border-bottom:1px solid #eee7d8;cursor:pointer;font-size:12.5px}
+#log li:hover{background:#faf5ea}
+#log li.cur{background:#fbeeda;box-shadow:inset 3px 0 0 var(--accent)}
+#log li.future{opacity:.5}
+#log time{font:11px/1.6 ui-monospace,Menlo,monospace;color:var(--muted)}
+#log b{font-weight:600}
+#stories li{padding:7px 12px;border-bottom:1px solid #eee7d8;cursor:pointer;font-size:13px}
+#stories li:hover{background:#faf5ea}
+#stories .sub{font-size:11.5px;color:var(--muted)}
+#transport{grid-column:1;display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--panel);border-top:1px solid var(--rule);min-width:0}
+#transport button{font:inherit;min-width:36px;height:32px;border-radius:8px;border:1px solid var(--rule);background:#fff;cursor:pointer}
+#transport button.primary{background:var(--accent);color:#fff;border-color:var(--accent);min-width:64px;font-weight:700}
+#transport input[type=range]{flex:1;min-width:60px;accent-color:var(--accent)}
+#transport select{font:inherit;height:32px;border-radius:8px;border:1px solid var(--rule);background:#fff}
+#transport label{font-size:12px;color:var(--muted);white-space:nowrap;display:flex;align-items:center;gap:4px}
+#count{font:12px ui-monospace,Menlo,monospace;color:var(--muted);white-space:nowrap}
+@media (max-width:900px){
+  body{overflow:auto}
+  #app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 56vh auto auto;height:auto;min-height:100dvh}
+  #panel{grid-row:4;grid-column:1;border-left:0;border-top:1px solid var(--rule);max-height:none}
+  #now{max-height:none}#lists{max-height:60vh}
+  #phases{margin-left:0}
+  #transport{flex-wrap:wrap}
+  #transport label.follow{display:none}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="top">
+    <h1>編輯室 3D 回放｜__DATE__｜__VARIANT_LABEL__</h1>
+    <a href="/daily/__DATE__">← 當期日報</a>
+    <a href="/daily/__DATE__/newsroom?variant=__VARIANT__">表格版回放／核准</a>
+    <a href="?variant=__OTHER_VARIANT__">切到 __OTHER_LABEL__</a>
+    <span class="note" id="timing"></span>
+    <nav id="phases" aria-label="階段"></nav>
+  </header>
+  <div id="stage">
+    <canvas id="scene"></canvas>
+    <div id="bubbles"></div>
+    <div id="hud"><div id="clock"><small id="clockday"></small><span id="clocktime">--:--:--</span></div><div id="hint">拖曳旋轉・滾輪縮放・Shift＋拖曳平移</div></div>
+    <div id="fallback"><p>3D 場景載入失敗（需要 WebGL，以及第一次載入時連得到 three.js）。<br>右邊的逐步紀錄仍可照常播放。</p></div>
+    <div id="start"><button type="button" id="startbtn">▶ 開始回放</button></div>
+  </div>
+  <aside id="panel">
+    <section id="now" aria-live="polite"></section>
+    <div id="tabs"><button type="button" class="on" data-tab="log">逐步紀錄</button><button type="button" data-tab="stories">稿件</button></div>
+    <div id="lists"><ol id="log"></ol><ul id="stories" hidden></ul></div>
+  </aside>
+  <footer id="transport">
+    <button type="button" id="prev" title="上一步（←）">⏮</button>
+    <button type="button" id="play" class="primary" title="播放／暫停（空白鍵）">▶ 播放</button>
+    <button type="button" id="next" title="下一步（→）">⏭</button>
+    <input type="range" id="seek" min="0" max="0" value="0" aria-label="進度">
+    <span id="count">0 / 0</span>
+    <label>速度 <select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+    <label class="follow"><input type="checkbox" id="follow" checked> 鏡頭跟隨</label>
+  </footer>
+</div>
+<script id="replay-data" type="application/json">__REPLAY_JSON__</script>
+<script type="importmap">{"imports":{"three":"__THREE_URL__"}}</script>
+<script type="module">
+const DATA = JSON.parse(document.getElementById('replay-data').textContent);
+const BEATS = DATA.beats, ROLES = DATA.roles, STORIES = DATA.stories, PLANS = DATA.plans;
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+const STATUS = {draft:'草稿', challenged:'有異議', hold:'HOLD', checked:'查核通過', approved:'已核准', published:'已發行'};
+const CANCEL = Symbol('cancel');
+const st = {i:-1, playing:false, speed:1, gen:0, follow:true, stories:{}, plan:-1, collected:0, busy:false};
+
+let THREE = null;
+try { THREE = await import('three'); } catch (err) { console.warn('three.js 載入失敗', err); }
+
+/* ───────────────────────── 3D 場景 ───────────────────────── */
+const S = THREE ? buildScene() : null;
+if (!S) $('fallback').style.display = 'flex';
+
+function buildScene() {
+  const canvas = $('scene');
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({canvas, antialias:true}); } catch (err) { console.warn(err); return null; }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xe7ebe9);
+  const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
+  scene.add(new THREE.HemisphereLight(0xfff6e6, 0x8d8272, 2.1));
+  const sun = new THREE.DirectionalLight(0xfff1dc, 2.4);
+  sun.position.set(9, 20, 13); sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, {left:-20, right:20, top:16, bottom:-16, near:1, far:60});
+  sun.shadow.bias = -0.0004;
+  scene.add(sun);
+
+  const mat = (color, extra) => new THREE.MeshStandardMaterial({color, roughness:.85, metalness:.02, ...extra});
+  const box = (w, h, d, color, x, y, z, parent = scene, extra) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, extra));
+    m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m;
+  };
+  const FONT = '"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif';
+  function textCanvas(w, h, draw) {
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const g = c.getContext('2d'); draw(g, w, h);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+  }
+  function fitText(g, text, maxW) {
+    if (g.measureText(text).width <= maxW) return text;
+    let s = text; while (s.length > 1 && g.measureText(s + '…').width > maxW) s = s.slice(0, -1); return s + '…';
+  }
+  function sign(text, w, h, x, y, z, opts = {}) {
+    const tex = textCanvas(512, Math.round(512 * h / w), (g, W, H) => {
+      g.fillStyle = opts.bg || '#2b2620'; g.fillRect(0, 0, W, H);
+      g.fillStyle = opts.fg || '#ffe9b8'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.font = `700 ${Math.round(H * (opts.size || .5))}px ${FONT}`; g.fillText(fitText(g, text, W - 24), W / 2, H / 2 + 2);
+    });
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({map:tex}));
+    m.position.set(x, y, z); if (opts.ry) m.rotation.y = opts.ry; scene.add(m); return m;
+  }
+
+  /* 房間 */
+  const floorTex = textCanvas(512, 512, (g, W, H) => {
+    g.fillStyle = '#cdbb9d'; g.fillRect(0, 0, W, H);
+    for (let y = 0; y < H; y += 64) { g.fillStyle = (y / 64) % 2 ? '#c7b494' : '#d2c1a4'; g.fillRect(0, y, W, 62); }
+    g.strokeStyle = 'rgba(90,70,40,.18)'; for (let x = 0; x < W; x += 128) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+  });
+  floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping; floorTex.repeat.set(7, 5);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 22), new THREE.MeshStandardMaterial({map:floorTex, roughness:.9}));
+  floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+  const rug = (w, d, x, z, color) => { const r = box(w, .03, d, color, x, .015, z); r.castShadow = false; return r; };
+  rug(7.4, 19, -10.8, 0, 0xb7c3c8);          // 收發室／資料區
+  rug(13.5, 4.2, 3.5, -5.9, 0xa8463b);       // 總編區
+  rug(6.2, 4, 9.8, 7.6, 0x9bb59c);           // 審核台
+  box(30, 7, .3, 0xf1ebde, 0, 3.5, -11.1);   // 後牆
+  box(.3, 7, 22, 0xe8e1d2, -15.1, 3.5, 0);   // 左牆
+  for (const z of [-6, 0, 6]) { const w = box(.06, 2.6, 3.4, 0xbfe3f5, -14.92, 4, z, scene, {emissive:0x9fd0ea, emissiveIntensity:.55}); w.castShadow = false; }
+  sign('AI 綜合日報　編輯室', 8.5, 1.25, -8.2, 5.4, -10.93, {size:.5});
+  sign('收發室：RSSHub 傳真機', 3.6, .5, -14.9, 2.2, -6.6, {ry:Math.PI / 2, bg:'#31464f', fg:'#e6f4f8', size:.52});
+  sign('資料庫：聚合・快照（程式）', 4.2, .5, -14.9, 2.2, 3.6, {ry:Math.PI / 2, bg:'#31464f', fg:'#e6f4f8', size:.5});
+
+  /* 版面看板 */
+  const boardCanvas = document.createElement('canvas'); boardCanvas.width = 1536; boardCanvas.height = 704;
+  const boardTex = new THREE.CanvasTexture(boardCanvas); boardTex.colorSpace = THREE.SRGBColorSpace; boardTex.anisotropy = 8;
+  box(10.3, 4.9, .12, 0x5b4630, 4.6, 4.05, -10.9);
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(9.9, 4.54), new THREE.MeshBasicMaterial({map:boardTex}));
+  board.position.set(4.6, 4.05, -10.82); scene.add(board);
+  const boardGlow = box(10.5, 5.1, .05, 0xffd166, 4.6, 4.05, -10.95, scene, {emissive:0xffb703, emissiveIntensity:0, transparent:true, opacity:0});
+  boardGlow.castShadow = false;
+
+  /* 家具 */
+  const deskOf = {};
+  function desk(id, x, z, label, color = 0x7a5a3c) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
+    box(2.1, .09, 1.05, color, 0, .8, 0, g);
+    box(2.0, .76, .06, 0x5f452d, 0, .39, .46, g);
+    box(.06, .76, .95, 0x5f452d, -1, .39, 0, g); box(.06, .76, .95, 0x5f452d, 1, .39, 0, g);
+    const lap = new THREE.Group(); lap.position.set(-.1, .85, -.05); g.add(lap);
+    box(.62, .03, .42, 0x3a3f46, 0, 0, 0, lap);
+    const lid = box(.62, .42, .03, 0x3a3f46, 0, .2, .22, lap); lid.rotation.x = .28;
+    const logo = box(.1, .1, .01, 0xffffff, 0, .22, .245, lap, {emissive:0xffffff, emissiveIntensity:.15}); logo.rotation.x = .28; logo.castShadow = false;
+    const plate = textCanvas(512, 96, (c, W, H) => {
+      c.fillStyle = '#f7efdc'; c.fillRect(0, 0, W, H); c.fillStyle = '#2b2620'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.font = `700 54px ${FONT}`; c.fillText(label, W / 2, H / 2 + 3);
+    });
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(1.5, .28), new THREE.MeshBasicMaterial({map:plate})); p.position.set(0, .45, .495); g.add(p);
+    const stack = box(.36, .02, .5, 0xfdfdfb, .68, .86, 0, g); stack.visible = false;
+    deskOf[id] = {group:g, logo, stack, papers:0};
+    return g;
+  }
+  const SEAT = {
+    eic:[3.5, -6.6], layout_editor:[8.6, -6.6],
+    section_taiwan:[-1.6, -2.0], section_world:[3.5, -2.0], section_tech:[8.6, -2.0],
+    reporter:[-1.6, 2.7], fact_checker:[3.5, 2.7], copy_editor:[8.6, 2.7],
+    researcher:[-8.6, -2.0], human:[9.8, 7.0],
+  };
+  const COLORS = {eic:0x8a1c1c, layout_editor:0x7b5ea7, section_taiwan:0x2f7d5b, section_world:0x2f6f9f, section_tech:0xc77d1a,
+    reporter:0x3b4a6b, fact_checker:0xb3261e, copy_editor:0x4d7c8a, researcher:0x5c6f3a, human:0x222222};
+  for (const [id, [x, z]] of Object.entries(SEAT)) desk(id, x, z + .95, ROLES[id] || id, id === 'eic' ? 0x5c3a24 : 0x7a5a3c);
+  deskOf.eic.group.scale.set(1.25, 1, 1.1);
+
+  /* 人物 */
+  const actors = {};
+  const skin = [0xf1c9a5, 0xe8b98f, 0xf5d3b3, 0xd9a877];
+  function person(id, i) {
+    const g = new THREE.Group(); const [x, z] = SEAT[id]; g.position.set(x, 0, z); scene.add(g);
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(.33, .62, 6, 14), mat(COLORS[id])); body.position.y = .98; body.castShadow = true; g.add(body);
+    const legs = new THREE.Mesh(new THREE.CylinderGeometry(.27, .22, .5, 12), mat(0x2f2a26)); legs.position.y = .27; legs.castShadow = true; g.add(legs);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(.28, 20, 16), mat(skin[i % skin.length])); head.position.y = 1.75; head.castShadow = true; g.add(head);
+    const hair = new THREE.Mesh(new THREE.SphereGeometry(.295, 20, 12, 0, Math.PI * 2, 0, Math.PI * .52), mat([0x2a211c, 0x4a3426, 0x1c1c22, 0x6b4a2b][i % 4]));
+    hair.position.y = 1.78; hair.rotation.x = -.25; g.add(hair);
+    for (const sx of [-.1, .1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(.033, 8, 8), mat(0x1c1916)); e.position.set(sx, 1.77, .255); g.add(e); }
+    const arm = (sx) => { const a = new THREE.Group(); a.position.set(sx * .4, 1.3, 0); g.add(a);
+      const m = new THREE.Mesh(new THREE.CapsuleGeometry(.085, .42, 4, 8), mat(COLORS[id])); m.position.y = -.26; m.castShadow = true; a.add(m); a.rotation.x = -.5; return a; };
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(.42, .035, 8, 28), new THREE.MeshBasicMaterial({color:0x4f7cff, transparent:true, opacity:0}));
+    ring.rotation.x = Math.PI / 2; ring.position.y = 2.3; g.add(ring);
+    actors[id] = {id, group:g, body, head, armL:arm(-1), armR:arm(1), ring, home:new THREE.Vector3(x, 0, z), work:0, think:0, hop:0, phase:i * 1.7, top:2.35};
+  }
+  Object.keys(SEAT).forEach(person);
+
+  /* 機器：傳真機、程式機器人、流水線、查核工具、發行台 */
+  const fax = new THREE.Group(); fax.position.set(-11.2, 0, -6.4); scene.add(fax);
+  box(2.2, .85, 1.1, 0x6e7d84, 0, .43, 0, fax);
+  const faxBody = box(1.3, .5, .85, 0xe9ecee, 0, 1.12, 0, fax);
+  box(1.0, .05, .12, 0x22272b, 0, 1.3, .36, fax);
+  box(.9, .03, .7, 0xcfd6da, 0, .93, .75, fax);
+  const faxLamp = box(.1, .06, .06, 0x2bd45a, .5, 1.3, .44, fax, {emissive:0x2bd45a, emissiveIntensity:.2}); faxLamp.castShadow = false;
+  actors.wire = {id:'wire', group:fax, machine:true, home:fax.position.clone(), top:2.0, work:0, think:0, hop:0, phase:0, body:faxBody};
+
+  const bot = new THREE.Group(); bot.position.set(-9.6, 0, 4.4); scene.add(bot);
+  const botBody = box(.9, 1.0, .7, 0x8fa3ad, 0, .95, 0, bot, {metalness:.4, roughness:.45});
+  box(.7, .5, .55, 0xb9c7ce, 0, 1.75, 0, bot, {metalness:.4, roughness:.45});
+  for (const sx of [-.17, .17]) { const e = box(.12, .12, .03, 0x7df9ff, sx, 1.8, .285, bot, {emissive:0x7df9ff, emissiveIntensity:.9}); e.castShadow = false; }
+  box(.04, .3, .04, 0x555, 0, 2.15, 0, bot); const botTip = box(.1, .1, .1, 0xff5d5d, 0, 2.33, 0, bot, {emissive:0xff5d5d, emissiveIntensity:.6}); botTip.castShadow = false;
+  box(.7, .4, .5, 0x5f6e76, 0, .22, 0, bot);
+  actors.system = {id:'system', group:bot, machine:true, home:bot.position.clone(), top:2.6, work:0, think:0, hop:0, phase:0, body:botBody, spin:true};
+  const shelf = new THREE.Group(); shelf.position.set(-13.6, 0, 4.4); scene.add(shelf);
+  box(.7, 3.2, 5.2, 0x6b5139, 0, 1.6, 0, shelf);
+  const folders = [];
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 9; c++) {
+    const f = box(.5, .5, .42, [0xd9a441, 0x4f8fbf, 0x62a36b, 0xc65b4e][(r + c) % 4], .15, .45 + r * .72, -2.1 + c * .52, shelf); f.visible = false; folders.push(f);
+  }
+  const pile = box(.7, .02, .9, 0xfdfdfb, -10.9, .02, 2.9); pile.visible = false;
+  box(1.4, .5, 1.3, 0x7d6a52, -10.9, .25, 2.9).position.y = -.24;
+  const counter = {canvas:document.createElement('canvas')}; counter.canvas.width = 512; counter.canvas.height = 128;
+  counter.tex = new THREE.CanvasTexture(counter.canvas); counter.tex.colorSpace = THREE.SRGBColorSpace;
+  const counterMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.6, .9), new THREE.MeshBasicMaterial({map:counter.tex}));
+  counterMesh.position.set(-14.9, 3.4, -1.6); counterMesh.rotation.y = Math.PI / 2; scene.add(counterMesh);
+
+  const line = new THREE.Group(); line.position.set(-4.6, 0, 7.6); scene.add(line);
+  box(4.6, .7, 1.0, 0x56606b, 0, .35, 0, line);
+  box(4.4, .06, .8, 0x23272c, 0, .73, 0, line);
+  const lineBox = box(1.3, 1.1, 1.1, 0xd0863a, -1.2, 1.3, 0, line);
+  const lineLamp = box(.16, .16, .16, 0xffd166, -1.2, 1.95, 0, line, {emissive:0xffb703, emissiveIntensity:.2}); lineLamp.castShadow = false;
+  sign('流水線 P 組（對照）', 3.4, .42, -4.6, .36, 8.115, {bg:'#3d4650', fg:'#ffe9b8', size:.56});
+  actors.pipeline = {id:'pipeline', group:line, machine:true, home:new THREE.Vector3(-5.8, 0, 7.6), top:2.5, work:0, think:0, hop:0, phase:0, body:lineBox};
+
+  const tool = new THREE.Group(); tool.position.set(5.4, 0, 3.75); scene.add(tool);
+  box(.5, .9, .5, 0x44505a, 0, .45, 0, tool);
+  const toolLamp = box(.34, .34, .06, 0x9aa5ad, 0, 1.15, .1, tool, {emissive:0x1f7a3a, emissiveIntensity:0}); toolLamp.castShadow = false; toolLamp.rotation.x = -.3;
+  actors.checktool = {id:'checktool', group:tool, machine:true, home:tool.position.clone(), top:1.75, work:0, think:0, hop:0, phase:0, body:toolLamp};
+
+  const out = new THREE.Group(); out.position.set(13.2, 0, 4.6); scene.add(out);
+  box(1.3, .9, 1.6, 0x3d4650, 0, .45, 0, out);
+  const outStack = box(.9, .02, 1.2, 0xfdfdfb, 0, .92, 0, out); outStack.visible = false;
+  sign('發行', 1.1, .4, 13.2, .5, 5.41, {bg:'#8a1c1c', fg:'#fff', size:.6});
+  sign('真人審核台', 2.0, .34, 9.8, 1.55, 8.5, {bg:'#1f1c18', fg:'#fff', size:.56}).visible = false;
+  const anchors = {board:new THREE.Vector3(4.6, 6.7, -10.6), outbox:new THREE.Vector3(13.2, 2.2, 4.6)};
+
+  /* 名牌（頭上） */
+  function tag(id, text) {
+    const tex = textCanvas(256, 64, (g, W, H) => {
+      g.fillStyle = 'rgba(31,28,24,.82)'; g.beginPath(); g.roundRect(2, 8, W - 4, H - 16, 18); g.fill();
+      g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `600 27px ${FONT}`; g.fillText(fitText(g, text, W - 20), W / 2, H / 2 + 2);
+    });
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, depthTest:false, transparent:true})); s.scale.set(1.7, .425, 1); s.renderOrder = 5;
+    const a = actors[id]; s.position.set(0, a.top - .05, 0); a.group.add(s);
+  }
+  for (const id of Object.keys(actors)) tag(id, ROLES[id] || id);
+
+  /* 鏡頭 */
+  const HOME = new THREE.Vector3(-.4, .6, .4);
+  const cam = {theta:.46, phi:.86, radius:36, target:HOME.clone(), goal:HOME.clone(), goalR:36, user:0};
+  function placeCamera() {
+    const {theta, phi, radius, target} = cam;
+    camera.position.set(target.x + radius * Math.sin(phi) * Math.sin(theta), target.y + radius * Math.cos(phi), target.z + radius * Math.sin(phi) * Math.cos(theta));
+    camera.lookAt(target);
+  }
+  const ptr = new Map(); let pinch = 0;
+  canvas.addEventListener('pointerdown', (e) => { canvas.setPointerCapture(e.pointerId); ptr.set(e.pointerId, {x:e.clientX, y:e.clientY, pan:e.shiftKey || e.button === 2}); });
+  canvas.addEventListener('pointermove', (e) => {
+    const p = ptr.get(e.pointerId); if (!p) return;
+    const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY; cam.user = performance.now();
+    if (ptr.size === 2) { const [a, b] = [...ptr.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); if (pinch) cam.goalR = cam.radius = Math.min(60, Math.max(8, cam.radius * pinch / d)); pinch = d; return; }
+    if (p.pan) { const k = cam.radius * .0014; const right = new THREE.Vector3(Math.cos(cam.theta), 0, -Math.sin(cam.theta)); const fwd = new THREE.Vector3(Math.sin(cam.theta), 0, Math.cos(cam.theta));
+      cam.target.addScaledVector(right, -dx * k).addScaledVector(fwd, -dy * k); cam.goal.copy(cam.target); }
+    else { cam.theta -= dx * .006; cam.phi = Math.min(1.45, Math.max(.25, cam.phi - dy * .005)); }
+  });
+  const up = (e) => { ptr.delete(e.pointerId); pinch = 0; };
+  canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+  canvas.addEventListener('wheel', (e) => { e.preventDefault(); cam.user = performance.now(); cam.goalR = cam.radius = Math.min(60, Math.max(8, cam.radius * (1 + Math.sign(e.deltaY) * .08))); }, {passive:false});
+
+  function resize() {
+    const r = $('stage').getBoundingClientRect(); const w = Math.max(1, r.width), h = Math.max(1, r.height);
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w < 640 ? 56 : w < 900 ? 46 : 38; camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe($('stage')); resize();
+  const fx = new THREE.Group(); scene.add(fx);
+  return {THREE, scene, camera, renderer, actors, deskOf, anchors, cam, placeCamera, fx, box, mat, textCanvas, fitText, FONT,
+    boardCanvas, boardTex, boardGlow, faxLamp, lineLamp, toolLamp, botTip, folders, pile, counter, outStack, SEAT};
+}
+
+/* ───────────────────────── 動畫工具 ───────────────────────── */
+let simTime = 0, lastFrame = performance.now();
+const tweens = new Set();
+const ease = (k) => k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+function tween(ms, fn) {
+  return new Promise((resolve) => tweens.add({t0:simTime, ms:Math.max(1, ms), fn, resolve, gen:st.gen}));
+}
+const wait = (ms) => tween(ms, null);
+function frame(now) {
+  const dt = Math.min(80, now - lastFrame); lastFrame = now; simTime += dt * st.speed;
+  for (const t of [...tweens]) {
+    if (t.gen !== st.gen) { tweens.delete(t); t.resolve(); continue; }
+    const k = Math.min(1, (simTime - t.t0) / t.ms);
+    if (t.fn) t.fn(ease(k), k);
+    if (k >= 1) { tweens.delete(t); t.resolve(); }
+  }
+  if (S) {
+    const T = now / 1000;
+    for (const a of Object.values(S.actors)) {
+      if (a.machine) {
+        if (a.spin) a.group.rotation.y = a.work ? Math.sin(T * 6) * .5 : a.group.rotation.y * .9;
+        if (a.body && a.work && !a.spin) a.body.position.x += Math.sin(T * 40) * .0006;
+        continue;
+      }
+      a.body.position.y = .98 + Math.sin(T * 1.6 + a.phase) * .012 + a.hop;
+      a.head.position.y = 1.75 + Math.sin(T * 1.6 + a.phase) * .014 + a.hop;
+      const typing = a.work ? Math.sin(T * 17 + a.phase) * .22 : 0;
+      a.armL.rotation.x = -.5 - (a.work ? .75 : 0) + typing; a.armR.rotation.x = -.5 - (a.work ? .75 : 0) - typing;
+      a.head.rotation.z = a.think ? Math.sin(T * 2.2) * .12 : 0;
+      a.ring.material.opacity = a.think ? .35 + Math.sin(T * 5) * .3 : 0; a.ring.rotation.z = T * 2;
+      const d = S.deskOf[a.id]; if (d) d.logo.material.emissiveIntensity = a.work ? .7 + Math.sin(T * 9) * .3 : .12;
+    }
+    const c = S.cam;
+    if (st.follow && now - c.user > 2500) { c.target.lerp(c.goal, .045); c.radius += (c.goalR - c.radius) * .04; }
+    S.placeCamera(); S.renderer.render(S.scene, S.camera);
+    placeBubbles();
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ───────────────────────── 對話氣泡 ───────────────────────── */
+const bubbles = new Map();
+function anchorOf(id) {
+  if (!S) return null;
+  if (S.anchors[id]) return S.anchors[id].clone();
+  const a = S.actors[id] || S.actors.system; const p = new S.THREE.Vector3(); a.group.getWorldPosition(p); p.y += a.top + .15; return p;
+}
+function bubble(id, text, kind = 'say', who) {
+  if (!S) return;
+  let b = bubbles.get(id);
+  if (!b) { b = {el:el('div', 'bubble')}; $('bubbles').appendChild(b.el); bubbles.set(id, b); }
+  b.beat = st.i; b.id = id; b.el.className = 'bubble ' + kind; b.el.replaceChildren();
+  b.el.appendChild(el('span', 'who', who || ROLES[id] || id));
+  if (kind === 'think' && !text) { const d = el('span', 'dots'); d.append(el('span'), el('span'), el('span')); b.el.appendChild(d); }
+  else b.el.appendChild(document.createTextNode(text));
+}
+function thinkingBubble(id, secs) {
+  bubble(id, '', 'think');
+  if (secs) bubbles.get(id)?.el.appendChild(el('span', null, ` 思考 ${secs} 秒`));
+}
+function ageBubbles() {
+  for (const [id, b] of bubbles) {
+    if (b.beat < st.i - 1) { b.el.remove(); bubbles.delete(id); } else b.el.classList.toggle('old', b.beat < st.i);
+  }
+}
+function clearBubbles() { for (const b of bubbles.values()) b.el.remove(); bubbles.clear(); }
+function placeBubbles() {
+  const r = $('stage').getBoundingClientRect();
+  for (const b of bubbles.values()) {
+    const p = anchorOf(b.id); if (!p) continue; p.project(S.camera);
+    const w = b.el.offsetWidth / 2, h = b.el.offsetHeight;
+    const x = Math.min(r.width - w - 6, Math.max(w + 6, (p.x * .5 + .5) * r.width));
+    const y = Math.min(r.height - 6, Math.max(h + 14, (-p.y * .5 + .5) * r.height - 10));
+    b.el.style.transform = `translate(${x}px,${y}px) translate(-50%,-100%)`;
+    b.el.style.visibility = p.z > 1 ? 'hidden' : 'visible';
+  }
+}
+
+/* ───────────────────────── 場景動作 ───────────────────────── */
+function paperMesh(label, color = '#fdfdfb') {
+  const tex = S.textCanvas(128, 176, (g, W, H) => {
+    g.fillStyle = color; g.fillRect(0, 0, W, H); g.strokeStyle = '#b9b2a3'; g.strokeRect(1, 1, W - 2, H - 2);
+    g.fillStyle = '#2b2620'; g.textAlign = 'center'; g.font = `700 24px ${S.FONT}`;
+    const words = String(label); g.fillText(S.fitText(g, words.slice(0, 5), W - 10), W / 2, 40);
+    if (words.length > 5) g.fillText(S.fitText(g, words.slice(5), W - 10), W / 2, 72);
+    g.fillStyle = '#c9c2b3'; for (let y = 96; y < H - 14; y += 16) g.fillRect(14, y, W - 28, 5);
+  });
+  const m = new S.THREE.Mesh(new S.THREE.PlaneGeometry(.5, .69), new S.THREE.MeshBasicMaterial({map:tex, side:S.THREE.DoubleSide}));
+  m.userData.tex = tex; S.fx.add(m); return m;
+}
+function dropFx(m) { S.fx.remove(m); m.userData.tex?.dispose(); m.geometry.dispose(); m.material.dispose(); }
+function clearFx() { if (S) for (const m of [...S.fx.children]) dropFx(m); }
+function handPos(id) {
+  const a = S.actors[id] || S.actors.system; const p = new S.THREE.Vector3(); a.group.getWorldPosition(p);
+  p.y += a.machine ? Math.min(1.4, a.top - .6) : 1.15; if (!a.machine) p.z += .75; return p;
+}
+async function fly(from, to, label, ms = 760, color) {
+  if (!S) return;
+  const m = paperMesh(label, color); const a = from.clone(), b = to.clone(); const mid = a.clone().lerp(b, .5); mid.y += 2.2 + a.distanceTo(b) * .12;
+  await tween(ms, (k) => {
+    const u = 1 - k; m.position.set(u * u * a.x + 2 * u * k * mid.x + k * k * b.x, u * u * a.y + 2 * u * k * mid.y + k * k * b.y, u * u * a.z + 2 * u * k * mid.z + k * k * b.z);
+    m.rotation.set(-.9 + k * .6, k * 5, Math.sin(k * 6) * .3); m.lookAt(S.camera.position); m.rotateZ(Math.sin(k * 7) * .25);
+  });
+  dropFx(m);
+}
+function stackOn(id, n) { const d = S?.deskOf[id]; if (!d) return; d.stack.visible = n > 0; d.stack.scale.y = Math.max(1, n * 1.6); d.stack.position.y = .86 + n * .016; }
+function focus(id, radius = 19) {
+  if (!S) return; const p = S.anchors[id] ? S.anchors[id].clone() : S.actors[id]?.group.getWorldPosition(new S.THREE.Vector3());
+  if (!p) return; S.cam.goal.set(p.x * .42 - .3, .7, p.z * .42 + .4); S.cam.goalR = radius;
+}
+function face(id, toId) {
+  const a = S?.actors[id], b = S?.actors[toId]; if (!a || a.machine || !b) return;
+  const pa = a.group.position, pb = b.group.getWorldPosition(new S.THREE.Vector3()); a.group.rotation.y = Math.atan2(pb.x - pa.x, pb.z - pa.z);
+}
+async function hop(id) { const a = S?.actors[id]; if (!a || a.machine) return; await tween(360, (k) => { a.hop = Math.sin(k * Math.PI) * .22; }); a.hop = 0; }
+function route(a, b) {
+  // 沿著桌子之間的走道走：先往右側空隙、到走道、橫移、再走到對方旁邊
+  const aisle = (z) => (z < -3.2 ? -4.2 : z < 1.5 ? .45 : 5.4);
+  const sx = a.home.x + 1.45, tx = b.home.x + 1.45, az = Math.abs(a.home.z - b.home.z) < .5 ? a.home.z : aisle((a.home.z + b.home.z) / 2);
+  const V = (x, z) => new S.THREE.Vector3(x, 0, z);
+  const pts = [V(sx, a.home.z), V(sx, az), V(tx, az), V(tx, b.home.z + .15)];
+  return pts.filter((p, i) => i === 0 || p.distanceTo(pts[i - 1]) > .05);
+}
+async function walk(a, pts) {
+  for (const p of pts) {
+    const from = a.group.position.clone(); const d = from.distanceTo(p); if (d < .02) continue;
+    a.group.rotation.y = Math.atan2(p.x - from.x, p.z - from.z);
+    await tween(d * 170, (k, raw) => { a.group.position.lerpVectors(from, p, raw); a.hop = Math.abs(Math.sin(raw * d * 3.2)) * .06; });
+  }
+  a.hop = 0;
+}
+function resetActors() {
+  if (!S) return;
+  for (const a of Object.values(S.actors)) { a.work = 0; a.think = 0; a.hop = 0; if (!a.machine) { a.group.position.copy(a.home); a.group.rotation.y = 0; } }
+  S.faxLamp.material.emissiveIntensity = .2; S.lineLamp.material.emissiveIntensity = .2; S.toolLamp.material.emissiveIntensity = 0; S.boardGlow.material.opacity = 0;
+}
+
+/* ───────────────────────── 看板與狀態 ───────────────────────── */
+const STATUS_COLOR = {draft:'#6b7c99', challenged:'#d98a1f', hold:'#c0392b', checked:'#2e9b53', approved:'#156b33'};
+function title(id) { const s = st.stories[id] || {}; return s.headline || STORIES[id]?.source_title || STORIES[id]?.headline || `story ${id}`; }
+function drawBoard(flash) {
+  if (!S) return;
+  const c = S.boardCanvas, g = c.getContext('2d'), W = c.width, H = c.height, F = S.FONT;
+  g.fillStyle = '#fbf7ee'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#2b2620'; g.fillRect(0, 0, W, 66); g.fillStyle = '#ffe9b8'; g.textBaseline = 'middle'; g.textAlign = 'left';
+  g.font = `700 34px ${F}`; g.fillText(`版面計畫${st.plan >= 0 ? ' v' + PLANS[st.plan].version : '（還沒有）'}`, 24, 35);
+  g.font = `500 22px ${F}`; g.textAlign = 'right'; g.fillText(`${DATA.date}　${DATA.variant === 'mas' ? 'M 組 MAS 編輯室' : 'P 組 流水線'}`, W - 24, 35);
+  const plan = st.plan >= 0 ? PLANS[st.plan] : null, prev = st.plan > 0 ? PLANS[st.plan - 1] : null;
+  const prevFront = prev ? [prev.front.lead, ...prev.front.second, ...prev.front.briefs] : null;
+  const cols = [['頭版', 0, 560], ['台灣', 560, 325], ['國際', 885, 325], ['科技', 1210, 326]];
+  for (const [name, x, w] of cols) { g.strokeStyle = '#d9d0bf'; g.strokeRect(x + .5, 66.5, w, H - 67); g.fillStyle = '#8a1c1c'; g.textAlign = 'left'; g.font = `700 26px ${F}`; g.fillText(name, x + 16, 96); }
+  const row = (id, x, y, w, size, tagText, changed) => {
+    const s = st.stories[id];
+    if (changed) { g.fillStyle = '#fff1b8'; g.fillRect(x + 6, y - size * .8, w - 12, size * 1.6); }
+    g.fillStyle = STATUS_COLOR[s?.status] || '#c9c2b3'; g.beginPath(); g.arc(x + 22, y, 8, 0, 7); g.fill();
+    g.fillStyle = s ? '#1f1c18' : '#9a9283'; g.font = `${tagText === '主稿' ? 700 : 500} ${size}px ${F}`; g.textAlign = 'left';
+    let tx = x + 38;
+    if (tagText) { g.fillStyle = '#8a1c1c'; g.font = `700 ${Math.round(size * .72)}px ${F}`; g.fillText(tagText, tx, y + 1); tx += g.measureText(tagText).width + 8; g.fillStyle = s ? '#1f1c18' : '#9a9283'; g.font = `${tagText === '主稿' ? 700 : 500} ${size}px ${F}`; }
+    g.fillText(S.fitText(g, title(id), x + w - tx - 12), tx, y + 1);
+  };
+  if (plan) {
+    let y = 140; const front = [[plan.front.lead, '主稿', 30], ...plan.front.second.map((i) => [i, '次稿', 24]), ...plan.front.briefs.map((i) => [i, '短訊', 21])];
+    front.forEach(([id, tagText, size], n) => { if (id == null) return; const changed = prevFront && prevFront[n] !== id; row(id, 0, y, 560, size, tagText, changed); y += size * 2.35; });
+    ['taiwan', 'world', 'tech'].forEach((key, n) => {
+      let yy = 140; for (const e of plan.sections[key] || []) { row(e.story_id, cols[n + 1][1], yy, cols[n + 1][2], 21, e.display === 'link' ? '→頭版' : '', false); yy += 56; }
+    });
+  } else { g.fillStyle = '#9a9283'; g.font = `500 28px ${F}`; g.textAlign = 'center'; g.fillText('等各版主編提案、記者寫稿之後才有版面', W / 2, H / 2); }
+  g.textAlign = 'left'; g.font = `500 18px ${F}`; let lx = 16;
+  for (const [k, label] of Object.entries(STATUS)) { if (!STATUS_COLOR[k]) continue; g.fillStyle = STATUS_COLOR[k]; g.beginPath(); g.arc(lx + 8, H - 20, 7, 0, 7); g.fill(); g.fillStyle = '#6f675b'; g.fillText(label, lx + 22, H - 19); lx += 40 + g.measureText(label).width; }
+  S.boardTex.needsUpdate = true;
+  if (flash) { S.boardGlow.material.opacity = .9; S.boardGlow.material.emissiveIntensity = 1.4; tween(1400, (k) => { S.boardGlow.material.opacity = .9 * (1 - k); }); }
+}
+function drawCounter() {
+  if (!S) return; const c = S.counter.canvas, g = c.getContext('2d');
+  g.fillStyle = '#1f2b31'; g.fillRect(0, 0, 512, 128); g.fillStyle = '#9fe3ff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = `600 30px ${S.FONT}`; g.fillText('過去 24 小時收到的新素材', 256, 36); g.font = `700 54px ui-monospace,Menlo,monospace`; g.fillStyle = '#fff'; g.fillText(`${st.collected.toLocaleString()} 則`, 256, 88);
+  S.counter.tex.needsUpdate = true; S.pile.visible = st.collected > 0; S.pile.scale.y = 1 + st.collected / 55; S.pile.position.y = .02 + st.collected / 55 * .01;
+}
+function applyState(beat, quiet) {
+  const p = beat.state; if (beat.kind === 'cluster') st.clustered = true; if (beat.kind === 'publish') st.published = true;
+  if (p?.collected) st.collected += p.collected;
+  if (p?.stories) for (const [id, v] of Object.entries(p.stories)) st.stories[id] = {...(st.stories[id] || {}), ...v};
+  if (p && p.plan != null) st.plan = p.plan;
+  if (!quiet) refreshState(beat);
+}
+function refreshState(beat) {
+  drawCounter(); drawBoard(beat?.kind === 'plan'); renderStories();
+  if (S) {
+    S.folders.forEach((f, n) => { f.visible = !!st.clustered && n < 36; });
+    const ready = Object.values(st.stories).filter((s) => ['checked', 'approved'].includes(s.status)).length;
+    stackOn('eic', ready); stackOn('human', Object.values(st.stories).filter((s) => s.status === 'approved').length);
+    S.outStack.visible = !!st.published; S.outStack.scale.y = 14; S.outStack.position.y = 1.05;
+  }
+}
+
+/* ───────────────────────── 右側面板 ───────────────────────── */
+function diffNode(text) {
+  const pre = el('pre');
+  for (const lineText of text.split('\n')) {
+    const cls = lineText.startsWith('+') && !lineText.startsWith('+++') ? 'add' : lineText.startsWith('-') && !lineText.startsWith('---') ? 'del' : null;
+    pre.appendChild(cls ? el('span', cls, lineText) : document.createTextNode(lineText + '\n'));
+  }
+  return pre;
+}
+function fold(label, node, open) { const d = el('details'); d.open = !!open; d.appendChild(el('summary', null, label)); d.appendChild(node); return d; }
+function renderNow(beat) {
+  const box = $('now'); box.replaceChildren();
+  if (!beat) { box.appendChild(el('p', null, '按「開始回放」，或在下面點任何一步。')); return; }
+  const meta = el('div', 'meta'); meta.appendChild(el('span', null, `${beat.day} ${beat.at}`));
+  if (beat.type) meta.appendChild(el('span', 'pill type', `${beat.type}｜${beat.type_label || ''}`));
+  if (beat.kind === 'llm') meta.appendChild(el('span', 'pill', `模型呼叫 ${beat.secs ?? '?'} 秒`));
+  if (beat.status) meta.appendChild(el('span', 'pill ' + (beat.status === 'rejected' ? 'rejected' : ''), beat.status));
+  box.appendChild(meta); box.appendChild(el('h2', null, beat.title || '')); box.appendChild(el('p', null, beat.say || ''));
+  if (beat.story_id && (STORIES[beat.story_id] || st.stories[beat.story_id])) {
+    const s = st.stories[beat.story_id] || {}; const p = el('p'); p.appendChild(el('span', 'pill ' + (s.status || ''), `${STATUS[s.status] || '尚未寫稿'}${s.version ? ' v' + s.version : ''}`));
+    p.appendChild(document.createTextNode(' ' + title(beat.story_id))); box.appendChild(p);
+  }
+  const d = beat.detail || {};
+  if (d.pitches) { const ul = el('ul', 'kv'); for (const p of d.pitches) { const li = el('li'); li.appendChild(el('span', 'pill ' + (p.priority === 'front' ? 'challenged' : ''), p.priority === 'front' ? '想上頭版' : '放本版')); li.appendChild(document.createTextNode(` 《${p.title}》${p.angle}`)); ul.appendChild(li); } box.appendChild(ul); }
+  if (d.sources?.length) { const ul = el('ul', 'kv'); ul.appendChild(el('li', null, `抓取 ${d.runs} 次｜失敗 ${d.failed}｜沒更新 ${d.unchanged}｜新素材 ${d.new}`)); for (const s of d.sources.slice(0, 14)) ul.appendChild(el('li', null, `${s.name}　+${s.new}`)); box.appendChild(fold('這段時間各來源新增', ul, true)); }
+  if (d.section_rewrites && Object.keys(d.section_rewrites).length) { const ul = el('ul', 'kv'); for (const [k, v] of Object.entries(d.section_rewrites)) ul.appendChild(el('li', null, `${k}：${v} 個事件`)); box.appendChild(fold('併版改寫（十版→三內版）', ul)); }
+  if (d.reasons?.length) { const ul = el('ul', 'kv'); for (const r of d.reasons) ul.appendChild(el('li', null, `上：《${r.title}》${r.why}`)); for (const r of d.dropped || []) ul.appendChild(el('li', null, `不上：《${r.title}》${r.why}`)); box.appendChild(fold('總編輯寫的理由', ul, true)); }
+  if (d.program_reason) box.appendChild(el('p', null, `程式拒絕的原因：${d.program_reason}`));
+  if (d.stories) { const ul = el('ul', 'kv'); for (const s of d.stories) ul.appendChild(el('li', null, `v${s.version}《${s.title}》`)); box.appendChild(fold(`核准的 ${d.stories.length} 篇`, ul)); }
+  if (d.diff) box.appendChild(fold('這一版改了什麼（diff）', diffNode(d.diff), true));
+  if (d.body) box.appendChild(fold(`稿件正文${d.version ? ' v' + d.version : ''}`, el('pre', null, `${d.headline || ''}\n\n${d.body}`)));
+  if (d.response) box.appendChild(fold('模型的回應', el('pre', null, d.response), !d.diff && beat.kind === 'llm' && !d.body));
+  if (d.prompt) box.appendChild(fold('給模型的提示詞', el('pre', null, d.prompt)));
+  if (d.payload) box.appendChild(fold('訊息內容（agent_messages.payload）', el('pre', null, d.payload)));
+  const ids = [d.message_id && `訊息 #${d.message_id}`, d.llm_id && `llm_records #${d.llm_id}`, d.correlation_id, d.model].filter(Boolean);
+  if (ids.length) box.appendChild(el('p', 'sub', ids.join('｜'))).style.cssText = 'font-size:11px;color:#6f675b;margin-top:6px';
+}
+const logItems = [];
+function buildLists() {
+  const log = $('log');
+  BEATS.forEach((b, i) => {
+    const li = el('li', 'future'); li.appendChild(el('time', null, b.at)); const body = el('div');
+    body.appendChild(el('b', null, ROLES[b.actor] || b.actor)); if (b.to) body.appendChild(document.createTextNode(` → ${ROLES[b.to] || b.to}`));
+    if (b.type) { body.appendChild(document.createTextNode(' ')); body.appendChild(el('span', 'pill type', b.type)); }
+    body.appendChild(el('div', null, b.say || b.title || '')); li.appendChild(body); li.addEventListener('click', () => jump(i)); log.appendChild(li); logItems.push(li);
+  });
+  const nav = $('phases');
+  for (const p of DATA.phases) { const btn = el('button', null, p.label); btn.type = 'button'; btn.dataset.phase = p.id; btn.addEventListener('click', () => jump(BEATS.findIndex((b) => b.phase === p.id))); nav.appendChild(btn); }
+  $('seek').max = Math.max(0, BEATS.length - 1);
+  $('timing').textContent = DATA.timing === 'reconstructed' ? '這一期的訊息時間是用模型呼叫紀錄還原的（當時訊息只記了順序）' : '';
+}
+function renderStories() {
+  const ul = $('stories'); ul.replaceChildren();
+  const ids = Object.keys(STORIES).sort((a, b) => (STORIES[b].lead - STORIES[a].lead) || (STORIES[b].front - STORIES[a].front) || STORIES[a].section.localeCompare(STORIES[b].section));
+  if (!ids.length) ul.appendChild(el('li', null, '這一期這一組沒有稿件。'));
+  for (const id of ids) {
+    const s = STORIES[id], now = st.stories[id]; const li = el('li');
+    li.appendChild(el('span', 'pill', s.section_label)); li.appendChild(document.createTextNode(' '));
+    li.appendChild(el('span', 'pill ' + (now?.status || ''), now ? `${STATUS[now.status] || now.status} v${now.version || 1}` : '還沒寫'));
+    li.appendChild(el('div', null, now?.headline || s.source_title || s.headline));
+    li.appendChild(el('div', 'sub', `${s.lead ? '頭版主稿｜' : s.front ? '頭版｜' : ''}${s.kind === 'report' ? '多來源' : '單一來源'}｜分數 ${s.score}｜最後共 ${s.versions} 版`));
+    li.addEventListener('click', () => { const i = BEATS.findIndex((b) => String(b.story_id) === id); if (i >= 0) jump(i); });
+    ul.appendChild(li);
+  }
+}
+function renderProgress() {
+  const i = st.i; $('seek').value = Math.max(0, i); $('count').textContent = `${i + 1} / ${BEATS.length}`;
+  logItems.forEach((li, n) => { li.classList.toggle('cur', n === i); li.classList.toggle('future', n > i); });
+  if (i >= 0) { const li = logItems[i], box = $('lists'); if (!$('log').hidden) box.scrollTop = Math.max(0, li.offsetTop - box.clientHeight / 2); }
+  const b = BEATS[i]; $('clocktime').textContent = b ? b.at : '--:--:--'; $('clockday').textContent = b ? `${b.day}（台北）` : DATA.date;
+  const order = DATA.phases.map((p) => p.id), at = b ? order.indexOf(b.phase) : -1;
+  for (const btn of $('phases').children) { const n = order.indexOf(btn.dataset.phase); btn.classList.toggle('on', n === at); btn.classList.toggle('done', n < at); }
+  $('play').textContent = st.playing ? '⏸ 暫停' : (i >= BEATS.length - 1 ? '↺ 重播' : '▶ 播放');
+}
+
+/* ───────────────────────── 每一步怎麼演 ───────────────────────── */
+async function act(beat, g) {
+  const ok = async (p) => { const v = await p; if (g !== st.gen) throw CANCEL; return v; };
+  const A = S?.actors[beat.actor], who = beat.actor, bad = beat.status === 'rejected' || beat.type === 'HOLD';
+  if (!S) { await ok(wait(1500)); return; }
+  focus(beat.mode === 'board' ? 'board' : beat.mode === 'publish' ? 'outbox' : who, beat.mode === 'board' ? 30 : 29);
+  if (beat.mode === 'print') {           // RSSHub → 傳真機吐紙
+    A.work = 1; S.faxLamp.material.emissiveIntensity = 1.6; bubble(who, beat.say, 'tool');
+    const sheets = beat.sheets?.length ? beat.sheets : [{label:'沒有新稿', n:0}]; const slot = handPos('wire'); slot.y = 1.3; slot.z += .45;
+    const pileAt = new S.THREE.Vector3(-10.9, .5, 2.9); const flights = [];
+    for (const [n, s] of sheets.entries()) {
+      const m = paperMesh(`${s.label}`.slice(0, 5) + `+${s.n}`); m.rotation.x = -1.2; m.position.copy(slot); m.scale.y = .05;
+      await ok(tween(260, (k) => { m.scale.y = .05 + .95 * k; m.position.set(slot.x + (n - 2.5) * .02, slot.y - .16 * k, slot.z + .45 * k); }));
+      dropFx(m); flights.push(fly(new S.THREE.Vector3(slot.x, 1.15, slot.z + .45), pileAt, `${s.label}`.slice(0, 5) + `+${s.n}`, 820));
+    }
+    await ok(Promise.all(flights)); A.work = 0; S.faxLamp.material.emissiveIntensity = .2; await ok(wait(500));
+  } else if (beat.mode === 'browse') {   // 資料員上網查 RSS
+    A.work = 1; const names = (beat.sheets || []).map((s) => `${s.label} +${s.n}`);
+    thinkingBubble(who); bubbles.get(who)?.el.appendChild(el('span', null, ' 上網查各家 RSS…'));
+    for (const name of names.slice(0, 5)) { bubble(who, `🔎 ${name}`, 'think'); await ok(wait(330)); }
+    bubble(who, beat.say); const flights = (beat.sheets || []).slice(0, 4).map((s, n) => wait(n * 130).then(() => fly(handPos(who), new S.THREE.Vector3(-10.9, .5, 2.9), `${s.label}`.slice(0, 5) + `+${s.n}`, 780, '#eef6ff')));
+    await ok(Promise.all(flights)); A.work = 0; await ok(wait(450));
+  } else if (beat.mode === 'sort') {     // 程式聚合
+    A.work = 1; thinkingBubble(who); bubbles.get(who)?.el.appendChild(el('span', null, ' 比對標題、共同實體、譯名表…'));
+    const from = new S.THREE.Vector3(-10.9, .7, 2.9);
+    for (let n = 0; n < 36; n += 3) { for (let j = n; j < n + 3; j++) { const f = S.folders[j]; f.visible = true; const p = f.getWorldPosition(new S.THREE.Vector3()); fly(from, p, '事件', 520, '#fff4c9'); } await ok(wait(150)); }
+    bubble(who, beat.say, 'tool'); await ok(wait(1500)); A.work = 0;
+  } else if (beat.mode === 'think') {    // 模型呼叫：思考 → 說出結果
+    A.work = 1; A.think = 1; if (who === 'pipeline') S.lineLamp.material.emissiveIntensity = 1.8;
+    thinkingBubble(who, beat.secs); await ok(wait(Math.min(2600, 900 + (beat.secs || 4) * 110)));
+    A.think = 0; A.work = 0; S.lineLamp.material.emissiveIntensity = .2;
+    bubble(who, beat.say, beat.detail?.ok === false ? 'bad' : 'say');
+    if (who === 'pipeline') await ok(fly(handPos('pipeline'), new S.THREE.Vector3(-2.6, .95, 7.6), '影子版', 600, '#ffe7c2'));
+    if (beat.paper && S.actors[beat.paper.to]) await ok(fly(handPos(who), handPos(beat.paper.to), beat.paper.label)); else await ok(wait(900));
+  } else if (beat.mode === 'say') {      // 角色之間的訊息
+    const T = S.actors[beat.to]; let back = null;
+    if (beat.walk && A && !A.machine && T) { const pts = route(A, T); await ok(walk(A, pts.slice(1))); back = pts.slice(0, -1).reverse(); }
+    if (beat.to) { face(who, beat.to); face(beat.to, who); }
+    bubble(who, beat.say, bad ? 'bad' : 'say', `${ROLES[who] || who}${beat.to ? ' → ' + (ROLES[beat.to] || beat.to) : ''}`);
+    if (beat.paper && T) await ok(fly(handPos(who), handPos(beat.to), beat.paper.label, 700, beat.type === 'PITCH' ? '#fff4c9' : undefined));
+    hop(beat.to); await ok(wait(Math.min(3200, 1300 + (beat.say || '').length * 22)));
+    if (back) { await ok(walk(A, back)); }
+    if (A && !A.machine) A.group.rotation.y = 0; if (T && !T.machine) T.group.rotation.y = 0;
+  } else if (beat.mode === 'stamp') {    // 程式工具放行／暫緩、快照、核准
+    if (who === 'checktool') { S.toolLamp.material.emissive.set(bad ? 0xc0392b : 0x1f7a3a); S.toolLamp.material.emissiveIntensity = 2.2; }
+    if (A) A.work = 1; bubble(who, (bad ? '⛔ ' : '✓ ') + beat.say, bad ? 'bad' : 'tool');
+    await ok(wait(700)); if (A) A.work = 0;
+    if (beat.paper && S.actors[beat.paper.to]) await ok(fly(handPos(who === 'checktool' ? 'fact_checker' : who), handPos(beat.paper.to), beat.paper.label, 650, '#e3f6e7'));
+    if (beat.kind === 'approve') { await ok(fly(handPos('eic'), handPos('human'), '待審', 700)); hop('human'); }
+    await ok(wait(900)); S.toolLamp.material.emissiveIntensity = 0;
+  } else if (beat.mode === 'board') {    // 版面計畫換版
+    bubble('board', beat.say, 'tool', '版面看板'); await ok(wait(2400));
+  } else if (beat.mode === 'publish') {  // 發行
+    bubble('outbox', beat.say, 'say', '發行'); const from = S.anchors.outbox.clone(); from.y = 1.2;
+    const flights = []; for (let n = 0; n < 7; n++) { flights.push(fly(from, new S.THREE.Vector3(20 + n, 7 + n * .6, -6 + n * 3), '日報', 1300, '#fff')); await ok(wait(140)); }
+    await ok(Promise.all(flights)); await ok(wait(1200));
+  } else await ok(wait(1500));
+}
+async function playBeat(i) {
+  const g = st.gen, beat = BEATS[i]; st.i = i; st.busy = true; ageBubbles(); renderProgress(); renderNow(beat);
+  try { if (beat.mode === 'board' || beat.mode === 'stamp') applyState(beat); await act(beat, g); if (!(beat.mode === 'board' || beat.mode === 'stamp')) applyState(beat); }
+  catch (err) { if (err !== CANCEL) throw err; return false; }
+  finally { if (g === st.gen) st.busy = false; }
+  return true;
+}
+async function loop() {
+  const g = st.gen;
+  while (st.playing && g === st.gen && st.i < BEATS.length - 1) { if (!(await playBeat(st.i + 1))) return; }
+  if (g === st.gen) { st.playing = false; renderProgress(); }
+}
+function rebuild(upto) {  // 把第 0..upto-1 步的結果直接套上，不播動畫
+  st.gen++; st.busy = false; clearFx(); clearBubbles(); resetActors();
+  st.stories = {}; st.plan = -1; st.collected = 0; st.clustered = false; st.published = false;
+  for (let n = 0; n < upto; n++) applyState(BEATS[n], true);
+  refreshState();
+}
+function jump(i, keepPlaying) {
+  if (!BEATS.length) return; i = Math.min(BEATS.length - 1, Math.max(0, i));
+  const playing = keepPlaying ?? st.playing; rebuild(i); st.i = i - 1; st.playing = playing; $('start').style.display = 'none';
+  if (playing) loop(); else playBeat(i);
+}
+function toggle() {
+  $('start').style.display = 'none';
+  if (st.playing) { st.playing = false; renderProgress(); return; }
+  if (st.i >= BEATS.length - 1) { jump(0, true); return; }
+  st.playing = true; renderProgress();
+  if (!st.busy) loop(); else { const g = st.gen; const t = setInterval(() => { if (g !== st.gen || !st.playing) clearInterval(t); else if (!st.busy) { clearInterval(t); loop(); } }, 120); }
+}
+
+/* ───────────────────────── 啟動 ───────────────────────── */
+buildLists(); rebuild(0); renderNow(null); renderProgress();
+if (!BEATS.length) { $('start').firstElementChild.textContent = '這一期沒有可回放的紀錄'; $('start').firstElementChild.disabled = true; }
+$('startbtn').addEventListener('click', toggle); $('play').addEventListener('click', toggle);
+$('prev').addEventListener('click', () => jump(st.i - 1, false)); $('next').addEventListener('click', () => jump(st.i + 1, false));
+$('seek').addEventListener('change', (e) => jump(Number(e.target.value)));
+$('speed').addEventListener('change', (e) => { st.speed = Number(e.target.value) || 1; });
+$('follow').addEventListener('change', (e) => { st.follow = e.target.checked; });
+for (const btn of $('tabs').children) btn.addEventListener('click', () => { for (const b of $('tabs').children) b.classList.toggle('on', b === btn); $('log').hidden = btn.dataset.tab !== 'log'; $('stories').hidden = btn.dataset.tab !== 'stories'; });
+window.addEventListener('keydown', (e) => {
+  if (e.target.matches('input,select,button,summary')) return;
+  if (e.code === 'Space') { e.preventDefault(); toggle(); } else if (e.code === 'ArrowRight') jump(st.i + 1, false); else if (e.code === 'ArrowLeft') jump(st.i - 1, false);
+});
+if (matchMedia('(prefers-reduced-motion: reduce)').matches) { st.speed = 4; $('speed').value = '4'; }
+window.__office = {st, DATA, jump, toggle};
+</script>
+</body>
+</html>

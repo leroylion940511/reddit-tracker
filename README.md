@@ -79,6 +79,7 @@ flowchart TD
 - `DAILY_MODE=mas` 發行時依最新 `page_plans` 與核可狀態重新渲染：**未核可的稿只出標題**，正文換成「未核准，本期不發行全文。」
 - 只有真人名字能核可，角色名（`eic`、`reporter`…）會被拒絕；寫入 `approved_by`／`approved_at`。
 - 核可或 HOLD 可用 CLI（`daily approve`／`daily hold`），或在回放頁操作（`/daily/<date>/newsroom/decision`）。回放頁不能改稿。
+- 3D 編輯室回放：`/daily/<date>/newsroom/office`（唯讀）。把當期的收集、各角色的模型呼叫、訊息、改稿、版面變化一步一步演出來；資料介面見 `docs/v5/DAILY_EDITION.md`「回放時間線與 3D 編輯室」。
 - mas 模式沒有準備好的期數就發行失敗，不會在發行時重跑 prepare。
 
 ## LLM 層

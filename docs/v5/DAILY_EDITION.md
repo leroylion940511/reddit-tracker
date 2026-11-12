@@ -259,6 +259,60 @@ uv run python -m reddit_tracker.daily blind-export --dates YYYY-MM-DD --out DIR
 重編 10/27：`DATABASE_URL=sqlite:///data/work/1027_rebuild.db … prepare --now 2026-10-27T06:00 --recluster --refresh`；
 完整流程（刪截止後素材、清聚合與所有期數、重算重複稿）見 `scripts/rebuild_1027.py`。
 
+## 回放時間線與 3D 編輯室（2026-11-12）
+
+唯讀。把一期發生的事照時間排成一步一步的 `beats`，3D 頁面只負責播放，不做任何新聞判斷。
+
+| 路由 | 內容 |
+| --- | --- |
+| `GET /daily/{date}/newsroom/office?variant=mas\|pipeline` | 3D 編輯室回放頁（`daily/office_page.py`＋`daily/office.html`） |
+| `GET /daily/{date}/newsroom/replay.json?variant=…` | 同一份時間線資料（`daily/replay.py::build_replay`） |
+| `GET /daily/{date}/newsroom?variant=…&story=` | 表格版回放與核准（原有；3D 頁不能核准） |
+| `GET /daily/_static/three.module.js` | 本機那份 three.js；`reddit_tracker/daily/vendor/three.module.js` 存在才有，否則頁面從 jsDelivr 載入 `three@0.160.0` |
+
+`build_replay(session, edition_date, run_variant) -> dict`：
+
+| 鍵 | 內容 |
+| --- | --- |
+| `date`、`variant` | 哪一期、哪一組 |
+| `timing` | `recorded`（訊息有 `llm_call_id`，時間是真的）或 `reconstructed`（舊期數：訊息時間用同一篇稿、同一角色的第 k 次模型呼叫還原） |
+| `phases` | 這一期有出現的階段，依序：`collect`、`cluster`、`pipeline`、`pitch`、`write`、`layout`、`copy`、`approve`、`publish` |
+| `roles` | 角色 id → 中文名（含 `wire` 傳真機、`researcher` 資料員、`checktool` 查核工具、`pipeline` 流水線） |
+| `stories` | 有寫稿的 story：`section`、`kind`、`score`、`headline`、`source_title`、`final_status`、`versions`、`front`、`lead` |
+| `plans` | 每一版 `page_plans`：`version`、`decided_by`、`front{lead,second,briefs}`、`sections{版:[{story_id,display}]}` |
+| `beats` | 見下表 |
+| `summary` | 收集則數與抓取次數、候選事件數、稿數、訊息數、各角色呼叫次數、降級、發行時間 |
+
+每個 beat：`i`（順序）、`at`／`day`／`iso`（台北時間）、`phase`、`kind`、`actor`、`mode`、`title`、`say`（氣泡文字）、
+`detail`（右側面板：提示詞、回應、payload、diff…）、選用的 `to`、`type`／`type_label`／`status`（訊息）、`story_id`、
+`secs`（模型耗時）、`walk`（走到對方桌邊）、`paper`（傳一張紙給誰）、`sheets`（收集到的來源與則數）、
+`state`（這一步之後的狀態：`stories{id:{status,version,headline}}`、`plan`（`plans` 的索引）、`collected`）。
+
+| `kind` | 來源 | `mode`（頁面怎麼演） |
+| --- | --- | --- |
+| `collect` | `source_fetch_runs`，準備前 24 小時、每 4 小時一格；`rsshub` 來源歸 `wire`、其餘歸 `researcher` | `print`（傳真機吐紙）／`browse`（資料員上網） |
+| `cluster`、`snapshot` | `daily_editions.stats`、`daily_snapshots` | `sort`、`stamp` |
+| `llm` | `llm_records` 每次嘗試一步（含失敗）；P 組的呼叫 `actor=pipeline` | `think`（思考氣泡→結果） |
+| `message` | `agent_messages`；同一版的 PITCH 併成一步；程式對稿件發的 RELEASE／HOLD `actor=checktool` | `say`／`stamp` |
+| `plan` | `page_plans` 每一版 | `board`（看板換版） |
+| `version` | P 組的 `story_versions`（P 沒有訊息） | `stamp` |
+| `approve` | `story_versions.approved_by/approved_at`，同一人同一分鐘併成一步；晚於發行標 `late` | `stamp` |
+| `publish` | `daily_editions.published_at` | `publish` |
+
+資料直接嵌在頁面的 `<script type="application/json">`（`</` 會拆開），所以頁面另存下來就能離線重看那一期（3D 需要 three.js）。
+
+### 訊息的時間、連結與狀態（2026-11-12 起）
+
+- `agent_messages.llm_call_id`：這則訊息來自哪一次模型呼叫（`llm/records.last_record_id()`；重播命中舊紀錄時指到那一列）。程式自己發的訊息是空的。
+- 正式出刊（呼叫 `prepare_daily`／`prepare_with_shadow` 時沒給 `now`）用 `protocol.wall_clock()`，`Clock.tick()` 回真實時間；有給 `now`（重編、回歸集、測試）維持每則 +1 秒，結果可重現。提示詞、`request_hash` 都不受影響。
+- `run_mas` 結束時 `protocol.settle_messages()` 把已處理的 PITCH、RELEASE、PAGE_OBJECTION、REVISION_DONE、REBUT、REQUEST_REVISION 標成 `handled`；沒解決的 CHALLENGE 與等真人的 HOLD 留 `pending`。
+
+## 前台標示（2026-11-12）
+
+報頭印「第 N 期」（`view.edition_issue_number`：到這一天為止第幾期）與台北時間的出刊時間；多來源報導在標題旁標「多來源」；
+來源列是「媒體｜標題｜時間（台北）」；「為什麼重要」裡的 `[S1]` 也變成連結；頁尾有「依標題與摘要撰稿」；
+M 組頁尾的撰稿數照版面上有全文的稿計算。
+
 ## 試編紀錄（2026-10-26，production DB 複本，報紙日期 10/27）
 
 - 1,743 個候選事件 → 編輯會議合併 8 組（巴西、塞爾維亞、委內瑞拉的中英文報導；五中全會三個事件；福田康夫；Anthropic IPO 等）→ 42 則：頭版 6、各版 36。

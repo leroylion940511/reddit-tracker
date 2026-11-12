@@ -553,3 +553,33 @@
 - 👤 **重錄估計**：要在旗標開啟時也有 T2a 真錄音，需真 Codex **2 次**（查核員 1＋記者修稿 1，記者初稿重用舊錄音）；每次最多重試 1 次（`CODEX_MAX_RETRIES=1`），最壞 4 次。建議另存 `1027_t2a_per_source_records.json`，不覆蓋舊檔，兩條路徑都能重播。`1027_mas_records.json` 有 2 筆查核員紀錄，旗標開啟時整期重播（`verify_mas_merge.py`）另需最多 2＋2 次（最壞 8 次）。
 - 測試：`tests/test_factcheck_relevance.py` 新增 7 個（5330 重現 S2 留、S3 刪；新舊格式解析；旗標關閉時請求不變；旗標由設定讀；旗標開但回舊格式；KEEP 不能放行數字；查核員失敗照程式刪）。`scripts/recheck_factcheck.py` 改用同一個解讀函式（fixture 結果不變：5330 S2、S3，5455 S2）。全套 392 passed／7 skipped／1 xfailed／1 xpassed（基準 385／7／1／1）。
 - 對實驗二（查核員開關）的影響與決定期限，見 `docs/pr/checker-per-source.md`。
+
+### 2026-11-12 手冊對照盤點與 3D 編輯室（`feat/newsroom-3d`，未部署）
+
+用 production 資料庫的唯讀複本（`~/Documents/Developer/Lab/rt-data-3d/prod-copy.db`，11/12 18:01）逐項對手冊。沒有呼叫 Codex、沒有動 production、沒有重啟服務。
+
+**程式上補齊的（都有測試，`tests/test_replay_office.py`）：**
+
+- ✅ **`agent_messages.llm_call_id`（手冊 6.3）**：production 414 則訊息全部是空的，編排器從來沒填。現在每則由模型呼叫產生的訊息都指到那一次 `llm_records`；程式發的訊息維持空。
+- ✅ **訊息時間是真的（手冊 0.2「誰在幾點」）**：`Clock` 原本一律每則 +1 秒，所以每期訊息都是 06:00:01、06:00:02…，跟實際呼叫時間（06:02–06:06）對不上。正式出刊改用真實時間；重編、回歸集、測試不變。
+- ✅ **訊息結案（手冊 6.3 的 status）**：414 則裡 342 則永遠停在 `pending`（PITCH、RELEASE、PAGE_OBJECTION）。一輪跑完把已處理的標成 `handled`；沒解決的 CHALLENGE、等真人的 HOLD 留著。
+- ✅ **前台（手冊 6.8、10.1）**：報頭「試刊號」改成「第 N 期」；出刊時間原本把 UTC 當台北時間印（08:35 印成 00:35）；多來源稿加「多來源」標籤；來源列補時間；「為什麼重要」的 `[S1]` 變連結；頁尾補「依標題與摘要撰稿」；M 組頁尾「AI 撰稿 0 則」改成實際稿數。
+- ✅ **盲計雜湊（步驟 11）**：`docs/eval/blind_mapping.sha256` 記了 11/09–11/12；兩個已經成立的 xfail 拿掉。⚠️ 11/09–11/11 是事後才記的。
+- ✅ **試刊指標表（步驟 12）**：`scripts/trial_metrics.py`，只讀資料庫；週報草稿 `docs/weekly/2026-11-10.md`。
+- ✅ **3D 編輯室回放**：`/daily/{date}/newsroom/office`，介面見 `docs/v5/DAILY_EDITION.md`「回放時間線與 3D 編輯室」。舊期數的訊息時間用模型呼叫紀錄還原，頁面上有標明。
+
+**沒有照手冊、要人處理的（程式改不了）：**
+
+- 👤 **核准時間**：11/07–11/12 的 M 組稿都是 11/12 11:03 一次補核准，晚於各期發行；11/04、11/05 沒核准。手冊要求 08:20 前核准。
+- 👤 **實驗一標註**：`annotation/exp1/exp1_resolution.md` 寫明 A、B 都是 AI 工具標的，違反手冊 8.1 第 4 點、11.5 第 2 點；要標註員本人重標，現有答案不能用。
+- 👤 **E11**（11/15 到期）、**老師確認方案 B 時程與 Codex**：同 PROGRESS。
+
+**還沒做的工具：**
+
+- ⛔ 實驗一的結果計算（Wilson、bootstrap、McNemar、κ）還沒有腳本；`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md` 都還沒有（11/22）。
+- ⛔ 實驗二的三組執行（查核員全關／只開程式工具／程式＋LLM）還沒有腳本，只有抽候選稿的 `scripts/sample_exp2.py`（方案 B：11/17–11/18）。
+- 🔁 T2b、方法 B（embedding）、Google 發燒搜尋：手冊列為加分，沒做。
+- ℹ️ 版面編輯的提示詞沒有給頭版容量，模型每天都回「未提供頭版容量上限」；試刊期間不改提示詞。
+
+全套 410 passed／7 skipped。
+
