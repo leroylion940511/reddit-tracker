@@ -5,7 +5,7 @@
 > 2026-10-27 以前的段落是 v4／v5 歷史紀錄，裡面提到的 bot、scrapers、services、v5 newsroom 模組都已移除；v4 的段落已搬到 `docs/archive/PROGRESS_v4.md`。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-12（`feat/newsroom-3d`：手冊對照盤點＋3D 編輯室回放，未併 main、未部署）；上次部署 2026-11-06 15:54（`fix/newsroom-1106`，main `f252c8b`）
+**Last updated:** 2026-11-12（`feat/newsroom-3d`：手冊對照盤點＋3D 編輯室回放，已併入 main `7f72c69`，**服務沒有重載、沒有 push**）；上次部署 2026-11-06 15:54（`fix/newsroom-1106`，main `f252c8b`）
 
 ## 本次變更（2026-11-12 — 手冊對照盤點＋3D 編輯室，`feat/newsroom-3d`）
 
@@ -13,7 +13,7 @@ worktree `~/Documents/Developer/Lab/rt-wt-3d`。查證用 production DB 唯讀�
 
 - ✅ 3D 編輯室回放 `/daily/<date>/newsroom/office`（`daily/replay.py`、`office_page.py`、`office.html`）；日報頁右下與表格版回放都有入口。three.js 從 jsDelivr 載入，放一份到 `reddit_tracker/daily/vendor/three.module.js` 就能離線。
 - ✅ 補齊：`agent_messages.llm_call_id`、訊息真實時間、訊息結案、報頭期號／台北出刊時間、「多來源」標籤、來源列時間、頁尾聲明、盲計雜湊（11/09–11/12）、`scripts/trial_metrics.py`、週報草稿 `docs/weekly/2026-11-10.md`。
-- ⚠️ 這些會改 M 組的訊息紀錄與網頁版面，但不改提示詞與 `request_hash`。試刊到 11/15；👤 決定現在部署還是試刊後再部署。部署不需要 migration。
+- ⚠️ 2026-11-12 晚上依志晨指示 fast-forward 併入 main，但 **newsroom 服務沒有重載**：常駐 process 還是舊程式，06:00 出刊照舊。新程式（訊息時間、llm_call_id、結案、報頭）要等 `deploy/install_launchd.sh newsroom-reload` 或服務自己重啟才生效；試刊到 11/15，👤 決定什麼時候重載。不改提示詞與 `request_hash`，不需要 migration。3D 回放用 `uv run python -m reddit_tracker.web` 就看得到，不用重載。
 - ⚠️ **11/07–11/12 的 M 組稿是 11/12 11:03 一次補核准的**（晚於各期 08:35 發行）；試刊 11/09–11/12 四期讀者都只收到標題短訊。
 - ⚠️ **實驗一的 100 組是 AI 工具標的**（`annotation/exp1/exp1_resolution.md`），手冊不允許；要標註員 A、B 本人重標。
 - ⛔ 還沒有：實驗一結果計算腳本、實驗二三組執行腳本。
