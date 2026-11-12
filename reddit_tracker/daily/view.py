@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from functools import lru_cache
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -189,7 +190,7 @@ def build_edition_view(
         sections=dict(sections),
         market=market,
         stats=stats,
-        issue_number=issue_number,
+        issue_number=issue_number if issue_number is not None else (edition_issue_number(session, edition_date) or None),
         published_at=published_at,
         plan_version=plan.plan_version,
     )
@@ -258,6 +259,24 @@ def _cached_names(path: str, mtime_ns: int) -> tuple[tuple[str, str], ...]:
     return tuple((s.id, s.name) for s in load_registry(path).sources)
 
 
+def _source_time(value: datetime | None) -> str:
+    """來源列的時間（手冊 6.8：媒體、標題、時間），台北時間。"""
+    if value is None:
+        return ""
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(ZoneInfo("Asia/Taipei")).strftime("%m-%d %H:%M")
+
+
+def edition_issue_number(session: Session, edition_date: date) -> int:
+    """期號＝到這一天為止第幾期（含試刊號 2026-10-27）。"""
+    from sqlalchemy import func
+
+    return session.scalar(
+        select(func.count()).select_from(DailyEdition).where(DailyEdition.edition_date <= edition_date)
+    ) or 0
+
+
 def _sources_for(session: Session, story: Story, version: StoryVersion) -> list[dict]:
     """版本上記的素材 id 對回標題。沒有 id 時留空，渲染仍可出標題。
 
@@ -284,7 +303,7 @@ def _sources_for(session: Session, story: Story, version: StoryVersion) -> list[
             "source_id": row.source_id,
             "title": row.title or "",
             "url": row.url,
-            "published_at": "",
+            "published_at": _source_time(row.published_at),
             "summary": row.summary or "",
         })
     return sources

@@ -12,6 +12,7 @@ import asyncio
 import logging
 import shutil
 import time
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -471,9 +472,12 @@ def _finish_mas(
         session, edition_date, plan.snapshot_candidates if plan.snapshot_candidates is not None else freeze_candidates(session, plan.candidates, registry.disabled_source_ids()), now,
     )
     client = getattr(writer, "client", None) or _SilentClient()
-    result = run_mas(
-        session, edition_date=edition_date, snapshot=snapshot, registry=registry, client=client, now=now,
-    )
+    from .mas.protocol import wall_clock
+
+    with wall_clock(_live_clock.get()):
+        result = run_mas(
+            session, edition_date=edition_date, snapshot=snapshot, registry=registry, client=client, now=now,
+        )
     view = build_edition_view(session, edition_date, MAS, sections, market=market, for_publish=False)
     if not view.articles:
         raise DailyEditionError("沒有可刊登的事件；請確認收集與聚合是否正常")
@@ -592,7 +596,21 @@ def refresh_after_review(edition_date: date, *, scope=None) -> Path | None:
         return None
 
 
-def prepare_daily(
+# 呼叫端沒給 now＝正式出刊（排程、手動 prepare）：M 組訊息與版本的時間用真實時間。
+# 有給 now 的是重編、回歸集、測試，維持每則 +1 秒，結果才可重現。
+_live_clock: ContextVar[bool] = ContextVar("daily_live_clock", default=False)
+
+
+def prepare_daily(edition_date: date, *, now: datetime | None = None, **kwargs) -> int:
+    """冪等準備一期日報，回傳 edition id；不發送。參數見 `_prepare_daily`。"""
+    token = _live_clock.set(now is None or _live_clock.get())
+    try:
+        return _prepare_daily(edition_date, now=now, **kwargs)
+    finally:
+        _live_clock.reset(token)
+
+
+def _prepare_daily(
     edition_date: date,
     *,
     writer_mode: str | None = None,
@@ -770,6 +788,14 @@ def export_annotation_report(edition_date: date, out_root: str | Path) -> str:
 
 
 def prepare_with_shadow(edition_date: date, *, now: datetime | None = None) -> int:
+    token = _live_clock.set(now is None or _live_clock.get())
+    try:
+        return _prepare_with_shadow(edition_date, now=now)
+    finally:
+        _live_clock.reset(token)
+
+
+def _prepare_with_shadow(edition_date: date, *, now: datetime | None = None) -> int:
     """`DAILY_MODE=mas` 且 `DAILY_SHADOW_ENABLED=true` 的 06:00：P 影子先跑、M 後跑（手冊 2.3、8.3）。
 
     - 同一份快照：P 影子建快照（跨語言合併只跑一次），M 用 `plan_from_snapshot` 從同一份開始。

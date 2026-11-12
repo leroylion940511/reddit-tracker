@@ -38,6 +38,16 @@ class LogMeta:
 
 _factory: ContextVar = ContextVar("llm_log_factory", default=None)
 _meta: ContextVar[LogMeta] = ContextVar("llm_log_meta", default=LogMeta())
+_last_id: ContextVar[int | None] = ContextVar("llm_last_record_id", default=None)
+
+
+def reset_last_record() -> None:
+    _last_id.set(None)
+
+
+def last_record_id() -> int | None:
+    """最近一次嘗試（或重播時命中的那一列）的 llm_records.id；agent_messages.llm_call_id 用。"""
+    return _last_id.get()
 
 
 @contextmanager
@@ -117,6 +127,7 @@ def note_attempt(
     with factory() as session:
         session.add(row)
         session.flush()
+        _last_id.set(row.id)
         return row.id
 
 
@@ -127,7 +138,10 @@ def cached_ok_response(session: Session, *, system: str, messages: list[dict], m
         .where(LLMRecord.request_hash == digest, LLMRecord.ok.is_(True), LLMRecord.response_text.is_not(None))
         .order_by(LLMRecord.id.desc())
     )
-    return None if row is None else row.response_text
+    if row is None:
+        return None
+    _last_id.set(row.id)
+    return row.response_text
 
 
 def complete_logged(client, session: Session, **kwargs) -> str:

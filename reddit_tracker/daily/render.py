@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from datetime import date
+from datetime import date, timezone
 from html import escape
 from zoneinfo import ZoneInfo
 
@@ -18,6 +18,7 @@ WEEKDAYS = "一二三四五六日"
 # MVP 只做頭版＋台灣、國際、科技三個內版（手冊 1.3）；其他版留在選單，沒稿時寫「本版未開放」。
 MVP_SECTIONS = ("taiwan", "world", "tech")
 TELEGRAM_LIMIT = 3_900
+MULTI_SOURCE_LABEL = "多來源"
 
 _CSS = """
 :root{--bg:#f7f4ee;--paper:#fffdf8;--ink:#1d1b18;--muted:#6b645a;--rule:#d9d2c5;--accent:#8a1c1c;--tag:#efe8da}
@@ -69,7 +70,7 @@ def _preprint_only(article: ViewArticle) -> bool:
     return bool(urls) and all(domain_of(canonicalize_url(u)) in PREPRINT_OUTLETS for u in urls)
 
 
-def _cite(text: str, anchor: str, n_sources: int) -> str:
+def _cite(text: str, anchor: str, n_sources: int, *, fill: bool = True) -> str:
     def repl(match: re.Match) -> str:
         number = int(match.group(1))
         if 1 <= number <= n_sources:
@@ -77,7 +78,7 @@ def _cite(text: str, anchor: str, n_sources: int) -> str:
         return match.group(0)
 
     cited = _CITE.sub(repl, escape(text))
-    if n_sources and "<a href=" not in cited:
+    if fill and n_sources and "<a href=" not in cited:
         links = "".join(f'<a href="#{anchor}-{i}">[{i}]</a>' for i in range(1, n_sources + 1))
         cited = f"{cited} {links}"
     return cited
@@ -110,6 +111,8 @@ def _article_html(article: ViewArticle) -> str:
         tags.append(PREPRINT_LABEL)
     elif KIND_LABELS.get(article.kind):
         tags.append(KIND_LABELS[article.kind])
+    elif article.kind == "report" and len(article.sources) >= 2:
+        tags.append(MULTI_SOURCE_LABEL)  # 手冊 6.8：狀態標籤放在標題旁；來源列已把轉載併成一列，只算獨立來源
     if article.writer == "template" and not article.withheld:
         tags.append("摘要整理")
     tag_html = "".join(f'<span class="tag">{escape(t)}</span>' for t in tags)
@@ -128,7 +131,10 @@ def _article_html(article: ViewArticle) -> str:
             f'<p class="withheld">未核准，本期不發行全文。</p></article>'
         )
     deck = f'<p class="deck">{escape(article.deck)}</p>' if article.deck and article.writer != "template" else ""
-    why = f'<p class="why">為什麼重要：{escape(article.why_it_matters)}</p>' if article.why_it_matters else ""
+    why = (
+        f'<p class="why">為什麼重要：{_cite(article.why_it_matters, anchor, len(article.sources), fill=False)}</p>'
+        if article.why_it_matters else ""
+    )
     klass = f' class="{css}"' if css else ""
     return (
         f'<article{klass} id="{article.anchor}"><h3>{tag_html}{escape(article.headline)}</h3>{deck}'
@@ -175,7 +181,10 @@ def _mast_meta(view: EditionView) -> str:
     when = ""
     if view.published_at is not None:
         tz = ZoneInfo(get_settings().newsroom_delivery_timezone)
-        local = view.published_at.astimezone(tz)
+        stamp = view.published_at
+        if stamp.tzinfo is None:  # SQLite 讀回來沒有時區，存的是 UTC；不補的話 08:35 會印成 00:35
+            stamp = stamp.replace(tzinfo=timezone.utc)
+        local = stamp.astimezone(tz)
         when = f"｜{local.strftime('%Y-%m-%d %H:%M')} 出刊"
     count = sum(1 for a in view.articles if a.display == FULL or a.is_front)
     return f"{edition_title(view.edition_date)}｜{issue}{when}｜本期 {count} 則"
@@ -199,6 +208,12 @@ def render_html(view: EditionView) -> str:
             inner = f'<p class="empty">{empty}</p>'
         blocks.append(f'<h2 class="section" id="{key}">{escape(label)}</h2><div class="grid">{inner}</div>')
     stats = view.stats or {}
+    ai_count, template_count = stats.get("ai_articles", stats.get("gemini_articles", 0)), stats.get("template_articles", 0)
+    if not ai_count and not template_count:
+        # M 組的 stats 不記撰稿數（稿在 story_versions）；照版面上有全文的稿數
+        written = {a.story_id or id(a): a for a in view.articles if a.display == FULL and not a.withheld}
+        template_count = sum(1 for a in written.values() if a.writer == "template")
+        ai_count = len(written) - template_count
     title = f"AI 綜合日報｜{view.edition_date.isoformat()}"
     return f"""<!doctype html>
 <html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -210,9 +225,9 @@ def render_html(view: EditionView) -> str:
 <h2 class="section" id="front">頭版</h2><div class="front">{"".join(_article_html(a) for a in front)}{_section_briefs_html(stats.get("briefs"), sections)}</div>
 {"".join(blocks)}
 <footer>
-<p>本報由 AI 協作編採：程式依獨立出處數、官方來源、時效與升溫速度選題，AI 依各家媒體的標題與摘要撰稿，未讀取全文、未做現場採訪。每則附原始來源，請以原文為準。</p>
+<p>本報由 AI 協作編採，依標題與摘要撰稿：程式依獨立出處數、官方來源、時效與升溫速度選題，AI 依各家媒體的標題與摘要撰稿，未讀取全文、未做現場採訪。每則附原始來源，請以原文為準。</p>
 <p>標示「單一來源」者目前僅一家媒體報導；「社群觀察」為網路討論，不代表整體民意，亦非已證實的事實；「摘要整理」為未經 AI 改寫的來源摘要。「多來源」只計算獨立來源，轉載併成一列。</p>
-<p>素材收集 {escape(str(stats.get("candidate_clusters", "—")))} 個事件｜AI 撰稿 {escape(str(stats.get("ai_articles", stats.get("gemini_articles", 0))))} 則｜摘要整理 {escape(str(stats.get("template_articles", 0)))} 則</p>
+<p>素材收集 {escape(str(stats.get("candidate_clusters", "—")))} 個事件｜AI 撰稿 {escape(str(ai_count))} 則｜摘要整理 {escape(str(template_count))} 則</p>
 </footer></div></body></html>
 """
 

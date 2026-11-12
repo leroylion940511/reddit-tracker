@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta
+from contextlib import contextmanager
+from contextvars import ContextVar
+from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
@@ -163,10 +165,50 @@ def correlation_id(kind: str, edition_date: date, story_id: int) -> str:
     return f"{kind}-{edition_date.strftime('%Y%m%d')}-{story_id:03d}"
 
 
+# 編排器處理完就結案的訊息種類。HOLD（等真人）與 CHALLENGE（沒解決的異議）留著 pending。
+SETTLED_TYPES = ("PITCH", "RELEASE", "PAGE_OBJECTION", "REVISION_DONE", "REBUT", "REQUEST_REVISION")
+
+
+def settle_messages(session: Session, edition_date: date, run_variant: str) -> int:
+    """一輪跑完，把編排器已經處理過的 pending 訊息標成 handled（手冊 6.3 的 status）。"""
+    result = session.execute(
+        update(AgentMessage)
+        .where(
+            AgentMessage.edition_date == edition_date,
+            AgentMessage.run_variant == run_variant,
+            AgentMessage.status == "pending",
+            AgentMessage.type.in_(SETTLED_TYPES),
+        )
+        .values(status="handled")
+    )
+    session.flush()
+    return result.rowcount or 0
+
+
+_wall_clock: ContextVar[bool] = ContextVar("mas_wall_clock", default=False)
+
+
+@contextmanager
+def wall_clock(enabled: bool = True):
+    """正式出刊（呼叫端沒指定 now）時，訊息與版本的時間用真實時間；重播、測試維持每則 +1 秒。"""
+    token = _wall_clock.set(enabled)
+    try:
+        yield
+    finally:
+        _wall_clock.reset(token)
+
+
 class Clock:
     def __init__(self, start: datetime) -> None:
         self.now = start
 
     def tick(self, seconds: int = 1) -> datetime:
-        self.now = self.now + timedelta(seconds=seconds)
+        if _wall_clock.get():
+            real = datetime.now(timezone.utc)
+            if self.now.tzinfo is None:
+                real = real.replace(tzinfo=None)
+            # 至少比上一則晚 1 微秒，順序不會因為同一刻而亂掉
+            self.now = max(self.now + timedelta(microseconds=1), real)
+        else:
+            self.now = self.now + timedelta(seconds=seconds)
         return self.now

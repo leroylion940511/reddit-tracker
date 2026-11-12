@@ -16,7 +16,7 @@ from ...config import get_settings
 from ...collection.entities import EntityContext, load_lexicon
 from ...llm.deadline import deadline_reached
 from ...llm.quota import QuotaExhausted
-from ...llm.records import bind_log_session, complete_logged, llm_log_meta
+from ...llm.records import bind_log_session, complete_logged, last_record_id, llm_log_meta, reset_last_record
 from ...models import AgentMessage, PagePlan, Story, StoryVersion
 from ..evidence import EvidenceItem, EvidencePack, build_evidence_from_ids
 from ..scoring import SECTION_QUOTAS, ScoredCluster, select_articles
@@ -30,6 +30,7 @@ from .protocol import (
     mark_handled,
     post_message,
     recover_claimed,
+    settle_messages,
 )
 
 logger = logging.getLogger(__name__)
@@ -236,7 +237,11 @@ def _degrade(degraded, role):
 
 
 def _ask(session, client, *, role, story_id, edition_date, system, user, schema, temperature) -> str | None:
-    """回傳模型文字。額度用完或呼叫失敗回 None，由呼叫端降級。"""
+    """回傳模型文字。額度用完或呼叫失敗回 None，由呼叫端降級。
+
+    這次呼叫寫的 llm_records.id 用 `last_record_id()` 取（沒呼叫就是 None），給訊息的 llm_call_id。
+    """
+    reset_last_record()
     if _quota_left(client) == 0:
         return None
     kwargs = dict(
@@ -407,6 +412,7 @@ def _check_and_maybe_revise(session, *, edition_date, story, evidence, version, 
     bad = call_tool("fact_checker", "check_relevance", irrelevant_sources, evidence)
     numbers = call_tool("fact_checker", "check_numbers", unsupported_numbers, version.body, evidence_text)
     assessment = None
+    checker_call = None
     cleared: list[tuple[int, EvidenceItem]] = []
     if bad or numbers:
         # 可疑時才請查核員判斷。數字：程式結果不能被模型的 OK 覆蓋。
@@ -419,6 +425,7 @@ def _check_and_maybe_revise(session, *, edition_date, story, evidence, version, 
                 session, client, role="fact_checker", story_id=story.id, edition_date=edition_date,
                 system=system, user=user, schema=schema, temperature=0,
             )
+            checker_call = last_record_id()
         elif _quota_left(client) == 0:
             _degrade(degraded, "fact_checker")
         if bad:
@@ -444,7 +451,7 @@ def _check_and_maybe_revise(session, *, edition_date, story, evidence, version, 
         message = post_message(
             session, run_variant=MAS, edition_date=edition_date, sender="fact_checker", recipient="reporter",
             type="CHALLENGE", now=clock.tick(), story_id=story.id, target_version=version.version,
-            correlation_id=corr, payload=payload,
+            correlation_id=corr, payload=payload, llm_call_id=checker_call,
         )
         if claim_message(session, message.id):
             mark_handled(session, message.id)
@@ -481,7 +488,7 @@ def _check_and_maybe_revise(session, *, edition_date, story, evidence, version, 
     post_message(
         session, run_variant=MAS, edition_date=edition_date, sender="system", recipient="eic", type="RELEASE",
         now=clock.tick(), story_id=story.id, target_version=version.version, correlation_id=corr,
-        payload=release,
+        payload=release, llm_call_id=checker_call if cleared else None,
     )
     # RELEASE 不該把 checked 改掉；hold_story 只在 HOLD。system RELEASE 是放行紀錄。
     version.status = "checked"
@@ -498,13 +505,14 @@ def _revise(session, *, edition_date, story, evidence, removed, version, client,
         session, client, role="reporter", story_id=story.id, edition_date=edition_date,
         system=REPORTER_SYSTEM, user=user, schema=DRAFT_SCHEMA, temperature=0.3,
     )
+    reporter_call = last_record_id()
     draft = _parse(text, _Draft)
     if draft is None or draft.action == "REBUT":
         if draft is not None and draft.action == "REBUT":
             post_message(
                 session, run_variant=MAS, edition_date=edition_date, sender="reporter", recipient="fact_checker",
                 type="REBUT", now=clock.tick(), story_id=story.id, correlation_id=corr,
-                payload={"reason": draft.reason, "target_version": version.version},
+                payload={"reason": draft.reason, "target_version": version.version}, llm_call_id=reporter_call,
             )
             return _checker_llm(
                 session, edition_date=edition_date, story=story, evidence=evidence, version=version, client=client,
@@ -523,7 +531,7 @@ def _revise(session, *, edition_date, story, evidence, removed, version, client,
     done = post_message(
         session, run_variant=MAS, edition_date=edition_date, sender="reporter", recipient="fact_checker",
         type="REVISION_DONE", now=clock.tick(), story_id=story.id, correlation_id=corr,
-        payload={"new_version": new.version, "change": f"來源改為 {len(evidence)} 家"},
+        payload={"new_version": new.version, "change": f"來源改為 {len(evidence)} 家"}, llm_call_id=reporter_call,
     )
     if claim_message(session, done.id):
         mark_handled(session, done.id)
@@ -560,6 +568,7 @@ def _checker_llm(session, *, edition_date, story, evidence, version, client, clo
         session, client, role="fact_checker", story_id=story.id, edition_date=edition_date,
         system=CHECKER_SYSTEM, user=user, schema=CHECKER_SCHEMA, temperature=0,
     )
+    checker_call = last_record_id()
     parsed = _parse(text, _Checker)
     if parsed is None:
         if "fact_checker" not in degraded and text is None:
@@ -578,6 +587,7 @@ def _checker_llm(session, *, edition_date, story, evidence, version, client, clo
         session, run_variant=MAS, edition_date=edition_date, sender="fact_checker", recipient="reporter",
         type="CHALLENGE", now=clock.tick(), story_id=story.id, target_version=version.version, correlation_id=corr,
         payload={"problem": parsed.problem, "detail": parsed.detail, "required_action": parsed.required_action},
+        llm_call_id=checker_call,
     )
     if message.type == "HOLD":
         return latest_version(session, story.id) or version
@@ -591,11 +601,13 @@ def _checker_llm(session, *, edition_date, story, evidence, version, client, clo
         session, client, role="reporter", story_id=story.id, edition_date=edition_date,
         system=REPORTER_SYSTEM, user=follow, schema=DRAFT_SCHEMA, temperature=0.3,
     )
+    reporter_call = last_record_id()
     draft = _parse(text, _Draft)
     if draft is not None and draft.action == "REBUT":
         post_message(
             session, run_variant=MAS, edition_date=edition_date, sender="reporter", recipient="fact_checker",
             type="REBUT", now=clock.tick(), story_id=story.id, correlation_id=corr, payload={"reason": draft.reason},
+            llm_call_id=reporter_call,
         )
         return _checker_llm(
             session, edition_date=edition_date, story=story, evidence=evidence, version=version, client=client,
@@ -613,7 +625,7 @@ def _checker_llm(session, *, edition_date, story, evidence, version, client, clo
     post_message(
         session, run_variant=MAS, edition_date=edition_date, sender="reporter", recipient="fact_checker",
         type="REVISION_DONE", now=clock.tick(), story_id=story.id, correlation_id=corr,
-        payload={"new_version": new.version, "change": parsed.required_action},
+        payload={"new_version": new.version, "change": parsed.required_action}, llm_call_id=reporter_call,
     )
     new.status = "checked"
     session.flush()
@@ -747,14 +759,16 @@ def run_mas(
             )
             evidence_of[story.id] = pack.items
         automatic = pitches is None
+        pitch_calls: dict[str, int | None] = {}
         if automatic:
-            pitches = _section_pitches(session, edition_date, list(stories.values()), evidence_of, client)
+            pitches = _section_pitches(session, edition_date, list(stories.values()), evidence_of, client, pitch_calls)
         pitches = guard_pitches(pitches, evidence_of, result.injection_log)
         for pitch in pitches:
             post_message(
                 session, run_variant=MAS, edition_date=edition_date, sender=pitch.sender, recipient="eic",
                 type="PITCH", now=clock.tick(), story_id=pitch.story_id,
                 payload={"section": pitch.section, "angle": pitch.angle, "priority": pitch.priority},
+                llm_call_id=pitch_calls.get(pitch.section),
             )
         hold_ids: set[int] = set()
         for pitch in pitches:
@@ -780,7 +794,8 @@ def run_mas(
                           user=json.dumps([p.__dict__ for p in safe_pitches], ensure_ascii=False),
                           schema=CHECKER_SCHEMA, temperature=0)
             post_message(session, run_variant=MAS, edition_date=edition_date, sender="layout_editor", recipient="eic",
-                         type="PAGE_OBJECTION", now=clock.tick(), payload={"detail": layout or "程式檢查版面容量", "capacity": 6})
+                         type="PAGE_OBJECTION", now=clock.tick(), payload={"detail": layout or "程式檢查版面容量", "capacity": 6},
+                         llm_call_id=last_record_id())
         conflicts = _conflicts(pitches)
         front = [p for p in pitches if p.priority == "front" and p.story_id not in hold_ids]
         if conflicts:
@@ -803,6 +818,7 @@ def run_mas(
             _copy_edit_front(session, edition_date=edition_date, client=client, clock=clock, degraded=result.degraded)
         elif _quota_left(client) == 0 and "copy_editor" not in result.degraded:
             result.degraded.append("copy_editor")
+        settle_messages(session, edition_date, MAS)
     return result
 
 
@@ -815,7 +831,7 @@ def _default_pitches(stories: list[Story], evidence_of: dict[int, list[EvidenceI
                   priority="front" if sel.is_front else "section") for sel in selections]
 
 
-def _section_pitches(session, edition_date, stories, evidence_of, client):
+def _section_pitches(session, edition_date, stories, evidence_of, client, calls: dict | None = None):
     pitches = _default_pitches(stories, evidence_of)
     top = sorted((s for s in stories if s.section in SECTIONS), key=lambda s: -s.score)[:10]
     global_top = [{"story_id": s.id, "section": s.section, "score": s.score,
@@ -826,6 +842,8 @@ def _section_pitches(session, edition_date, stories, evidence_of, client):
                     system=PITCH_SYSTEM, user=json.dumps({"section": section, "candidates": [
                         {**p.__dict__, "title": evidence_of[p.story_id][0].title} for p in own
                     ], "global_top10": global_top}, ensure_ascii=False), schema=PITCH_SCHEMA, temperature=0)
+        if calls is not None:
+            calls[section] = last_record_id()
         try:
             proposed = json.loads(text or "{}").get("pitches", [])
             by_id = {p["story_id"]: p for p in proposed if isinstance(p, dict) and "story_id" in p}
@@ -923,7 +941,7 @@ def _resolve_t1(session, *, edition_date, conflicts, client, clock, hold_ids, re
             payload["why"] = "同一事件不得有兩篇主稿"
         message = post_message(
             session, run_variant=MAS, edition_date=edition_date, sender="eic", recipient="section_editor",
-            type="DECISION", now=clock.tick(), story_id=story_id, payload=payload,
+            type="DECISION", now=clock.tick(), story_id=story_id, payload=payload, llm_call_id=last_record_id(),
         )
         if decision is None or raw_problems:
             message.status = "rejected"
@@ -973,7 +991,7 @@ def _resolve_t3(session, *, edition_date, front, client, clock, hold_ids, result
     message = post_message(
         session, run_variant=MAS, edition_date=edition_date, sender="eic", recipient="layout_editor",
         type="DECISION", now=clock.tick(),
-        payload=decision.model_dump() if decision else {"error": "沒有可用的決定"},
+        payload=decision.model_dump() if decision else {"error": "沒有可用的決定"}, llm_call_id=last_record_id(),
     )
     if decision is None:
         message.status = "rejected"
@@ -1016,6 +1034,7 @@ def _maybe_shorten_lead(session, *, edition_date, client, clock, degraded) -> No
         session, client, role="reporter", story_id=lead_id, edition_date=edition_date,
         system=REPORTER_SYSTEM, user=user, schema=DRAFT_SCHEMA, temperature=0.3,
     )
+    shorten_call = last_record_id()
     draft = _parse(text, _Draft)
     body = draft.body if draft and draft.body else version.body[:LEAD_MAX_CHARS]
     if len(body) > LEAD_MAX_CHARS:
@@ -1029,7 +1048,7 @@ def _maybe_shorten_lead(session, *, edition_date, client, clock, degraded) -> No
     post_message(
         session, run_variant=MAS, edition_date=edition_date, sender="reporter", recipient="layout_editor",
         type="REVISION_DONE", now=clock.tick(), story_id=lead_id,
-        payload={"new_version": version.version + 1, "change": "縮短主稿"},
+        payload={"new_version": version.version + 1, "change": "縮短主稿"}, llm_call_id=shorten_call,
     )
     if story is not None and "copy_editor" not in degraded:
         _copy_confirm(session, edition_date=edition_date, story=story, before=version.body, clock=clock)
@@ -1079,6 +1098,7 @@ def _copy_edit_front(session, *, edition_date, client, clock, degraded=None) -> 
             system=COPY_SYSTEM, user=f"標題：{version.headline}\n正文：{version.body}",
             schema=CHECKER_SCHEMA, temperature=0,
         )
+        copy_call = last_record_id()
         parsed = _parse(text, _Checker)
         if parsed is None or parsed.action != "CHALLENGE":
             continue
@@ -1088,6 +1108,7 @@ def _copy_edit_front(session, *, edition_date, client, clock, degraded=None) -> 
             type="CHALLENGE", now=clock.tick(), story_id=story_id, target_version=version.version,
             correlation_id=corr, payload={"problem": "COPY", "detail": parsed.detail,
                                           "required_action": parsed.required_action},
+            llm_call_id=copy_call,
         )
         if not claim_message(session, message.id):
             continue  # 別的 worker 已經在處理（手冊 6.4 第 4 條）
