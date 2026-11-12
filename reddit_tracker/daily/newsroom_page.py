@@ -146,6 +146,7 @@ def render_newsroom(
 <title>回放 {edition_date.isoformat()}</title>
 <style>{CSS}</style></head><body>
 <section class="top"><h1>編輯室回放 {edition_date.isoformat()} · {escape(run_variant)}</h1>
+<p><a href="/daily/{edition_date.isoformat()}">← 回到當期日報</a> · <a href="?variant={"pipeline" if run_variant == "mas" else "mas"}">切換到 {"P 組" if run_variant == "mas" else "M 組"}</a></p>
 <h2>版面計畫</h2>{_plan_diffs(plans, titles)}</section>
 <div class="cols"><aside class="left"><h2>稿件</h2>{left}</aside>
 <main class="right">{_overview(timeline, titles, run_variant)}{focus or "<p>點左邊一則稿，看訊息與版本 diff。</p>"}</main></div>

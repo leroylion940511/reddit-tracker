@@ -37,11 +37,35 @@ def daily_edition_page(edition_date: date | None = None) -> FileResponse:
         pages = sorted(site.glob("*.html"))
         if not pages:
             raise HTTPException(status_code=404, detail="尚未產生任何日報")
-        return FileResponse(pages[-1])
-    page = site / f"{edition_date.isoformat()}.html"
-    if not page.is_file():
-        raise HTTPException(status_code=404, detail="這一天沒有日報")
-    return FileResponse(page)
+        page = pages[-1]
+        try:
+            edition_date = date.fromisoformat(page.stem)
+        except ValueError:  # 例如 index.html（期別列表），不加回放入口
+            return FileResponse(page)
+    else:
+        page = site / f"{edition_date.isoformat()}.html"
+        if not page.is_file():
+            raise HTTPException(status_code=404, detail="這一天沒有日報")
+    return HTMLResponse(_with_newsroom_link(page.read_text(encoding="utf-8"), edition_date))
+
+
+def _newsroom_bar(edition_date: date) -> str:
+    d = edition_date.isoformat()
+    return (
+        '<nav id="rt-newsroom-bar" style="position:fixed;right:16px;bottom:16px;z-index:9999;'
+        'display:flex;gap:8px;font:14px/1.4 system-ui,-apple-system,\'PingFang TC\',sans-serif">'
+        f'<a href="/daily/{d}/newsroom?variant=mas" style="background:#7a2a12;color:#fff;padding:8px 14px;'
+        'border-radius:20px;text-decoration:none;box-shadow:0 2px 6px rgba(0,0,0,.25)">編輯室回放（M 組）</a>'
+        f'<a href="/daily/{d}/newsroom?variant=pipeline" style="background:#fff;color:#7a2a12;padding:8px 14px;'
+        'border:1px solid #7a2a12;border-radius:20px;text-decoration:none">P 組</a></nav>'
+    )
+
+
+def _with_newsroom_link(html: str, edition_date: date) -> str:
+    """檔案本身不改（Telegram 附的是同一份），只在網頁版注入回放入口。"""
+    bar = _newsroom_bar(edition_date)
+    idx = html.lower().rfind("</body>")
+    return html[:idx] + bar + html[idx:] if idx != -1 else html + bar
 
 
 @app.get("/daily/{edition_date}/newsroom", include_in_schema=False)
