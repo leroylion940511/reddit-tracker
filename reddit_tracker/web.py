@@ -29,6 +29,7 @@ def index() -> RedirectResponse:
 
 @app.get("/daily/", include_in_schema=False)
 @app.get("/daily/{edition_date}", include_in_schema=False)
+@app.get("/daily/{edition_date}.html", include_in_schema=False)  # 日報內的期別連結是相對的 YYYY-MM-DD.html；裝飾器由下往上註冊，要比上一行先
 def daily_edition_page(edition_date: date | None = None) -> FileResponse:
     """v2.0 綜合日報的網頁版；不帶日期時開最新一期。"""
     site = Path(get_settings().daily_site_dir)
