@@ -1,0 +1,66 @@
+# desk-v3：放開版面、依角色放開資訊、增加 agent 互動
+
+> 這份文件是自動排程（定時任務 `desk-v3-autorun`）的**唯一交接檔**。每次執行只看這份檔案、`git log`、程式碼，不依賴任何對話紀錄。
+> 分支 `feat/desk-v3`，worktree `~/Documents/Developer/Lab/rt-wt-desk`。2026-11-13 志晨與老師討論後提出。
+
+## 目標（志晨的原話整理）
+
+1. 放開版面限制，每個類別的篇數由主編決定。
+2. 傳給記者、主編等人的新聞資訊放開：主編可以看到摘要，記者可以看到全文。
+3. 讓 agent 之間的互動多一點。
+
+## 鐵則（每次執行都要遵守）
+
+- **只在這個 worktree 的 `feat/desk-v3` 分支工作。** 不碰 `/Users/leroy/reddit_tracker`（production checkout，launchd 從那裡跑），不 merge 到 main、不 push、不部署、不重載 launchd。
+- **11/20 前凍結**：試刊與實驗二、三的條件不能變。所以**所有新行為都放在設定開關後面，預設關閉**；開關關閉時，請求內容與 `request_hash` 要和現在逐字相同（錄音重播測試 `tests/test_e11_replay.py` 等必須照過）。
+- **不呼叫真的 Codex／Gemini**，不讀 production `.env`、不開 production DB。測試用 fake／replay client。需要真實資料時只能用唯讀複本（`sqlite3 "file:/Users/leroy/reddit_tracker/data/reddit_tracker.db?mode=ro" ".backup ~/Documents/Developer/Lab/rt-data-desk/copy.db"`），而且不能用它呼叫 LLM。
+- 抓全文的程式（階段 D）開發時**只用測試 fixture**，不對外連網抓新聞。
+- 測試：`REDDIT_TRACKER_NO_DOTENV=1 uv run python -m pytest -q`。每個步驟結束時全套必須綠燈才 commit。
+- 介面（函式簽名、資料結構、設定鍵、訊息類型）寫進 `docs/v5/DAILY_EDITION.md` 對應段落（標「desk-v3，預設關閉」）。
+- 每個步驟一個（或少數幾個）commit，訊息英文、結尾加 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`。
+- 不確定的設計決定：選最保守、最好回退的做法，寫進下面「決定紀錄」，不要停下來等人。真的卡住（例如需要對外連網或改 production）就把該步驟標 `BLOCKED` 並寫原因，跳到下一個不依賴它的步驟。
+
+## 現況（2026-11-13，main `ada70ef`）
+
+| 角色 | 現在看到的 | 現在能決定的 |
+|---|---|---|
+| 分版主編 | 本版入選稿 S1 標題＋全站前十標題 | 角度、front/section；篇數固定 4（`_section_pitches`） |
+| 記者／查核員 | 證據包最多 6 篇，摘要截 400 字（`evidence.EVIDENCE_SUMMARY_CHARS`） | 寫稿／CHALLENGE |
+| 總編 | `_story_card`：標題、版別、kind、分數、HOLD，沒有摘要 | 頭版位置 |
+| 版面編輯 | pitch 清單 | PAGE_OBJECTION，總編不回應 |
+
+寫死的地方：`scoring.SECTION_QUOTAS`、`FRONT_PAGE_SIZE`、`FRONT_PAGE_PER_SECTION`、`orchestrator.FRONT_CAPACITY`、`PITCH_SYSTEM`（「不能增加正式稿名額」）、`protocol.ALLOWED`／`MAX_MESSAGES`／`MAX_CHALLENGES`。收集層完全沒有全文，只有 RSS summary。
+
+## 步驟（依序做；完成就把 `[ ]` 改 `[x]` 並寫一行結果與 commit）
+
+### 階段 A：主編、總編看得到摘要（目標 2 的一半）
+- [ ] **A1** 設定鍵 `MAS_RICH_CONTEXT`（`config.py`，預設 false）。開啟時 `_section_pitches` 的每則候選與 `_story_card` 多帶 `summary`（S1 摘要，限長，例如 200 字）、`outlets`（媒體名清單）、`outlet_count`。關閉時請求逐字不變（加測試比對 request 字串）。更新 DAILY_EDITION.md。
+
+### 階段 B：各版篇數由主編決定（目標 1）
+- [ ] **B1** 設定鍵 `MAS_OPEN_LAYOUT`（預設 false）＋護欄設定：`MAS_SECTION_MIN`（預設 1）、`MAS_SECTION_MAX`（預設 8）、`MAS_EDITION_MAX`（全期正式稿上限，預設 18）。純設定與驗證函式，含測試。
+- [ ] **B2** 開啟時分版主編看 `desk_pool`（配額兩倍候選，已有）而不是固定 4 篇，回傳要收的 story_id 清單（新 schema，含每篇理由）；程式套護欄（只能選候選內的、kind 規則照舊、HOLD 規則照舊、超過 MAX 截斷並記錄）。失敗或格式錯時退回 `select_articles` 的結果。
+- [ ] **B3** 三版加總超過 `MAS_EDITION_MAX` 時由總編裁決刪哪幾篇（一次請求，理由寫進 DECISION payload）；總編失敗時程式依分數刪。
+- [ ] **B4** `EditionView`／`render`／頭版選取能處理每版 0–`MAS_SECTION_MAX` 篇；P 組（pipeline）完全不受影響（測試證明）。
+
+### 階段 C：增加 agent 互動（目標 3）
+每種新對話都要有回合上限，並計入 `MAX_MESSAGES`；新訊息類型加進 `protocol.ALLOWED`。設定鍵 `MAS_MORE_INTERACTION`（預設 false）。
+- [ ] **C1** 篇數協商：總編刪稿時，被刪最多的分版主編可以 `APPEAL` 一次（新類型），總編回 `DECISION`（維持或改判）。最多 1 輪。
+- [ ] **C2** 版面編輯的 `PAGE_OBJECTION` 要有回應：總編回 `DECISION`（accept/reject＋理由），accept 時套用到 page plan（仍受頭版規則限制）。
+- [ ] **C3** 總編看完頭版稿（標題＋摘要＋deck）可對最多 2 篇發 `REQUEST_REVISION` 給記者（類型已在白名單），記者回 `REVISION_DONE`，修稿後照原流程重驗查核。
+- [ ] **C4** 回放頁／`format_trace` 顯示新訊息類型；3D 編輯室若有訊息類型白名單也要補。
+
+### 階段 D：記者、查核員看全文（目標 2 的另一半）
+- [ ] **D1** 設計文件（寫在本檔「決定紀錄」）：抽取方式（優先用已安裝或輕量套件，例如 trafilatura；用 `uv add`）、robots.txt 與付費牆處理、速率限制、存哪（新表 `item_fulltext` 或欄位；需要 Alembic migration）、失敗回退到摘要、全文長度上限、注入防護。
+- [ ] **D2** 實作抓取＋抽取模組與 migration，**只用 fixture HTML 測試**，不實際連網。收集排程不接上（之後人工決定）。設定鍵 `FULLTEXT_ENABLED` 預設 false。
+- [ ] **D3** `MAS_REPORTER_FULLTEXT`（預設 false）開啟時，記者與查核員的證據塊用全文（有就用，沒有用摘要），長度上限可設；`evidence_has_injection` 也掃全文。關閉時請求逐字不變。
+
+### 階段 E：收尾
+- [ ] **E1** 全套測試、`docs/v5/DAILY_EDITION.md` 整理、在本檔寫「怎麼開啟、建議的開啟順序、風險、要人工確認的事」，在 main 的 `PROGRESS.md` **不要改**（交給人工併入時再寫）。全部完成後把定時任務 `desk-v3-autorun` 停用。
+
+## 決定紀錄
+
+（每次執行有設計決定就追加一行：日期、步驟、決定、理由。）
+
+## 執行紀錄
+
+（每次執行追加一行：開始時間、做了哪些步驟、測試結果、commit、結束時 5 小時用量。）
