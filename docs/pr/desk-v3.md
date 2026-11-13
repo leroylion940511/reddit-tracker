@@ -42,12 +42,15 @@
   - 結果：`daily/mas/layout.py`（`LayoutLimits`、`check_limits`、`layout_limits`）。commit `14e8f60`。
 - [x] **B2** 開啟時分版主編看 `desk_pool`（配額兩倍候選，已有）而不是固定 4 篇，回傳要收的 story_id 清單（新 schema，含每篇理由）；程式套護欄（只能選候選內的、kind 規則照舊、HOLD 規則照舊、超過 MAX 截斷並記錄）。失敗或格式錯時退回 `select_articles` 的結果。
   - 結果：`OPEN_PITCH_SYSTEM/SCHEMA`、`section_pool`、`guard_open_pitches`、`MasResult.layout_log`；PITCH payload 開啟時多 `reason`。commit `41eb804`。
-- [ ] **B3** 三版加總超過 `MAS_EDITION_MAX` 時由總編裁決刪哪幾篇（一次請求，理由寫進 DECISION payload）；總編失敗時程式依分數刪。
-- [ ] **B4** `EditionView`／`render`／頭版選取能處理每版 0–`MAS_SECTION_MAX` 篇；P 組（pipeline）完全不受影響（測試證明）。
+- [x] **B3** 三版加總超過 `MAS_EDITION_MAX` 時由總編裁決刪哪幾篇（一次請求，理由寫進 DECISION payload）；總編失敗時程式依分數刪。
+  - 結果：`TRIM_SCHEMA`、`program_trim`、`guard_trim`、`_trim_edition`；DECISION payload `action=TRIM`（by eic／program／mixed）。commit `f12d382`。
+- [x] **B4** `EditionView`／`render`／頭版選取能處理每版 0–`MAS_SECTION_MAX` 篇；P 組（pipeline）完全不受影響（測試證明）。
+  - 結果：現有 view／render／digest 已照實際篇數排，不用改程式；加 0/8/2 端到端測試與 P 組不讀 `layout_limits` 的測試。commit `1a8159e`。
 
 ### 階段 C：增加 agent 互動（目標 3）
 每種新對話都要有回合上限，並計入 `MAX_MESSAGES`；新訊息類型加進 `protocol.ALLOWED`。設定鍵 `MAS_MORE_INTERACTION`（預設 false）。
-- [ ] **C1** 篇數協商：總編刪稿時，被刪最多的分版主編可以 `APPEAL` 一次（新類型），總編回 `DECISION`（維持或改判）。最多 1 輪。
+- [x] **C1** 篇數協商：總編刪稿時，被刪最多的分版主編可以 `APPEAL` 一次（新類型），總編回 `DECISION`（維持或改判）。最多 1 輪。
+  - 結果：`MAS_MORE_INTERACTION`、`ALLOWED` 加 `(section_editor, APPEAL)`、`appeal_section`／`guard_appeal_ruling`／`_appeal_trim`；改判用 `swap_out` 換一篇，全期篇數不變。commit `a049ee9`。
 - [ ] **C2** 版面編輯的 `PAGE_OBJECTION` 要有回應：總編回 `DECISION`（accept/reject＋理由），accept 時套用到 page plan（仍受頭版規則限制）。
 - [ ] **C3** 總編看完頭版稿（標題＋摘要＋deck）可對最多 2 篇發 `REQUEST_REVISION` 給記者（類型已在白名單），記者回 `REVISION_DONE`，修稿後照原流程重驗查核。
 - [ ] **C4** 回放頁／`format_trace` 顯示新訊息類型；3D 編輯室若有訊息類型白名單也要補。
@@ -70,9 +73,16 @@
 - 2026-11-13 B2：不在 `Pitch` dataclass 加 `reason` 欄位——`Pitch.__dict__` 直接進分版主編、版面編輯、T1 的請求，加欄位會改到關閉時的 `request_hash`。理由改存 `reasons_out` dict，只在開啟時寫進 PITCH payload。
 - 2026-11-13 B2：開放模式另用 `OPEN_PITCH_SYSTEM`／`OPEN_PITCH_SCHEMA`，舊的 `PITCH_SYSTEM`（「不能增加正式稿名額」）不改。少於下限時依候選池順序補（不是退回整版固定名額）；整個回應失敗才退回。
 - 2026-11-13 B2：`MAX_MESSAGES = 80` 沒改。開放版面最多 3×8 篇 PITCH，加上記者／查核訊息可能碰到上限而 expired——留給 B3／E1 評估（改上限會影響關閉時的行為）。
+- 2026-11-14 B3：刪稿在所有 PITCH 訊息發出之後、記者審稿之前做；被刪稿的 PITCH 保留在紀錄裡（回放看得到），只是不審稿、不進 page plan。少一次記者／查核呼叫，也省訊息額度。
+- 2026-11-14 B3：總編回應只採「名單內、不重複、刪了不低於下限」的前 `must_drop` 篇；不足時程式依分數補（`by=mixed`），整個失敗 `by=program` 且 `llm_call_id` 為 null。總編刪太多不採用多出的，避免版面比上限還空。
+- 2026-11-14 B3：總編卡片用證據包 S1 標題（此時還沒稿），不是 `_story_card` 的 headline；`MAS_RICH_CONTEXT` 開時帶 A1 三欄。
+- 2026-11-14 B4：沒有改程式——`build_edition_view`／`render_html`／`telegram_digest` 本來就照 page plan 實際篇數。0 篇的版不出現在 page plan 的 sections，渲染成「本版今日無新稿。」。
+- 2026-11-14 C1：申訴改判必須指定 `swap_out`（換一篇刪），不允許單純加回，保持全期 ≤ `MAS_EDITION_MAX`。任何不合規則的改判都當 UPHOLD（最保守）。分版主編不申訴就不發 APPEAL 訊息。
+- 2026-11-14 C1：申訴版＝被刪最多的版，同數取 `SECTIONS` 順序（taiwan、world、tech）在前；只開一輪，不讓其他版申訴。
 
 ## 執行紀錄
 
 （每次執行追加一行：開始時間、做了哪些步驟、測試結果、commit、結束時 5 小時用量。）
 
 - 2026-11-13 15:20：A1、B1、B2 完成；全套 439 passed／7 skipped；commit `3128cce`、`14e8f60`、`41eb804`；結束用量 5h 6%／週 25%。
+- 2026-11-14（本次）：B3、B4、C1 完成；全套 453 passed／7 skipped；commit `f12d382`、`1a8159e`、`a049ee9`；結束用量 5h 12%／週 26%。下一步 C2。
