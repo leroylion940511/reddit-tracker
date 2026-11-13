@@ -53,7 +53,8 @@
   - 結果：`MAS_MORE_INTERACTION`、`ALLOWED` 加 `(section_editor, APPEAL)`、`appeal_section`／`guard_appeal_ruling`／`_appeal_trim`；改判用 `swap_out` 換一篇，全期篇數不變。commit `a049ee9`。
 - [x] **C2** 版面編輯的 `PAGE_OBJECTION` 要有回應：總編回 `DECISION`（accept/reject＋理由），accept 時套用到 page plan（仍受頭版規則限制）。
   - 結果：`PAGE_REVIEW_SCHEMA`／`PAGE_RULING_SCHEMA`、`guard_page_proposal`、`_page_review`；DECISION payload `action=PAGE_RULING`（ACCEPT 走 `apply_decision`）。commit `899b21b`。
-- [ ] **C3** 總編看完頭版稿（標題＋摘要＋deck）可對最多 2 篇發 `REQUEST_REVISION` 給記者（類型已在白名單），記者回 `REVISION_DONE`，修稿後照原流程重驗查核。
+- [x] **C3** 總編看完頭版稿（標題＋摘要＋deck）可對最多 2 篇發 `REQUEST_REVISION` 給記者（類型已在白名單），記者回 `REVISION_DONE`，修稿後照原流程重驗查核。
+  - 結果：`EIC_REVIEW_SCHEMA`、`guard_eic_requests`、`_eic_revisions`；記者可 REVISE（走 `_check_and_maybe_revise` 重驗）或 REBUT。commit `49f3992`。
 - [ ] **C4** 回放頁／`format_trace` 顯示新訊息類型；3D 編輯室若有訊息類型白名單也要補。
 
 ### 階段 D：記者、查核員看全文（目標 2 的另一半）
@@ -83,6 +84,8 @@
 - 2026-11-14 C2：開關開啟時不送舊的頭版預審（它在 T1／T3 之前，總編接受也會被 T3 蓋掉），改成頭版排定後才審一次；關閉時預審照舊，請求逐字不變。
 - 2026-11-14 C2：版面編輯異議必須附完整頭版提案（lead／second／briefs）才能被「套用」；提案不合規則由程式代回 REJECT（`by=program`）、不問總編，省額度。總編回應失敗一律當 REJECT。
 - 2026-11-14 C2：提案不准讓頭版變少、不准撤下兩版都有位置的稿（避免 `apply_decision` 重算內版時 T1 連結變成重複全文）；可上頭版的稿限 `kind=report`、非 HOLD、沒注入標記，和 `guard_pitches`／`_section_pitches` 規則一致。版面編輯回 OK 時不發訊息。
+- 2026-11-14 C3：總編只看頭版 `status=checked` 的稿，「摘要」用 S1 摘要（`rich_fields`，有注入標記給空字串），不依賴 `MAS_RICH_CONTEXT`；退稿用獨立 correlation_id `ER-…`，CHALLENGE 次數不跟 T2 合併計算。
+- 2026-11-14 C3：記者可 REBUT（總編不再回應，原稿不動），回應無效也維持原稿；修稿重驗後變 HOLD 不改 page plan，交給發佈前人工核可（`view` 本來就扣未核可的 M 組稿）。
 
 ## 執行紀錄
 
