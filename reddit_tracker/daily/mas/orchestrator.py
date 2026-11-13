@@ -18,7 +18,7 @@ from ...llm.deadline import deadline_reached
 from ...llm.quota import QuotaExhausted
 from ...llm.records import bind_log_session, complete_logged, last_record_id, llm_log_meta, reset_last_record
 from ...models import AgentMessage, PagePlan, Story, StoryVersion
-from ..evidence import EvidenceItem, EvidencePack, build_evidence_from_ids
+from ..evidence import EvidenceItem, EvidencePack, build_evidence_from_ids, with_fulltext
 from ..scoring import DESK_POOL_PER_SECTION, SECTION_KINDS, SECTION_QUOTAS, ScoredCluster, select_articles
 from ..store import MAS, add_page_plan, add_story, latest_version, write_story_version
 from ..writer import finalize_story, template_story, unsupported_numbers
@@ -278,9 +278,45 @@ def registry_domains(registry) -> frozenset[str]:
     return frozenset(domains)
 
 
+def _has_marker(text: str) -> bool:
+    text = text.lower()
+    return any(marker.lower() in text for marker in INJECTION_MARKERS)
+
+
 def evidence_has_injection(evidence: list[EvidenceItem]) -> bool:
     text = " ".join(f"{item.title}\n{item.summary}" for item in evidence).lower()
-    return any(marker.lower() in text for marker in INJECTION_MARKERS)
+    if any(marker.lower() in text for marker in INJECTION_MARKERS):
+        return True
+    # desk-v3 D3：全文也要掃（只有 MAS_REPORTER_FULLTEXT 開啟時才會有 fulltext）
+    return any(_has_marker(getattr(item, "fulltext", None) or "") for item in evidence)
+
+
+def _usable_fulltext(item: EvidenceItem) -> str | None:
+    """可以放進提示的全文；沒有或含注入標記時回 None（該篇退回摘要）。"""
+    text = getattr(item, "fulltext", None)
+    if not text or _has_marker(text):
+        return None
+    return text
+
+
+def _evidence_text(evidence: list[EvidenceItem]) -> str:
+    """數字檢查用的證據文字；沒有全文時與舊寫法逐字相同。"""
+    parts = []
+    for item in evidence:
+        full = _usable_fulltext(item)
+        parts.append(f"{item.title} {item.summary}" + (f" {full}" if full else ""))
+    return " ".join(parts)
+
+
+def _attach_fulltext(session: Session, items: list[EvidenceItem]) -> list[EvidenceItem]:
+    """desk-v3 D3：`MAS_REPORTER_FULLTEXT` 開啟時換上 item_fulltext 的全文；關閉時原樣回傳。"""
+    settings = get_settings()
+    if not settings.mas_reporter_fulltext or not items:
+        return items
+    from ...collection.fulltext import fulltext_of
+
+    texts = fulltext_of(session, [item.item_id for item in items if item.item_id is not None])
+    return with_fulltext(items, texts, settings.mas_reporter_fulltext_chars)
 
 
 def guard_pitches(pitches: list[Pitch], evidence_of: dict[int, list[EvidenceItem]], log: list[str]) -> list[Pitch]:
@@ -296,11 +332,16 @@ def guard_pitches(pitches: list[Pitch], evidence_of: dict[int, list[EvidenceItem
     return safe
 
 
+def _body_line(item: EvidenceItem) -> str:
+    full = _usable_fulltext(item)
+    return f"全文：{full}" if full else f"摘要：{item.summary}"
+
+
 def _evidence_block(evidence: list[EvidenceItem]) -> str:
     blocks = []
     for index, item in enumerate(evidence, start=1):
         blocks.append(
-            f"<<<S{index}>>>\n媒體：{item.display_name}\n標題：{item.title}\n摘要：{item.summary}\n<<</S{index}>>>"
+            f"<<<S{index}>>>\n媒體：{item.display_name}\n標題：{item.title}\n{_body_line(item)}\n<<</S{index}>>>"
         )
     return "\n\n".join(blocks)
 
@@ -509,7 +550,7 @@ def _checker_relevance_prompt(version, evidence, bad, per_source: bool) -> tuple
 
 def _check_and_maybe_revise(session, *, edition_date, story, evidence, version, client, clock, corr, degraded,
                             per_source: bool = False, checker_mode: str = "full") -> StoryVersion:
-    evidence_text = " ".join(f"{item.title} {item.summary}" for item in evidence)
+    evidence_text = _evidence_text(evidence)
     use_llm = checker_mode == "full"
     bad = [] if checker_mode == "off" else call_tool("fact_checker", "check_relevance", irrelevant_sources, evidence)
     numbers = call_tool("fact_checker", "check_numbers", unsupported_numbers, version.body, evidence_text)
@@ -864,7 +905,7 @@ def run_mas(
                 session, list(raw.get("evidence_item_ids") or []), names,
                 anchor_item_id=raw.get("anchor_item_id"), allowed_domains=domains,
             )
-            evidence_of[story.id] = pack.items
+            evidence_of[story.id] = _attach_fulltext(session, pack.items)
         automatic = pitches is None
         pitch_calls: dict[str, int | None] = {}
         pitch_reasons: dict[int, str] = {}
@@ -1823,7 +1864,7 @@ def _copy_edit_front(session, *, edition_date, client, clock, degraded=None) -> 
             continue  # 別的 worker 已經在處理（手冊 6.4 第 4 條）
         from ...seeds.news_sources import load_registry
         names = {s.id: s.name for s in load_registry().sources}
-        evidence = build_evidence_from_ids(session, list(version.source_ids or []), names).items
+        evidence = _attach_fulltext(session, build_evidence_from_ids(session, list(version.source_ids or []), names).items)
         if evidence:
             story = session.get(Story, story_id)
             _revise(session, edition_date=edition_date, story=story, evidence=evidence, removed=[],

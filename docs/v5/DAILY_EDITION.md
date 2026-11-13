@@ -526,3 +526,18 @@ _eic_revisions(session, *, edition_date, client, clock, hold_ids, evidence_of, r
   - `fulltext_of(session, item_ids) -> dict[int, str]`：只回 `status=ok` 的全文（D3 用）。
 - 新表 `item_fulltext`（Alembic `c5e1a9d3f207`，接 `b8d4f0a17c33`；downgrade = drop table，不改 `source_items`）：`item_id`（PK，FK `source_items.id`）、`status`（`ok|robots_denied|paywalled|too_short|http_error|non_html|blocked_domain|error`）、`http_status`、`final_url`、`text`（只有 ok 有值）、`text_chars`、`content_sha1`、`extractor`、`fetched_at`、`error`。
 - 設定鍵：`FULLTEXT_ENABLED`（false）、`FULLTEXT_DOMAIN_INTERVAL_SECONDS`（5）、`FULLTEXT_MAX_PER_RUN`（60）、`FULLTEXT_MIN_CHARS`（200，短於此標 `too_short`）、`FULLTEXT_STORE_MAX_CHARS`（20000）、`FULLTEXT_SKIP_DOMAINS`（逗號分隔可註冊網域，一律當 `paywalled`）。HTTP 401/402/403 也標 `paywalled`，不嘗試繞過。
+
+### D3 記者、查核員看全文（`MAS_REPORTER_FULLTEXT`，desk-v3，預設關閉）
+
+只讀 `item_fulltext`（D2），不會觸發抓取。關閉時證據塊、數字檢查文字與請求逐字不變（`tests/test_desk_v3.py` 比對有無全文列時的記者請求）。
+
+- 設定鍵：`MAS_REPORTER_FULLTEXT`（false）、`MAS_REPORTER_FULLTEXT_CHARS`（2000，每篇進提示的上限）。
+- `daily/evidence.py`：
+  - `FulltextEvidenceItem(EvidenceItem)`：多一欄 `fulltext: str | None`。刻意用子類別：實驗二用 `asdict(EvidenceItem)` 寫案例檔，基底類別欄位不變。
+  - `with_fulltext(items, texts: dict[int, str], max_chars) -> list[EvidenceItem]`：有全文的列換成子類別（簡轉繁、截長），沒有的原物件保留。
+- `daily/mas/orchestrator.py`：
+  - `_attach_fulltext(session, items)`：開關開時用 `fulltext_of` 換上全文；`run_mas` 建 `evidence_of` 時與文稿編輯異議重建證據時呼叫。
+  - `_evidence_block`：該篇有可用全文時第三行是 `全文：…`，否則照舊 `摘要：…`。
+  - `_evidence_text`：查核數字檢查用的證據文字，有可用全文時接在 `標題 摘要` 後面。
+  - `evidence_has_injection` 也掃 `fulltext`；全文含注入標記時，整包照現有規則視為有注入（不上頭版、主編／總編摘要給空），且該篇提示退回摘要（`_usable_fulltext` 回 None）。
+- P 組（`writer.py`）與實驗二（`eval/exp2.py`）不受影響。

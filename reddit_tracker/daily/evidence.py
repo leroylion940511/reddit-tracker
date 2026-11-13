@@ -66,6 +66,31 @@ class EvidenceItem:
 
 
 @dataclass
+class FulltextEvidenceItem(EvidenceItem):
+    """desk-v3 D3（`MAS_REPORTER_FULLTEXT`）：帶文章全文的證據列，只在開關開啟時建立。
+
+    刻意用子類別而不在 `EvidenceItem` 加欄位：實驗二用 `asdict(EvidenceItem)` 寫案例檔，
+    加欄位會改到凍結的檔案格式。
+    """
+
+    fulltext: str | None = None
+
+
+def with_fulltext(items: list[EvidenceItem], texts: dict[int, str], max_chars: int) -> list[EvidenceItem]:
+    """有全文的證據列換成 `FulltextEvidenceItem`（簡轉繁、截 `max_chars`），沒有的原樣保留。"""
+    out: list[EvidenceItem] = []
+    for item in items:
+        text = texts.get(item.item_id) if item.item_id is not None else None
+        if not text:
+            out.append(item)
+            continue
+        fields = {name: getattr(item, name) for name in EvidenceItem.__dataclass_fields__}
+        fields["reprinted_by"] = list(item.reprinted_by)
+        out.append(FulltextEvidenceItem(**fields, fulltext=_to_traditional(text, item.lang)[: max(0, max_chars)]))
+    return out
+
+
+@dataclass
 class EvidencePack:
     items: list[EvidenceItem]
     # 寫進稿件 review_notes 的紀錄（例如相關性過濾剔除的來源）

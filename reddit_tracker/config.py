@@ -127,6 +127,10 @@ class Settings(BaseSettings):
     fulltext_store_max_chars: int = 20000
     # 逗號分隔的可註冊網域（例：udn.com），一律當付費牆、不抓
     fulltext_skip_domains: str = ""
+    # desk-v3 D3：記者與查核員的證據塊用 item_fulltext 的全文（有才用，沒有用摘要）；每篇截這麼多字。
+    # 預設關閉＝請求逐字不變。只讀表，不會觸發抓取。
+    mas_reporter_fulltext: bool = False
+    mas_reporter_fulltext_chars: int = 2000
     gemini_daily_model: str = "gemini-3.5-flash-lite"
 
     # --- 舊排程（候選探索、舊版日報編採與發送）已在 commit 2d95c07 移除；設 true 也不會復活 ---
