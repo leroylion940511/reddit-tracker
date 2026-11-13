@@ -119,6 +119,14 @@ class Settings(BaseSettings):
     mas_edition_max: int = 18
     # desk-v3 C：agent 之間多一點互動（申訴、版面異議回應、退稿修改）。預設關閉＝不發新訊息、不多呼叫。
     mas_more_interaction: bool = False
+    # desk-v3 D2：抓文章全文存進 item_fulltext（collection/fulltext.py）。預設關閉，也還沒接排程。
+    fulltext_enabled: bool = False
+    fulltext_domain_interval_seconds: float = 5.0
+    fulltext_max_per_run: int = 60
+    fulltext_min_chars: int = 200
+    fulltext_store_max_chars: int = 20000
+    # 逗號分隔的可註冊網域（例：udn.com），一律當付費牆、不抓
+    fulltext_skip_domains: str = ""
     gemini_daily_model: str = "gemini-3.5-flash-lite"
 
     # --- 舊排程（候選探索、舊版日報編採與發送）已在 commit 2d95c07 移除；設 true 也不會復活 ---

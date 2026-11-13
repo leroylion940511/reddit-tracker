@@ -512,3 +512,17 @@ _eic_revisions(session, *, edition_date, client, clock, hold_ids, evidence_of, r
 - beat：`APPEAL` 與 TRIM／APPEAL_RULING 的 `DECISION` 放 `phase="pitch"`（`APPEAL` `walk=true`）；PAGE_RULING 照舊 `layout`。APPEAL_RULING 的 `to` 用 `appeal_message_id` 找回申訴的版（`section_<版>`）。TRIM 的 `detail.dropped` 沿用既有欄位。
 - `daily/newsroom_page.py`：`TYPE_LABELS` 加 `"APPEAL": "申訴"`。測試保證 `protocol.ALLOWED` 的每種類型在兩邊都有中文標籤。
 - `format_trace` 本來就逐則印 type 與 payload，不用改；3D 編輯室（`office.html`）沒有訊息類型白名單，照 beat 播放，不用改。
+
+### D2 文章全文抓取（`FULLTEXT_ENABLED`，desk-v3，預設關閉）
+
+設計見 `docs/pr/desk-v3.md`「D 階段設計」。**沒有接上收集排程**；開關開著也只有呼叫 `fetch_pending` 才會抓。
+
+- 模組 `reddit_tracker/collection/fulltext.py`：
+  - `extract(html: str) -> str`：標準庫 `html.parser` 抽正文（`<article>` → `<main>` → 全頁；只收 `p/h2/h3/li/blockquote`，略過 `script/style/nav/header/footer/aside/form/iframe/...`），經 `sanitize_text`（去零寬／控制字元，`<<<`／`>>>` 改全形）。`EXTRACTOR = "stdlib-html/1"`。
+  - `HttpResponse(status_code, url, headers, body)`；`Getter = Callable[[str], HttpResponse]`（單次請求、不跟 redirect）。正式用 `requests_getter()`（timeout 10 秒、回應上限 2 MB）；測試一律注入假 getter。
+  - `RobotsCache(get).allowed(url) -> bool`：每個 origin 讀一次；4xx 允許，5xx／網路錯誤不允許。
+  - `fetch_fulltext(url, *, get, robots, allowed_domains, skip_domains=frozenset(), min_chars=200, store_max_chars=20000) -> FetchResult(status, http_status, final_url, text, error)`：不丟例外；redirect 手動跟最多 3 次，每跳都要在登錄表網域。
+  - `fetch_pending(session, item_ids, *, allowed_domains, get=None, clock, sleep, now, settings=None) -> list[ItemFulltext]`：開關關閉回 `[]`；表裡已有的素材跳過（每篇只抓一次），同網域間隔、單次上限照設定；只 `flush`，呼叫端 commit。`allowed_domains` 用 `daily/mas/orchestrator.registry_domains(registry)`。
+  - `fulltext_of(session, item_ids) -> dict[int, str]`：只回 `status=ok` 的全文（D3 用）。
+- 新表 `item_fulltext`（Alembic `c5e1a9d3f207`，接 `b8d4f0a17c33`；downgrade = drop table，不改 `source_items`）：`item_id`（PK，FK `source_items.id`）、`status`（`ok|robots_denied|paywalled|too_short|http_error|non_html|blocked_domain|error`）、`http_status`、`final_url`、`text`（只有 ok 有值）、`text_chars`、`content_sha1`、`extractor`、`fetched_at`、`error`。
+- 設定鍵：`FULLTEXT_ENABLED`（false）、`FULLTEXT_DOMAIN_INTERVAL_SECONDS`（5）、`FULLTEXT_MAX_PER_RUN`（60）、`FULLTEXT_MIN_CHARS`（200，短於此標 `too_short`）、`FULLTEXT_STORE_MAX_CHARS`（20000）、`FULLTEXT_SKIP_DOMAINS`（逗號分隔可註冊網域，一律當 `paywalled`）。HTTP 401/402/403 也標 `paywalled`，不嘗試繞過。
