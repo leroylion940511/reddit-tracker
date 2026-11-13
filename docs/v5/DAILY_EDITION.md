@@ -503,3 +503,12 @@ _eic_revisions(session, *, edition_date, client, clock, hold_ids, evidence_of, r
   - `REBUT` → 發 `reporter → eic` 的 `REBUT`（`{"reason", "target_version"}`），原稿不動。回應無效 → 原稿不動，只記 `layout_log`。
 - 修稿重驗後變 HOLD 的稿不改 page plan，跟其他 HOLD 稿一樣由發佈前的人工核可擋下。
 - 最多 1 次總編呼叫＋每篇 1 次記者呼叫（＋查核流程）；訊息計入 `MAX_MESSAGES`。關閉時請求逐字不變。
+
+### C4 回放與 trace 顯示新訊息（desk-v3）
+
+純顯示，沒有開關（舊資料沒有這些訊息，輸出不變）。
+
+- `daily/replay.py`：`TYPE_LABELS` 加 `"APPEAL": "申訴"`；`PITCH_DECISIONS = ("TRIM", "APPEAL_RULING")`；`_desk_decision_text(payload, titles) -> str` 依 `payload.action` 產生 TRIM／APPEAL_RULING／PAGE_RULING 的說明（有 `program_reason` 時附在後面）。沒有 `action` 的舊 DECISION 文字不變。
+- beat：`APPEAL` 與 TRIM／APPEAL_RULING 的 `DECISION` 放 `phase="pitch"`（`APPEAL` `walk=true`）；PAGE_RULING 照舊 `layout`。APPEAL_RULING 的 `to` 用 `appeal_message_id` 找回申訴的版（`section_<版>`）。TRIM 的 `detail.dropped` 沿用既有欄位。
+- `daily/newsroom_page.py`：`TYPE_LABELS` 加 `"APPEAL": "申訴"`。測試保證 `protocol.ALLOWED` 的每種類型在兩邊都有中文標籤。
+- `format_trace` 本來就逐則印 type 與 payload，不用改；3D 編輯室（`office.html`）沒有訊息類型白名單，照 beat 播放，不用改。

@@ -834,3 +834,64 @@ def test_eic_revision_off_by_default(session):
     assert get_settings().mas_more_interaction is False
     _, _, seen = _run_revision(session, lambda data: pytest.fail("關閉時不該審頭版稿"))
     assert seen["eic"] == [] and _eic_requests(session) == []
+
+
+# ── C4：回放與 format_trace 顯示 desk-v3 的新訊息 ─────────────────────────────
+
+
+def _beats(session, kind):
+    from reddit_tracker.daily.replay import build_replay
+
+    return [b for b in build_replay(session, DAY)["beats"] if b.get("type") == kind]
+
+
+def test_replay_shows_trim_appeal_and_ruling(session, appeal_on):
+    from reddit_tracker.daily.mas.orchestrator import format_trace
+
+    def appeal(data):
+        return json.dumps({"appeal": True, "story_id": data["dropped"][0]["story_id"], "why": "獨家角度"})
+
+    def ruling(data):
+        swap = next(c["story_id"] for c in data["kept"] if c["section"] != "taiwan")
+        return json.dumps({"verdict": "REVERSE", "swap_out": swap, "why": "申訴有理"})
+
+    _run_open(session, _all_six, appeal=appeal, ruling=ruling)
+    [appeal_beat] = _beats(session, "APPEAL")
+    assert appeal_beat["type_label"] == "申訴" and appeal_beat["phase"] == "pitch" and appeal_beat["walk"]
+    assert "獨家角度" in appeal_beat["say"] and appeal_beat["actor"].startswith("section_")
+    decisions = _beats(session, "DECISION")
+    trim = next(b for b in decisions if "全期上限" in b["say"])
+    assert trim["phase"] == "pitch" and "程式依分數決定" in trim["say"] and len(trim["detail"]["dropped"]) == 8
+    ruled = next(b for b in decisions if "申訴改判" in b["say"])
+    assert ruled["phase"] == "pitch" and ruled["to"] == appeal_beat["actor"] and "申訴有理" in ruled["say"]
+    trace = format_trace(session, DAY, "mas")
+    assert "section_editor → eic APPEAL" in trace and "APPEAL_RULING" in trace
+
+
+def test_replay_shows_page_ruling_and_eic_revision(session, interaction_on):
+    _run_review(session, _swap_lead, lambda data: json.dumps({"verdict": "REJECT", "why": "主稿不換"}))
+    ruling = [b for b in _beats(session, "DECISION") if "版面異議" in b["say"]]
+    assert len(ruling) == 1 and ruling[0]["phase"] == "layout" and "駁回" in ruling[0]["say"]
+    assert "主稿不換" in ruling[0]["say"]
+    objection = [b for b in _beats(session, "PAGE_OBJECTION") if "版別不平衡" in b["say"]]
+    assert len(objection) == 1 and objection[0]["walk"]
+
+
+def test_replay_old_decision_text_unchanged(session):
+    from reddit_tracker.daily.replay import _message_text
+    from reddit_tracker.models import AgentMessage
+
+    old = AgentMessage(type="DECISION", payload={"lead": 1, "second": [2], "briefs": [], "why": "重要"})
+    assert _message_text(old, {1: "甲"}) == "頭版定案 2 則，主稿《甲》。重要"
+    rejected = AgentMessage(type="DECISION", payload={"action": "PAGE_RULING", "verdict": "REJECT", "why": "",
+                                                      "program_reason": "提案格式不對"})
+    assert _message_text(rejected, {}) == "駁回版面異議，維持原頭版。（程式：提案格式不對）"
+
+
+def test_newsroom_page_labels_appeal():
+    from reddit_tracker.daily.newsroom_page import TYPE_LABELS as NEWSROOM
+    from reddit_tracker.daily.replay import TYPE_LABELS as REPLAY
+
+    from reddit_tracker.daily.mas.protocol import ALLOWED
+    types = {t for _, t in ALLOWED}
+    assert types <= set(NEWSROOM) and types <= set(REPLAY)

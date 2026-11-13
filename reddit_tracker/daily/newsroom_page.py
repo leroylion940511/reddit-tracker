@@ -25,7 +25,7 @@ STATUS_LABELS = {
 TYPE_LABELS = {
     "PITCH": "提案", "CHALLENGE": "質疑", "REQUEST_REVISION": "要求修稿", "REVISION_DONE": "修稿完成",
     "REBUT": "反駁", "HOLD": "扣稿 HOLD", "RELEASE": "解除 HOLD", "PAGE_OBJECTION": "版面異議",
-    "DECISION": "主編決定",
+    "DECISION": "主編決定", "APPEAL": "申訴",
 }
 TAIPEI = ZoneInfo("Asia/Taipei")
 CSS = """
