@@ -357,6 +357,20 @@ def reporter_draft(session, client, *, edition_date, story, evidence, degraded) 
 
 分支 `feat/desk-v3`；計畫與交接見 `docs/pr/desk-v3.md`。每個開關關閉時，送給模型的請求與 `request_hash` 逐字不變。
 
+開關總表（全部在 `config.Settings`，環境變數同名大寫；開啟順序、風險與要人工確認的事見 `docs/pr/desk-v3.md`「開啟指南」）：
+
+| 開關 | 預設 | 作用範圍 | 依賴 | 段落 |
+|---|---|---|---|---|
+| `MAS_RICH_CONTEXT` | false | 分版主編候選、總編 T1／T3 稿件卡多 `summary／outlets／outlet_count` | 無 | A1 |
+| `MAS_OPEN_LAYOUT` | false | 分版主編從 `section_pool` 決定本版篇數；全期超過上限由總編刪稿 | `MAS_SECTION_MIN`(1)／`MAS_SECTION_MAX`(8)／`MAS_EDITION_MAX`(18) | B1–B4 |
+| `MAS_MORE_INTERACTION` | false | 刪稿申訴（C1）、頭版異議由總編裁決（C2）、總編退稿（C3） | C1 需 `MAS_OPEN_LAYOUT` 且真的刪稿；C2／C3 不需要 | C1–C3 |
+| `FULLTEXT_ENABLED` | false | 允許 `fetch_pending` 抓全文寫 `item_fulltext`；**未接排程** | `FULLTEXT_*` 速率與長度設定；migration `c5e1a9d3f207` | D2 |
+| `MAS_REPORTER_FULLTEXT` | false | 記者、查核員證據塊與數字檢查用全文 | `item_fulltext` 有 `status=ok` 的列（D2 抓過）；`MAS_REPORTER_FULLTEXT_CHARS`(2000) | D3 |
+
+- 只影響 M 組（`DAILY_MODE=mas`）；P 組（pipeline）與實驗二（`eval/exp2.py`）不讀這些開關。
+- C4（回放／newsroom 標籤）沒有開關，舊資料輸出不變。
+- `protocol.MAX_MESSAGES = 80`、`MAX_CHALLENGES = 2` 沒有改；新訊息全部計入同一個上限，超過的訊息標 `expired`。
+
 ### A1 主編、總編看得到摘要（`MAS_RICH_CONTEXT`，desk-v3，預設關閉）
 
 `config.py`：`mas_rich_context: bool = False`（環境變數 `MAS_RICH_CONTEXT`）。
@@ -389,7 +403,7 @@ layout_limits(settings=None) -> LayoutLimits
 ```
 
 - 合法條件：`section_min >= 0`、`section_max >= 1`、`section_min <= section_max`、`edition_max >= 1` 且 `>= 版數 × section_min`。
-- `layout_limits` 只在開關開啟時驗證，不合法丟 `ValueError`（訊息列出所有問題）；關閉時回傳 `enabled=False`，不影響現行流程。B1 只有設定與驗證，`run_mas` 還沒讀它（B2 起接上）。
+- `layout_limits` 只在開關開啟時驗證，不合法丟 `ValueError`（訊息列出所有問題）；關閉時回傳 `enabled=False`，不影響現行流程。`run_mas` 從 B2 起透過 `_section_pitches`／`_trim_edition` 讀它。
 
 ### B2 分版主編決定各版篇數（`MAS_OPEN_LAYOUT`，desk-v3，預設關閉）
 

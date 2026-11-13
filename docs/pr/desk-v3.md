@@ -67,7 +67,46 @@
   - 結果：`FulltextEvidenceItem`／`with_fulltext`（evidence.py）、`_attach_fulltext`／`_usable_fulltext`／`_evidence_text`（orchestrator）、`MAS_REPORTER_FULLTEXT(_CHARS)`；關閉時記者請求與有無全文列無關（測試）。commit `b831534`。
 
 ### 階段 E：收尾
-- [ ] **E1** 全套測試、`docs/v5/DAILY_EDITION.md` 整理、在本檔寫「怎麼開啟、建議的開啟順序、風險、要人工確認的事」，在 main 的 `PROGRESS.md` **不要改**（交給人工併入時再寫）。全部完成後把定時任務 `desk-v3-autorun` 停用。
+- [x] **E1** 全套測試、`docs/v5/DAILY_EDITION.md` 整理、在本檔寫「怎麼開啟、建議的開啟順序、風險、要人工確認的事」，在 main 的 `PROGRESS.md` **不要改**（交給人工併入時再寫）。全部完成後把定時任務 `desk-v3-autorun` 停用。
+  - 結果：全套 490 passed／7 skipped；`DAILY_EDITION.md` desk-v3 段開頭加開關總表、修正 B1 過時說明；本檔加「開啟指南」；定時任務 `desk-v3-autorun` 停用。commit 見執行紀錄。
+
+## 開啟指南（E1，2026-11-14）
+
+所有開關預設關閉；關閉時 M 組請求與 `request_hash` 逐字不變、P 組與實驗二不受影響（`tests/test_desk_v3.py`、`tests/test_e11_replay.py`）。介面細節見 `docs/v5/DAILY_EDITION.md`「desk-v3」段的開關總表。
+
+### 怎麼開啟
+
+1. **11/20 凍結與實驗二、三結束之前不要在 production 開任何一個開關**，也不要把本分支併進 main 之後就直接開。
+2. 併入 main（人工）：`git merge feat/desk-v3` 後要跑 `uv run alembic upgrade head`（新表 `item_fulltext`，revision `c5e1a9d3f207`；只新增表，downgrade＝drop table）。沒有新依賴，`uv.lock` 不變。
+3. 開關寫在 `.env`（或 launchd 環境），例如 `MAS_RICH_CONTEXT=true`；重啟 newsroom scheduler 才生效。
+4. 先在唯讀複本＋`DAILY_MODE=mas` 的 shadow／replay 試跑，看回放頁（`daily/replay.py`）與 `MasResult.layout_log`，再上正式。
+
+### 建議的開啟順序（一次開一個，每個至少觀察 2–3 期）
+
+1. **`MAS_RICH_CONTEXT`**：只多給主編／總編資訊，不改流程，風險最低。
+2. **`MAS_OPEN_LAYOUT`**（先用預設護欄 min 1／max 8／edition 18）：觀察每版篇數分布、`layout_log` 裡的截斷／補足次數、TRIM 的 `by`（eic／program／mixed）比例。
+3. **`MAS_MORE_INTERACTION`**：C2／C3 單獨就會作用；C1 只有在 B3 真的刪稿時才出現。觀察訊息總數是否接近 80。
+4. **全文（D2→D3）最後**：先人工決定抓取怎麼接排程（目前沒有接），手動跑 `fetch_pending` 累積幾天 `item_fulltext`，看 `status` 分布（robots_denied／paywalled／too_short 比例），再開 `MAS_REPORTER_FULLTEXT`。
+
+### 風險
+
+- **訊息上限 `MAX_MESSAGES = 80` 沒有改。** 粗估最壞情況：開放版面 3×8＝24 則 PITCH＋TRIM 1＋申訴 2＋C2 2＋C3 最多 2×(退稿 1＋回覆 1＋查核來回)＋每篇記者／查核訊息（18 篇 × 0–5 則）——全開時有機會超過 80，超過的訊息標 `expired`，等於後面的查核或退稿沒做。開 `MAS_OPEN_LAYOUT`／`MAS_MORE_INTERACTION` 時要先看實際訊息數；要調上限得人工決定（改常數會影響關閉時的行為，應放在開關後面）。
+- **模型呼叫次數與成本上升**：開放版面每版一次＋TRIM 1＋申訴 2＋C2 2＋C3 1＋每篇退稿的記者／查核呼叫；要確認 `llm/quota.py` 的每日額度夠，額度用完時新互動會靜默略過（`_ask` 回 None）。
+- **全文提示變長**：每篇最多 2000 字 × 6 篇 ≈ 12000 字進記者／查核提示，成本與延遲上升；全文抽取器是標準庫版本，某些網站可能抽到選單或抽不到（標 `too_short` 退回摘要）。
+- **全文抓取的法律／禮貌面**：已遵守 robots.txt、不繞付費牆、同網域間隔 5 秒、只抓登錄表網域；但各媒體的使用條款沒有逐一確認。
+- **注入面變大**：全文比摘要長，注入機會多；已有 `sanitize_text`、`evidence_has_injection` 掃全文、有注入時退回摘要並擋頭版，但只是關鍵字規則。
+- **請求內容改變**：任何開關一開，`request_hash` 就變，錄音重播（replay）的舊錄音不能用於開啟後的期數；開啟後的期數不能和凍結期的實驗結果直接比較。
+- 回放頁的 TRIM 被刪稿標題退回 `story N`（C4 決定），可讀性較差。
+
+### 要人工確認的事
+
+1. 何時併入 main、何時開哪個開關（凍結與實驗結束後）。
+2. `MAX_MESSAGES` 是否要在 `MAS_OPEN_LAYOUT`／`MAS_MORE_INTERACTION` 開啟時提高（以及改成開關後面的設定鍵）。
+3. 全文抓取要不要接上收集排程、接在哪個時間點（例如 05:30 收集後、06:00 prepare 前），以及 `FULLTEXT_SKIP_DOMAINS` 要列哪些付費牆媒體。
+4. 抽取器是否在凍結後換成 trafilatura（`uv add trafilatura`，只改 `collection/fulltext.extract` 一處，`EXTRACTOR` 名稱一起改）。
+5. 各媒體使用條款是否允許抓全文供內部撰稿參考。
+6. 護欄預設值（min 1／max 8／edition 18）是否合適；回放頁 TRIM 稿標題要不要補查證據包標題。
+7. main 的 `PROGRESS.md` 在併入時由人工更新（本分支刻意不改）。
 
 ## D 階段設計（D1，2026-11-14）
 
@@ -108,6 +147,7 @@
 - 2026-11-14 D1：抽取器先用標準庫、不加 trafilatura（凍結期不改 `uv.lock`）；全文存獨立新表 `item_fulltext` 不加欄位；robots 讀取失敗視為不允許；全文有注入標記時該篇退回摘要。細節見「D 階段設計」。
 - 2026-11-14 D2：抓取 getter 不跟 redirect，由 `fetch_fulltext` 手動跟並逐跳檢查網域（`requests` 自動跟的話請求已經送到站外）。每篇只抓一次、失敗不重試；要重抓得人工刪列。`fetch_pending` 只 flush 不 commit，交給呼叫端。
 - 2026-11-14 D3：不在 `EvidenceItem` 加欄位，改用子類別 `FulltextEvidenceItem`——`eval/exp2.py` 用 `asdict(EvidenceItem)` 寫案例檔，加欄位會讓凍結的實驗二檔案多一個 `fulltext: null`。查核數字檢查（`_evidence_text`）也納入全文，否則記者引用全文裡的數字會被當成無出處。P 組 `writer.py` 不動。
+- 2026-11-14 E1：不改 `MAX_MESSAGES`、不補 TRIM 稿標題、不接全文排程——都列進「開啟指南／要人工確認的事」，凍結期不動程式行為。
 - 2026-11-14 C4：TRIM 刪掉的稿沒寫過稿，回放標題退回 `story N`（沒另外查證據包標題，避免改 `build_replay` 的查詢）；留給 E1 視需要補。
 
 ## 執行紀錄
