@@ -172,7 +172,7 @@ def open_layout(monkeypatch):
     get_settings.cache_clear()
 
 
-def _run_open(session, pick):
+def _run_open(session, pick, trim=None):
     from sqlalchemy import select
 
     from reddit_tracker.models import AgentMessage, PagePlan
@@ -190,6 +190,9 @@ def _run_open(session, pick):
         if "分版主編" in kw["system"]:
             requests.append(kw)
             return pick(data)
+        if "總編輯" in kw["system"] and data and "must_drop" in data:
+            requests.append(kw)
+            return trim(data) if trim else "不是 JSON"
         if "總編輯" in kw["system"] and data and "candidates" in data:
             ids = list(dict.fromkeys(c["story_id"] for c in data["candidates"]))[:6]
             return json.dumps({"lead": ids[0], "second": ids[1:5], "briefs": ids[5:], "links": [],
@@ -249,3 +252,116 @@ def test_open_layout_invalid_settings_fall_back(session, monkeypatch):
         get_settings.cache_clear()
     assert {s: len(v) for s, v in plan.slots["sections"].items()} == {s: 4 for s in SECTIONS}
     assert "設定不合法" in result.layout_log[0]
+
+
+# ── B3：超過全期上限時總編刪稿（MAS_OPEN_LAYOUT）──────────────────────────────
+
+def _p(section, sid):
+    from reddit_tracker.daily.mas.orchestrator import Pitch
+    return Pitch(section=section, story_id=sid, angle=section)
+
+
+def test_program_trim_drops_lowest_scores_and_keeps_section_min():
+    from reddit_tracker.daily.mas.orchestrator import program_trim
+
+    pitches = [_p("taiwan", 1), _p("taiwan", 2), _p("world", 3), _p("tech", 4), _p("tech", 5)]
+    scores = {1: 10, 2: 1, 3: 0, 4: 5, 5: 5}
+    # 3 是全場最低，但 world 只剩 1 篇（下限 1）不能刪；同分 4、5 先刪排在後面的 5
+    assert program_trim(pitches, scores, _limits(), 2) == [2, 5]
+    assert program_trim(pitches, scores, _limits(), 9) == [2, 5]  # 刪到每版只剩下限就停
+
+
+def test_guard_trim_rules():
+    from reddit_tracker.daily.mas.orchestrator import guard_trim
+
+    pitches = [_p("taiwan", 1), _p("taiwan", 2), _p("world", 3), _p("tech", 4), _p("tech", 5)]
+    scores = {1: 10, 2: 1, 3: 0, 4: 5, 5: 5}
+    log: list[str] = []
+    dropped, why, by = guard_trim([
+        {"story_id": 99, "why": "不在名單"},
+        {"story_id": 3, "why": "world 只剩一篇"},
+        {"story_id": 4, "why": "重複報導"},
+        {"story_id": 4, "why": "重複"},
+        {"story_id": 1, "why": "太多"},
+        {"story_id": 2, "why": "多的"},
+    ], pitches, scores, _limits(), 2, log)
+    assert (dropped, why, by) == ([4, 1], {4: "重複報導", 1: "太多"}, "eic")
+    assert any("99" in line for line in log) and any("少於下限" in line for line in log)
+    assert any("多的不採用" in line for line in log)
+    # 不足由程式補 → mixed；失敗 → program
+    assert guard_trim([{"story_id": 4, "why": "x"}], pitches, scores, _limits(), 2, []) == (
+        [4, 2], {4: "x", 2: "程式依分數刪"}, "mixed")
+    log.clear()
+    assert guard_trim(None, pitches, scores, _limits(), 2, log) == (
+        [2, 5], {2: "程式依分數刪", 5: "程式依分數刪"}, "program")
+    assert "改由程式依分數刪" in log[0]
+
+
+def _all_six(data):
+    return json.dumps({"pitches": [{"story_id": c["story_id"], "angle": "角度", "priority": "section",
+                                    "reason": "值得收"} for c in data["candidates"]]})
+
+
+def _decisions(session):
+    from sqlalchemy import select
+
+    from reddit_tracker.models import AgentMessage
+    return [m for m in session.scalars(select(AgentMessage).where(AgentMessage.type == "DECISION"))
+            if (m.payload or {}).get("action") == "TRIM"]
+
+
+@pytest.fixture
+def edition_max_10(monkeypatch):
+    monkeypatch.setenv("MAS_OPEN_LAYOUT", "true")
+    monkeypatch.setenv("MAS_EDITION_MAX", "10")
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
+
+
+def test_trim_eic_decides_which_stories_go(session, edition_max_10):
+    from reddit_tracker.daily.mas.orchestrator import TRIM_SCHEMA
+
+    seen = []
+
+    def trim(data):
+        seen.append(data)
+        # 總編決定：world 只留第 1 篇、tech 只留前 3 篇，taiwan 不動
+        by_section: dict[str, list[int]] = {}
+        for card in data["stories"]:
+            by_section.setdefault(card["section"], []).append(card["story_id"])
+        drop = by_section["world"][1:] + by_section["tech"][3:]
+        return json.dumps({"dropped": [{"story_id": i, "why": "版面太擠"} for i in drop]})
+
+    result, plan, pitches, requests = _run_open(session, _all_six, trim)
+    assert seen[0]["must_drop"] == 8 and seen[0]["edition_max"] == 10 and len(seen[0]["stories"]) == 18
+    assert {"story_id", "section", "score", "title", "angle", "priority", "reason"} == set(seen[0]["stories"][0])
+    assert any(r["json_schema"] == TRIM_SCHEMA for r in requests)
+    assert {s: len(v) for s, v in plan.slots["sections"].items()} == {"taiwan": 6, "world": 1, "tech": 3}
+    [decision] = _decisions(session)
+    assert decision.sender_role == "eic" and decision.recipient_role == "section_editor"
+    assert decision.payload["by"] == "eic" and decision.payload["before"] == 18 and decision.payload["after"] == 10
+    assert len(decision.payload["dropped"]) == 8 and all(d["why"] == "版面太擠" for d in decision.payload["dropped"])
+    assert decision.llm_call_id is not None
+    assert len(pitches) == 18  # 被刪的稿的 PITCH 仍留在紀錄裡
+
+
+def test_trim_falls_back_to_scores_when_eic_fails(session, edition_max_10):
+    result, plan, _, _ = _run_open(session, _all_six)
+    # 各版分數 100..95 一樣，程式刪最低分：每版最後幾篇，全期剩 10
+    assert sum(len(v) for v in plan.slots["sections"].values()) == 10
+    [decision] = _decisions(session)
+    assert decision.payload["by"] == "program" and decision.llm_call_id is None
+    assert all(d["why"] == "程式依分數刪" for d in decision.payload["dropped"])
+    assert any("改由程式依分數刪" in line for line in result.layout_log)
+
+
+def test_trim_not_needed_under_edition_max(session, open_layout):
+    _run_open(session, _all_six)  # 18 篇 = 預設上限 18，不刪
+    assert _decisions(session) == []
+
+
+def test_trim_off_sends_no_request(session):
+    _, _, _, requests = _run_open(session, _all_six)
+    assert not any("must_drop" in r["messages"][0]["content"] for r in requests)
+    assert _decisions(session) == []

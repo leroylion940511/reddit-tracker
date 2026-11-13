@@ -409,3 +409,21 @@ MasResult.layout_log: list[str]   # 護欄動作紀錄；關閉時為空
 - `PITCH` 訊息 payload 開啟時多 `reason`（主編寫的理由）；關閉時仍是 `section, angle, priority`。
 - 設定不合法（`layout_limits` 丟 `ValueError`）→ 記 WARNING 與 `layout_log`，本期用固定名額，不中斷出刊。
 - 全期上限 `MAS_EDITION_MAX` 在 B3 才套用；B2 單獨開啟時全期最多 3 × `MAS_SECTION_MAX` 篇。
+
+### B3 超過全期上限時總編刪稿（`MAS_OPEN_LAYOUT`，desk-v3，預設關閉）
+
+`daily/mas/orchestrator.py`：
+
+```python
+TRIM_SUFFIX: str                      # 接在 EIC_SYSTEM 後面
+TRIM_SCHEMA = {"dropped": [{"story_id": int, "why": str}]}
+program_trim(pitches, scores, limits, count, keep_per_section=None) -> list[int]   # 低分先刪（同分刪後面的），每版留 section_min
+guard_trim(proposed, pitches, scores, limits, count, log) -> (list[int], {story_id: why}, by)   # by: eic|program|mixed
+_trim_edition(session, *, edition_date, pitches, stories, evidence_of, reasons, client, clock, result) -> list[Pitch]
+```
+
+- 時機：`run_mas` 自動提案（`pitches is None`）時，PITCH 訊息全部發出之後、記者審稿之前。關閉、設定不合法、或三版不重複 story 數 ≤ `MAS_EDITION_MAX` → 原樣回傳，不呼叫模型、不發訊息。
+- 請求：總編一次，system＝`EIC_SYSTEM + TRIM_SUFFIX`，user＝`{"edition_max", "must_drop", "section_min", "stories": [{"story_id", "section", "score", "title", "angle", "priority", "reason", ...rich_fields}]}`（`MAS_RICH_CONTEXT` 也開時帶 A1 三欄）。
+- 護欄（`guard_trim`）：只收本期名單內、不重複、刪了不會讓該版低於 `MAS_SECTION_MIN` 的稿；超過 `must_drop` 的忽略；不足（含失敗、格式錯）由 `program_trim` 依分數補。動作寫進 `MasResult.layout_log`。
+- 訊息：`eic → section_editor` 的 `DECISION`，payload＝`{"action": "TRIM", "by", "edition_max", "before", "after", "dropped": [{"story_id", "section", "why"}], "why"}`；`by="program"` 時 `llm_call_id` 為 null。被刪稿的 `PITCH` 訊息保留，只是不進審稿與 page plan。
+- 多一則訊息計入 `MAX_MESSAGES`（未改上限）。

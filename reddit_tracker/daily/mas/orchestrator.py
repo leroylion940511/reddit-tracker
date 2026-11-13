@@ -155,6 +155,18 @@ OPEN_PITCH_SCHEMA = {
 }
 
 
+# desk-v3 B3（MAS_OPEN_LAYOUT）：三版加總超過 MAS_EDITION_MAX 時，總編一次決定刪哪幾篇。預設關閉時不用。
+TRIM_SUFFIX = """
+本期各版收的正式稿加總超過全期上限 edition_max，你要刪掉剛好 must_drop 篇。
+只能從 stories 裡刪；每版至少要留 section_min 篇。在 dropped 列出要刪的稿，why 用一句話寫理由。"""
+TRIM_SCHEMA = {
+    "type": "object", "properties": {"dropped": {"type": "array", "items": {
+        "type": "object", "properties": {"story_id": {"type": "integer"}, "why": {"type": "string"}},
+        "required": ["story_id", "why"], "additionalProperties": False}}},
+    "required": ["dropped"], "additionalProperties": False,
+}
+
+
 # 查核員開關（實驗二，手冊 8.2）。線上只用 full。
 CHECKER_MODES = ("full", "program", "off")
 
@@ -814,6 +826,10 @@ def run_mas(
                          **({"reason": pitch_reasons[pitch.story_id]} if pitch.story_id in pitch_reasons else {})},
                 llm_call_id=pitch_calls.get(pitch.section),
             )
+        if automatic:
+            pitches = _trim_edition(session, edition_date=edition_date, pitches=pitches, stories=stories,
+                                    evidence_of=evidence_of, reasons=pitch_reasons, client=client, clock=clock,
+                                    result=result)
         hold_ids: set[int] = set()
         for pitch in pitches:
             story = session.get(Story, pitch.story_id)
@@ -974,6 +990,123 @@ def _open_section_pitches(session, edition_date, stories, evidence_of, client, c
     kinds = {s.id: s.kind for s in stories}
     return [replace(p, priority="section") if kinds[p.story_id] != "report" else p for p in pitches]
 
+
+def program_trim(pitches: list[Pitch], scores: dict[int, float], limits, count: int,
+                 keep_per_section: dict[str, int] | None = None) -> list[int]:
+    """程式刪稿：分數最低的先刪（同分刪排在後面的），每版至少留 section_min 篇。回傳要刪的 story_id。"""
+    left = dict(keep_per_section) if keep_per_section is not None else _section_counts(pitches)
+    order = sorted(enumerate(pitches), key=lambda ip: (scores.get(ip[1].story_id, 0), -ip[0]))
+    dropped: list[int] = []
+    for _, pitch in order:
+        if len(dropped) >= count:
+            break
+        if pitch.story_id in dropped or left.get(pitch.section, 0) <= limits.section_min:
+            continue
+        dropped.append(pitch.story_id)
+        left[pitch.section] -= 1
+    return dropped
+
+
+def _section_counts(pitches: list[Pitch]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for pitch in pitches:
+        counts[pitch.section] = counts.get(pitch.section, 0) + 1
+    return counts
+
+
+def guard_trim(proposed, pitches: list[Pitch], scores: dict[int, float], limits, count: int,
+               log: list[str]) -> tuple[list[int], dict[int, str], str]:
+    """把總編的刪稿名單套上護欄，回傳 (要刪的 story_id, {story_id: 理由}, by)。
+
+    - 只收本期 pitches 內、不重複、刪了不會讓該版低於 section_min 的稿；多出 `count` 的忽略。
+    - 不足 `count`（含 `proposed` 不是 list）由 `program_trim` 依分數補；by 是 eic／program／mixed。
+    """
+    by_id = {p.story_id: p for p in pitches}
+    left = _section_counts(pitches)
+    dropped: list[int] = []
+    reasons: dict[int, str] = {}
+    if isinstance(proposed, list):
+        for entry in proposed:
+            if len(dropped) >= count:
+                log.append(f"總編刪稿超過 {count} 篇，多的不採用")
+                break
+            sid = entry.get("story_id") if isinstance(entry, dict) else None
+            if not isinstance(sid, int) or isinstance(sid, bool) or sid not in by_id or sid in reasons:
+                log.append(f"總編刪稿：剔除不在本期名單的 {sid!r}")
+                continue
+            section = by_id[sid].section
+            if left[section] <= limits.section_min:
+                log.append(f"總編刪稿：{sid} 會讓 {section} 少於下限 {limits.section_min}，不採用")
+                continue
+            left[section] -= 1
+            dropped.append(sid)
+            reasons[sid] = str(entry.get("why") or "")
+    else:
+        log.append("總編沒有可用的刪稿決定，改由程式依分數刪")
+    by = "eic" if dropped else "program"
+    if len(dropped) < count:
+        rest = [p for p in pitches if p.story_id not in reasons]
+        extra = program_trim(rest, scores, limits, count - len(dropped), keep_per_section=left)
+        for sid in extra:
+            reasons[sid] = "程式依分數刪"
+        if extra and dropped:
+            by = "mixed"
+        if extra:
+            log.append(f"程式依分數刪 {extra}")
+        dropped += extra
+    return dropped, reasons, by
+
+
+def _trim_edition(session, *, edition_date, pitches: list[Pitch], stories: dict, evidence_of, reasons: dict,
+                  client, clock, result: MasResult) -> list[Pitch]:
+    """desk-v3 B3：開放版面時三版加總超過 MAS_EDITION_MAX，請總編一次決定刪哪幾篇。
+
+    關閉、設定不合法或沒超過上限時原樣回傳（不呼叫模型、不發訊息）。決定（含理由與 by）寫進
+    eic → section_editor 的 DECISION payload（action=TRIM）。
+    """
+    try:
+        limits = layout_limits()
+    except ValueError:
+        return pitches
+    if not limits.enabled:
+        return pitches
+    total = len(dict.fromkeys(p.story_id for p in pitches))
+    count = total - limits.edition_max
+    if count <= 0:
+        return pitches
+    scores = {s.id: s.score for s in stories.values()}
+    rich = get_settings().mas_rich_context
+    cards = []
+    for pitch in pitches:
+        evidence = evidence_of.get(pitch.story_id) or []
+        cards.append({
+            "story_id": pitch.story_id, "section": pitch.section, "score": scores.get(pitch.story_id),
+            "title": evidence[0].title if evidence else "", "angle": pitch.angle, "priority": pitch.priority,
+            "reason": reasons.get(pitch.story_id, ""), **(rich_fields(evidence) if rich else {}),
+        })
+    text = _ask(session, client, role="eic", story_id=None, edition_date=edition_date,
+                system=EIC_SYSTEM + TRIM_SUFFIX, user=json.dumps({
+                    "edition_max": limits.edition_max, "must_drop": count, "section_min": limits.section_min,
+                    "stories": cards}, ensure_ascii=False),
+                schema=TRIM_SCHEMA, temperature=0)
+    call_id = last_record_id()
+    try:
+        proposed = json.loads(text).get("dropped") if text else None
+    except (ValueError, TypeError, AttributeError):
+        proposed = None
+    dropped, why, by = guard_trim(proposed, pitches, scores, limits, count, result.layout_log)
+    section_of = {p.story_id: p.section for p in pitches}
+    post_message(
+        session, run_variant=MAS, edition_date=edition_date, sender="eic", recipient="section_editor",
+        type="DECISION", now=clock.tick(), llm_call_id=call_id if by != "program" else None,
+        payload={"action": "TRIM", "by": by, "edition_max": limits.edition_max, "before": total,
+                 "after": total - len(dropped),
+                 "dropped": [{"story_id": sid, "section": section_of[sid], "why": why[sid]} for sid in dropped],
+                 "why": f"全期上限 {limits.edition_max} 篇，刪 {len(dropped)} 篇"},
+    )
+    result.layout_log.append(f"超過全期上限 {limits.edition_max}（{total} 篇），刪 {dropped}（{by}）")
+    gone = set(dropped)
+    return [p for p in pitches if p.story_id not in gone]
 
 def _section_pitches(session, edition_date, stories, evidence_of, client, calls: dict | None = None,
                      reasons_out: dict | None = None, layout_log: list[str] | None = None):
