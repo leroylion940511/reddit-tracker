@@ -1,0 +1,101 @@
+﻿pair_id,split,kind,stratum,a_merged,c_merged,label_a,label_b,final,標題 1,標題 2
+D101,dev,same,both,True,True,不是,不是,不是,蔡康永澄清還不夠？國台辦再嗆蔡康永,蔡康永表态“未支持台独”后 现身蒋万安竞选活动
+D105,dev,same,only_c,False,True,不是,,不是,花蓮縣長抽籤 魏嘉賢1號、張峻2號、游淑貞3號,魏嘉賢遞狀查境外帳號介選 游淑貞、張峻爭取民意支持
+D110,dev,same,only_c,False,True,不是,,不是,How Lula beat far-right Bolsonaro in Brazil – The Latest,Flávio Bolsonaro on flight to Miami after fleeing Brazil amid election defeat
+D119,dev,same,only_a,True,False,不是,,不是,"Microsoft offers buyouts to 60,000 staff",Skydance offers buyouts to some employees to cut costs after Warner Bros merger
+D126,dev,cross,neither,False,False,是,,是,iPad mini 只是前菜！傳蘋果今、明連發 3 大新品　觸控 MacBook 當壓軸,The new iPad mini
+D132,dev,same,both,True,True,是,是,是,美再封鎖3家中企 列入新疆強迫勞動黑名單,美国禁三家中国基因科技企业产品进口 指涉疆强迫劳动
+D162,dev,same,neither,False,False,不是,不是,不是,Experience Memory Graph: Extracting Reusable Correction Knowledge from Agent Trajectories,ActionRAG: Evidence-Refining Graph Diffusion for Long-Term Memory in LLM Agents
+D168,dev,cross,only_c,False,True,不是,,不是,President Lula calls Bolsonaro’s Brazil exit ‘shameful’,败选流亡佛州 弗拉维奥坚称是巴西合法领袖
+D188,dev,same,both,True,True,不是,不是,不是,不禁台灣了！巴基斯坦突恢復長榮、華航飛航領空權限,全球首例！巴基斯坦挺一中政策 禁台灣班機飛越領空
+D198,dev,cross,both,True,True,是,是,是,"Nvidia Chief, Jensen Huang, Is Seen as Target of Chinese Spy Plot",中國女商人企圖接近黃仁勳！紐時揭間諜風險
+D222,dev,same,only_a,True,False,是,,是,蔡康永昨称望两岸友好来往 没支持过台独 今现身蒋万安竞总成立大会观摩,蔡康永發「不支持台獨」聲明後......對岸輿論不領情，台灣網紅也批「三頭不討好」
+D239,dev,same,only_c,False,True,不是,,不是,《聯合報》民調沈伯洋超車蔣萬安！趙曉慧：10/31辯論後恐有明顯變化,ET民調／蔣萬安支持度48.6%、沈伯洋41.1％
+D249,dev,cross,both,True,True,是,,是,黃仁勳爆遭中國美女間諜滲透「密切往來」！ 輝達親上火線回應了,"Nvidia Chief, Jensen Huang, Is Seen as Target of Chinese Spy Plot"
+D268,dev,same,only_c,False,True,不是,,不是,嘉義縣議員選舉 7個選區52人號次一次看,屏東縣長、縣議員選舉 抽籤號次一次看
+D270,dev,same,both,True,True,是,,是,巴基斯坦一度對台祭禁航令  行政院發聲遺憾,巴基斯坦一度對台關閉領空 歐盟回應了
+D276,dev,same,only_a,True,False,是,,是,U.S. to issue visas to Flávio Bolsonaro as his whereabouts remain unclear,Watch: Lula questions what guilt drives Flávio Bolsonaro to flee Brazil
+D304,dev,cross,neither,False,False,是,是,是,Apple reveals updated iPad mini with a bigger OLED screen for $700,"iPad mini 終於升級 OLED！不過入門價直接漲 6,000  元"
+D369,dev,same,neither,False,False,不是,,不是,蔣萬安抽號女孩籲停止騷擾攻擊 沈伯洋喊話：勿針對個人,台北市長選舉號次抽籤 沈伯洋③號 蔣萬安⑤號
+D370,dev,same,only_c,False,True,不是,,不是,Flavio Bolsonaro lands in Miami after fleeing Brazil for US,Brazil wonders: Where on earth is Flavio Bolsonaro?
+D379,dev,same,neither,False,False,是,,是,[財經] 台股開低跌逾200點 台積電跌10元,台積電跌10元至2415　台股跌129點來到46906點
+D380,dev,cross,only_a,True,False,是,是,是,"Bloodied, dazed and angry - how passengers' rail journey turned to disaster in Spain",西班牙高鐵追撞暴增至64死 BBC：該國10年來最慘鐵路事故
+D397,dev,same,only_c,False,True,不是,,不是,Flávio Bolsonaro flees Brazil through Argentina and is expected to land in Miami,Brazil: defeated Flávio Bolsonaro ordered to surrender passports
+D399,dev,cross,neither,False,False,是,不是,不是,Apple announces its first touchscreen MacBook Pro,TrendForce: MacBook Pro 新機入局 2027全球 OLED 筆電出貨年增逾40%
+D409,dev,same,only_a,True,False,不是,不是,不是,Block’s new voice model sounds eerily human,Switzerland. Block by block. At 1:1 scale
+D413,dev,same,only_c,False,True,不是,,不是,蔣萬安和沈伯洋，蔡康永更挺誰？蔡詩萍突曬「3人合照」吐一段話,蔡康永澄清還不夠？國台辦再嗆蔡康永
+D466,dev,cross,neither,False,False,是,,是,Apple announces touchscreen MacBook Pro with OLED display,TrendForce: MacBook Pro 新機入局 2027全球 OLED 筆電出貨年增逾40%
+D504,dev,same,only_a,True,False,是,,是,西班牙兩列火車追撞致車廂出軌 至少10死,西班牙高鐵追撞暴增至64死 BBC：該國10年來最慘鐵路事故
+D506,dev,cross,only_a,True,False,不是,,不是,Jaxon Smith-Njigba has big night in Seahawks’ 20-3 win over Chiefs,武契奇承认败选　塞尔维亚学生运动赢得议会选举
+D528,dev,cross,only_c,False,True,不是,,不是,Flavio Bolsonaro says Brazil federal police asked for his passports,巴西前总统之子败选后传逃往美国 卢拉斥行为可耻
+D559,dev,same,neither,False,False,不是,,不是,MemComposer: Learning to Assemble Memories for LLM Agents via Reinforcement Learning,Towards Root Memory: Benchmarking and Enhancing Implicit Logical Memory Retrieval for Personalized LLMs
+D576,dev,same,neither,False,False,不是,,不是,VLA-HWBench: Where the Time Goes When VLA Models Run on Edge Hardware,Power-of-Two Leaky Integrate-and-Fire Neurons for Event-Driven Vision-Language-Action Inference
+D583,dev,cross,both,True,True,是,,是,傳女共諜接近黃仁勳 川普知情年餘,"Nvidia responds to report Jensen Huang was target of Chinese asset, says diversion allegations were 'investigated and debunked'"
+D598,dev,same,only_a,True,False,是,,是,At least 10 dead in crash between 2 trains in Spain,Is There a ‘Safest Seat’ in a Train Crash? Experts Say It’s Not So Simple.
+D632,dev,same,both,True,True,是,,是,塞爾維亞國會大選變天 學生主導反貪聯盟勝選,塞尔维亚议会选举初步结果出炉 武契奇承认败选
+D661,dev,same,neither,False,False,是,不是,不是,酸蔣萬安搶下凱道路權嗨發新聞  周軒：是要證明手速很快嗎？,無緣凱道 沈伯洋選前之夜回北平東路競總
+D669,dev,same,both,True,True,是,,是,小波索納洛敗選赴美獲准入境！　美國務院證實將發簽證,[國際] 小波索納洛敗選後傳離開巴西抵美 魯拉：可恥
+D729,dev,same,only_a,True,False,不是,,不是,蔣萬安辦競總成立大會 沈伯洋成立女力後援會,批周春米「沒小孩可憐」！蘇清泉二度道歉認使用不當言語
+D748,dev,same,both,True,True,是,是,是,賭債僅剩5百萬！呂文婉曝馬國弼「還債進度」 揭他近況：瘦很多,昔欠5千萬賭債！馬國弼13年還4500萬 呂文婉揭他近況
+D801,dev,same,only_c,False,True,是,,是,Brazilian political drama unfolds as defeated Flavio Bolsonaro arrives in Miami,Flávio Bolsonaro Lands in Miami After Fleeing Brazil
+D816,dev,same,both,True,True,不是,,不是,Man City beat Brighton on penalties after dramatic League Cup comeback,Liverpool v Chelsea: Carabao Cup fourth round – live
+D824,dev,cross,both,True,True,是,是,是,輝達爆共諜案！美調查黃仁勳親密女友人 情報單位疑他早就知情,Nvidia CEO reportedly targeted by Chinese spy
+D879,dev,cross,only_c,False,True,不是,不是,不是,Flavio Bolsonaro declares himself rightful president-elect of Brazil,[國際] 小波索納洛敗選後傳離開巴西抵美 魯拉：可恥
+D932,dev,same,neither,False,False,不是,,不是,How investors can position ahead of into the Fed's next policy decision,Trading Day: AI wave lifts all boats
+D947,dev,cross,only_a,True,False,不是,,不是,Real Madrid and FC Barcelona honour Spain train crash victims,西班牙两列高铁追尾 两车厢脱轨至少10人死亡
+D954,dev,cross,only_c,False,True,是,,是,What Vucic’s defeat means for Serbia’s foreign policy,塞爾維亞國會大選變天 學生主導反貪聯盟勝選
+D955,dev,cross,only_a,True,False,不是,,不是,以色列國會大選 出口民調：尼坦雅胡陣營未獲過半席次,Election polls in New Zealand continue to show no clear outcome
+D973,dev,cross,both,True,True,是,是,是,快訊／蘋果首款觸控螢幕Macbook Pro！機背信仰燈回歸、起價近10萬,Apple’s touchscreen MacBook Pro pushes laptop pricing to a new extreme
+D983,dev,cross,neither,False,False,是,,是,Brown & Brown: Q3 Earnings Snapshot,Brown & Brown 財報後股價挫近 5% 執行長示警保險費率續跌
+D984,dev,cross,only_c,False,True,是,,是,Lula wins Brazil runoff after prediction markets favored Bolsonaro,巴西總統大選 魯拉逆轉勝連任
+D987,dev,cross,only_a,True,False,是,是,是,西班牙高鐵追撞46死180傷！最新畫面曝,Spain train crash: PM Sanchez calls for investigation as 3 days of mourning begins
+T106,test,same,only_a,True,False,是,不是,不是,中國女間諜曾陪黃仁勳來台？ 劉世芳：若違法不排除驅逐出境,女共諜接近黃仁勳！美媒：台灣曾調查及派員監控
+T109,test,same,only_a,True,False,是,,是,好天氣到明天　下周4天北東「降溫轉濕涼」,[生活] 東北季風稍增強 迎風面降雨略增
+T120,test,same,only_c,False,True,是,不是,不是,首場電視辯論挨批問A答B、朗讀大會 蔣萬安笑喊「五告讚」,台北市長誰辯得好？醫看沈伯洋「中計了」：兵不厭詐，蔣萬安先做了這一事
+T169,test,cross,neither,False,False,是,,是,AWS 創近五年最快成長！Amazon 卻因 AI 支出過高，股價盤後重挫 7%,"AWS will be a $1T business, Jassy says. But first, it will spend big."
+T174,test,same,neither,False,False,是,不是,不是,北市長辯論／蔣萬安嗆沈伯洋「不懂市政」 范琪斐讚這點：比美國好看,台北市长辩论 蒋万安、沈伯洋交锋“双城论坛”议题
+T195,test,cross,only_a,True,False,是,,是,Possible Binance hack triggers $3bn freeze in cryptocurrency assets,幣安逾60億美元資產遭竊 FBI指北韓所為
+T259,test,same,neither,False,False,不是,,不是,India's gold imports down 81%; global prices could be impacted,"Gold price today, Friday, October 30, 2026: Gold slips below $4,000 as Mid-East concerns mount"
+T275,test,cross,both,True,True,是,,是,爆「輝達女高管」疑為北京間諜！川普發聲力挺黃仁勳：希望沒事,‘Groundless speculation’: China denies spying on Nvidia’s Jensen Huang
+T294,test,same,only_c,False,True,是,不是,不是,北市長辯論／蔣萬安狂喊「這一句」 網聽到煩：很不舒服,沈伯洋問可否加LINE約下次辯論 蔣萬安：雙方團隊可溝通協調
+T297,test,same,only_c,False,True,是,,是,台北市長選舉電視辯論 外媒這樣看,蔣萬安、沈伯洋辯論會高下立判？謝寒冰酸：洋流變洋相
+T298,test,cross,neither,False,False,不是,不是,不是,"Cheng traded to Tigers, raising prospect of Taiwanese infield pairing",僑智國小舊校舍轉身！屏東客青基地動土 打造青年創業、育兒新天地
+T299,test,same,both,True,True,是,,是,以色列大選官方結果出爐 納坦雅胡陣營領先未過半,以色列大選組閣陷僵局！納坦雅胡陣營「未過半」　揭4種政局走向
+T300,test,same,only_a,True,False,是,,是,[政治] 台北市長選舉電視辯論會31日登場 交叉詰問規劃「追問」機制,蔣萬安辯論攻擊頻率極高 他慶幸沈伯洋沒有隨之起舞
+T301,test,same,only_c,False,True,是,不是,不是,台北市長辯論蔣萬安、沈伯洋誰得分？Cheap驚呼沒料到他這麼弱：有準備嗎？,柯文哲評沈伯洋、蔣萬安辯論 早就說過不要被洋流嚇到
+T306,test,cross,neither,False,False,是,,是,MacBook Pro新機入局，2027年全球OLED筆電出貨年增逾40%,The touchscreen MacBook Pro is just a MacBook Pro with a touchscreen
+T309,test,same,neither,False,False,是,,是,台北市長選戰／蔣稱自己有方法、有魄力 沈喊先有市民才有市長,台北市長選戰首場辯論12:00登場  蔣萬安、沈伯洋正面攻防
+T336,test,same,only_a,True,False,是,,是,Binance’s $6.3 billion hack raises questions about crypto wallet safety,"Secret Service, FBI Join Binance Hack Probe as Circle Freezes $823 Million"
+T345,test,cross,neither,False,False,不是,,不是,黑海戰事激烈 俄羅斯糧食出口被迫繞道北極,Americans may feel a bit spooked by Halloween prices
+T362,test,same,neither,False,False,不是,,不是,AI引爆記憶體荒！「這大廠」估明年EPS衝130.8元 目標價曝光,明年EPS上看48元！「這大廠」挾高階材料出貨爆發 目標價衝2070元
+T368,test,same,both,True,True,是,是,是,US greenlights $2.1bn sale of Patriot interceptors to Ukraine,US greenlights $2.1bn Patriot missile sale to Ukraine
+T425,test,same,only_a,True,False,是,,是,Here’s when Binance plans to reopen after what’s believed to be the largest-ever $6.3 billion hack,Binance Was Hacked. What Protections Exist for Crypto Customers?
+T426,test,same,only_a,True,False,是,,是,TPBL》帶領特攻重返海神主場奪勝 費雪：情緒很多,TPBL》阿巴西砍29分 特攻擊潰海神本季首勝入袋
+T429,test,same,only_a,True,False,是,,是,北市長辯論／四年後北市生活有何改變？沈伯洋、蔣萬安願景說法一次看,蔣萬安、沈伯洋辯論誰更勝一籌？媒體人點評他贏10分：2項論述比預期強大
+T446,test,cross,only_a,True,False,是,,是,Hackers steal $6.3 billion from Binance in record crypto heist,幣安逾60億美元資產遭竊 FBI指北韓所為
+T447,test,same,only_c,False,True,是,,是,都更議題交鋒 蔣萬安批已讀亂回沈伯洋促強化陪伴機制[影],北市長選舉電視辯論 蔣萬安：多元包容 沈伯洋：市民優先
+T457,test,same,both,True,True,不是,,不是,10/30國際早報｜川普早知黃仁勳身邊有中國情報資產、美日在日本合產AMRAAM飛彈、Alphabet單日暴跌12.6%,與捲間諜案中國籍企業主管關係密切？黃仁勳稱彼此往來正常
+T467,test,cross,both,True,True,是,,是,‘Groundless speculation’: China denies spying on Nvidia’s Jensen Huang,與捲間諜案中國籍企業主管關係密切？黃仁勳稱彼此往來正常
+T510,test,cross,neither,False,False,不是,不是,不是,Here's what to expect from the stock market on Election Day,日本通膨13年來首次達2％目標   12月升息機率大增
+T523,test,cross,both,True,True,不是,,不是,‘Groundless speculation’: China denies spying on Nvidia’s Jensen Huang,10/30國際早報｜川普早知黃仁勳身邊有中國情報資產、美日在日本合產AMRAAM飛彈、Alphabet單日暴跌12.6%
+T550,test,cross,both,True,True,是,是,是,《纽约时报》：一名中国女情报人员同黄仁勋关系密切,‘Groundless speculation’: China denies spying on Nvidia’s Jensen Huang
+T563,test,same,neither,False,False,不是,,不是,AI投資回報疑慮升溫，日股早盤急跌2%、韓股重挫逾4%,東京匯市早盤美元續跌失守102，英鎊、歐元重回1.34和1.12美元上方
+T571,test,same,both,True,True,是,,是,王偉忠遭誤爆「專訪蔣萬安脫口髒字」 中廣發聯合聲明駁斥！還原真相了,指王偉忠專訪蔣萬安脫口「狗屁」 教授胡川安道歉了
+T591,test,same,neither,False,False,不是,不是,不是,Diagnosing the Reference Gap: What Visual Scaffolds Can and Cannot Fix in Multimodal Reasoning,ClueTracer: Question-to-Vision Clue Tracing for Training-Free Hallucination Suppression in Multimodal Reasoning
+T629,test,cross,only_a,True,False,是,,是,Binance resumes withdrawals following $6.3 billion breach,幣安逾60億美元資產遭竊 FBI指北韓所為
+T664,test,cross,neither,False,False,是,,是,Linux TCP漏洞可被用來遠端取得root權限，部分發行版尚未修補,TCP Use-After-Free: CVE-2026-98432 / CVSS 9.8
+T667,test,cross,neither,False,False,不是,,不是,Starbucks CEO Brian Niccol: 'The turn has occurred' — now it's in growth mode,10月殺瘋了！台股市值蒸發近9兆  股民人均慘賠60萬
+T682,test,same,only_a,True,False,是,,是,市長辯論會變吐槽大會！陳其邁評2方表現：柯志恩3/4在批評,高雄市長辯論「賴瑞隆頻頻看稿」 學者嘆可惜：有被柯志恩逼到牆角的感覺
+T683,test,cross,neither,False,False,不是,,不是,China plenum lays groundwork for prolonged Xi rule: Scholars,[國際] 伊朗軍方：4艘油輪荷莫茲海峽觸雷起火
+T697,test,cross,neither,False,False,是,,是,"On 'tense' Antonelli's big weekend, this was Hamilton's day",【F1】2026-19墨西哥城GP排位賽：Hamilton為紅軍取得本季首次竿位  Antonelli將於第4順位再次挑戰提前封王
+T712,test,same,neither,False,False,是,不是,不是,沈伯洋車掃終點大安森林公園 蔣萬安母親現身替蔣拜票,蔡英文預告明出席「台北大洋流 」車掃  沈伯洋廟口開講秒回
+T763,test,same,neither,False,False,不是,不是,不是,Prompt-agnostic Language Models,Understanding Large Language Models as Numerical Optimizers
+T767,test,cross,only_a,True,False,不是,,不是,"Elon Musk, CZ Trade Blows Over SpaceX Shares After $6.4B Binance Hack",幣安補足 95% 失竊加密貨幣，週日起分階段恢復提領
+T777,test,cross,only_a,True,False,是,,是,Israel is in a political deadlock. What comes next?,以色列组阁谈判恐陷僵局 内坦亚胡暂成最大赢家
+T807,test,same,both,True,True,是,不是,不是,TVBS最新民調！辯論會沈伯洋優於蔣萬安  支持度46％、42％沈伯洋小輸,蔣萬安辯論攻擊頻率極高 他慶幸沈伯洋沒有隨之起舞
+T859,test,same,both,True,True,是,,是,不只沈伯洋！蔣萬安被揪也說過「都更是陪伴」 他酸爆：網軍洗半天洗臉市長,辯論議題延燒！被翻出曾說「都更是陪伴」 蔣萬安回應了
+T886,test,cross,both,True,True,是,,是,‘Groundless speculation’: China denies spying on Nvidia’s Jensen Huang,外媒爆與黃仁勳密切往來！中國女間諜履歷超狂　跨媒體金融界
+T918,test,same,both,True,True,是,,是,中共打貪鎖定領導幹部身邊人 加強核查家庭異常財產,中共加强查处领导干部家族式腐败 核查家庭异常财产
+T921,test,same,only_c,False,True,是,是,是,台股跌1156點失守半年線　金管會：密切關注國際市場變化,台股大屠殺！跌勢加劇崩逾1500點 台達電、友達跌停
+T925,test,cross,neither,False,False,是,是,是,"LeBron James, Tyrese Maxey shine as 76ers beat Knicks in NBA Cup thriller",NBA》詹姆斯拿下超前分！馬克西繳27分助七六人對尼克2連勝
+T966,test,same,only_c,False,True,是,,是,沈伯洋邀「加LINE再約戰」！ 蔣萬安：開放態度,太誇張！沈伯洋直播頻道破10萬人線上收看 蔣萬安差超多

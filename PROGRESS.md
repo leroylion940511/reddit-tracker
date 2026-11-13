@@ -5,7 +5,7 @@
 > 2026-10-29 以前的段落已搬到 `docs/archive/`（見文末「更早的紀錄」）。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-13 晚（`feat/exp2-runner`：實驗二三組執行腳本，已併入 main、**服務沒有重載**（線上行為不變，不需要重載）；清掉舊備份、舊 worktree、`.env` 舊鍵。main **還沒 push**）
+**Last updated:** 2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
 
 ## 線上現況（2026-11-13 查證）
 
@@ -13,6 +13,14 @@
 - 11/13 是新程式的第一期：06:00–06:05 準備（P 影子 5 次、M 28 次 Codex），12 篇、`degraded=[]`；12 篇於 07:06 核准；08:35 發行（Telegram 533、534）。
 - 查證當下 main 領先 origin/main 3 個 commit（`ff87ca0`、`7f72c69`、`4446959`）；部署後共 9 個，**還沒 push**。
 - production DB 523 MB、Alembic `b8d4f0a17c33`。全套（production checkout，有母本）413 passed／4 skipped。
+
+## 本次變更（2026-11-13 晚 — 實驗一結果存檔，`docs/exp1-results`）
+
+- ✅ `scripts/exp1_results.py --write` 正式跑一次：`docs/eval/cluster_pairs_v1.csv`（100 組，**寫了就不能改**；sha256 `01466b64…cd084`）與 [`docs/eval/exp1_results.md`](docs/eval/exp1_results.md)（結果表、信賴區間、McNemar、κ、3 個錯誤分析、結論、標註限制）。`exp1-frozen`＝`5f31fab`。
+- **結果（test 50 組）：C 沒有比 A 好。** C：Precision 0.68／Recall 0.43／F1 0.53／錯誤合併率 0.30；A：0.80／0.67／0.73／0.25；exact McNemar p = 0.115（A 對 14、C 對 6），不顯著。C 判錯 23 組，漏併 17、錯併 6。
+- 3 個錯誤分析：彙整型「早報」被併進單一事件（T457、T523）；英文標題相似度低於 0.28 且句首 Binance 不算名字（T336、T425）；譯名表沒有「幣安」（T446、T629）。⚠️ 錯誤分析是 Claude 依快照與凍結的程式查出來寫的草稿，手冊要求開發者寫，請志晨看過再交。
+- ⚠️ 標註是 AI 工具標的（老師同意），報告裡的 κ = 0.44 是兩個模型之間的一致程度；報告「標註的限制」一節有寫。
+- 不要因為這個結果在 11/20 前回頭改聚合規則：test 只能跑一次，而且會動到試刊與實驗二、三的條件。要改留到凍結後，並在報告說明。
 
 ## 本次變更（2026-11-13 晚 — 實驗二執行腳本＋清理，`feat/exp2-runner`）
 
@@ -45,7 +53,7 @@ worktree `~/Documents/Developer/Lab/rt-wt-cleanup`。開發時 production 只做
 
 1. 👤 **試刊到 11/15，每天**：06:00 準備後核准 M 組稿；交 B 之前 `scripts/collect_blind_hashes.py --write` 並 commit（11/09–11/13 已記）。
 2. 👤 **push main**（領先 origin 9 個 commit）。`chore/cleanup-1113` 已於 11/13 19:12 部署。
-3. 👤 **實驗一結果**（11/22 前）：老師已同意用現有標註。跑 `scripts/exp1_results.py --write`（指令見腳本開頭）寫 `docs/eval/cluster_pairs_v1.csv` 與 `exp1_results.md`，再補 3 個錯誤分析。⚠️ 11/13 已用同一份標註乾跑過一次（只印不存），不要因為看過數字回頭調方法 C。
+3. 👤 **實驗一結果**：已存檔（見上）。剩下志晨讀一遍 `exp1_results.md` 的 3 個錯誤分析與結論，改成自己的話；11/22 前。
 4. 👤 **請老師確認** `trial-dates.md` 的時程與用本機 Codex 當 LLM（手冊 6.9 第 1 條要正式 API），並告知 A、B。這裡沒有收到確認的紀錄；B 的七類錯誤計數練習（原訂 11/08 前）也沒有紀錄。
 5. 👤 **`FACT_CHECKER_PER_SOURCE`**：試刊已用預設關閉在跑；要不要在實驗二 (c) 組打開，最晚 11/17 前定案（`docs/pr/checker-per-source.md`）。
 6. **實驗二 11/17–11/18**：A 11/17 中午前選 15 篇正常稿 → `run_exp2.py build --normal-ids …` → `draft --live`（25 次 Codex）→ 隔天 `run --arm all --live` → `report --write`。額度與排程見 `docs/eval/EXP2_DESIGN.md`；不要在 06:00–06:10 準備期間跑。
