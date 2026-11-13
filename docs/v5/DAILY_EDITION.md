@@ -374,3 +374,19 @@ _resolve_t3(..., evidence_of=None)
 - `summary`：S1（證據包第一篇）摘要去頭尾空白後截 `RICH_SUMMARY_CHARS` 字；證據包有注入標記（`evidence_has_injection`）時給空字串。`outlets`：證據包 `display_name` 去重、保持順序（轉載併成一列，例如「中央社（央廣轉載）」）；`outlet_count`＝`len(outlets)`。
 - 開啟時：分版主編請求的每個 `candidates[]` 多這三欄（接在 `title` 後）；總編 T1 的 `story`／`current_front[]`、T3 的 `candidates[]` 稿件卡也多這三欄。`evidence_of` 沒傳（例如 `scripts/verify_t1_t3.py`）時稿件卡不加欄位。
 - 關閉時：分版主編候選欄位仍是 `section, story_id, angle, priority, sender, title`，稿件卡仍是 `story_id, section, kind, score, headline, hold`（測試 `tests/test_desk_v3.py`）。
+
+### B1 開放版面護欄（`MAS_OPEN_LAYOUT`，desk-v3，預設關閉）
+
+`config.py`：`mas_open_layout: bool = False`、`mas_section_min: int = 1`、`mas_section_max: int = 8`、`mas_edition_max: int = 18`（環境變數同名大寫）。
+
+`daily/mas/layout.py`：
+
+```python
+@dataclass(frozen=True)
+class LayoutLimits: enabled: bool; section_min: int; section_max: int; edition_max: int
+check_limits(section_min, section_max, edition_max, sections=len(SECTION_QUOTAS)) -> list[str]  # 空＝合法
+layout_limits(settings=None) -> LayoutLimits
+```
+
+- 合法條件：`section_min >= 0`、`section_max >= 1`、`section_min <= section_max`、`edition_max >= 1` 且 `>= 版數 × section_min`。
+- `layout_limits` 只在開關開啟時驗證，不合法丟 `ValueError`（訊息列出所有問題）；關閉時回傳 `enabled=False`，不影響現行流程。B1 只有設定與驗證，`run_mas` 還沒讀它（B2 起接上）。

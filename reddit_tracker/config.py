@@ -111,6 +111,12 @@ class Settings(BaseSettings):
     # desk-v3 A1：分版主編的候選與總編的稿件卡多帶 S1 摘要（限長）、媒體名清單、家數。
     # 預設關閉＝請求逐字不變（request_hash 不變）。
     mas_rich_context: bool = False
+    # desk-v3 B：各版篇數由分版主編決定（預設關閉＝沿用 SECTION_QUOTAS 固定名額）。
+    # 護欄：每版至少／至多幾篇、全期正式稿上限；驗證見 daily/mas/layout.py 的 layout_limits()。
+    mas_open_layout: bool = False
+    mas_section_min: int = 1
+    mas_section_max: int = 8
+    mas_edition_max: int = 18
     gemini_daily_model: str = "gemini-3.5-flash-lite"
 
     # --- 舊排程（候選探索、舊版日報編採與發送）已在 commit 2d95c07 移除；設 true 也不會復活 ---

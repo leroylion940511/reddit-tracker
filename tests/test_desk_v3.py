@@ -86,3 +86,44 @@ def test_rich_context_on_adds_summary_and_outlets(session, rich_on):
             assert c["outlets"] == ["中央社"] and c["outlet_count"] == 1
     card = eic[0]["candidates"][0]
     assert set(card) == OLD_CARD_KEYS | RICH_KEYS and card["summary"] == summary[:RICH_SUMMARY_CHARS]
+
+
+# ── B1：開放版面的護欄設定（MAS_OPEN_LAYOUT，預設關閉）──────────────────────
+
+def test_open_layout_defaults_are_off_and_valid():
+    from reddit_tracker.daily.mas.layout import LayoutLimits, check_limits, layout_limits
+
+    assert layout_limits() == LayoutLimits(enabled=False, section_min=1, section_max=8, edition_max=18)
+    assert check_limits(1, 8, 18) == []
+
+
+def test_open_layout_limit_validation():
+    from reddit_tracker.daily.mas.layout import check_limits
+
+    assert check_limits(0, 1, 1) == []
+    assert any("不能小於 0" in p for p in check_limits(-1, 8, 18))
+    assert any("至少要 1" in p for p in check_limits(0, 0, 18))
+    assert any("不能大於" in p for p in check_limits(5, 4, 18))
+    assert any("下限總和" in p for p in check_limits(4, 8, 11))
+
+
+def test_open_layout_bad_settings_raise_only_when_enabled():
+    from reddit_tracker.daily.mas.layout import layout_limits
+
+    bad = SimpleNamespace(mas_open_layout=False, mas_section_min=9, mas_section_max=2, mas_edition_max=0)
+    assert layout_limits(bad).enabled is False  # 關閉時不驗證，不影響現行流程
+    with pytest.raises(ValueError, match="不能大於"):
+        layout_limits(SimpleNamespace(**{**bad.__dict__, "mas_open_layout": True}))
+
+
+def test_open_layout_reads_env(monkeypatch):
+    from reddit_tracker.daily.mas.layout import layout_limits
+
+    monkeypatch.setenv("MAS_OPEN_LAYOUT", "true")
+    monkeypatch.setenv("MAS_SECTION_MAX", "6")
+    get_settings.cache_clear()
+    try:
+        limits = layout_limits()
+        assert limits.enabled and limits.section_max == 6 and limits.edition_max == 18
+    finally:
+        get_settings.cache_clear()
