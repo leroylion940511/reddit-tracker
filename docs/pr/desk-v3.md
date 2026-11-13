@@ -55,7 +55,8 @@
   - 結果：`PAGE_REVIEW_SCHEMA`／`PAGE_RULING_SCHEMA`、`guard_page_proposal`、`_page_review`；DECISION payload `action=PAGE_RULING`（ACCEPT 走 `apply_decision`）。commit `899b21b`。
 - [x] **C3** 總編看完頭版稿（標題＋摘要＋deck）可對最多 2 篇發 `REQUEST_REVISION` 給記者（類型已在白名單），記者回 `REVISION_DONE`，修稿後照原流程重驗查核。
   - 結果：`EIC_REVIEW_SCHEMA`、`guard_eic_requests`、`_eic_revisions`；記者可 REVISE（走 `_check_and_maybe_revise` 重驗）或 REBUT。commit `49f3992`。
-- [ ] **C4** 回放頁／`format_trace` 顯示新訊息類型；3D 編輯室若有訊息類型白名單也要補。
+- [x] **C4** 回放頁／`format_trace` 顯示新訊息類型；3D 編輯室若有訊息類型白名單也要補。
+  - 結果：replay／newsroom 加 `APPEAL` 標籤、`_desk_decision_text`（TRIM／APPEAL_RULING／PAGE_RULING）、選稿階段 beat；`format_trace` 與 `office.html` 不用改（沒有白名單）。commit `b51fa6d`。
 
 ### 階段 D：記者、查核員看全文（目標 2 的另一半）
 - [ ] **D1** 設計文件（寫在本檔「決定紀錄」）：抽取方式（優先用已安裝或輕量套件，例如 trafilatura；用 `uv add`）、robots.txt 與付費牆處理、速率限制、存哪（新表 `item_fulltext` 或欄位；需要 Alembic migration）、失敗回退到摘要、全文長度上限、注入防護。
@@ -86,6 +87,7 @@
 - 2026-11-14 C2：提案不准讓頭版變少、不准撤下兩版都有位置的稿（避免 `apply_decision` 重算內版時 T1 連結變成重複全文）；可上頭版的稿限 `kind=report`、非 HOLD、沒注入標記，和 `guard_pitches`／`_section_pitches` 規則一致。版面編輯回 OK 時不發訊息。
 - 2026-11-14 C3：總編只看頭版 `status=checked` 的稿，「摘要」用 S1 摘要（`rich_fields`，有注入標記給空字串），不依賴 `MAS_RICH_CONTEXT`；退稿用獨立 correlation_id `ER-…`，CHALLENGE 次數不跟 T2 合併計算。
 - 2026-11-14 C3：記者可 REBUT（總編不再回應，原稿不動），回應無效也維持原稿；修稿重驗後變 HOLD 不改 page plan，交給發佈前人工核可（`view` 本來就扣未核可的 M 組稿）。
+- 2026-11-14 C4：TRIM 刪掉的稿沒寫過稿，回放標題退回 `story N`（沒另外查證據包標題，避免改 `build_replay` 的查詢）；留給 E1 視需要補。
 
 ## 執行紀錄
 
@@ -93,3 +95,4 @@
 
 - 2026-11-13 15:20：A1、B1、B2 完成；全套 439 passed／7 skipped；commit `3128cce`、`14e8f60`、`41eb804`；結束用量 5h 6%／週 25%。
 - 2026-11-14（本次）：B3、B4、C1 完成；全套 453 passed／7 skipped；commit `f12d382`、`1a8159e`、`a049ee9`；結束用量 5h 12%／週 26%。下一步 C2。
+- 2026-11-14 01:19：C2、C3、C4 完成；全套 471 passed／7 skipped；commit `899b21b`、`49f3992`、`b51fa6d`；結束用量 5h 19%／週 27%。下一步 D1（設計文件）。
