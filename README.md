@@ -243,6 +243,7 @@ REDDIT_TRACKER_NO_DOTENV=1 uv run python -m pytest -q
 | 工具 | 用途 |
 | --- | --- |
 | `scripts/sample_exp1.py` ＋ `reddit_tracker/eval/exp1.py` | 實驗一：事件合併方法 A／C 的配對抽樣（固定種子，dev／test、複標），說明見 [`docs/eval/EXP1_SAMPLING.md`](docs/eval/EXP1_SAMPLING.md) |
+| `scripts/exp1_results.py` ＋ `reddit_tracker/eval/exp1_results.py` | 實驗一結果表：Precision／Recall／錯誤合併率（Wilson 區間）、F1（bootstrap）、exact McNemar、κ；`--write` 才寫 `docs/eval/cluster_pairs_v1.csv`（不覆寫）與 `exp1_results.md` |
 | `scripts/export_blind_count.py` ／ `daily blind-export` ＋ `daily/blind.py` | 實驗三盲計：每天從 P、M 都有寫的事件抽 8 篇（4 P／4 M）去識別化匯出，只 commit 對照表 SHA-256 |
 | `scripts/analyze_blind_count.py` | 驗證對照表雜湊後算 P／M 的七類錯誤、每 10 篇主指標、HOLD 敏感度版本與猜組別正確率 |
 | `scripts/sample_exp2.py` | 實驗二：從 M 組稿固定種子抽 25 篇 |
