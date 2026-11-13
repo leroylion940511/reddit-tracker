@@ -352,3 +352,25 @@ def reporter_draft(session, client, *, edition_date, story, evidence, degraded) 
 - `checker_mode`：`full`＝線上行為；`program`＝只用程式的相關性規則，不呼叫查核員 LLM；`off`＝不做相關性檢查。數字檢查三種都開。
 - `draft`：`(headline, deck, body, why_it_matters)`，有給就不呼叫記者寫 v1。
 - 線上（`run_mas`）不傳這兩個參數。`daily/evidence.py` 的 `raw_evidence_item(member, source_names)` 不做相關性過濾，只給實驗二把無關素材加進證據包。規則見 `docs/eval/EXP2_DESIGN.md`。
+
+## desk-v3（開發中，全部預設關閉）
+
+分支 `feat/desk-v3`；計畫與交接見 `docs/pr/desk-v3.md`。每個開關關閉時，送給模型的請求與 `request_hash` 逐字不變。
+
+### A1 主編、總編看得到摘要（`MAS_RICH_CONTEXT`，desk-v3，預設關閉）
+
+`config.py`：`mas_rich_context: bool = False`（環境變數 `MAS_RICH_CONTEXT`）。
+
+`daily/mas/orchestrator.py`：
+
+```python
+RICH_SUMMARY_CHARS = 200
+rich_fields(evidence: list[EvidenceItem] | None) -> {"summary": str, "outlets": list[str], "outlet_count": int}
+_story_card(session, story_id, hold_ids, evidence_of: dict[int, list[EvidenceItem]] | None = None) -> dict
+_resolve_t1(..., evidence_of=None)   # run_mas 傳入本期證據包
+_resolve_t3(..., evidence_of=None)
+```
+
+- `summary`：S1（證據包第一篇）摘要去頭尾空白後截 `RICH_SUMMARY_CHARS` 字；證據包有注入標記（`evidence_has_injection`）時給空字串。`outlets`：證據包 `display_name` 去重、保持順序（轉載併成一列，例如「中央社（央廣轉載）」）；`outlet_count`＝`len(outlets)`。
+- 開啟時：分版主編請求的每個 `candidates[]` 多這三欄（接在 `title` 後）；總編 T1 的 `story`／`current_front[]`、T3 的 `candidates[]` 稿件卡也多這三欄。`evidence_of` 沒傳（例如 `scripts/verify_t1_t3.py`）時稿件卡不加欄位。
+- 關閉時：分版主編候選欄位仍是 `section, story_id, angle, priority, sender, title`，稿件卡仍是 `story_id, section, kind, score, headline, hold`（測試 `tests/test_desk_v3.py`）。

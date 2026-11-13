@@ -108,6 +108,9 @@ class Settings(BaseSettings):
     # M 組查核員逐來源回報（每個程式點名的可疑來源回 KEEP／REMOVE）。會改到查核員請求的 request_hash，
     # 預設關閉＝沿用舊提示詞與舊 schema，既有錄音（1027_t2a_records.json）照常重播。
     fact_checker_per_source: bool = False
+    # desk-v3 A1：分版主編的候選與總編的稿件卡多帶 S1 摘要（限長）、媒體名清單、家數。
+    # 預設關閉＝請求逐字不變（request_hash 不變）。
+    mas_rich_context: bool = False
     gemini_daily_model: str = "gemini-3.5-flash-lite"
 
     # --- 舊排程（候選探索、舊版日報編採與發送）已在 commit 2d95c07 移除；設 true 也不會復活 ---

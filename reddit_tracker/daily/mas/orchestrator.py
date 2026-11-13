@@ -37,6 +37,8 @@ logger = logging.getLogger(__name__)
 
 FRONT_CAPACITY = 6
 LEAD_MAX_CHARS = 300
+# desk-v3 A1（MAS_RICH_CONTEXT）：主編／總編看到的 S1 摘要長度上限
+RICH_SUMMARY_CHARS = 200
 SECTIONS = tuple(SECTION_QUOTAS)
 
 INJECTION_MARKERS = (
@@ -823,10 +825,10 @@ def run_mas(
         front = [p for p in pitches if p.priority == "front" and p.story_id not in hold_ids]
         if conflicts:
             _resolve_t1(session, edition_date=edition_date, conflicts=conflicts, client=client, clock=clock,
-                        hold_ids=hold_ids, result=result, pitches=safe_pitches)
+                        hold_ids=hold_ids, result=result, pitches=safe_pitches, evidence_of=evidence_of)
         elif automatic or len(front) > FRONT_CAPACITY:
             _resolve_t3(session, edition_date=edition_date, front=front, client=client, clock=clock,
-                        hold_ids=hold_ids, result=result)
+                        hold_ids=hold_ids, result=result, evidence_of=evidence_of)
         else:
             plan = add_page_plan(
                 session, edition_date=edition_date, run_variant=MAS, slots=slots_from_pitches(
@@ -845,6 +847,23 @@ def run_mas(
     return result
 
 
+def rich_fields(evidence: list[EvidenceItem] | None) -> dict:
+    """MAS_RICH_CONTEXT 開啟時給主編／總編的額外欄位：S1 摘要（限長）、媒體名、家數。
+
+    證據包有注入標記時不給摘要（只給媒體名），避免把來源裡的指示送進編輯決策。
+    """
+    evidence = evidence or []
+    outlets: list[str] = []
+    for item in evidence:
+        name = item.display_name
+        if name not in outlets:
+            outlets.append(name)
+    summary = ""
+    if evidence and not evidence_has_injection(evidence):
+        summary = (evidence[0].summary or "").strip()[:RICH_SUMMARY_CHARS]
+    return {"summary": summary, "outlets": outlets, "outlet_count": len(outlets)}
+
+
 def _default_pitches(stories: list[Story], evidence_of: dict[int, list[EvidenceItem]]) -> list[Pitch]:
     by_id = {story.id: story for story in stories if evidence_of.get(story.id)}
     selections = select_articles([
@@ -856,6 +875,7 @@ def _default_pitches(stories: list[Story], evidence_of: dict[int, list[EvidenceI
 
 def _section_pitches(session, edition_date, stories, evidence_of, client, calls: dict | None = None):
     pitches = _default_pitches(stories, evidence_of)
+    rich = get_settings().mas_rich_context
     top = sorted((s for s in stories if s.section in SECTIONS), key=lambda s: -s.score)[:10]
     global_top = [{"story_id": s.id, "section": s.section, "score": s.score,
                    "title": (evidence_of.get(s.id) or [None])[0].title if evidence_of.get(s.id) else ""} for s in top]
@@ -863,7 +883,8 @@ def _section_pitches(session, edition_date, stories, evidence_of, client, calls:
         own = [p for p in pitches if p.section == section]
         text = _ask(session, client, role="section_editor", story_id=None, edition_date=edition_date,
                     system=PITCH_SYSTEM, user=json.dumps({"section": section, "candidates": [
-                        {**p.__dict__, "title": evidence_of[p.story_id][0].title} for p in own
+                        {**p.__dict__, "title": evidence_of[p.story_id][0].title,
+                         **(rich_fields(evidence_of.get(p.story_id)) if rich else {})} for p in own
                     ], "global_top10": global_top}, ensure_ascii=False), schema=PITCH_SCHEMA, temperature=0)
         if calls is not None:
             calls[section] = last_record_id()
@@ -889,11 +910,14 @@ def _conflicts(pitches: list[Pitch]) -> dict[int, list[Pitch]]:
     return {sid: group for sid, group in by.items() if len({p.section for p in group}) > 1}
 
 
-def _story_card(session, story_id: int, hold_ids: set[int]) -> dict:
-    """給總編看的稿件卡：標題、版別、種類、分數、是否 HOLD（不給全文）。"""
+def _story_card(session, story_id: int, hold_ids: set[int], evidence_of: dict | None = None) -> dict:
+    """給總編看的稿件卡：標題、版別、種類、分數、是否 HOLD（不給全文）。
+
+    MAS_RICH_CONTEXT 開啟且有證據包時，多帶 `rich_fields`（summary／outlets／outlet_count）。
+    """
     story = session.get(Story, story_id)
     version = latest_version(session, story_id)
-    return {
+    card = {
         "story_id": story_id,
         "section": story.section if story else None,
         "kind": story.kind if story else None,
@@ -901,6 +925,9 @@ def _story_card(session, story_id: int, hold_ids: set[int]) -> dict:
         "headline": version.headline if version else "",
         "hold": story_id in hold_ids,
     }
+    if evidence_of is not None and get_settings().mas_rich_context:
+        card.update(rich_fields(evidence_of.get(story_id)))
+    return card
 
 
 def _current_front(session, edition_date) -> list[int]:
@@ -928,7 +955,8 @@ def merge_t1_decision(previous_front: list[int], story_id: int, decision: _Decis
     })
 
 
-def _resolve_t1(session, *, edition_date, conflicts, client, clock, hold_ids, result: MasResult, pitches=None) -> None:
+def _resolve_t1(session, *, edition_date, conflicts, client, clock, hold_ids, result: MasResult, pitches=None,
+                evidence_of: dict | None = None) -> None:
     # 先留下提案當時的版面，決定之後才是下一版。
     flat = pitches or [pitch for group in conflicts.values() for pitch in group]
     proposal = add_page_plan(
@@ -939,9 +967,9 @@ def _resolve_t1(session, *, edition_date, conflicts, client, clock, hold_ids, re
         previous_front = _current_front(session, edition_date)
         user = json.dumps(
             {
-                "story": _story_card(session, story_id, hold_ids),
+                "story": _story_card(session, story_id, hold_ids, evidence_of),
                 "pitches": [p.__dict__ for p in group],
-                "current_front": [_story_card(session, i, hold_ids) for i in previous_front],
+                "current_front": [_story_card(session, i, hold_ids, evidence_of) for i in previous_front],
             },
             ensure_ascii=False,
         )
@@ -983,7 +1011,8 @@ def _resolve_t1(session, *, edition_date, conflicts, client, clock, hold_ids, re
             result.page_plan_ids.append(plan_id)
 
 
-def _resolve_t3(session, *, edition_date, front, client, clock, hold_ids, result: MasResult) -> None:
+def _resolve_t3(session, *, edition_date, front, client, clock, hold_ids, result: MasResult,
+                evidence_of: dict | None = None) -> None:
     if not session.scalar(select(PagePlan.id).where(PagePlan.edition_date == edition_date, PagePlan.run_variant == MAS)):
         plan = add_page_plan(session, edition_date=edition_date, run_variant=MAS,
                              slots=slots_from_pitches(front), now=clock.tick())
@@ -1000,7 +1029,7 @@ def _resolve_t3(session, *, edition_date, front, client, clock, hold_ids, result
     need = min(FRONT_CAPACITY, len(eligible))
     user = json.dumps({
         "capacity": FRONT_CAPACITY,
-        "candidates": [{**_story_card(session, p.story_id, hold_ids), "pitched_by": p.section, "angle": p.angle}
+        "candidates": [{**_story_card(session, p.story_id, hold_ids, evidence_of), "pitched_by": p.section, "angle": p.angle}
                        for p in front],
     }, ensure_ascii=False)
     text = _ask(
