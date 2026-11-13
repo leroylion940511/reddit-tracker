@@ -545,3 +545,174 @@ def test_appeal_off_by_default_even_when_trimming(session, edition_max_10):
                                   appeal=lambda data: pytest.fail("關閉時不應申訴"))
     assert _messages(session, "APPEAL") == []
     assert not any('"kept"' in r["messages"][0]["content"] for r in requests)
+
+
+# ── C2：版面異議要有總編回應（MAS_MORE_INTERACTION）────────────────────────
+
+
+def test_guard_page_proposal_rules():
+    from reddit_tracker.daily.mas.orchestrator import guard_page_proposal
+
+    slots = {"front": {"lead": 1, "second": [2, 3], "briefs": []},
+             "sections": {"world": [{"story_id": 1}, {"story_id": 2}, {"story_id": 3}, {"story_id": 4}],
+                          "tech": [{"story_id": 5}, {"story_id": 3, "display": "link"}]}}
+    eligible = {1, 2, 3, 4, 5}
+
+    def obj(lead, second, briefs=()):
+        return {"action": "OBJECT", "lead": lead, "second": list(second), "briefs": list(briefs)}
+
+    assert guard_page_proposal({"action": "OK"}, slots, eligible, set()) == (None, None)
+    assert guard_page_proposal("不是 dict", slots, eligible, set()) == (None, None)
+    ok, why = guard_page_proposal(obj(4, [1, 3]), slots, eligible, set())
+    assert why is None and ok.lead == 4 and ok.second == [1, 3]
+    for bad, hold in [
+        (obj(1, [2, 3]), set()),        # 跟現在一樣
+        (obj(4, [1]), set()),           # 篇數變少
+        (obj(9, [1, 3]), set()),        # 不在 eligible
+        (obj(4, [1, 3]), {4}),          # HOLD 上頭版
+        (obj(4, [4, 3]), set()),        # 重複
+        (obj(None, [4, 1, 3]), set()),  # 沒有主稿
+        (obj(4, [1, 2]), set()),        # 撤下兩版都有位置的 3
+        (obj(1, [2, 3, 4, 5, 6], [7]), set()),
+        ({"action": "OBJECT", "lead": "x", "second": [], "briefs": []}, set()),
+    ]:
+        proposal, why = guard_page_proposal(bad, slots, eligible | {6, 7}, hold)
+        assert proposal is None and why, bad
+
+
+def _run_review(session, review, ruling=None):
+    from sqlalchemy import select
+
+    from reddit_tracker.models import PagePlan
+
+    raw = []
+    for i, section in enumerate(SECTIONS):
+        for j in range(5):
+            item = _item(session, f"武契奇事件{i}-{j}", "國會選舉結果", url=f"https://www.cna.com.tw/r{i}/{j}")
+            raw.append(_snapshot([item.id], i * 10 + j, section=section, score=100 - j))
+    requests = []
+
+    def handler(kw):
+        content = kw["messages"][0]["content"]
+        data = json.loads(content) if content.startswith("{") else None
+        if "版面編輯" in kw["system"] and data and "others" in data:
+            requests.append(kw)
+            return review(data)
+        if "總編輯" in kw["system"] and data and "objection" in data:
+            requests.append(kw)
+            return ruling(data) if ruling else "不是 JSON"
+        if "版面編輯" in kw["system"]:
+            requests.append(kw)
+        if "分版主編" in kw["system"]:
+            return json.dumps({"pitches": [{"story_id": p["story_id"], "angle": "國會", "priority": "front"}
+                                           for p in data["candidates"]]})
+        if "總編輯" in kw["system"] and data and "candidates" in data:
+            ids = [c["story_id"] for c in data["candidates"]][:6]
+            return json.dumps({"lead": ids[0], "second": ids[1:5], "briefs": ids[5:], "links": [],
+                               "dropped": [], "reasons": [{"story_id": i, "why": "重要"} for i in ids]})
+        if "記者" in kw["system"]:
+            return json.dumps({"action": "DRAFT", "headline": "武契奇選舉", "body": "國會選舉結果。[S1]"})
+        return _checker("OK", "")
+
+    result = run_mas(session, edition_date=DAY, snapshot=SimpleNamespace(candidates=raw), registry=_registry(),
+                     client=Scripted(handler), now=NOW)
+    plan = session.scalar(select(PagePlan).order_by(PagePlan.plan_version.desc()))
+    return result, plan, requests
+
+
+@pytest.fixture
+def interaction_on(monkeypatch):
+    monkeypatch.setenv("MAS_MORE_INTERACTION", "true")
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
+
+
+def _swap_lead(data):
+    front = [c["story_id"] for c in data["front"]]
+    new = data["others"][0]["story_id"]
+    return json.dumps({"action": "OBJECT", "problem": "BALANCE", "detail": "版別不平衡",
+                       "lead": new, "second": front[:4], "briefs": front[4:5]})
+
+
+def _layout_objections(session):
+    return [m for m in _messages(session, "PAGE_OBJECTION") if m.sender_role == "layout_editor"]
+
+
+def _page_rulings(session):
+    return [m for m in _messages(session, "DECISION") if (m.payload or {}).get("action") == "PAGE_RULING"]
+
+
+def test_page_objection_accepted_changes_front(session, interaction_on):
+    from reddit_tracker.daily.mas.orchestrator import PAGE_REVIEW_SCHEMA, PAGE_RULING_SCHEMA
+
+    seen = {}
+
+    def review(data):
+        seen["review"] = data
+        return _swap_lead(data)
+
+    def ruling(data):
+        seen["ruling"] = data
+        return json.dumps({"verdict": "ACCEPT", "why": "有道理"})
+
+    result, plan, requests = _run_review(session, review, ruling)
+    schemas = [r["json_schema"] for r in requests]
+    assert schemas == [PAGE_REVIEW_SCHEMA, PAGE_RULING_SCHEMA]  # 開啟時不送舊的預審
+    assert len(seen["review"]["front"]) == 6 and seen["review"]["front"][0]["slot"] == "lead"
+    new_lead = seen["review"]["others"][0]["story_id"]
+    objections = _layout_objections(session)
+    assert [o.payload.get("problem") for o in objections][-1] == "BALANCE"
+    [ruling_msg] = _page_rulings(session)
+    assert ruling_msg.payload["verdict"] == "ACCEPT" and ruling_msg.payload["by"] == "eic"
+    assert ruling_msg.payload["objection_message_id"] == objections[-1].id and ruling_msg.status == "handled"
+    assert plan.decided_by_message_id == ruling_msg.id and plan.slots["front"]["lead"] == new_lead
+    assert len(seen["ruling"]["proposed_front"]) == 6
+    assert any("總編接受" in line for line in result.layout_log)
+
+
+def test_page_objection_rejected_keeps_front(session, interaction_on):
+    seen = {}
+
+    def review(data):
+        seen["front"] = [c["story_id"] for c in data["front"]]
+        return _swap_lead(data)
+
+    result, plan, _ = _run_review(session, review, lambda data: json.dumps({"verdict": "REJECT", "why": "維持"}))
+    [ruling_msg] = _page_rulings(session)
+    assert ruling_msg.payload["verdict"] == "REJECT" and ruling_msg.payload["why"] == "維持"
+    assert plan.slots["front"]["lead"] == seen["front"][0]
+
+
+def test_page_objection_bad_ruling_rejects(session, interaction_on):
+    _, plan, _ = _run_review(session, _swap_lead)
+    [ruling_msg] = _page_rulings(session)
+    assert ruling_msg.payload["verdict"] == "REJECT" and ruling_msg.payload["by"] == "program"
+    assert ruling_msg.llm_call_id is None and "program_reason" in ruling_msg.payload
+
+
+def test_page_objection_invalid_proposal_rejected_without_asking_eic(session, interaction_on):
+    def review(data):
+        front = [c["story_id"] for c in data["front"]]
+        return json.dumps({"action": "OBJECT", "problem": "DUP", "detail": "重複", "lead": front[0],
+                           "second": [front[0]], "briefs": []})
+
+    _, plan, requests = _run_review(session, review, lambda data: pytest.fail("提案不合規則不該問總編"))
+    [ruling_msg] = _page_rulings(session)
+    assert ruling_msg.payload["by"] == "program" and ruling_msg.payload["verdict"] == "REJECT"
+    assert len(requests) == 1
+
+
+def test_page_review_ok_sends_no_message(session, interaction_on):
+    result, _, requests = _run_review(session, lambda data: _checker("OK", ""),
+                                      lambda data: pytest.fail("沒有異議不該問總編"))
+    assert _page_rulings(session) == [] and len(requests) == 1
+    assert all(o.payload.get("page") == "front" and "proposal" not in o.payload for o in _layout_objections(session))
+    assert any("沒有異議" in line for line in result.layout_log)
+
+
+def test_page_review_off_keeps_old_precheck(session):
+    assert get_settings().mas_more_interaction is False
+    _, _, requests = _run_review(session, lambda data: pytest.fail("關閉時不該審頭版"))
+    assert len(requests) == 1 and "只檢查頭版容量" in requests[0]["system"]
+    assert _page_rulings(session) == []

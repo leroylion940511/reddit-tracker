@@ -456,3 +456,27 @@ _appeal_trim(session, *, edition_date, pitches, cards, gone, why, limits, trim_m
 - 總編裁決請求 user＝`{"section_min", "appeal": {"story", "why", "eic_why"}, "kept": [卡片]}`，回 `eic → section_editor` 的 `DECISION`，payload＝`{"action": "APPEAL_RULING", "verdict", "story_id", "swap_out", "appeal_message_id", "why", ["program_reason"]}`。
 - 護欄：`REVERSE` 只在 `swap_out` 是目前保留、不是被申訴稿、換掉後該版不低於 `MAS_SECTION_MIN` 時成立（全期篇數不變）；回應失敗或不合規則一律當 `UPHOLD`，原因寫 `program_reason`。
 - 新訊息照常計入 `MAX_MESSAGES`；關閉時不發請求、不發訊息。
+
+### C2 版面異議要有總編回應（`MAS_MORE_INTERACTION`，desk-v3，預設關閉）
+
+同一個開關 `MAS_MORE_INTERACTION`，只在自動模式（`run_mas` 沒傳 `pitches`）作用，不需要 `MAS_OPEN_LAYOUT`。沒有新訊息類型（`PAGE_OBJECTION`、`DECISION` 本來就在白名單）。
+
+`daily/mas/orchestrator.py`：
+
+```python
+PAGE_REVIEW_SYSTEM: str
+PAGE_REVIEW_SCHEMA = {"action": "OK"|"OBJECT", "problem": str, "detail": str,
+                      "lead": int | None, "second": [int], "briefs": [int]}
+PAGE_RULING_SUFFIX: str               # 接在 EIC_SYSTEM 後面
+PAGE_RULING_SCHEMA = {"verdict": "ACCEPT"|"REJECT", "why": str}
+guard_page_proposal(review, plan_slots, eligible, hold_ids) -> (_Decision | None, 不採用原因 | None)
+_page_review(session, *, edition_date, client, clock, hold_ids, evidence_of, result) -> None
+```
+
+- 開啟時**不送**舊的頭版預審（`CHECKER_SCHEMA` 那次版面編輯呼叫與它的 `PAGE_OBJECTION`），改在 T1／T3 排定頭版之後、縮主稿之前審一次（最多 1 輪）。T3 程式發的 `OVER_CAPACITY／LAYOUT_REVIEW` 異議照舊。
+- 版面編輯請求 user＝`{"capacity", "front": [_story_card＋slot], "others": [_story_card], "section_counts": {版: 篇數}}`；`others`＝最新 page plan 各版裡、不在頭版、`kind=report`、非 HOLD、證據沒有注入標記的稿。
+- 回 `OK` 或無法解析 → 不發訊息，只記 `layout_log`。回 `OBJECT` → 發 `layout_editor → eic` 的 `PAGE_OBJECTION`，payload＝`{"page": "front", "problem", "detail", "proposal": {"lead", "second", "briefs"}, "plan_id"}`。
+- 提案護欄（`guard_page_proposal`）：頭版規則（`_decision_problems`：有主稿、不重複、≤ `FRONT_CAPACITY`、無 HOLD）、`second` ≤ 4、只用 `front`∪`others`、篇數不比現在少、跟現在不同、不能把兩個版都有位置（T1 連結）的稿撤下頭版。不合規則 → 不問總編，程式代發 `eic → layout_editor` 的 `DECISION`（`verdict=REJECT`、`by=program`、`program_reason`、`llm_call_id=null`）。
+- 合規則 → 總編請求 user＝`{"objection": {"problem", "detail"}, "current_front": [卡片＋slot], "proposed_front": [卡片＋slot]}`，回 `eic → layout_editor` 的 `DECISION`，payload＝`{"action": "PAGE_RULING", "objection_message_id", "proposal", "verdict", "by": "eic"|"program", "why", ["program_reason"]}`。總編回應失敗當 `REJECT`（`by=program`）。
+- `ACCEPT` → `apply_decision(..., min_front=現在頭版篇數)` 寫下一版 page plan（`decided_by_message_id`＝這則 DECISION）；仍不合規則時訊息標 `rejected`、版面不變。`REJECT` → 訊息 `handled`、版面不變。
+- 最多多 2 則訊息、2 次呼叫，計入 `MAX_MESSAGES`／額度；額度用完時 `_ask` 回 None＝當沒有異議。關閉時請求逐字不變。
