@@ -117,6 +117,8 @@ class Settings(BaseSettings):
     mas_section_min: int = 1
     mas_section_max: int = 8
     mas_edition_max: int = 18
+    # desk-v3 C：agent 之間多一點互動（申訴、版面異議回應、退稿修改）。預設關閉＝不發新訊息、不多呼叫。
+    mas_more_interaction: bool = False
     gemini_daily_model: str = "gemini-3.5-flash-lite"
 
     # --- 舊排程（候選探索、舊版日報編採與發送）已在 commit 2d95c07 移除；設 true 也不會復活 ---

@@ -435,3 +435,24 @@ _trim_edition(session, *, edition_date, pitches, stories, evidence_of, reasons, 
 - `slots_from_pitches`、`build_edition_view`、`render_html`、`telegram_digest` 都照 page plan 的實際篇數排，沒有寫死 4 篇。某版 0 篇時 page plan 沒有該版的 key，HTML 顯示「本版今日無新稿。」，Telegram 各版列不列該版。
 - 頭版仍由 `slots_from_pitches`（`FRONT_CAPACITY=6`）與 T1／T3 決定；`FRONT_PAGE_SIZE`／`FRONT_PAGE_PER_SECTION` 只用在 P 組的 `select_articles`。
 - P 組（`prepare_daily(mode="pipeline")`）不讀 `layout_limits`：`MAS_OPEN_LAYOUT`、`MAS_RICH_CONTEXT` 全開、`MAS_EDITION_MAX=3` 時結果與預設相同。
+
+### C1 刪稿申訴（`MAS_MORE_INTERACTION`，desk-v3，預設關閉）
+
+設定鍵 `MAS_MORE_INTERACTION`（`config.Settings.mas_more_interaction`，預設 false）。C1 只在 B3 真的刪了稿時才作用（所以也要 `MAS_OPEN_LAYOUT`）。`protocol.ALLOWED` 加 `("section_editor", "APPEAL")`。
+
+`daily/mas/orchestrator.py`：
+
+```python
+APPEAL_SYSTEM: str
+APPEAL_SCHEMA = {"appeal": bool, "story_id": int | None, "why": str}
+APPEAL_RULING_SUFFIX: str             # 接在 EIC_SYSTEM 後面
+APPEAL_RULING_SCHEMA = {"verdict": "UPHOLD"|"REVERSE", "swap_out": int | None, "why": str}
+appeal_section(pitches, gone) -> str | None          # 被刪最多的版，同數取 SECTIONS 順序在前
+guard_appeal_ruling(ruling, appealed, appeal_from, pitches, gone, limits) -> (verdict, swap_out, 不採用原因 | None)
+_appeal_trim(session, *, edition_date, pitches, cards, gone, why, limits, trim_message, client, clock, result) -> set[int]
+```
+
+- 流程（最多 1 輪）：B3 的 TRIM `DECISION` 之後，被刪最多的那版主編收到 `{"section", "dropped": [卡片＋eic_why], "kept": [卡片]}`（卡片同 B3 `stories`）。`appeal=true` 且 `story_id` 在 `dropped` 內才發 `section_editor → eic` 的 `APPEAL`（payload `{"section", "why", "trim_message_id"}`）；否則不發訊息，只記 `layout_log`。
+- 總編裁決請求 user＝`{"section_min", "appeal": {"story", "why", "eic_why"}, "kept": [卡片]}`，回 `eic → section_editor` 的 `DECISION`，payload＝`{"action": "APPEAL_RULING", "verdict", "story_id", "swap_out", "appeal_message_id", "why", ["program_reason"]}`。
+- 護欄：`REVERSE` 只在 `swap_out` 是目前保留、不是被申訴稿、換掉後該版不低於 `MAS_SECTION_MIN` 時成立（全期篇數不變）；回應失敗或不合規則一律當 `UPHOLD`，原因寫 `program_reason`。
+- 新訊息照常計入 `MAX_MESSAGES`；關閉時不發請求、不發訊息。

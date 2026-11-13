@@ -173,7 +173,7 @@ def open_layout(monkeypatch):
     get_settings.cache_clear()
 
 
-def _run_open(session, pick, trim=None, per_section=6):
+def _run_open(session, pick, trim=None, per_section=6, appeal=None, ruling=None):
     from sqlalchemy import select
 
     from reddit_tracker.models import AgentMessage, PagePlan
@@ -188,6 +188,12 @@ def _run_open(session, pick, trim=None, per_section=6):
     def handler(kw):
         content = kw["messages"][0]["content"]
         data = json.loads(content) if content.startswith("{") else None
+        if "分版主編" in kw["system"] and data and "kept" in data and "dropped" in data:
+            requests.append(kw)
+            return appeal(data) if appeal else "不是 JSON"
+        if "總編輯" in kw["system"] and data and "appeal" in data:
+            requests.append(kw)
+            return ruling(data) if ruling else "不是 JSON"
         if "分版主編" in kw["system"]:
             requests.append(kw)
             return pick(data)
@@ -429,3 +435,113 @@ def test_pipeline_ignores_open_layout_switches(daily_env, monkeypatch):  # noqa:
     assert set(articles) == {"world", "taiwan"}
     assert articles["world"].is_front and articles["world"].position == 1
     assert articles["taiwan"].kind == "single_source" and not articles["taiwan"].is_front
+
+
+# ── C1：被刪最多的分版主編申訴一次（MAS_MORE_INTERACTION）────────────────────
+
+def test_appeal_section_picks_most_dropped_then_section_order():
+    from reddit_tracker.daily.mas.orchestrator import appeal_section
+
+    pitches = [_p("taiwan", 1), _p("world", 2), _p("world", 3), _p("tech", 4), _p("tech", 5)]
+    assert appeal_section(pitches, {2, 3, 4}) == "world"
+    assert appeal_section(pitches, {2, 4}) == "world"  # 同數取 SECTIONS 順序在前
+    assert appeal_section(pitches, set()) is None
+
+
+def test_guard_appeal_ruling_rules():
+    from reddit_tracker.daily.mas.orchestrator import guard_appeal_ruling
+
+    pitches = [_p("taiwan", 1), _p("taiwan", 2), _p("world", 3), _p("world", 4), _p("tech", 5)]
+    gone = {4}
+    lim = _limits()
+    assert guard_appeal_ruling({"verdict": "UPHOLD", "swap_out": None}, 4, "world", pitches, gone, lim)[:2] == (
+        "UPHOLD", None)
+    assert guard_appeal_ruling({"verdict": "REVERSE", "swap_out": 2}, 4, "world", pitches, gone, lim) == (
+        "REVERSE", 2, None)
+    # 同版互換：world 換回 4、改刪 3，world 仍有 1 篇
+    assert guard_appeal_ruling({"verdict": "REVERSE", "swap_out": 3}, 4, "world", pitches, gone, lim)[0] == "REVERSE"
+    # tech 只剩 1 篇（下限 1）不能刪；swap 是已刪的／被申訴的／bool／不存在 → 維持
+    for bad in (5, 4, True, 99, None):
+        verdict, swap, why = guard_appeal_ruling({"verdict": "REVERSE", "swap_out": bad}, 4, "world", pitches, gone, lim)
+        assert (verdict, swap) == ("UPHOLD", None) and why
+    assert guard_appeal_ruling("不是 dict", 4, "world", pitches, gone, lim)[0] == "UPHOLD"
+
+
+@pytest.fixture
+def appeal_on(monkeypatch):
+    monkeypatch.setenv("MAS_OPEN_LAYOUT", "true")
+    monkeypatch.setenv("MAS_EDITION_MAX", "10")
+    monkeypatch.setenv("MAS_MORE_INTERACTION", "true")
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
+
+
+def _messages(session, kind):
+    from sqlalchemy import select
+
+    from reddit_tracker.models import AgentMessage
+    return list(session.scalars(select(AgentMessage).where(AgentMessage.type == kind).order_by(AgentMessage.id)))
+
+
+def _final_ids(plan):
+    return {slot["story_id"] for slots in plan.slots["sections"].values() for slot in slots}
+
+
+def test_appeal_reversed_swaps_one_story(session, appeal_on):
+    from reddit_tracker.daily.mas.orchestrator import APPEAL_RULING_SCHEMA, APPEAL_SCHEMA
+
+    seen = {}
+
+    def appeal(data):
+        seen["appeal"] = data
+        return json.dumps({"appeal": True, "story_id": data["dropped"][0]["story_id"], "why": "獨家角度"})
+
+    def ruling(data):
+        seen["ruling"] = data
+        swap = next(c["story_id"] for c in data["kept"] if c["section"] != seen["appeal"]["section"])
+        seen["swap"] = swap
+        return json.dumps({"verdict": "REVERSE", "swap_out": swap, "why": "申訴有理"})
+
+    result, plan, _, requests = _run_open(session, _all_six, appeal=appeal, ruling=ruling)
+    schemas = [r["json_schema"] for r in requests]
+    assert APPEAL_SCHEMA in schemas and APPEAL_RULING_SCHEMA in schemas
+    appealed = seen["appeal"]["dropped"][0]["story_id"]
+    assert seen["appeal"]["dropped"][0]["eic_why"] == "程式依分數刪"
+    [msg] = _messages(session, "APPEAL")
+    assert msg.status != "rejected" and msg.sender_role == "section_editor" and msg.story_id == appealed
+    assert msg.payload["why"] == "獨家角度" and msg.payload["trim_message_id"] == _decisions(session)[0].id
+    ruling_msg = [m for m in _messages(session, "DECISION") if m.payload.get("action") == "APPEAL_RULING"]
+    assert len(ruling_msg) == 1 and ruling_msg[0].payload["verdict"] == "REVERSE"
+    assert ruling_msg[0].payload["swap_out"] == seen["swap"] and ruling_msg[0].payload["why"] == "申訴有理"
+    final = _final_ids(plan)
+    assert appealed in final and seen["swap"] not in final and len(final) == 10
+    assert any("改判" in line for line in result.layout_log)
+
+
+def test_appeal_bad_ruling_upholds(session, appeal_on):
+    def appeal(data):
+        return json.dumps({"appeal": True, "story_id": data["dropped"][0]["story_id"], "why": "想留"})
+
+    result, plan, _, _ = _run_open(session, _all_six, appeal=appeal,
+                                   ruling=lambda data: json.dumps({"verdict": "REVERSE", "swap_out": 999, "why": "x"}))
+    [ruling_msg] = [m for m in _messages(session, "DECISION") if m.payload.get("action") == "APPEAL_RULING"]
+    assert ruling_msg.payload["verdict"] == "UPHOLD" and "program_reason" in ruling_msg.payload
+    appealed = _messages(session, "APPEAL")[0].story_id
+    assert appealed not in _final_ids(plan) and len(_final_ids(plan)) == 10
+
+
+def test_no_appeal_sends_no_message(session, appeal_on):
+    result, plan, _, _ = _run_open(session, _all_six,
+                                   appeal=lambda data: json.dumps({"appeal": False, "story_id": None, "why": ""}))
+    assert _messages(session, "APPEAL") == []
+    assert all(m.payload.get("action") != "APPEAL_RULING" for m in _messages(session, "DECISION"))
+    assert len(_final_ids(plan)) == 10 and any("不申訴" in line for line in result.layout_log)
+
+
+def test_appeal_off_by_default_even_when_trimming(session, edition_max_10):
+    assert get_settings().mas_more_interaction is False
+    _, _, _, requests = _run_open(session, _all_six,
+                                  appeal=lambda data: pytest.fail("關閉時不應申訴"))
+    assert _messages(session, "APPEAL") == []
+    assert not any('"kept"' in r["messages"][0]["content"] for r in requests)
