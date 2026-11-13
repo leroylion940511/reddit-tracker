@@ -427,3 +427,11 @@ _trim_edition(session, *, edition_date, pitches, stories, evidence_of, reasons, 
 - 護欄（`guard_trim`）：只收本期名單內、不重複、刪了不會讓該版低於 `MAS_SECTION_MIN` 的稿；超過 `must_drop` 的忽略；不足（含失敗、格式錯）由 `program_trim` 依分數補。動作寫進 `MasResult.layout_log`。
 - 訊息：`eic → section_editor` 的 `DECISION`，payload＝`{"action": "TRIM", "by", "edition_max", "before", "after", "dropped": [{"story_id", "section", "why"}], "why"}`；`by="program"` 時 `llm_call_id` 為 null。被刪稿的 `PITCH` 訊息保留，只是不進審稿與 page plan。
 - 多一則訊息計入 `MAX_MESSAGES`（未改上限）。
+
+### B4 每版 0–`MAS_SECTION_MAX` 篇的排版（`MAS_OPEN_LAYOUT`，desk-v3，預設關閉）
+
+不改介面，只用測試釘住現有行為（`tests/test_desk_v3.py`）：
+
+- `slots_from_pitches`、`build_edition_view`、`render_html`、`telegram_digest` 都照 page plan 的實際篇數排，沒有寫死 4 篇。某版 0 篇時 page plan 沒有該版的 key，HTML 顯示「本版今日無新稿。」，Telegram 各版列不列該版。
+- 頭版仍由 `slots_from_pitches`（`FRONT_CAPACITY=6`）與 T1／T3 決定；`FRONT_PAGE_SIZE`／`FRONT_PAGE_PER_SECTION` 只用在 P 組的 `select_articles`。
+- P 組（`prepare_daily(mode="pipeline")`）不讀 `layout_limits`：`MAS_OPEN_LAYOUT`、`MAS_RICH_CONTEXT` 全開、`MAS_EDITION_MAX=3` 時結果與預設相同。

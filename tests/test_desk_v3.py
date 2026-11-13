@@ -9,6 +9,7 @@ import pytest
 from reddit_tracker.config import get_settings
 from reddit_tracker.daily.evidence import EvidenceItem
 from reddit_tracker.daily.mas.orchestrator import RICH_SUMMARY_CHARS, rich_fields, run_mas
+from tests.test_daily import daily_env  # noqa: F401
 from tests.test_mas_steps import DAY, NOW, SECTIONS, Scripted, _checker, _item, _registry, _snapshot
 
 OLD_PITCH_KEYS = {"section", "story_id", "angle", "priority", "sender", "title"}
@@ -172,14 +173,14 @@ def open_layout(monkeypatch):
     get_settings.cache_clear()
 
 
-def _run_open(session, pick, trim=None):
+def _run_open(session, pick, trim=None, per_section=6):
     from sqlalchemy import select
 
     from reddit_tracker.models import AgentMessage, PagePlan
 
     raw = []
     for i, section in enumerate(SECTIONS):
-        for j in range(6):
+        for j in range(per_section):
             item = _item(session, f"武契奇事件{i}-{j}", "國會選舉結果", url=f"https://www.cna.com.tw/o{i}/{j}")
             raw.append(_snapshot([item.id], i * 10 + j, section=section, score=100 - j))
     requests = []
@@ -365,3 +366,66 @@ def test_trim_off_sends_no_request(session):
     _, _, _, requests = _run_open(session, _all_six)
     assert not any("must_drop" in r["messages"][0]["content"] for r in requests)
     assert _decisions(session) == []
+
+
+# ── B4：每版 0–MAS_SECTION_MAX 篇都能排版；P 組不受影響 ───────────────────────
+
+def test_open_layout_view_and_render_handle_empty_and_full_sections(session, monkeypatch):
+    from reddit_tracker.daily.render import render_html, telegram_digest
+    from reddit_tracker.daily.view import build_edition_view
+    from tests.test_mas_steps import SECTIONS as LABELS
+
+    monkeypatch.setenv("MAS_OPEN_LAYOUT", "true")
+    monkeypatch.setenv("MAS_SECTION_MIN", "0")
+    get_settings.cache_clear()
+    counts = {"taiwan": 0, "world": 8, "tech": 2}
+
+    def pick(data):
+        ids = [c["story_id"] for c in data["candidates"]][: counts[data["section"]]]
+        return json.dumps({"pitches": [{"story_id": i, "angle": "角度", "priority": "front", "reason": "收"}
+                                       for i in ids]})
+
+    try:
+        result, plan, _, _ = _run_open(session, pick, per_section=8)
+    finally:
+        get_settings.cache_clear()
+    assert {s: len(v) for s, v in plan.slots["sections"].items()} == {"world": 8, "tech": 2}
+    front = [plan.slots["front"]["lead"], *plan.slots["front"]["second"], *plan.slots["front"]["briefs"]]
+    assert 1 <= len(front) <= 6 and len(set(front)) == len(front)
+    view = build_edition_view(session, DAY, "mas", LABELS)
+    inner = {key: [a for a in view.articles if a.section == key and not a.is_front] for key in LABELS}
+    assert {k: len(v) for k, v in inner.items()} == {"taiwan": 0, "world": 8, "tech": 2}
+    html = render_html(view)
+    assert html.count('class="empty">本版今日無新稿') == 1
+    digest = telegram_digest(view)
+    assert "國際 8" in digest and "台灣" not in digest.split("各版：")[1]
+
+
+def test_pipeline_ignores_open_layout_switches(daily_env, monkeypatch):  # noqa: F811
+    """P 組只走 select_articles：MAS 開關全開時也不讀護欄、結果與預設相同。"""
+    from reddit_tracker.daily import run as run_module
+    from reddit_tracker.daily.mas import layout, orchestrator
+    from reddit_tracker.models import DailyEdition
+    from tests.test_daily import EDITION
+    from tests.test_daily import NOW as DAILY_NOW
+
+    for key in ("MAS_OPEN_LAYOUT", "MAS_RICH_CONTEXT"):
+        monkeypatch.setenv(key, "true")
+    monkeypatch.setenv("MAS_EDITION_MAX", "3")
+    get_settings.cache_clear()
+
+    def boom(*_a, **_k):
+        raise AssertionError("P 組不應讀 MAS 開放版面設定")
+
+    monkeypatch.setattr(layout, "layout_limits", boom)
+    monkeypatch.setattr(orchestrator, "layout_limits", boom)
+    try:
+        edition_id = run_module.prepare_daily(EDITION, now=DAILY_NOW)
+    finally:
+        get_settings.cache_clear()
+    edition = daily_env.session.get(DailyEdition, edition_id)
+    articles = {a.section: a for a in edition.articles}
+    # 與 test_daily.test_prepare_builds_edition_with_front_page_links_and_html 的預設結果相同
+    assert set(articles) == {"world", "taiwan"}
+    assert articles["world"].is_front and articles["world"].position == 1
+    assert articles["taiwan"].kind == "single_source" and not articles["taiwan"].is_front
