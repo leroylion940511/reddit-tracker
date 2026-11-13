@@ -38,7 +38,7 @@ flowchart TD
 | 渲染發行 | `daily/view.py`、`render.py`、`run.py` | `render_html` 只吃 `EditionView`，依最新 `page_plans` 排版；Telegram 送文字精選＋HTML 檔；同一天只發一次 |
 | 檢視 | `web.py`、`daily/newsroom_page.py` | 只綁 127.0.0.1:8765 |
 
-來源登錄表目前 158 個來源、啟用 105 個（原生 RSS 與本機 RSSHub 路由；24 個社群來源已停用，停用來源的舊素材不進聚合、選題與證據包）。格式見 [`docs/v5/SOURCE_REGISTRY.md`](docs/v5/SOURCE_REGISTRY.md)。
+來源登錄表目前 162 個來源、啟用 104 個（原生 RSS 與本機 RSSHub 路由；24 個社群來源已停用，停用來源的舊素材不進聚合、選題與證據包）。格式見 [`docs/v5/SOURCE_REGISTRY.md`](docs/v5/SOURCE_REGISTRY.md)。
 
 ## 兩種編採模式（`DAILY_MODE`）
 
@@ -140,7 +140,7 @@ uv run python -m reddit_tracker.web
 | `FACT_CHECKER_PER_SOURCE` | `false` | M 組查核員對程式點名的每個可疑來源回 KEEP／REMOVE（關閉＝舊的全域 OK／CHALLENGE）；開啟會改查核員請求的 `request_hash`，見 `docs/pr/checker-per-source.md` |
 | `NEWSROOM_DELIVERY_TIMEZONE` | `Asia/Taipei` | 排程時區 |
 | `LLM_DAILY_LIMIT` | `60` | 每個模型每日嘗試次數上限（所有用途共用） |
-| `LLM_QUOTA_STATE_PATH` | `/tmp/reddit-tracker-llm-quota.json` | 額度 state 檔 |
+| `LLM_QUOTA_STATE_PATH` | `~/.local/state/reddit-tracker/llm-quota.json` | 額度 state 檔（2026-11-13 前在 `/tmp`，重開機會被清掉） |
 | `CODEX_BIN` | `/opt/homebrew/bin/codex` | Codex CLI 路徑（Homebrew cask） |
 | `CODEX_MODEL` | `gpt-6.1-sol` | |
 | `CODEX_REASONING_EFFORT` | `low` | |
@@ -217,7 +217,7 @@ deploy/install_launchd.sh rsshub-install    # 本機 RSSHub（只綁 127.0.0.1:1
 
 以上都以 `uv run` 執行。
 
-**Web 路由**：`/daily/`（最新一期）、`/daily/<date>`、回放頁 `/daily/<date>/newsroom?variant=mas|pipeline&story=<id>`（左邊稿件狀態，右邊訊息與 v1→v2 diff，上方 page plan 變化）、`/daily/<date>/newsroom/decision`（核可／HOLD）。
+**Web 路由**：`/daily/`（最新一期）、`/daily/<date>`、回放頁 `/daily/<date>/newsroom?variant=mas|pipeline&story=<id>`（左邊稿件狀態，右邊訊息與 v1→v2 diff，上方 page plan 變化）、`/daily/<date>/newsroom/decision`（核可／HOLD）、3D 回放 `/daily/<date>/newsroom/office`（資料 `/daily/<date>/newsroom/replay.json`）。
 
 ## 測試
 
@@ -225,7 +225,7 @@ deploy/install_launchd.sh rsshub-install    # 本機 RSSHub（只綁 127.0.0.1:1
 REDDIT_TRACKER_NO_DOTENV=1 uv run python -m pytest -q
 ```
 
-目前基準：315 passed／4 skipped／2 xfailed。2 個 xfail 是要等真人與真實日曆的關卡（連續 3 天 live 出刊與試刊公告、真實盲計對照表雜湊），4 個 skip 是重編版沒見報而不適用的案例。
+目前基準（2026-11-13）：413 passed／4 skipped，沒有 xfail。4 個 skip 是重編版沒見報而不適用的案例；沒有唯讀母本 `data/snapshots/2026-10-27.db` 的 worktree 會再多 3 個 skip。
 
 - **測試不呼叫真 LLM**：`tests/llm_guard.py` 全域擋 codex subprocess 與 Gemini HTTP；額度 state 檔改到 `tmp_path`。
 - **回歸集 E01–E16**（`tests/regression/cases/`，10/27 首期的 15 個錯誤案例＋E09 非錯誤案例）：runner 用離線 fixture 在 tmp SQLite 照線上時間表重編 10/27，撰稿走 `llm/replay.py` 錄音重播，案例到期還掛 xfail 會失敗。只跑回歸集：
