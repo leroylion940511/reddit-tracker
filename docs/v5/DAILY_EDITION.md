@@ -390,3 +390,22 @@ layout_limits(settings=None) -> LayoutLimits
 
 - 合法條件：`section_min >= 0`、`section_max >= 1`、`section_min <= section_max`、`edition_max >= 1` 且 `>= 版數 × section_min`。
 - `layout_limits` 只在開關開啟時驗證，不合法丟 `ValueError`（訊息列出所有問題）；關閉時回傳 `enabled=False`，不影響現行流程。B1 只有設定與驗證，`run_mas` 還沒讀它（B2 起接上）。
+
+### B2 分版主編決定各版篇數（`MAS_OPEN_LAYOUT`，desk-v3，預設關閉）
+
+`daily/mas/orchestrator.py`：
+
+```python
+OPEN_PITCH_SYSTEM: str
+OPEN_PITCH_SCHEMA = {"pitches": [{"story_id": int, "angle": str, "priority": "front"|"section", "reason": str}]}
+section_pool(stories, evidence_of, section) -> list[Story]     # 本版有證據、kind 合規，依 (kind, -score, id) 取 SECTION_QUOTAS×DESK_POOL_PER_SECTION
+guard_open_pitches(section, proposed, pool, fallback, limits, log) -> (list[Pitch], {story_id: reason})
+_section_pitches(..., calls=None, reasons_out=None, layout_log=None)
+MasResult.layout_log: list[str]   # 護欄動作紀錄；關閉時為空
+```
+
+- 開啟時每版一次請求，user＝`{"section", "min", "max", "candidates": [{"story_id", "kind", "score", "title", "default", ...rich_fields}], "global_top10"}`；`default=true` 是 `select_articles` 預選的稿；`MAS_RICH_CONTEXT` 也開時候選多帶 A1 三欄。
+- 護欄（`guard_open_pitches`）：回應失敗或格式錯（`pitches` 不是 list）→ 該版退回 `select_articles` 的結果；只收候選池內、不重複的 integer `story_id`；`front` 只給 report；超過 `MAS_SECTION_MAX` 依回傳順序截斷；少於 `MAS_SECTION_MIN` 依候選池順序補（理由「程式補足下限」）。每個動作寫進 `MasResult.layout_log`。HOLD 規則照舊（HOLD 稿不進 page plan）。
+- `PITCH` 訊息 payload 開啟時多 `reason`（主編寫的理由）；關閉時仍是 `section, angle, priority`。
+- 設定不合法（`layout_limits` 丟 `ValueError`）→ 記 WARNING 與 `layout_log`，本期用固定名額，不中斷出刊。
+- 全期上限 `MAS_EDITION_MAX` 在 B3 才套用；B2 單獨開啟時全期最多 3 × `MAS_SECTION_MAX` 篇。

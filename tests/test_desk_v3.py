@@ -127,3 +127,125 @@ def test_open_layout_reads_env(monkeypatch):
         assert limits.enabled and limits.section_max == 6 and limits.edition_max == 18
     finally:
         get_settings.cache_clear()
+
+
+# ── B2：分版主編從候選池決定篇數（MAS_OPEN_LAYOUT）────────────────────────────
+
+def _limits(lo=1, hi=8, total=18):
+    from reddit_tracker.daily.mas.layout import LayoutLimits
+    return LayoutLimits(enabled=True, section_min=lo, section_max=hi, edition_max=total)
+
+
+def test_guard_open_pitches_rules():
+    from reddit_tracker.daily.mas.orchestrator import Pitch, guard_open_pitches
+
+    pool = [SimpleNamespace(id=i, kind="report" if i != 3 else "single_source") for i in (1, 2, 3, 4)]
+    fallback = [Pitch(section="world", story_id=1, angle="world")]
+    log: list[str] = []
+    picks, reasons = guard_open_pitches("world", [
+        {"story_id": 3, "angle": "A", "priority": "front", "reason": "單一來源"},
+        {"story_id": 99, "angle": "X", "priority": "front", "reason": "不在池內"},
+        {"story_id": 2, "angle": "B", "priority": "front", "reason": "重要"},
+        {"story_id": 2, "angle": "dup", "priority": "section", "reason": "重複"},
+        {"story_id": True, "angle": "bool", "priority": "section", "reason": ""},
+        {"story_id": 4, "angle": "C", "priority": "section", "reason": "補充"},
+    ], pool, fallback, _limits(hi=2), log)
+    assert [(p.story_id, p.priority, p.angle) for p in picks] == [(3, "section", "A"), (2, "front", "B")]
+    assert reasons == {3: "單一來源", 2: "重要"}
+    assert any("99" in line for line in log) and any("截掉 [4]" in line for line in log)
+    # 失敗或格式錯：退回固定名額
+    log.clear()
+    assert guard_open_pitches("world", None, pool, fallback, _limits(), log) == (fallback, {})
+    assert "退回固定名額" in log[0]
+    # 少於下限：依池順序補足
+    picks, reasons = guard_open_pitches("world", [], pool, fallback, _limits(lo=2), log)
+    assert [p.story_id for p in picks] == [1, 2] and set(reasons.values()) == {"程式補足下限"}
+    # 下限 0：可以整版不收
+    assert guard_open_pitches("world", [], pool, fallback, _limits(lo=0), []) == ([], {})
+
+
+@pytest.fixture
+def open_layout(monkeypatch):
+    monkeypatch.setenv("MAS_OPEN_LAYOUT", "true")
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
+
+
+def _run_open(session, pick):
+    from sqlalchemy import select
+
+    from reddit_tracker.models import AgentMessage, PagePlan
+
+    raw = []
+    for i, section in enumerate(SECTIONS):
+        for j in range(6):
+            item = _item(session, f"武契奇事件{i}-{j}", "國會選舉結果", url=f"https://www.cna.com.tw/o{i}/{j}")
+            raw.append(_snapshot([item.id], i * 10 + j, section=section, score=100 - j))
+    requests = []
+
+    def handler(kw):
+        content = kw["messages"][0]["content"]
+        data = json.loads(content) if content.startswith("{") else None
+        if "分版主編" in kw["system"]:
+            requests.append(kw)
+            return pick(data)
+        if "總編輯" in kw["system"] and data and "candidates" in data:
+            ids = list(dict.fromkeys(c["story_id"] for c in data["candidates"]))[:6]
+            return json.dumps({"lead": ids[0], "second": ids[1:5], "briefs": ids[5:], "links": [],
+                               "dropped": [], "reasons": [{"story_id": i, "why": "重要"} for i in ids]})
+        if "記者" in kw["system"]:
+            return json.dumps({"action": "DRAFT", "headline": "武契奇選舉", "body": "國會選舉結果。[S1]"})
+        return _checker("OK", "")
+
+    result = run_mas(session, edition_date=DAY, snapshot=SimpleNamespace(candidates=raw), registry=_registry(),
+                     client=Scripted(handler), now=NOW)
+    plan = session.scalar(select(PagePlan).order_by(PagePlan.plan_version.desc()))
+    pitches = list(session.scalars(select(AgentMessage).where(AgentMessage.type == "PITCH")))
+    return result, plan, pitches, requests
+
+
+def test_open_layout_editor_decides_section_counts(session, open_layout):
+    from reddit_tracker.daily.mas.orchestrator import OPEN_PITCH_SCHEMA
+
+    counts = {"taiwan": 2, "world": 6, "tech": 1}
+
+    def pick(data):
+        ids = [c["story_id"] for c in data["candidates"]][: counts[data["section"]]]
+        return json.dumps({"pitches": [{"story_id": i, "angle": "角度", "priority": "front", "reason": "值得收"}
+                                       for i in ids]})
+
+    result, plan, pitches, requests = _run_open(session, pick)
+    assert len(requests) == 3 and requests[0]["json_schema"] == OPEN_PITCH_SCHEMA
+    first = json.loads(requests[0]["messages"][0]["content"])
+    assert first["min"] == 1 and first["max"] == 8 and len(first["candidates"]) == 6
+    assert sum(c["default"] for c in first["candidates"]) == 4 and "summary" not in first["candidates"][0]
+    assert {s: len(v) for s, v in plan.slots["sections"].items()} == counts
+    assert len(pitches) == 9 and all(p.payload["reason"] == "值得收" for p in pitches)
+    assert result.layout_log == []
+
+
+def test_open_layout_bad_editor_reply_falls_back_to_fixed_quota(session, open_layout):
+    result, plan, pitches, _ = _run_open(session, lambda data: "不是 JSON")
+    assert {s: len(v) for s, v in plan.slots["sections"].items()} == {s: 4 for s in SECTIONS}
+    assert all("reason" not in p.payload for p in pitches)
+    assert len(result.layout_log) == 3 and all("退回固定名額" in line for line in result.layout_log)
+
+
+def test_open_layout_off_keeps_fixed_quota_and_old_payload(session):
+    result, plan, pitches, requests = _run_open(session, lambda data: json.dumps({"pitches": []}))
+    assert {s: len(v) for s, v in plan.slots["sections"].items()} == {s: 4 for s in SECTIONS}
+    assert all(set(p.payload) == {"section", "angle", "priority"} for p in pitches)
+    assert "min" not in json.loads(requests[0]["messages"][0]["content"]) and result.layout_log == []
+
+
+def test_open_layout_invalid_settings_fall_back(session, monkeypatch):
+    monkeypatch.setenv("MAS_OPEN_LAYOUT", "true")
+    monkeypatch.setenv("MAS_SECTION_MIN", "9")
+    get_settings.cache_clear()
+    try:
+        result, plan, _, _ = _run_open(session, lambda data: json.dumps({"pitches": []}))
+    finally:
+        get_settings.cache_clear()
+    assert {s: len(v) for s, v in plan.slots["sections"].items()} == {s: 4 for s in SECTIONS}
+    assert "設定不合法" in result.layout_log[0]
