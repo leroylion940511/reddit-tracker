@@ -51,7 +51,8 @@
 每種新對話都要有回合上限，並計入 `MAX_MESSAGES`；新訊息類型加進 `protocol.ALLOWED`。設定鍵 `MAS_MORE_INTERACTION`（預設 false）。
 - [x] **C1** 篇數協商：總編刪稿時，被刪最多的分版主編可以 `APPEAL` 一次（新類型），總編回 `DECISION`（維持或改判）。最多 1 輪。
   - 結果：`MAS_MORE_INTERACTION`、`ALLOWED` 加 `(section_editor, APPEAL)`、`appeal_section`／`guard_appeal_ruling`／`_appeal_trim`；改判用 `swap_out` 換一篇，全期篇數不變。commit `a049ee9`。
-- [ ] **C2** 版面編輯的 `PAGE_OBJECTION` 要有回應：總編回 `DECISION`（accept/reject＋理由），accept 時套用到 page plan（仍受頭版規則限制）。
+- [x] **C2** 版面編輯的 `PAGE_OBJECTION` 要有回應：總編回 `DECISION`（accept/reject＋理由），accept 時套用到 page plan（仍受頭版規則限制）。
+  - 結果：`PAGE_REVIEW_SCHEMA`／`PAGE_RULING_SCHEMA`、`guard_page_proposal`、`_page_review`；DECISION payload `action=PAGE_RULING`（ACCEPT 走 `apply_decision`）。commit `899b21b`。
 - [ ] **C3** 總編看完頭版稿（標題＋摘要＋deck）可對最多 2 篇發 `REQUEST_REVISION` 給記者（類型已在白名單），記者回 `REVISION_DONE`，修稿後照原流程重驗查核。
 - [ ] **C4** 回放頁／`format_trace` 顯示新訊息類型；3D 編輯室若有訊息類型白名單也要補。
 
@@ -79,6 +80,9 @@
 - 2026-11-14 B4：沒有改程式——`build_edition_view`／`render_html`／`telegram_digest` 本來就照 page plan 實際篇數。0 篇的版不出現在 page plan 的 sections，渲染成「本版今日無新稿。」。
 - 2026-11-14 C1：申訴改判必須指定 `swap_out`（換一篇刪），不允許單純加回，保持全期 ≤ `MAS_EDITION_MAX`。任何不合規則的改判都當 UPHOLD（最保守）。分版主編不申訴就不發 APPEAL 訊息。
 - 2026-11-14 C1：申訴版＝被刪最多的版，同數取 `SECTIONS` 順序（taiwan、world、tech）在前；只開一輪，不讓其他版申訴。
+- 2026-11-14 C2：開關開啟時不送舊的頭版預審（它在 T1／T3 之前，總編接受也會被 T3 蓋掉），改成頭版排定後才審一次；關閉時預審照舊，請求逐字不變。
+- 2026-11-14 C2：版面編輯異議必須附完整頭版提案（lead／second／briefs）才能被「套用」；提案不合規則由程式代回 REJECT（`by=program`）、不問總編，省額度。總編回應失敗一律當 REJECT。
+- 2026-11-14 C2：提案不准讓頭版變少、不准撤下兩版都有位置的稿（避免 `apply_decision` 重算內版時 T1 連結變成重複全文）；可上頭版的稿限 `kind=report`、非 HOLD、沒注入標記，和 `guard_pitches`／`_section_pitches` 規則一致。版面編輯回 OK 時不發訊息。
 
 ## 執行紀錄
 
