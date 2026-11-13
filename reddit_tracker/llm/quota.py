@@ -47,8 +47,8 @@ class ModelQuotaGuard:
             raise ValueError("daily limit and RPM must both be positive")
         if any(limit < 1 for limit in (purpose_limits or {}).values()):
             raise ValueError("purpose limits must be positive")
-        self.state_path = Path(state_path)
-        self.lock_path = Path(f"{state_path}.lock")
+        self.state_path = Path(state_path).expanduser()
+        self.lock_path = Path(f"{self.state_path}.lock")
         self.daily_limit = daily_limit
         self.requests_per_minute = requests_per_minute
         self.purpose_limits = dict(purpose_limits or {})

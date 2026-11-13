@@ -8,7 +8,6 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
-from sqlalchemy import select
 
 from reddit_tracker.collection.clustering import cluster_recent_items
 from reddit_tracker.collection.entities import (

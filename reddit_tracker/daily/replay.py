@@ -290,7 +290,6 @@ def build_replay(session: Session, edition_date: date, run_variant: str = "mas")
         })
 
     recorded = any(m.llm_call_id for m in messages)
-    by_id = {rec.id: rec for rec in records}
     mas_records = [r for r in records if r.run_variant == run_variant and run_variant == "mas"]
     pool: dict[tuple, list[LLMRecord]] = defaultdict(list)  # (story_id, role) → 依序的呼叫
     for rec in mas_records:

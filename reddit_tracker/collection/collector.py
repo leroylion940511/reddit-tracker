@@ -307,19 +307,24 @@ def collect_due_sources(
             logger.exception("source collection store failed: %s", source.id)
             error = f"store failed: {type(exc).__name__}: {exc}"[:500]
             # 寫入失敗也要留健康紀錄，否則這個來源會在報表上看似從未抓取。
-            session.add(
-                SourceFetchRun(
-                    source_id=source.id,
-                    started_at=outcome.started_at,
-                    finished_at=datetime.now(timezone.utc),
-                    ok=False,
-                    http_status=outcome.http_status,
-                    items_returned=len(outcome.entries),
-                    error=error,
-                    elapsed_ms=outcome.elapsed_ms,
+            # 健康紀錄自己也寫不進去（例如 DB 還鎖著）就只記 log，其他來源照常寫入。
+            try:
+                session.add(
+                    SourceFetchRun(
+                        source_id=source.id,
+                        started_at=outcome.started_at,
+                        finished_at=datetime.now(timezone.utc),
+                        ok=False,
+                        http_status=outcome.http_status,
+                        items_returned=len(outcome.entries),
+                        error=error,
+                        elapsed_ms=outcome.elapsed_ms,
+                    )
                 )
-            )
-            session.commit()
+                session.commit()
+            except Exception:
+                session.rollback()
+                logger.exception("source health record failed: %s", source.id)
             stats.append(SourceCollectStats(source.id, False, len(outcome.entries), 0, 0, error))
         if not outcome.ok:
             logger.warning("source fetch failed: %s %s", source.id, outcome.error)

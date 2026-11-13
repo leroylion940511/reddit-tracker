@@ -103,3 +103,11 @@ def test_gemini_429_retries_once_and_every_attempt_consumes_quota(tmp_path, monk
     assert len(posts) == 2  # 1 次＋重試 1 次
     assert client.guard.used("gemini-3.5-flash-lite") == 2
     client.close()
+
+
+def test_state_path_expands_home(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    guard = ModelQuotaGuard(state_path="~/.local/state/reddit-tracker/llm-quota.json", daily_limit=2)
+    guard.acquire(model="m", purpose="daily")
+    assert (tmp_path / ".local/state/reddit-tracker/llm-quota.json").is_file()
+    assert guard.used("m") == 1

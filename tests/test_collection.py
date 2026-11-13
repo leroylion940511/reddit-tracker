@@ -175,6 +175,35 @@ def test_store_failure_is_logged_as_failed_run(session, monkeypatch):
     assert session.query(SourceItem).count() == 0
 
 
+def test_health_record_failure_does_not_abort_other_sources(session, monkeypatch):
+    """2026-11-11 06:06：DB 鎖住時連健康紀錄也寫不進去，整輪 tick 丟例外。現在只記 log，下一個來源照寫。"""
+    registry = _registry(_src("a"), _src("b"))
+    real_store = collector.store_outcome
+    real_commit = session.commit
+    state = {"fail_commits": 0}
+
+    def store(sess, source, outcome, now):
+        if source.id == "a":
+            state["fail_commits"] = 1
+            raise RuntimeError("database is locked")
+        return real_store(sess, source, outcome, now)
+
+    def commit():
+        if state["fail_commits"]:
+            state["fail_commits"] -= 1
+            raise RuntimeError("database is locked")
+        real_commit()
+
+    monkeypatch.setattr(collector, "store_outcome", store)
+    monkeypatch.setattr(session, "commit", commit)
+    stats = collect_due_sources(
+        session, registry, now=NOW,
+        fetcher=lambda s, p: _ok(FetchedEntry(url=f"https://n.tw/{s.id}", title=f"來源 {s.id} 的一則新聞標題")),
+    )
+    assert [(s.source_id, s.ok) for s in stats] == [("a", False), ("b", True)]
+    assert session.query(SourceItem).count() == 1
+
+
 def test_fetch_source_sends_conditional_headers_and_redacts_key(monkeypatch):
     calls = {}
 

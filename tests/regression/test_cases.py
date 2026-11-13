@@ -26,7 +26,7 @@ HANDBOOK_DUE = {
     "2026-11-15": {"E08", "E11", "E14"},
 }
 REQUIRED_KEYS = {"case_id", "edition", "is_error", "event_hint", "error", "stage", "fix", "expected", "due"}
-DOC_KEYS = REQUIRED_KEYS | {"event_titles", "xfail", "market_close_date", "non_contradiction", "same_event_titles"}
+DOC_KEYS = REQUIRED_KEYS | {"event_titles", "xfail", "market_close_date", "non_contradiction", "same_event_titles", "note"}
 
 
 def _conditions(case: dict) -> list[str]:
@@ -133,4 +133,5 @@ def test_rebuild_replays_merges_without_real_llm(rebuilt):
 
 def test_xfail_marks_are_strict():
     marks = [m for p in _params(with_xfail=True) for m in p.marks]
-    assert marks and all(m.name == "xfail" and m.kwargs["strict"] is True for m in marks)
+    # 2026-11-13 起所有案例都到期、沒有 xfail 了；之後若再加，仍必須是 strict。
+    assert all(m.name == "xfail" and m.kwargs["strict"] is True for m in marks)

@@ -71,7 +71,7 @@ def missing_recording_message() -> str:
         "只寫 data/work/1027_e11.db，額度檔 data/work/llm-quota-e11.json，"
         f"新的 Codex 呼叫上限 {MAX_ATTEMPTS} 次（記者→必要時查核→文稿編輯）。"
         f"錄完用 `{CHECK_COMMAND}` 檢查，再把 {EVIDENCE_NAME} 與 {RECORDS_NAME} commit。"
-        "回歸集 E11.json 的 xfail 維持到錄完再決定。"
+        "回歸集 E11.json 的 xfail 已於 2026-11-13 拿掉，這個重播是 E11 條件唯一的把關。"
     )
 
 

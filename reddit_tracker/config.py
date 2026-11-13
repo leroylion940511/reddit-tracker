@@ -41,7 +41,7 @@ class Settings(BaseSettings):
 
     # --- LLM 每日額度（依模型計數，所有用途共用；手冊步驟 1、6.7）---
     llm_daily_limit: int = 60
-    llm_quota_state_path: str = "/tmp/reddit-tracker-llm-quota.json"
+    llm_quota_state_path: str = "~/.local/state/reddit-tracker/llm-quota.json"  # /tmp 重開機會被清掉
 
     # --- Codex CLI（綜合日報撰稿預設 provider；吃本機 ChatGPT 訂閱登入，不用 API key）---
     codex_bin: str = "/opt/homebrew/bin/codex"

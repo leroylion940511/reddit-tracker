@@ -43,7 +43,7 @@ from sqlalchemy.orm import Session
 
 from ..collection.clustering import _cosine, _document_text, _vectorize, cluster_recent_items, lang_group, tokenize
 from ..collection.collector import recompute_duplicates
-from ..collection.entities import EntityLexicon, MergeRules, load_lexicon
+from ..collection.entities import EntityLexicon, MergeRules
 from ..models import Base, SourceItem
 from ..seeds.news_sources import SourceRegistry
 

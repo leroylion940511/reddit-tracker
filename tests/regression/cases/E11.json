@@ -14,7 +14,5 @@
   ],
   "expected": "標題不得把「2027 年審查」寫成「2027 年申請 FDA」",
   "due": "2026-11-15",
-  "xfail": {
-    "headline_must_not_match": "2026-11-06：離線重編（P 組）仍不適用。莫德納稿是 MarketWatch item 2736 單一來源，聚合後自成一則、財經改判 world，沒入選，pytest 回報 skip、不是 xfail。STAT item 3875（摘要才有 expected in 2027）是另一個 cluster，錄音不併回。錄音入口是 scripts/record_e11.py --live（只寫 data/work/1027_e11.db，上限 5 次 Codex，不讀 .env）。fixture 還沒錄，tests/test_e11_replay.py 會 skip。11/15 前要嘛在 Mac 錄完再拿掉這條 xfail，要嘛拿掉 xfail 並註明不適用；不要只為了讓逾期檢查變綠而拿掉"
-  }
+  "note": "2026-11-13 拿掉 xfail：離線重編（P 組）這則沒入選（MarketWatch item 2736 單一來源、財經改判 world），headline_must_not_match 在回歸重編是 skip（不適用，不是通過）。同一個條件改由 tests/test_e11_replay.py 把關：用 11/06 錄好的 1027_e11_evidence.json／1027_e11_records.json 離線重播 M 組記者→文稿編輯，再套這條 headline_must_not_match。"
 }
