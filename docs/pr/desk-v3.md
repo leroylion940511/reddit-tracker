@@ -61,7 +61,8 @@
 ### 階段 D：記者、查核員看全文（目標 2 的另一半）
 - [x] **D1** 設計文件（寫在本檔「決定紀錄」）：抽取方式（優先用已安裝或輕量套件，例如 trafilatura；用 `uv add`）、robots.txt 與付費牆處理、速率限制、存哪（新表 `item_fulltext` 或欄位；需要 Alembic migration）、失敗回退到摘要、全文長度上限、注入防護。
   - 結果：設計寫在下方「D 階段設計（D1）」；只有文件，不動程式。commit 見執行紀錄。
-- [ ] **D2** 實作抓取＋抽取模組與 migration，**只用 fixture HTML 測試**，不實際連網。收集排程不接上（之後人工決定）。設定鍵 `FULLTEXT_ENABLED` 預設 false。
+- [x] **D2** 實作抓取＋抽取模組與 migration，**只用 fixture HTML 測試**，不實際連網。收集排程不接上（之後人工決定）。設定鍵 `FULLTEXT_ENABLED` 預設 false。
+  - 結果：`collection/fulltext.py`（`extract`、`RobotsCache`、`fetch_fulltext`、`fetch_pending`、`fulltext_of`）、表 `item_fulltext`（Alembic `c5e1a9d3f207`）、`FULLTEXT_*` 設定；測試 `tests/test_fulltext.py`（假 getter）。commit `3cc7fa6`。
 - [ ] **D3** `MAS_REPORTER_FULLTEXT`（預設 false）開啟時，記者與查核員的證據塊用全文（有就用，沒有用摘要），長度上限可設；`evidence_has_injection` 也掃全文。關閉時請求逐字不變。
 
 ### 階段 E：收尾
@@ -104,6 +105,7 @@
 - 2026-11-14 C3：總編只看頭版 `status=checked` 的稿，「摘要」用 S1 摘要（`rich_fields`，有注入標記給空字串），不依賴 `MAS_RICH_CONTEXT`；退稿用獨立 correlation_id `ER-…`，CHALLENGE 次數不跟 T2 合併計算。
 - 2026-11-14 C3：記者可 REBUT（總編不再回應，原稿不動），回應無效也維持原稿；修稿重驗後變 HOLD 不改 page plan，交給發佈前人工核可（`view` 本來就扣未核可的 M 組稿）。
 - 2026-11-14 D1：抽取器先用標準庫、不加 trafilatura（凍結期不改 `uv.lock`）；全文存獨立新表 `item_fulltext` 不加欄位；robots 讀取失敗視為不允許；全文有注入標記時該篇退回摘要。細節見「D 階段設計」。
+- 2026-11-14 D2：抓取 getter 不跟 redirect，由 `fetch_fulltext` 手動跟並逐跳檢查網域（`requests` 自動跟的話請求已經送到站外）。每篇只抓一次、失敗不重試；要重抓得人工刪列。`fetch_pending` 只 flush 不 commit，交給呼叫端。
 - 2026-11-14 C4：TRIM 刪掉的稿沒寫過稿，回放標題退回 `story N`（沒另外查證據包標題，避免改 `build_replay` 的查詢）；留給 E1 視需要補。
 
 ## 執行紀錄
