@@ -34,11 +34,14 @@
 ## 步驟（依序做；完成就把 `[ ]` 改 `[x]` 並寫一行結果與 commit）
 
 ### 階段 A：主編、總編看得到摘要（目標 2 的一半）
-- [ ] **A1** 設定鍵 `MAS_RICH_CONTEXT`（`config.py`，預設 false）。開啟時 `_section_pitches` 的每則候選與 `_story_card` 多帶 `summary`（S1 摘要，限長，例如 200 字）、`outlets`（媒體名清單）、`outlet_count`。關閉時請求逐字不變（加測試比對 request 字串）。更新 DAILY_EDITION.md。
+- [x] **A1** 設定鍵 `MAS_RICH_CONTEXT`（`config.py`，預設 false）。開啟時 `_section_pitches` 的每則候選與 `_story_card` 多帶 `summary`（S1 摘要，限長，例如 200 字）、`outlets`（媒體名清單）、`outlet_count`。關閉時請求逐字不變（加測試比對 request 字串）。更新 DAILY_EDITION.md。
+  - 結果：`rich_fields()`＋`_story_card(..., evidence_of)`，T1／T3 由 `run_mas` 傳證據包；測試 `tests/test_desk_v3.py`。commit `3128cce`。
 
 ### 階段 B：各版篇數由主編決定（目標 1）
-- [ ] **B1** 設定鍵 `MAS_OPEN_LAYOUT`（預設 false）＋護欄設定：`MAS_SECTION_MIN`（預設 1）、`MAS_SECTION_MAX`（預設 8）、`MAS_EDITION_MAX`（全期正式稿上限，預設 18）。純設定與驗證函式，含測試。
-- [ ] **B2** 開啟時分版主編看 `desk_pool`（配額兩倍候選，已有）而不是固定 4 篇，回傳要收的 story_id 清單（新 schema，含每篇理由）；程式套護欄（只能選候選內的、kind 規則照舊、HOLD 規則照舊、超過 MAX 截斷並記錄）。失敗或格式錯時退回 `select_articles` 的結果。
+- [x] **B1** 設定鍵 `MAS_OPEN_LAYOUT`（預設 false）＋護欄設定：`MAS_SECTION_MIN`（預設 1）、`MAS_SECTION_MAX`（預設 8）、`MAS_EDITION_MAX`（全期正式稿上限，預設 18）。純設定與驗證函式，含測試。
+  - 結果：`daily/mas/layout.py`（`LayoutLimits`、`check_limits`、`layout_limits`）。commit `14e8f60`。
+- [x] **B2** 開啟時分版主編看 `desk_pool`（配額兩倍候選，已有）而不是固定 4 篇，回傳要收的 story_id 清單（新 schema，含每篇理由）；程式套護欄（只能選候選內的、kind 規則照舊、HOLD 規則照舊、超過 MAX 截斷並記錄）。失敗或格式錯時退回 `select_articles` 的結果。
+  - 結果：`OPEN_PITCH_SYSTEM/SCHEMA`、`section_pool`、`guard_open_pitches`、`MasResult.layout_log`；PITCH payload 開啟時多 `reason`。commit `41eb804`。
 - [ ] **B3** 三版加總超過 `MAS_EDITION_MAX` 時由總編裁決刪哪幾篇（一次請求，理由寫進 DECISION payload）；總編失敗時程式依分數刪。
 - [ ] **B4** `EditionView`／`render`／頭版選取能處理每版 0–`MAS_SECTION_MAX` 篇；P 組（pipeline）完全不受影響（測試證明）。
 
@@ -61,6 +64,15 @@
 
 （每次執行有設計決定就追加一行：日期、步驟、決定、理由。）
 
+- 2026-11-13 A1：證據包有注入標記時 `summary` 給空字串、只給媒體名。理由：摘要會進主編／總編決策，保守擋掉來源指示。
+- 2026-11-13 A1：`_story_card` 用選填參數 `evidence_of` 取摘要（不從 DB 重建證據包）；沒傳就不加欄位，`scripts/verify_t1_t3.py` 不受影響。
+- 2026-11-13 B1：設定不合法只在開關開啟時才丟 `ValueError`；B2 在 `_section_pitches` 接住後改用固定名額並記 `layout_log`，不中斷出刊。
+- 2026-11-13 B2：不在 `Pitch` dataclass 加 `reason` 欄位——`Pitch.__dict__` 直接進分版主編、版面編輯、T1 的請求，加欄位會改到關閉時的 `request_hash`。理由改存 `reasons_out` dict，只在開啟時寫進 PITCH payload。
+- 2026-11-13 B2：開放模式另用 `OPEN_PITCH_SYSTEM`／`OPEN_PITCH_SCHEMA`，舊的 `PITCH_SYSTEM`（「不能增加正式稿名額」）不改。少於下限時依候選池順序補（不是退回整版固定名額）；整個回應失敗才退回。
+- 2026-11-13 B2：`MAX_MESSAGES = 80` 沒改。開放版面最多 3×8 篇 PITCH，加上記者／查核訊息可能碰到上限而 expired——留給 B3／E1 評估（改上限會影響關閉時的行為）。
+
 ## 執行紀錄
 
 （每次執行追加一行：開始時間、做了哪些步驟、測試結果、commit、結束時 5 小時用量。）
+
+- 2026-11-13 15:20：A1、B1、B2 完成；全套 439 passed／7 skipped；commit `3128cce`、`14e8f60`、`41eb804`；結束用量 5h 6%／週 25%。
