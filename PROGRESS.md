@@ -5,18 +5,21 @@
 > 2026-10-29 以前的段落已搬到 `docs/archive/`（見文末「更早的紀錄」）。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-13（`chore/cleanup-1113`：專案梳理後的小修與文件整理，**尚未併入 main、尚未部署**）；線上程式 main `4446959`（2026-11-12 18:59 因重開機載入）
+**Last updated:** 2026-11-13（`chore/cleanup-1113` 已部署：19:12 併入 main、`newsroom-reload`；**還沒 push**，main 領先 origin 9 個 commit）
 
 ## 線上現況（2026-11-13 查證）
 
 - newsroom、rsshub 兩個 LaunchAgent 都在跑。**Mac 在 11/12 18:56 重開機，newsroom 於 18:59 重新啟動，載入的已是 `feat/newsroom-3d` 併入後的程式**（下面 11/12 段落寫的「服務沒有重載」只到重開機前為止）。重開機那一輪 RSSHub 比 newsroom 晚起來，11 個 RSSHub 來源連線被拒，下一輪恢復。
 - 11/13 是新程式的第一期：06:00–06:05 準備（P 影子 5 次、M 28 次 Codex），12 篇、`degraded=[]`；12 篇於 07:06 核准；08:35 發行（Telegram 533、534）。
-- main 領先 origin/main 3 個 commit（`ff87ca0`、`7f72c69`、`4446959`），**還沒 push**。
+- 查證當下 main 領先 origin/main 3 個 commit（`ff87ca0`、`7f72c69`、`4446959`）；部署後共 9 個，**還沒 push**。
 - production DB 523 MB、Alembic `b8d4f0a17c33`。全套（production checkout，有母本）413 passed／4 skipped。
 
 ## 本次變更（2026-11-13 — 專案梳理與小修，`chore/cleanup-1113`）
 
-worktree `~/Documents/Developer/Lab/rt-wt-cleanup`。production 只做唯讀查詢，沒有呼叫 Codex、沒有重載服務。
+worktree `~/Documents/Developer/Lab/rt-wt-cleanup`。開發時 production 只做唯讀查詢，沒有呼叫 Codex。
+
+- ✅ **已部署（2026-11-13 19:12 台北，依志晨指示）**：fast-forward 併入 main（`4446959`→`b8208b6`），備份 `~/Documents/Developer/Lab/reddit_tracker_backups/cleanup-20261113/`（sqlite `.backup`、integrity ok；`.env` 複本），`uv sync` 後 `deploy/install_launchd.sh newsroom-reload` 一次。log 有 `codex version guard ok: codex-cli 0.166.0`、三個 job 已註冊、scheduler Python process 1 個；首輪收集 19:13 ok 23/23。rsshub 未動，不需要 migration。
+- 👀 11/14 06:00 是第一期用新額度檔：準備後 `~/.local/state/reddit-tracker/llm-quota.json` 應該出現。
 
 - ✅ **SQLite 等鎖 5 秒→30 秒**（`db.py`）。11/11 06:06 收集 tick 寫 `ltn-politics` 時撞上 06:00 準備的寫入（`database is locked`），補寫健康紀錄又撞一次，整輪 tick 丟例外。`collect_due_sources` 補寫健康紀錄失敗時改成只記 log，其他來源照常寫入。
 - ✅ **額度檔移出 `/tmp`**：`LLM_QUOTA_STATE_PATH` 預設改 `~/.local/state/reddit-tracker/llm-quota.json`（`/tmp` 重開機會被清掉）。⚠️ 部署當下會換檔，當天已用的次數從 0 重新算一次；請在 08:35 發行後部署。
@@ -33,7 +36,7 @@ worktree `~/Documents/Developer/Lab/rt-wt-cleanup`。production 只做唯讀查�
 日期都是方案 B，見 [`docs/weekly/trial-dates.md`](docs/weekly/trial-dates.md)。依期限排：
 
 1. 👤 **試刊到 11/15，每天**：06:00 準備後核准 M 組稿；交 B 之前 `scripts/collect_blind_hashes.py --write` 並 commit（11/09–11/13 已記）。
-2. 👤 **部署 `chore/cleanup-1113`**：併入 main 後 `deploy/install_launchd.sh newsroom-reload`（08:35 發行後做；不需要 migration）。順便 push main。
+2. 👤 **push main**（領先 origin 9 個 commit）。`chore/cleanup-1113` 已於 11/13 19:12 部署。
 3. 👤 **實驗一**：100 組目前是 AI 工具標的（`annotation/exp1/exp1_resolution.md`），手冊不允許，要 A、B 本人重標。結果計算腳本已有：`scripts/exp1_results.py`（`reddit_tracker/eval/exp1_results.py`，Wilson／bootstrap F1／exact McNemar／κ；不加 `--write` 只印不存）。重標交回後跑一次並 `--write`，再由開發者補 3 個錯誤分析；11/22 前。⚠️ 11/13 用 AI 標的檔案乾跑過一次確認腳本能動（只印到 stdout），那些數字不能用，也不要因此回頭調方法 C。
 4. 👤 **請老師確認** `trial-dates.md` 的時程與用本機 Codex 當 LLM（手冊 6.9 第 1 條要正式 API），並告知 A、B。這裡沒有收到確認的紀錄；B 的七類錯誤計數練習（原訂 11/08 前）也沒有紀錄。
 5. 👤 **`FACT_CHECKER_PER_SOURCE`**：試刊已用預設關閉在跑；要不要在實驗二 (c) 組打開，最晚 11/17 前定案（`docs/pr/checker-per-source.md`）。
