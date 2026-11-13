@@ -247,6 +247,7 @@ REDDIT_TRACKER_NO_DOTENV=1 uv run python -m pytest -q
 | `scripts/export_blind_count.py` ／ `daily blind-export` ＋ `daily/blind.py` | 實驗三盲計：每天從 P、M 都有寫的事件抽 8 篇（4 P／4 M）去識別化匯出，只 commit 對照表 SHA-256 |
 | `scripts/analyze_blind_count.py` | 驗證對照表雜湊後算 P／M 的七類錯誤、每 10 篇主指標、HOLD 敏感度版本與猜組別正確率 |
 | `scripts/sample_exp2.py` | 實驗二：從 M 組稿固定種子抽 25 篇 |
+| `scripts/run_exp2.py` ＋ `reddit_tracker/eval/exp2.py` | 實驗二：查核員全關／只開程式工具／程式＋LLM 三組執行與結果表。`build` 凍結案例、`draft` 產生共用的 v1、`run` 跑三組、`report` 出表；不加 `--live` 只重播帳本。設計見 [`docs/eval/EXP2_DESIGN.md`](docs/eval/EXP2_DESIGN.md) |
 | `scripts/export_1027_fixtures.py` | 從 10/27 唯讀母本匯出回歸集 fixture |
 | `scripts/rebuild_1027.py`、`compare_1027.py` | 在複本重聚＋重編 10/27，產生前後對照週報 |
 | `scripts/validate_step4_1027.py` | 用 template writer 驗證版面配額（不呼叫 LLM） |

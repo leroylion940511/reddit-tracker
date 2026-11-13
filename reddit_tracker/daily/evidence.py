@@ -269,3 +269,25 @@ def build_evidence_from_ids(
     by_id = {m.id: m for m in members}
     anchor = by_id.get(anchor_item_id) if anchor_item_id else None
     return _assemble_evidence(members, source_names, anchor=anchor, lexicon=lexicon, context=context, notes=notes)
+
+
+def raw_evidence_item(member: SourceItem, source_names: dict[str, str]) -> EvidenceItem:
+    """把一篇素材直接變成證據列，不做相關性過濾、不併轉載。
+
+    只給實驗二用（手冊 8.2）：把已知無關的素材硬加進證據包，測查核員擋不擋得住。
+    欄位格式與 `_assemble_evidence` 相同。
+    """
+    name, carriers = _display_source(member, source_names)
+    return EvidenceItem(
+        outlet=outlet_of(member.canonical_url, member.title, member.summary),
+        source_id=member.source_id,
+        source_name=name,
+        tier=member.tier,
+        lang=member.lang,
+        title=_to_traditional(member.title, member.lang),
+        summary=_to_traditional(member.summary, member.lang)[:EVIDENCE_SUMMARY_CHARS],
+        url=member.url,
+        published_at=as_utc(member.published_at).astimezone(TAIPEI).isoformat(timespec="minutes"),
+        reprinted_by=carriers,
+        item_id=member.id,
+    )

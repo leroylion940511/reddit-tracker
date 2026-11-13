@@ -5,7 +5,7 @@
 > 2026-10-29 以前的段落已搬到 `docs/archive/`（見文末「更早的紀錄」）。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-13（`chore/cleanup-1113` 已部署：19:12 併入 main、`newsroom-reload`；**還沒 push**，main 領先 origin 9 個 commit）
+**Last updated:** 2026-11-13 晚（`feat/exp2-runner`：實驗二三組執行腳本，已併入 main、**服務沒有重載**（線上行為不變，不需要重載）；清掉舊備份、舊 worktree、`.env` 舊鍵。main **還沒 push**）
 
 ## 線上現況（2026-11-13 查證）
 
@@ -13,6 +13,14 @@
 - 11/13 是新程式的第一期：06:00–06:05 準備（P 影子 5 次、M 28 次 Codex），12 篇、`degraded=[]`；12 篇於 07:06 核准；08:35 發行（Telegram 533、534）。
 - 查證當下 main 領先 origin/main 3 個 commit（`ff87ca0`、`7f72c69`、`4446959`）；部署後共 9 個，**還沒 push**。
 - production DB 523 MB、Alembic `b8d4f0a17c33`。全套（production checkout，有母本）413 passed／4 skipped。
+
+## 本次變更（2026-11-13 晚 — 實驗二執行腳本＋清理，`feat/exp2-runner`）
+
+- ✅ **實驗二三組執行**：`scripts/run_exp2.py`（`build`／`draft`／`run`／`report`）＋`reddit_tracker/eval/exp2.py`，設計與理由在 [`docs/eval/EXP2_DESIGN.md`](docs/eval/EXP2_DESIGN.md)。`review_one` 多了 `checker_mode`（`full`／`program`／`off`）與 `draft`（已存檔的 v1）兩個參數，**預設值就是線上原本的行為，請求與 `request_hash` 不變**（錄音重播測試照過）。
+- ✅ 用真實資料試過 `build`（唯讀）：開發集 5（E01–E05）、保留集 5（T106、T457、T523、T767、T807）。沒有呼叫 Codex。
+- ℹ️ **實驗一標註**：2026-11-13 志晨轉述老師同意直接用現有的標註（grok bot 與 agy 標的），不另外重標；保留集就用這份產生。`docs/eval/cluster_pairs_v1.csv` 與 `exp1_results.md` 還沒寫（`scripts/exp1_results.py --write`，寫了就不能改）。
+- ✅ **清理（志晨授權）**：production 根目錄 7 個舊 DB 備份、`bot.log`、`scheduler.log` 已刪；`Lab/reddit_tracker_backups` 刪掉 7 個舊的 DB 備份資料夾（3.6 GB → 534 MB），留 `cleanup-20261113` 與幾個小資料夾；8 個舊 worktree 與本機分支已移除（內容比對過都在 main，origin 上的同名分支沒動；`rt-wt-e11` 的錄音 DB 先複製到 production `data/work/1027_e11.db`）；`.env` 刪掉 12 個沒有作用的舊鍵（改之前的複本在 `cleanup-20261113/.env.before-key-cleanup`）。
+- 全套 427 passed／7 skipped（worktree 沒有母本）。不需要 migration。
 
 ## 本次變更（2026-11-13 — 專案梳理與小修，`chore/cleanup-1113`）
 
@@ -37,16 +45,15 @@ worktree `~/Documents/Developer/Lab/rt-wt-cleanup`。開發時 production 只做
 
 1. 👤 **試刊到 11/15，每天**：06:00 準備後核准 M 組稿；交 B 之前 `scripts/collect_blind_hashes.py --write` 並 commit（11/09–11/13 已記）。
 2. 👤 **push main**（領先 origin 9 個 commit）。`chore/cleanup-1113` 已於 11/13 19:12 部署。
-3. 👤 **實驗一**：100 組目前是 AI 工具標的（`annotation/exp1/exp1_resolution.md`），手冊不允許，要 A、B 本人重標。結果計算腳本已有：`scripts/exp1_results.py`（`reddit_tracker/eval/exp1_results.py`，Wilson／bootstrap F1／exact McNemar／κ；不加 `--write` 只印不存）。重標交回後跑一次並 `--write`，再由開發者補 3 個錯誤分析；11/22 前。⚠️ 11/13 用 AI 標的檔案乾跑過一次確認腳本能動（只印到 stdout），那些數字不能用，也不要因此回頭調方法 C。
+3. 👤 **實驗一結果**（11/22 前）：老師已同意用現有標註。跑 `scripts/exp1_results.py --write`（指令見腳本開頭）寫 `docs/eval/cluster_pairs_v1.csv` 與 `exp1_results.md`，再補 3 個錯誤分析。⚠️ 11/13 已用同一份標註乾跑過一次（只印不存），不要因為看過數字回頭調方法 C。
 4. 👤 **請老師確認** `trial-dates.md` 的時程與用本機 Codex 當 LLM（手冊 6.9 第 1 條要正式 API），並告知 A、B。這裡沒有收到確認的紀錄；B 的七類錯誤計數練習（原訂 11/08 前）也沒有紀錄。
 5. 👤 **`FACT_CHECKER_PER_SOURCE`**：試刊已用預設關閉在跑；要不要在實驗二 (c) 組打開，最晚 11/17 前定案（`docs/pr/checker-per-source.md`）。
-6. **實驗二 11/17–11/18**（A 11/17 中午前選 15 篇正常稿）。⛔ 三組執行腳本還沒有。
+6. **實驗二 11/17–11/18**：A 11/17 中午前選 15 篇正常稿 → `run_exp2.py build --normal-ids …` → `draft --live`（25 次 Codex）→ 隔天 `run --arm all --live` → `report --write`。額度與排程見 `docs/eval/EXP2_DESIGN.md`；不要在 06:00–06:10 準備期間跑。
 7. **11/20 打 `final-1120` 功能凍結**；之前不要 `brew upgrade codex`。
 8. **凍結後的清理**（都不要在 11/20 前做）：
    - `run_mas` 把整個候選池（每天約 4,800 個事件）都寫成 `stories` 並建證據包，實際只用 12 篇；先確認分版主編要不要全池，再改成只處理入選稿。
    - v4／v5 遺留資料表（`candidate_posts` 186 MB、`agent_artifacts` 58 MB、`scoring_records` 12 MB…）與 `models.py` 裡約 20 個遺留 class：交付後寫 drop migration 再 `VACUUM`。
-   - production 根目錄 7 個舊 DB 備份約 1.1 GB、`bot.log` 48 MB、`scheduler.log` 21 MB；`Lab/reddit_tracker_backups` 3.6 GB。
-   - 9 個 worktree 與已併入的分支；`.env` 裡 13 個沒有作用的舊鍵（含 `MINIMAX_API_KEY`）。
+   - origin 上已併入的舊分支還在（本機的 11/13 已刪）；`.env` 備份裡還有舊的 `MINIMAX_API_KEY`，不再用就去撤銷。
    - `docs/v5/` 的歷史檔移到 `docs/archive/`；`CLAUDE.md` 與 `AGENTS.md` 內容相同，擇一為主。
    - `orchestrator.py`（1,163 行）、`run.py`（1,004 行）交付不要求就不拆。
 

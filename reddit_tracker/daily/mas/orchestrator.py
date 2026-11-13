@@ -139,6 +139,10 @@ PITCH_SCHEMA = {
 }
 
 
+# 查核員開關（實驗二，手冊 8.2）。線上只用 full。
+CHECKER_MODES = ("full", "program", "off")
+
+
 class _Draft(BaseModel):
     action: str
     headline: str = ""
@@ -362,17 +366,39 @@ def review_one(
     now: datetime,
     degraded: list[str] | None = None,
     per_source: bool | None = None,
+    checker_mode: str = "full",
+    draft: tuple[str, str, str, str] | None = None,
 ) -> StoryVersion:
     """記者寫 v1，程式查核；有問題才 CHALLENGE，通過則 checked。
 
     `per_source` 沒給就看 `FACT_CHECKER_PER_SOURCE`（預設 false＝舊提示詞與舊 schema）。
+    `checker_mode`、`draft` 只給實驗二用（手冊 8.2）：線上一律是預設值，請求與行為不變。
+    - `checker_mode`：`full`＝程式工具＋查核員 LLM；`program`＝只開程式工具；`off`＝查核員全關（數字檢查照開）。
+    - `draft`：已存檔的 v1（headline, deck, body, why_it_matters），有給就不呼叫記者。
     """
+    if checker_mode not in CHECKER_MODES:
+        raise ValueError(f"checker_mode 只能是 {CHECKER_MODES}：{checker_mode!r}")
     degraded = degraded if degraded is not None else []
     if per_source is None:
         per_source = get_settings().fact_checker_per_source
     clock = Clock(now)
     corr = correlation_id("T2", edition_date, story.id)
     source_ids = [item.item_id for item in evidence if item.item_id is not None]
+    headline, deck, body, why = draft or reporter_draft(
+        session, client, edition_date=edition_date, story=story, evidence=evidence, degraded=degraded,
+    )
+    version = write_story_version(
+        session, story_id=story.id, run_variant=MAS, expected_latest=0, headline=headline, deck=deck,
+        body=body, why_it_matters=why, source_ids=source_ids, status="draft", now=clock.tick(), sender="agent",
+    )
+    return _check_and_maybe_revise(
+        session, edition_date=edition_date, story=story, evidence=evidence, version=version, client=client,
+        clock=clock, corr=corr, degraded=degraded, per_source=per_source, checker_mode=checker_mode,
+    )
+
+
+def reporter_draft(session, client, *, edition_date, story, evidence, degraded) -> tuple[str, str, str, str]:
+    """記者的 v1（headline, deck, body, why_it_matters）；沒有可用的回應就用模板稿。"""
     user = f"事件板塊：{story.section}。請寫一則稿，action 填 DRAFT。\n\n{_evidence_block(evidence)}"
     text = _ask(
         session, client, role="reporter", story_id=story.id, edition_date=edition_date,
@@ -382,17 +408,8 @@ def review_one(
     if draft is None or not draft.headline or not draft.body:
         if text is None and _quota_left(client) == 0 and "reporter" not in degraded:
             _degrade(degraded, "reporter")
-        headline, deck, body, why = _draft_from_template(evidence, story.kind)
-    else:
-        headline, deck, body, why = draft.headline, draft.deck, draft.body, draft.why_it_matters
-    version = write_story_version(
-        session, story_id=story.id, run_variant=MAS, expected_latest=0, headline=headline, deck=deck,
-        body=body, why_it_matters=why, source_ids=source_ids, status="draft", now=clock.tick(), sender="agent",
-    )
-    return _check_and_maybe_revise(
-        session, edition_date=edition_date, story=story, evidence=evidence, version=version, client=client,
-        clock=clock, corr=corr, degraded=degraded, per_source=per_source,
-    )
+        return _draft_from_template(evidence, story.kind)
+    return draft.headline, draft.deck, draft.body, draft.why_it_matters
 
 
 def _checker_relevance_prompt(version, evidence, bad, per_source: bool) -> tuple[str, str, dict]:
@@ -407,9 +424,10 @@ def _checker_relevance_prompt(version, evidence, bad, per_source: bool) -> tuple
 
 
 def _check_and_maybe_revise(session, *, edition_date, story, evidence, version, client, clock, corr, degraded,
-                            per_source: bool = False) -> StoryVersion:
+                            per_source: bool = False, checker_mode: str = "full") -> StoryVersion:
     evidence_text = " ".join(f"{item.title} {item.summary}" for item in evidence)
-    bad = call_tool("fact_checker", "check_relevance", irrelevant_sources, evidence)
+    use_llm = checker_mode == "full"
+    bad = [] if checker_mode == "off" else call_tool("fact_checker", "check_relevance", irrelevant_sources, evidence)
     numbers = call_tool("fact_checker", "check_numbers", unsupported_numbers, version.body, evidence_text)
     assessment = None
     checker_call = None
@@ -419,14 +437,14 @@ def _check_and_maybe_revise(session, *, edition_date, story, evidence, version, 
         # 來源：程式只看標題、抓不到中文與跨語言的同一事件（2026-10-31／11-01 把多來源稿刪到剩 1 家），
         # 所以查核員 LLM 判定同一事件時保留：逐來源判斷 KEEP 的，或舊格式回 OK（全部）；
         # REMOVE、CHALLENGE 或沒有判斷才照程式刪。
-        if "fact_checker" not in degraded and _quota_left(client) != 0:
+        if use_llm and "fact_checker" not in degraded and _quota_left(client) != 0:
             system, user, schema = _checker_relevance_prompt(version, evidence, bad, per_source)
             assessment = _ask(
                 session, client, role="fact_checker", story_id=story.id, edition_date=edition_date,
                 system=system, user=user, schema=schema, temperature=0,
             )
             checker_call = last_record_id()
-        elif _quota_left(client) == 0:
+        elif use_llm and _quota_left(client) == 0:
             _degrade(degraded, "fact_checker")
         if bad:
             keep = checker_source_verdicts(assessment, [index for index, _ in bad])
@@ -457,8 +475,10 @@ def _check_and_maybe_revise(session, *, edition_date, story, evidence, version, 
             mark_handled(session, message.id)
         kept = [item for index, item in enumerate(evidence, start=1) if index not in {i for i, _ in bad}]
         return _revise(session, edition_date=edition_date, story=story, evidence=kept, removed=[item for _, item in bad],
-                       version=version, client=client, clock=clock, corr=corr, challenge=message, degraded=degraded)
-    percents = _percent_values(evidence, version.body)
+                       version=version, client=client, clock=clock, corr=corr, challenge=message, degraded=degraded,
+                       checker_mode=checker_mode)
+    # 百分比那一問只有查核員 LLM 能答；實驗二的 off／program 兩組不問、也不因為「LLM 停了」而 HOLD。
+    percents = _percent_values(evidence, version.body) if use_llm else set()
     if cleared and checker_says_same_event(assessment):
         # 查核員這次已經看過整篇（含數字）且回 OK，不再為百分比多問一次。
         percents = set()
@@ -496,7 +516,8 @@ def _check_and_maybe_revise(session, *, edition_date, story, evidence, version, 
     return version
 
 
-def _revise(session, *, edition_date, story, evidence, removed, version, client, clock, corr, challenge, degraded) -> StoryVersion:
+def _revise(session, *, edition_date, story, evidence, removed, version, client, clock, corr, challenge, degraded,
+            checker_mode: str = "full") -> StoryVersion:
     user = (
         f"查核員 CHALLENGE：{json.dumps(challenge.payload, ensure_ascii=False)}\n"
         f"請刪除被點名的來源後重寫，action 填 REVISE。\n\n{_evidence_block(evidence)}"
@@ -508,7 +529,8 @@ def _revise(session, *, edition_date, story, evidence, removed, version, client,
     reporter_call = last_record_id()
     draft = _parse(text, _Draft)
     if draft is None or draft.action == "REBUT":
-        if draft is not None and draft.action == "REBUT":
+        # 反駁要查核員 LLM 裁決；off／program 兩組沒有查核員 LLM，照程式結果用模板稿。
+        if draft is not None and draft.action == "REBUT" and checker_mode == "full":
             post_message(
                 session, run_variant=MAS, edition_date=edition_date, sender="reporter", recipient="fact_checker",
                 type="REBUT", now=clock.tick(), story_id=story.id, correlation_id=corr,
@@ -536,7 +558,8 @@ def _revise(session, *, edition_date, story, evidence, removed, version, client,
     if claim_message(session, done.id):
         mark_handled(session, done.id)
     keep = cleared_item_ids(session, story.id)
-    still_bad = [x for x in irrelevant_sources(evidence) if x[1].item_id not in keep] or unsupported_numbers(
+    still_irrelevant = [] if checker_mode == "off" else [x for x in irrelevant_sources(evidence) if x[1].item_id not in keep]
+    still_bad = still_irrelevant or unsupported_numbers(
         new.body, " ".join(f"{item.title} {item.summary}" for item in evidence)
     )
     if still_bad:

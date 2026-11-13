@@ -335,3 +335,20 @@ M 組頁尾的撰稿數照版面上有全文的稿計算。
 - 無人值守檢查使用 `REDDIT_TRACKER_NO_DOTENV=1`，Settings 不開啟 dotenv；不要從 production 取得設定。
 - `scripts/verify_mas_merge.py --stage t2a|mas [--live]` 只用 `data/work` 複本，已有目的 DB 就拒絕覆寫。`--live` 才能呼叫 Codex，固定 `LLM_QUOTA_STATE_PATH=data/work/llm-quota-merge.json`、`LLM_DAILY_LIMIT=40`；先完成回歸重播檢查再執行。T2a 專用證據刻意保留原始 E01 足球來源，正式編採仍先過濾。
 - E11（莫德納，MarketWatch item 2736，單一來源、財經改判國際，重編沒入選）不走整期 MAS。`uv run python scripts/record_e11.py --live` 只把這一則送進記者→（可疑才）查核員→文稿編輯，寫 `data/work/1027_e11.db`，額度檔 `data/work/llm-quota-e11.json`，新的 Codex 呼叫上限 5，不讀 `.env`、不開 production DB。匯出 `tests/regression/fixtures/1027_e11_evidence.json` 與 `1027_e11_records.json`。沒有這兩個檔時 `tests/test_e11_replay.py` skip；`--check` 只重播。
+
+## 實驗二用的查核員開關（2026-11-13）
+
+`daily/mas/orchestrator.py`：
+
+```python
+CHECKER_MODES = ("full", "program", "off")
+
+def review_one(session, *, edition_date, story, evidence, client, now,
+               degraded=None, per_source=None,
+               checker_mode="full", draft=None) -> StoryVersion
+def reporter_draft(session, client, *, edition_date, story, evidence, degraded) -> tuple[str, str, str, str]
+```
+
+- `checker_mode`：`full`＝線上行為；`program`＝只用程式的相關性規則，不呼叫查核員 LLM；`off`＝不做相關性檢查。數字檢查三種都開。
+- `draft`：`(headline, deck, body, why_it_matters)`，有給就不呼叫記者寫 v1。
+- 線上（`run_mas`）不傳這兩個參數。`daily/evidence.py` 的 `raw_evidence_item(member, source_names)` 不做相關性過濾，只給實驗二把無關素材加進證據包。規則見 `docs/eval/EXP2_DESIGN.md`。
