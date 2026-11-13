@@ -480,3 +480,26 @@ _page_review(session, *, edition_date, client, clock, hold_ids, evidence_of, res
 - 合規則 → 總編請求 user＝`{"objection": {"problem", "detail"}, "current_front": [卡片＋slot], "proposed_front": [卡片＋slot]}`，回 `eic → layout_editor` 的 `DECISION`，payload＝`{"action": "PAGE_RULING", "objection_message_id", "proposal", "verdict", "by": "eic"|"program", "why", ["program_reason"]}`。總編回應失敗當 `REJECT`（`by=program`）。
 - `ACCEPT` → `apply_decision(..., min_front=現在頭版篇數)` 寫下一版 page plan（`decided_by_message_id`＝這則 DECISION）；仍不合規則時訊息標 `rejected`、版面不變。`REJECT` → 訊息 `handled`、版面不變。
 - 最多多 2 則訊息、2 次呼叫，計入 `MAX_MESSAGES`／額度；額度用完時 `_ask` 回 None＝當沒有異議。關閉時請求逐字不變。
+
+### C3 總編退稿（`MAS_MORE_INTERACTION`，desk-v3，預設關閉）
+
+同一個開關，自動模式才作用；接在 C2 `_page_review` 之後、`_maybe_shorten_lead` 之前。沒有新訊息類型（`("eic", "REQUEST_REVISION")`、`("reporter", "REVISION_DONE"|"REBUT")` 本來就在白名單）。
+
+`daily/mas/orchestrator.py`：
+
+```python
+EIC_REVISION_MAX = 2
+EIC_REQUEST_DETAIL_CHARS = 200
+EIC_REVIEW_SUFFIX: str                # 接在 EIC_SYSTEM 後面
+EIC_REVIEW_SCHEMA = {"requests": [{"story_id": int, "detail": str}]}
+guard_eic_requests(proposed, reviewable, limit=EIC_REVISION_MAX) -> list[(story_id, detail)]
+_eic_revisions(session, *, edition_date, client, clock, hold_ids, evidence_of, result) -> None
+```
+
+- 總編請求 user＝`{"max": 2, "front": [{"story_id", "headline", "deck", "summary"}]}`；只列最新 page plan 頭版裡 `status=checked`、非 HOLD 的稿；`summary`＝`rich_fields` 的 S1 摘要（200 字、有注入標記給空字串），不看 `MAS_RICH_CONTEXT`。記者已降級或額度用完時整段跳過。
+- 護欄：只收 `front` 裡、不重複、`detail` 非空（截 200 字）的前 2 篇；回應無效＝不退稿（不發訊息）。
+- 每篇：`eic → reporter` 的 `REQUEST_REVISION`（`target_version`＝原版、`correlation_id`＝`ER-YYYYMMDD-NNN`、payload `{"detail", "by": "eic"}`）→ 記者請求（`REPORTER_SYSTEM`＋`DRAFT_SCHEMA`，user 含要求、原稿標題／導言／正文、證據塊）。
+  - `REVISE` 且有標題、正文 → 寫新版（`caused_by_message_id`＝退稿訊息、`source_ids` 不變、`status=draft`），發 `reporter → eic` 的 `REVISION_DONE`（`{"new_version", "change"}`），再走原查核流程 `_check_and_maybe_revise`（同一個 `ER-` correlation_id；可能 CHALLENGE／RELEASE／HOLD）。
+  - `REBUT` → 發 `reporter → eic` 的 `REBUT`（`{"reason", "target_version"}`），原稿不動。回應無效 → 原稿不動，只記 `layout_log`。
+- 修稿重驗後變 HOLD 的稿不改 page plan，跟其他 HOLD 稿一樣由發佈前的人工核可擋下。
+- 最多 1 次總編呼叫＋每篇 1 次記者呼叫（＋查核流程）；訊息計入 `MAX_MESSAGES`。關閉時請求逐字不變。

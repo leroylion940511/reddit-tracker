@@ -716,3 +716,121 @@ def test_page_review_off_keeps_old_precheck(session):
     _, _, requests = _run_review(session, lambda data: pytest.fail("關閉時不該審頭版"))
     assert len(requests) == 1 and "只檢查頭版容量" in requests[0]["system"]
     assert _page_rulings(session) == []
+
+
+# ── C3：總編對頭版稿退稿（MAS_MORE_INTERACTION）─────────────────────────────
+
+
+def test_guard_eic_requests_rules():
+    from reddit_tracker.daily.mas.orchestrator import EIC_REQUEST_DETAIL_CHARS, guard_eic_requests
+
+    ok = {1, 2, 3}
+    assert guard_eic_requests(None, ok) == [] and guard_eic_requests("x", ok) == []
+    got = guard_eic_requests([{"story_id": 9, "detail": "外面"}, {"story_id": 1, "detail": " 標題誤導 "},
+                              {"story_id": 1, "detail": "重複"}, {"story_id": 2, "detail": ""},
+                              {"story_id": True, "detail": "bool"}, "不是 dict",
+                              {"story_id": 3, "detail": "甲" * 500}, {"story_id": 2, "detail": "超過上限"}], ok)
+    assert got == [(1, "標題誤導"), (3, "甲" * EIC_REQUEST_DETAIL_CHARS)]
+
+
+def _run_revision(session, review, reporter=None, ruling_ok=True):
+    from sqlalchemy import select
+
+    from reddit_tracker.models import PagePlan
+
+    raw = []
+    for i, section in enumerate(SECTIONS):
+        for j in range(5):
+            item = _item(session, f"武契奇事件{i}-{j}", "國會選舉結果", url=f"https://www.cna.com.tw/v{i}/{j}")
+            raw.append(_snapshot([item.id], i * 10 + j, section=section, score=100 - j))
+    seen = {"eic": [], "reporter": []}
+
+    def handler(kw):
+        content = kw["messages"][0]["content"]
+        data = json.loads(content) if content.startswith("{") else None
+        if "總編輯" in kw["system"] and data and "max" in data and "front" in data:
+            seen["eic"].append(data)
+            return review(data)
+        if "記者" in kw["system"] and "總編 REQUEST_REVISION" in content:
+            seen["reporter"].append(content)
+            return reporter(content) if reporter else "不是 JSON"
+        if "分版主編" in kw["system"]:
+            return json.dumps({"pitches": [{"story_id": p["story_id"], "angle": "國會", "priority": "front"}
+                                           for p in data["candidates"]]})
+        if "總編輯" in kw["system"] and data and "candidates" in data:
+            ids = [c["story_id"] for c in data["candidates"]][:6]
+            return json.dumps({"lead": ids[0], "second": ids[1:5], "briefs": ids[5:], "links": [],
+                               "dropped": [], "reasons": [{"story_id": i, "why": "重要"} for i in ids]})
+        if "記者" in kw["system"]:
+            return json.dumps({"action": "DRAFT", "headline": "武契奇選舉", "deck": "導言",
+                               "body": "國會選舉結果。[S1]"})
+        return _checker("OK", "")
+
+    result = run_mas(session, edition_date=DAY, snapshot=SimpleNamespace(candidates=raw), registry=_registry(),
+                     client=Scripted(handler), now=NOW)
+    plan = session.scalar(select(PagePlan).order_by(PagePlan.plan_version.desc()))
+    return result, plan, seen
+
+
+def _eic_requests(session):
+    return [m for m in _messages(session, "REQUEST_REVISION") if m.sender_role == "eic"]
+
+
+def test_eic_revision_rechecked(session, interaction_on):
+    from reddit_tracker.daily.mas.orchestrator import latest_version
+
+    def review(data):
+        ids = [c["story_id"] for c in data["front"]]
+        return json.dumps({"requests": [{"story_id": i, "detail": "標題太空泛"} for i in ids[:3]]})
+
+    def reporter(content):
+        return json.dumps({"action": "REVISE", "headline": "武契奇承認國會選舉結果", "deck": "新導言",
+                           "body": "國會選舉結果。[S1]", "why_it_matters": "", "reason": ""})
+
+    result, plan, seen = _run_revision(session, review, reporter)
+    [eic_req] = seen["eic"]
+    assert eic_req["max"] == 2 and len(eic_req["front"]) == 6
+    assert set(eic_req["front"][0]) == {"story_id", "headline", "deck", "summary"}
+    assert eic_req["front"][0]["summary"] == "國會選舉結果"
+    reqs = _eic_requests(session)
+    assert len(reqs) == 2 and all(r.status == "handled" for r in reqs)  # 最多 2 篇
+    assert all(r.correlation_id.startswith("ER-") for r in reqs)
+    done = [m for m in _messages(session, "REVISION_DONE") if m.recipient_role == "eic"]
+    assert len(done) == 2 and len(seen["reporter"]) == 2 and "標題太空泛" in seen["reporter"][0]
+    for r in reqs:
+        v = latest_version(session, r.story_id)
+        assert v.headline == "武契奇承認國會選舉結果" and v.version == r.target_version + 1 and v.status == "checked"
+        assert v.caused_by_message_id == r.id
+    releases = [m for m in _messages(session, "RELEASE") if (m.correlation_id or "").startswith("ER-")]
+    assert len(releases) == 2  # 照原流程重驗
+    assert sum("重驗後 checked" in line for line in result.layout_log) == 2
+
+
+def test_eic_revision_rebut_keeps_story(session, interaction_on):
+    from reddit_tracker.daily.mas.orchestrator import latest_version
+
+    def review(data):
+        return json.dumps({"requests": [{"story_id": data["front"][0]["story_id"], "detail": "改標題"}]})
+
+    def reporter(content):
+        return json.dumps({"action": "REBUT", "headline": "", "deck": "", "body": "", "why_it_matters": "",
+                           "reason": "標題已忠於來源"})
+
+    _, _, _ = _run_revision(session, review, reporter)
+    [req] = _eic_requests(session)
+    [rebut] = [m for m in _messages(session, "REBUT") if m.recipient_role == "eic"]
+    assert rebut.status != "rejected" and rebut.payload["reason"] == "標題已忠於來源"
+    assert latest_version(session, req.story_id).version == req.target_version
+
+
+@pytest.mark.parametrize("reply", [json.dumps({"requests": []}), "不是 JSON",
+                                   json.dumps({"requests": [{"story_id": 999, "detail": "外面"}]})])
+def test_eic_revision_none_or_bad_reply_sends_nothing(session, interaction_on, reply):
+    result, _, _ = _run_revision(session, lambda data: reply)
+    assert _eic_requests(session) == [] and "總編審頭版稿：不退稿" in result.layout_log
+
+
+def test_eic_revision_off_by_default(session):
+    assert get_settings().mas_more_interaction is False
+    _, _, seen = _run_revision(session, lambda data: pytest.fail("關閉時不該審頭版稿"))
+    assert seen["eic"] == [] and _eic_requests(session) == []

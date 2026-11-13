@@ -206,6 +206,20 @@ PAGE_RULING_SCHEMA = {
     "required": ["verdict", "why"], "additionalProperties": False,
 }
 
+# desk-v3 C3（MAS_MORE_INTERACTION）：總編看頭版稿（標題＋deck＋S1 摘要），最多對 2 篇退稿請記者修改。
+EIC_REVISION_MAX = 2
+EIC_REVIEW_SUFFIX = """
+你在看頭版稿（front，每篇有標題 headline、導言 deck、來源摘要 summary）。標題或導言誤導、和摘要對不上、
+或漏了最重要的事實時，可以請記者修改，最多 max 篇；detail 用一句話寫要改什麼。不需要修改就回空陣列。
+你不能改稿、不能新增事實。"""
+EIC_REVIEW_SCHEMA = {
+    "type": "object", "properties": {"requests": {"type": "array", "items": {
+        "type": "object", "properties": {"story_id": {"type": "integer"}, "detail": {"type": "string"}},
+        "required": ["story_id", "detail"], "additionalProperties": False}}},
+    "required": ["requests"], "additionalProperties": False,
+}
+EIC_REQUEST_DETAIL_CHARS = 200
+
 
 # 查核員開關（實驗二，手冊 8.2）。線上只用 full。
 CHECKER_MODES = ("full", "program", "off")
@@ -917,6 +931,8 @@ def run_mas(
         if more_interaction:
             _page_review(session, edition_date=edition_date, client=client, clock=clock, hold_ids=hold_ids,
                          evidence_of=evidence_of, result=result)
+            _eic_revisions(session, edition_date=edition_date, client=client, clock=clock, hold_ids=hold_ids,
+                           evidence_of=evidence_of, result=result)
         if _quota_left(client) == 0:
             _degrade(result.degraded, "reporter")
         _maybe_shorten_lead(session, edition_date=edition_date, client=client, clock=clock, degraded=result.degraded)
@@ -1395,6 +1411,112 @@ def _page_review(session, *, edition_date, client, clock, hold_ids: set[int], ev
     else:
         result.page_plan_ids.append(plan_id)
         result.layout_log.append(f"版面異議：總編接受，頭版改為 {proposed_ids}")
+
+
+def guard_eic_requests(proposed, reviewable: set[int], limit: int = EIC_REVISION_MAX) -> list[tuple[int, str]]:
+    """總編退稿名單套護欄：只收 reviewable 裡的、不重複、detail 非空（截到 EIC_REQUEST_DETAIL_CHARS），最多 limit 篇。"""
+    out: list[tuple[int, str]] = []
+    if not isinstance(proposed, list):
+        return out
+    for entry in proposed:
+        if not isinstance(entry, dict):
+            continue
+        sid, detail = entry.get("story_id"), entry.get("detail")
+        if (not isinstance(sid, int) or isinstance(sid, bool) or sid not in reviewable
+                or any(sid == s for s, _ in out) or not isinstance(detail, str) or not detail.strip()):
+            continue
+        out.append((sid, detail.strip()[:EIC_REQUEST_DETAIL_CHARS]))
+        if len(out) >= limit:
+            break
+    return out
+
+
+def _eic_revisions(session, *, edition_date, client, clock, hold_ids: set[int], evidence_of: dict,
+                   result: MasResult) -> None:
+    """desk-v3 C3：總編看頭版稿，最多對 EIC_REVISION_MAX 篇發 REQUEST_REVISION；記者回 REVISION_DONE（或 REBUT），
+    改過的稿照原流程（`_check_and_maybe_revise`）重驗。只審 status=checked 的頭版稿。
+
+    記者降級或額度用完時整段跳過；總編回應無效＝不退稿。修稿後重驗變 HOLD 的稿留在版面上，
+    跟其他 HOLD 稿一樣由發佈時的人工核可擋下（不在這裡改 page plan）。
+    """
+    if "reporter" in result.degraded or _quota_left(client) == 0:
+        return
+    plan = session.scalar(select(PagePlan).where(
+        PagePlan.edition_date == edition_date, PagePlan.run_variant == MAS
+    ).order_by(PagePlan.plan_version.desc()))
+    if plan is None:
+        return
+    front_ids = _front_ids(plan.slots or {})
+    cards, versions = [], {}
+    for sid in front_ids:
+        version = latest_version(session, sid)
+        if sid in hold_ids or version is None or version.status != "checked":
+            continue
+        versions[sid] = version
+        cards.append({"story_id": sid, "headline": version.headline, "deck": version.deck or "",
+                      "summary": rich_fields(evidence_of.get(sid))["summary"]})
+    if not cards:
+        return
+    text = _ask(session, client, role="eic", story_id=None, edition_date=edition_date,
+                system=EIC_SYSTEM + EIC_REVIEW_SUFFIX,
+                user=json.dumps({"max": EIC_REVISION_MAX, "front": cards}, ensure_ascii=False),
+                schema=EIC_REVIEW_SCHEMA, temperature=0)
+    eic_call = last_record_id()
+    try:
+        proposed = json.loads(text).get("requests") if text else None
+    except (ValueError, TypeError, AttributeError):
+        proposed = None
+    requests = guard_eic_requests(proposed, set(versions))
+    if not requests:
+        result.layout_log.append("總編審頭版稿：不退稿")
+        return
+    per_source = get_settings().fact_checker_per_source
+    for sid, detail in requests:
+        story = session.get(Story, sid)
+        version = versions[sid]
+        evidence = evidence_of.get(sid) or []
+        corr = correlation_id("ER", edition_date, sid)
+        request = post_message(
+            session, run_variant=MAS, edition_date=edition_date, sender="eic", recipient="reporter",
+            type="REQUEST_REVISION", now=clock.tick(), story_id=sid, target_version=version.version,
+            correlation_id=corr, llm_call_id=eic_call, payload={"detail": detail, "by": "eic"},
+        )
+        if _quota_left(client) == 0:
+            result.layout_log.append(f"總編退稿 {sid}：額度用完，記者沒改")
+            continue
+        user = (f"總編 REQUEST_REVISION：{detail}\n請依要求改稿，action 填 REVISE；只能用證據裡的事實。"
+                f"不同意就 action 填 REBUT 並在 reason 寫理由。\n\n現稿標題：{version.headline}\n"
+                f"現稿導言：{version.deck or ''}\n現稿正文：{version.body}\n\n{_evidence_block(evidence)}")
+        text = _ask(session, client, role="reporter", story_id=sid, edition_date=edition_date,
+                    system=REPORTER_SYSTEM, user=user, schema=DRAFT_SCHEMA, temperature=0.3)
+        reporter_call = last_record_id()
+        draft = _parse(text, _Draft)
+        if draft is not None and draft.action == "REBUT":
+            post_message(session, run_variant=MAS, edition_date=edition_date, sender="reporter", recipient="eic",
+                         type="REBUT", now=clock.tick(), story_id=sid, correlation_id=corr,
+                         payload={"reason": draft.reason, "target_version": version.version},
+                         llm_call_id=reporter_call)
+            result.layout_log.append(f"總編退稿 {sid}：記者反駁，維持原稿")
+            continue
+        if draft is None or not draft.body or not draft.headline:
+            result.layout_log.append(f"總編退稿 {sid}：記者沒有可用的修改，維持原稿")
+            continue
+        new = write_story_version(
+            session, story_id=sid, run_variant=MAS, expected_latest=version.version, headline=draft.headline,
+            deck=draft.deck, body=draft.body, why_it_matters=draft.why_it_matters or version.why_it_matters or "",
+            source_ids=list(version.source_ids or []), status="draft", caused_by_message_id=request.id,
+            now=clock.tick(), sender="agent",
+        )
+        post_message(session, run_variant=MAS, edition_date=edition_date, sender="reporter", recipient="eic",
+                     type="REVISION_DONE", now=clock.tick(), story_id=sid, correlation_id=corr,
+                     payload={"new_version": new.version, "change": detail}, llm_call_id=reporter_call)
+        final = _check_and_maybe_revise(
+            session, edition_date=edition_date, story=story, evidence=evidence, version=new, client=client,
+            clock=clock, corr=corr, degraded=result.degraded, per_source=per_source,
+        )
+        if final.status == "hold":
+            hold_ids.add(sid)
+        result.layout_log.append(f"總編退稿 {sid}：記者改到 v{new.version}，重驗後 {final.status}")
 
 def _section_pitches(session, edition_date, stories, evidence_of, client, calls: dict | None = None,
                      reasons_out: dict | None = None, layout_log: list[str] | None = None):
