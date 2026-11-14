@@ -5,7 +5,7 @@
 > 2026-10-29 以前的段落已搬到 `docs/archive/`（見文末「更早的紀錄」）。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
+**Last updated:** 2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 還沒 push）。前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
 
 ## 線上現況（2026-11-13 查證）
 
@@ -14,12 +14,22 @@
 - 查證當下 main 領先 origin/main 3 個 commit（`ff87ca0`、`7f72c69`、`4446959`）；部署後共 9 個，**還沒 push**。
 - production DB 523 MB、Alembic `b8d4f0a17c33`。全套（production checkout，有母本）413 passed／4 skipped。
 
-## 本次變更（2026-11-14 — 可關閉人工核可，`feat/no-approval`，未部署）
+## 部署（2026-11-14 19:42 台北 — 關閉人工核可＋併入 desk-v3，依志晨指示）
+
+- ✅ `feat/desk-v3` 併入 `feat/no-approval`（只有 `config.py` 設定區衝突，兩邊都保留），全套 491 passed／7 skipped；main fast-forward `ada70ef`→`da0bd4b`。
+- ✅ 備份 `~/Documents/Developer/Lab/reddit_tracker_backups/deploy-20261114/`（sqlite `.backup`、integrity ok；`.env` 複本）。
+- ✅ `uv run alembic upgrade head`：`b8d4f0a17c33`→`c5e1a9d3f207`（新表 `item_fulltext`，只新增表）。
+- ✅ production `.env` 加 `DAILY_REQUIRE_APPROVAL=false`；`deploy/install_launchd.sh newsroom-reload` 一次。log 有 `codex version guard ok: codex-cli 0.166.0`、三個 job 已註冊、scheduler Python process 1 個；首輪收集 19:42 ok。rsshub 未動。
+- desk-v3 的開關（`MAS_RICH_CONTEXT`、`MAS_OPEN_LAYOUT`、`MAS_MORE_INTERACTION`、`FULLTEXT_ENABLED`、`MAS_REPORTER_FULLTEXT`）**全部維持關閉**，M 組請求與 `request_hash` 不變；開啟順序、風險與要人工確認的事見 [`docs/pr/desk-v3.md`](docs/pr/desk-v3.md)。原本計畫 11/20 後才併入，提前併入但未開啟任何行為。
+- 👀 11/15 06:00 是第一期不需核可：08:35 發行的稿應全部是全文，只有 HOLD 的稿只出標題。
+- ⚠️ 試刊最後一天（11/15）與實驗紀錄從此沒有 `approved_by`；回放頁沒有 approve 階段。報告要說明「11/15 起關閉人工核可」。
+
+## 本次變更（2026-11-14 — 可關閉人工核可，`feat/no-approval`）
 
 - ✅ 新設定 `DAILY_REQUIRE_APPROVAL`（預設 `true`＝原行為）。`false` 時 mas 發行不需要 `daily approve`：checked／draft／challenged 都發全文，只有 HOLD 的稿照樣只出標題。閘門在 `daily/view.py` `_withheld_status`，網頁與 Telegram 共用。
 - ⚠️ 關掉會改變試刊（到 11/15）與實驗紀錄的條件：`approved_by` 不再有值、回放頁的 `approve` 階段消失；手冊步驟 10 原本要求真人核可，交報告時要說明。
 - 全套 428 passed／7 skipped（worktree 沒有母本）。不需要 migration、不改提示詞與 `request_hash`。
-- 👤 部署：併入 main → production `.env` 加 `DAILY_REQUIRE_APPROVAL=false` → `deploy/install_launchd.sh newsroom-reload`（不要在 06:00–08:40 間做）。
+- ✅ 已部署，見上一節。
 
 ## 本次變更（2026-11-13 晚 — 實驗一結果存檔，`docs/exp1-results`）
 
@@ -58,7 +68,7 @@ worktree `~/Documents/Developer/Lab/rt-wt-cleanup`。開發時 production 只做
 
 日期都是方案 B，見 [`docs/weekly/trial-dates.md`](docs/weekly/trial-dates.md)。依期限排：
 
-1. 👤 **試刊到 11/15，每天**：06:00 準備後核准 M 組稿；交 B 之前 `scripts/collect_blind_hashes.py --write` 並 commit（11/09–11/13 已記）。
+1. 👤 **試刊到 11/15**：11/14 起已關閉人工核可，不用再 `approve`；交 B 之前 `scripts/collect_blind_hashes.py --write` 並 commit（11/09–11/13 已記）。
 2. 👤 **push main**（領先 origin 9 個 commit）。`chore/cleanup-1113` 已於 11/13 19:12 部署。
 3. 👤 **實驗一結果**：已存檔（見上）。剩下志晨讀一遍 `exp1_results.md` 的 3 個錯誤分析與結論，改成自己的話；11/22 前。
 4. 👤 **請老師確認** `trial-dates.md` 的時程與用本機 Codex 當 LLM（手冊 6.9 第 1 條要正式 API），並告知 A、B。這裡沒有收到確認的紀錄；B 的七類錯誤計數練習（原訂 11/08 前）也沒有紀錄。
