@@ -5,7 +5,7 @@
 > 2026-10-29 以前的段落已搬到 `docs/archive/`（見文末「更早的紀錄」）。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 還沒 push）。前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
+**Last updated:** 2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）。前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
 
 ## 線上現況（2026-11-13 查證）
 
@@ -69,7 +69,7 @@ worktree `~/Documents/Developer/Lab/rt-wt-cleanup`。開發時 production 只做
 日期都是方案 B，見 [`docs/weekly/trial-dates.md`](docs/weekly/trial-dates.md)。依期限排：
 
 1. 👤 **試刊到 11/15**：11/14 起已關閉人工核可，不用再 `approve`；交 B 之前 `scripts/collect_blind_hashes.py --write` 並 commit（11/09–11/13 已記）。
-2. 👤 **push main**（領先 origin 9 個 commit）。`chore/cleanup-1113` 已於 11/13 19:12 部署。
+2. ✅ **push main**：2026-11-14 已 push（`bcf0ae3`）。`chore/cleanup-1113` 已於 11/13 19:12 部署。
 3. 👤 **實驗一結果**：已存檔（見上）。剩下志晨讀一遍 `exp1_results.md` 的 3 個錯誤分析與結論，改成自己的話；11/22 前。
 4. 👤 **請老師確認** `trial-dates.md` 的時程與用本機 Codex 當 LLM（手冊 6.9 第 1 條要正式 API），並告知 A、B。這裡沒有收到確認的紀錄；B 的七類錯誤計數練習（原訂 11/08 前）也沒有紀錄。
 5. 👤 **`FACT_CHECKER_PER_SOURCE`**：試刊已用預設關閉在跑；要不要在實驗二 (c) 組打開，最晚 11/17 前定案（`docs/pr/checker-per-source.md`）。
