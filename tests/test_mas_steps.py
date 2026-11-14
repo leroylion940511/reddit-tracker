@@ -49,6 +49,7 @@ from reddit_tracker.daily.store import (
     add_page_plan,
     add_story,
     approve_story,
+    hold_story,
     write_story_version,
 )
 from reddit_tracker.daily.view import build_edition_view
@@ -498,6 +499,31 @@ def test_newsroom_page_lists_only_written_stories_and_readable_sections(session)
 
 
 # ── 步驟 10：核准與安全 ──────────────────────────────────────────────────
+
+
+def test_approval_not_required_publishes_unapproved_but_keeps_hold(session, monkeypatch):
+    """DAILY_REQUIRE_APPROVAL=false：未核可的稿照發全文；HOLD 的稿仍只出標題。"""
+    from reddit_tracker.config import get_settings
+
+    monkeypatch.setenv("DAILY_REQUIRE_APPROVAL", "false")
+    get_settings.cache_clear()
+    open_story, held_story = _story(session, 1), _story(session, 2)
+    write_story_version(
+        session, story_id=open_story.id, run_variant=MAS, expected_latest=0,
+        headline="免核可標題", body="不用核可也該發出的正文。", now=NOW, status="checked",
+    )
+    write_story_version(
+        session, story_id=held_story.id, run_variant=MAS, expected_latest=0,
+        headline="扣稿標題", body="被 HOLD 的秘密正文。", now=NOW, status="checked",
+    )
+    hold_story(session, held_story.id)
+    add_page_plan(
+        session, edition_date=DAY, run_variant=MAS,
+        slots={"front": {"lead": open_story.id, "second": [held_story.id], "briefs": []}, "sections": {}}, now=NOW,
+    )
+    html = render_html(build_edition_view(session, DAY, MAS, SECTIONS, for_publish=True))
+    assert "不用核可也該發出的正文" in html
+    assert "被 HOLD 的秘密正文" not in html and "未核准，本期不發行全文" in html
 
 
 def test_approval_gate_withholds_until_human(session, monkeypatch, tmp_path):

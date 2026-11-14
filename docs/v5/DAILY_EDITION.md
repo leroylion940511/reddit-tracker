@@ -8,7 +8,7 @@
 | --- | --- |
 | 每 15 分鐘 | 收集＋事件聚合（[COLLECTION.md](COLLECTION.md)、[CLUSTERING.md](CLUSTERING.md)） |
 | `DAILY_PREPARE` 06:00 | 評分、選題、撰稿、審稿，產生 `site/daily/YYYY-MM-DD.html`，狀態 `drafted`；不發送 |
-| 06:00–08:35 | 人工可在 web 或 HTML 檢視；需要時 `--refresh` 重寫。`DAILY_MODE=mas` 需逐則 `approve`，未核准只出標題 |
+| 06:00–08:35 | 人工可在 web 或 HTML 檢視；需要時 `--refresh` 重寫。`DAILY_MODE=mas` 需逐則 `approve`，未核准只出標題（`DAILY_REQUIRE_APPROVAL=false` 時不需核准，只有 HOLD 只出標題） |
 | `DAILY_DELIVERY` 08:35 | 只發行既有 draft：Telegram 頭版精選＋完整報紙 HTML 檔（當初為與已停刊的 v5 08:30 錯開而定） |
 
 兩個排程只有 `DAILY_EDITION_ENABLED=true` 時才註冊。

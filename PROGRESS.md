@@ -14,6 +14,13 @@
 - 查證當下 main 領先 origin/main 3 個 commit（`ff87ca0`、`7f72c69`、`4446959`）；部署後共 9 個，**還沒 push**。
 - production DB 523 MB、Alembic `b8d4f0a17c33`。全套（production checkout，有母本）413 passed／4 skipped。
 
+## 本次變更（2026-11-14 — 可關閉人工核可，`feat/no-approval`，未部署）
+
+- ✅ 新設定 `DAILY_REQUIRE_APPROVAL`（預設 `true`＝原行為）。`false` 時 mas 發行不需要 `daily approve`：checked／draft／challenged 都發全文，只有 HOLD 的稿照樣只出標題。閘門在 `daily/view.py` `_withheld_status`，網頁與 Telegram 共用。
+- ⚠️ 關掉會改變試刊（到 11/15）與實驗紀錄的條件：`approved_by` 不再有值、回放頁的 `approve` 階段消失；手冊步驟 10 原本要求真人核可，交報告時要說明。
+- 全套 428 passed／7 skipped（worktree 沒有母本）。不需要 migration、不改提示詞與 `request_hash`。
+- 👤 部署：併入 main → production `.env` 加 `DAILY_REQUIRE_APPROVAL=false` → `deploy/install_launchd.sh newsroom-reload`（不要在 06:00–08:40 間做）。
+
 ## 本次變更（2026-11-13 晚 — 實驗一結果存檔，`docs/exp1-results`）
 
 - ✅ `scripts/exp1_results.py --write` 正式跑一次：`docs/eval/cluster_pairs_v1.csv`（100 組，**寫了就不能改**；sha256 `01466b64…cd084`）與 [`docs/eval/exp1_results.md`](docs/eval/exp1_results.md)（結果表、信賴區間、McNemar、κ、3 個錯誤分析、結論、標註限制）。`exp1-frozen`＝`5f31fab`。

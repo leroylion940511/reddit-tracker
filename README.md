@@ -77,6 +77,7 @@ flowchart TD
 ## 人工核可
 
 - `DAILY_MODE=mas` 發行時依最新 `page_plans` 與核可狀態重新渲染：**未核可的稿只出標題**，正文換成「未核准，本期不發行全文。」
+- `DAILY_REQUIRE_APPROVAL=false` 關掉人工核可：不用 `approve`，稿件照發全文；HOLD（查核員或真人扣稿）的稿仍只出標題。
 - 只有真人名字能核可，角色名（`eic`、`reporter`…）會被拒絕；寫入 `approved_by`／`approved_at`。
 - 核可或 HOLD 可用 CLI（`daily approve`／`daily hold`），或在回放頁操作（`/daily/<date>/newsroom/decision`）。回放頁不能改稿。
 - 3D 編輯室回放：`/daily/<date>/newsroom/office`（唯讀）。把當期的收集、各角色的模型呼叫、訊息、改稿、版面變化一步一步演出來；資料介面見 `docs/v5/DAILY_EDITION.md`「回放時間線與 3D 編輯室」。
@@ -138,6 +139,7 @@ uv run python -m reddit_tracker.web
 | `DAILY_SHADOW_LLM_LIMIT` | `12` | P 影子每日最多用幾格額度（含編輯會議與重試）；M 至少保有 `LLM_DAILY_LIMIT` 減這個數 |
 | `DAILY_ANNOTATION_DIR` | `annotation` | 影子＋M 都有稿時匯出盲計稿／抽查稿到 `YYYY-MM-DD/`（可整個交給 B；對照表在 `_private/YYYY-MM-DD/mapping.json`，不給 B、不進版控） |
 | `FACT_CHECKER_PER_SOURCE` | `false` | M 組查核員對程式點名的每個可疑來源回 KEEP／REMOVE（關閉＝舊的全域 OK／CHALLENGE）；開啟會改查核員請求的 `request_hash`，見 `docs/pr/checker-per-source.md` |
+| `DAILY_REQUIRE_APPROVAL` | `true` | mas 發行要不要真人核可；`false`＝未核可的稿也發全文，只有 HOLD 的稿只出標題 |
 | `NEWSROOM_DELIVERY_TIMEZONE` | `Asia/Taipei` | 排程時區 |
 | `LLM_DAILY_LIMIT` | `60` | 每個模型每日嘗試次數上限（所有用途共用） |
 | `LLM_QUOTA_STATE_PATH` | `~/.local/state/reddit-tracker/llm-quota.json` | 額度 state 檔（2026-11-13 前在 `/tmp`，重開機會被清掉） |

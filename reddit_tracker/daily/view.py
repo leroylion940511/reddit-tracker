@@ -196,6 +196,18 @@ def build_edition_view(
     )
 
 
+HELD_STATUSES = ("hold", "held")
+
+
+def _withheld_status(status: str) -> bool:
+    """發行時這個狀態要不要只出標題：要核可就看 approved；不要核可就只擋 HOLD。"""
+    from ..config import get_settings
+
+    if get_settings().daily_require_approval:
+        return status != "approved"
+    return status in HELD_STATUSES
+
+
 def _view_story(
     session: Session,
     story_id: int,
@@ -217,7 +229,7 @@ def _view_story(
     )
     if version is None:
         return None
-    withheld = for_publish and run_variant == "mas" and version.status != "approved"
+    withheld = for_publish and run_variant == "mas" and _withheld_status(version.status)
     show = BRIEF if display == BRIEF or withheld else (LINK if display == LINK else FULL)
     sources = _sources_for(session, story, version)
     return ViewArticle(
