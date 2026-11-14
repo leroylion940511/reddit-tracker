@@ -111,6 +111,29 @@ class Settings(BaseSettings):
     # mas 發行要不要真人核可（`daily approve`）。true＝未核可只出標題（手冊步驟 10 原設計）；
     # false＝不需核可，checked／draft／challenged 都發全文，只有 HOLD 的稿照樣只出標題。
     daily_require_approval: bool = True
+    # desk-v3 A1：分版主編的候選與總編的稿件卡多帶 S1 摘要（限長）、媒體名清單、家數。
+    # 預設關閉＝請求逐字不變（request_hash 不變）。
+    mas_rich_context: bool = False
+    # desk-v3 B：各版篇數由分版主編決定（預設關閉＝沿用 SECTION_QUOTAS 固定名額）。
+    # 護欄：每版至少／至多幾篇、全期正式稿上限；驗證見 daily/mas/layout.py 的 layout_limits()。
+    mas_open_layout: bool = False
+    mas_section_min: int = 1
+    mas_section_max: int = 8
+    mas_edition_max: int = 18
+    # desk-v3 C：agent 之間多一點互動（申訴、版面異議回應、退稿修改）。預設關閉＝不發新訊息、不多呼叫。
+    mas_more_interaction: bool = False
+    # desk-v3 D2：抓文章全文存進 item_fulltext（collection/fulltext.py）。預設關閉，也還沒接排程。
+    fulltext_enabled: bool = False
+    fulltext_domain_interval_seconds: float = 5.0
+    fulltext_max_per_run: int = 60
+    fulltext_min_chars: int = 200
+    fulltext_store_max_chars: int = 20000
+    # 逗號分隔的可註冊網域（例：udn.com），一律當付費牆、不抓
+    fulltext_skip_domains: str = ""
+    # desk-v3 D3：記者與查核員的證據塊用 item_fulltext 的全文（有才用，沒有用摘要）；每篇截這麼多字。
+    # 預設關閉＝請求逐字不變。只讀表，不會觸發抓取。
+    mas_reporter_fulltext: bool = False
+    mas_reporter_fulltext_chars: int = 2000
     gemini_daily_model: str = "gemini-3.5-flash-lite"
 
     # --- 舊排程（候選探索、舊版日報編採與發送）已在 commit 2d95c07 移除；設 true 也不會復活 ---

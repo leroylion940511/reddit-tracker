@@ -37,7 +37,11 @@ ROLE_LABELS = {
 TYPE_LABELS = {
     "PITCH": "提案", "CHALLENGE": "異議", "REQUEST_REVISION": "要求修稿", "REVISION_DONE": "修稿完成",
     "REBUT": "反駁", "HOLD": "暫緩 HOLD", "RELEASE": "放行", "PAGE_OBJECTION": "版面異議", "DECISION": "總編決定",
+    "APPEAL": "申訴",  # desk-v3 C1
 }
+# desk-v3：TRIM／APPEAL_RULING 是選稿階段的決定，其餘 DECISION 是版面協商
+PITCH_DECISIONS = ("TRIM", "APPEAL_RULING")
+TRIM_BY = {"eic": "總編", "program": "程式依分數", "mixed": "總編＋程式依分數補"}
 PHASES = [
     ("collect", "收集"), ("cluster", "聚合／快照"), ("pipeline", "流水線 P"), ("pitch", "提案"),
     ("write", "寫稿／查核"), ("layout", "版面協商"), ("copy", "文稿"), ("approve", "核准"), ("publish", "發行"),
@@ -182,6 +186,10 @@ def _message_text(message: AgentMessage, titles: dict[int, str]) -> str:
         if isinstance(inner, dict):
             detail = inner.get("detail") or inner.get("problem") or detail
         return f"版面意見：{detail}"
+    if kind == "APPEAL":
+        return f"申訴《{titles.get(message.story_id, f'story {message.story_id}')}》：{payload.get('why', '')}"
+    if kind == "DECISION" and payload.get("action") in ("TRIM", "APPEAL_RULING", "PAGE_RULING"):
+        return _desk_decision_text(payload, titles)
     if kind == "DECISION":
         if payload.get("error"):
             return f"沒有可用的決定：{payload['error']}"
@@ -191,6 +199,26 @@ def _message_text(message: AgentMessage, titles: dict[int, str]) -> str:
                                            if r.get("story_id") == payload.get("lead")), "")
         return f"頭版定案 {count} 則，主稿《{lead}》。{why}"
     return payload.get("detail") or kind
+
+
+def _desk_decision_text(payload: dict, titles: dict[int, str]) -> str:
+    """desk-v3 的三種 DECISION（payload.action）：TRIM 刪稿、APPEAL_RULING 申訴裁決、PAGE_RULING 版面異議裁決。"""
+    def name(sid):
+        return titles.get(sid, f"story {sid}")
+
+    action, why = payload.get("action"), payload.get("why") or ""
+    reason = f"（程式：{payload['program_reason']}）" if payload.get("program_reason") else ""
+    if action == "TRIM":
+        who = TRIM_BY.get(payload.get("by"), payload.get("by") or "")
+        return f"全期上限 {payload.get('edition_max', '?')} 篇，{payload.get('before', '?')} 篇刪到 {payload.get('after', '?')} 篇（{who}決定）"
+    if action == "APPEAL_RULING":
+        if payload.get("verdict") == "REVERSE":
+            return f"申訴改判：留《{name(payload.get('story_id'))}》，改刪《{name(payload.get('swap_out'))}》。{why}"
+        return f"維持原判，《{name(payload.get('story_id'))}》不留。{why}{reason}"
+    proposal = payload.get("proposal") or {}
+    if payload.get("verdict") == "ACCEPT":
+        return f"接受版面異議，頭版改由《{name(proposal.get('lead'))}》當主稿。{why}"
+    return f"駁回版面異議，維持原頭版。{why}{reason}"
 
 
 def _actor_of(role: str, section: str | None = None) -> str:
@@ -418,6 +446,7 @@ def build_replay(session: Session, edition_date: date, run_variant: str = "mas")
 
     hold_now: set[int] = set()
     pitch_groups: dict[str, dict] = {}
+    by_id = {m.id: m for m in messages}
     for message in messages:
         payload = message.payload if isinstance(message.payload, dict) else {}
         if recorded or message.sender_role == "human":
@@ -449,6 +478,10 @@ def build_replay(session: Session, edition_date: date, run_variant: str = "mas")
             continue
         actor = _actor_of(message.sender_role, payload.get("section"))
         target = _actor_of(message.recipient_role, payload.get("section"))
+        if message.type == "DECISION" and payload.get("action") == "APPEAL_RULING":
+            appeal = by_id.get(payload.get("appeal_message_id"))
+            if appeal is not None and isinstance(appeal.payload, dict):
+                target = _actor_of("section_editor", appeal.payload.get("section"))
         if message.sender_role == "system" and message.story_id is not None:
             actor = "checktool"  # 查核員桌上的程式工具：重驗、放行、暫緩
         beat = {
@@ -493,8 +526,11 @@ def build_replay(session: Session, edition_date: date, run_variant: str = "mas")
         elif message.type in ("PAGE_OBJECTION", "REQUEST_REVISION"):
             beat["phase"] = "layout"
             beat["walk"] = message.type == "PAGE_OBJECTION"
+        elif message.type == "APPEAL":
+            beat["phase"] = "pitch"
+            beat["walk"] = True
         elif message.type == "DECISION":
-            beat["phase"] = "layout"
+            beat["phase"] = "pitch" if payload.get("action") in PITCH_DECISIONS else "layout"
             beat["detail"]["reasons"] = [
                 {"title": name_of(r.get("story_id")), "why": r.get("why", "")} for r in payload.get("reasons") or []]
             beat["detail"]["dropped"] = [

@@ -352,3 +352,206 @@ def reporter_draft(session, client, *, edition_date, story, evidence, degraded) 
 - `checker_mode`：`full`＝線上行為；`program`＝只用程式的相關性規則，不呼叫查核員 LLM；`off`＝不做相關性檢查。數字檢查三種都開。
 - `draft`：`(headline, deck, body, why_it_matters)`，有給就不呼叫記者寫 v1。
 - 線上（`run_mas`）不傳這兩個參數。`daily/evidence.py` 的 `raw_evidence_item(member, source_names)` 不做相關性過濾，只給實驗二把無關素材加進證據包。規則見 `docs/eval/EXP2_DESIGN.md`。
+
+## desk-v3（開發中，全部預設關閉）
+
+分支 `feat/desk-v3`；計畫與交接見 `docs/pr/desk-v3.md`。每個開關關閉時，送給模型的請求與 `request_hash` 逐字不變。
+
+開關總表（全部在 `config.Settings`，環境變數同名大寫；開啟順序、風險與要人工確認的事見 `docs/pr/desk-v3.md`「開啟指南」）：
+
+| 開關 | 預設 | 作用範圍 | 依賴 | 段落 |
+|---|---|---|---|---|
+| `MAS_RICH_CONTEXT` | false | 分版主編候選、總編 T1／T3 稿件卡多 `summary／outlets／outlet_count` | 無 | A1 |
+| `MAS_OPEN_LAYOUT` | false | 分版主編從 `section_pool` 決定本版篇數；全期超過上限由總編刪稿 | `MAS_SECTION_MIN`(1)／`MAS_SECTION_MAX`(8)／`MAS_EDITION_MAX`(18) | B1–B4 |
+| `MAS_MORE_INTERACTION` | false | 刪稿申訴（C1）、頭版異議由總編裁決（C2）、總編退稿（C3） | C1 需 `MAS_OPEN_LAYOUT` 且真的刪稿；C2／C3 不需要 | C1–C3 |
+| `FULLTEXT_ENABLED` | false | 允許 `fetch_pending` 抓全文寫 `item_fulltext`；**未接排程** | `FULLTEXT_*` 速率與長度設定；migration `c5e1a9d3f207` | D2 |
+| `MAS_REPORTER_FULLTEXT` | false | 記者、查核員證據塊與數字檢查用全文 | `item_fulltext` 有 `status=ok` 的列（D2 抓過）；`MAS_REPORTER_FULLTEXT_CHARS`(2000) | D3 |
+
+- 只影響 M 組（`DAILY_MODE=mas`）；P 組（pipeline）與實驗二（`eval/exp2.py`）不讀這些開關。
+- C4（回放／newsroom 標籤）沒有開關，舊資料輸出不變。
+- `protocol.MAX_MESSAGES = 80`、`MAX_CHALLENGES = 2` 沒有改；新訊息全部計入同一個上限，超過的訊息標 `expired`。
+
+### A1 主編、總編看得到摘要（`MAS_RICH_CONTEXT`，desk-v3，預設關閉）
+
+`config.py`：`mas_rich_context: bool = False`（環境變數 `MAS_RICH_CONTEXT`）。
+
+`daily/mas/orchestrator.py`：
+
+```python
+RICH_SUMMARY_CHARS = 200
+rich_fields(evidence: list[EvidenceItem] | None) -> {"summary": str, "outlets": list[str], "outlet_count": int}
+_story_card(session, story_id, hold_ids, evidence_of: dict[int, list[EvidenceItem]] | None = None) -> dict
+_resolve_t1(..., evidence_of=None)   # run_mas 傳入本期證據包
+_resolve_t3(..., evidence_of=None)
+```
+
+- `summary`：S1（證據包第一篇）摘要去頭尾空白後截 `RICH_SUMMARY_CHARS` 字；證據包有注入標記（`evidence_has_injection`）時給空字串。`outlets`：證據包 `display_name` 去重、保持順序（轉載併成一列，例如「中央社（央廣轉載）」）；`outlet_count`＝`len(outlets)`。
+- 開啟時：分版主編請求的每個 `candidates[]` 多這三欄（接在 `title` 後）；總編 T1 的 `story`／`current_front[]`、T3 的 `candidates[]` 稿件卡也多這三欄。`evidence_of` 沒傳（例如 `scripts/verify_t1_t3.py`）時稿件卡不加欄位。
+- 關閉時：分版主編候選欄位仍是 `section, story_id, angle, priority, sender, title`，稿件卡仍是 `story_id, section, kind, score, headline, hold`（測試 `tests/test_desk_v3.py`）。
+
+### B1 開放版面護欄（`MAS_OPEN_LAYOUT`，desk-v3，預設關閉）
+
+`config.py`：`mas_open_layout: bool = False`、`mas_section_min: int = 1`、`mas_section_max: int = 8`、`mas_edition_max: int = 18`（環境變數同名大寫）。
+
+`daily/mas/layout.py`：
+
+```python
+@dataclass(frozen=True)
+class LayoutLimits: enabled: bool; section_min: int; section_max: int; edition_max: int
+check_limits(section_min, section_max, edition_max, sections=len(SECTION_QUOTAS)) -> list[str]  # 空＝合法
+layout_limits(settings=None) -> LayoutLimits
+```
+
+- 合法條件：`section_min >= 0`、`section_max >= 1`、`section_min <= section_max`、`edition_max >= 1` 且 `>= 版數 × section_min`。
+- `layout_limits` 只在開關開啟時驗證，不合法丟 `ValueError`（訊息列出所有問題）；關閉時回傳 `enabled=False`，不影響現行流程。`run_mas` 從 B2 起透過 `_section_pitches`／`_trim_edition` 讀它。
+
+### B2 分版主編決定各版篇數（`MAS_OPEN_LAYOUT`，desk-v3，預設關閉）
+
+`daily/mas/orchestrator.py`：
+
+```python
+OPEN_PITCH_SYSTEM: str
+OPEN_PITCH_SCHEMA = {"pitches": [{"story_id": int, "angle": str, "priority": "front"|"section", "reason": str}]}
+section_pool(stories, evidence_of, section) -> list[Story]     # 本版有證據、kind 合規，依 (kind, -score, id) 取 SECTION_QUOTAS×DESK_POOL_PER_SECTION
+guard_open_pitches(section, proposed, pool, fallback, limits, log) -> (list[Pitch], {story_id: reason})
+_section_pitches(..., calls=None, reasons_out=None, layout_log=None)
+MasResult.layout_log: list[str]   # 護欄動作紀錄；關閉時為空
+```
+
+- 開啟時每版一次請求，user＝`{"section", "min", "max", "candidates": [{"story_id", "kind", "score", "title", "default", ...rich_fields}], "global_top10"}`；`default=true` 是 `select_articles` 預選的稿；`MAS_RICH_CONTEXT` 也開時候選多帶 A1 三欄。
+- 護欄（`guard_open_pitches`）：回應失敗或格式錯（`pitches` 不是 list）→ 該版退回 `select_articles` 的結果；只收候選池內、不重複的 integer `story_id`；`front` 只給 report；超過 `MAS_SECTION_MAX` 依回傳順序截斷；少於 `MAS_SECTION_MIN` 依候選池順序補（理由「程式補足下限」）。每個動作寫進 `MasResult.layout_log`。HOLD 規則照舊（HOLD 稿不進 page plan）。
+- `PITCH` 訊息 payload 開啟時多 `reason`（主編寫的理由）；關閉時仍是 `section, angle, priority`。
+- 設定不合法（`layout_limits` 丟 `ValueError`）→ 記 WARNING 與 `layout_log`，本期用固定名額，不中斷出刊。
+- 全期上限 `MAS_EDITION_MAX` 在 B3 才套用；B2 單獨開啟時全期最多 3 × `MAS_SECTION_MAX` 篇。
+
+### B3 超過全期上限時總編刪稿（`MAS_OPEN_LAYOUT`，desk-v3，預設關閉）
+
+`daily/mas/orchestrator.py`：
+
+```python
+TRIM_SUFFIX: str                      # 接在 EIC_SYSTEM 後面
+TRIM_SCHEMA = {"dropped": [{"story_id": int, "why": str}]}
+program_trim(pitches, scores, limits, count, keep_per_section=None) -> list[int]   # 低分先刪（同分刪後面的），每版留 section_min
+guard_trim(proposed, pitches, scores, limits, count, log) -> (list[int], {story_id: why}, by)   # by: eic|program|mixed
+_trim_edition(session, *, edition_date, pitches, stories, evidence_of, reasons, client, clock, result) -> list[Pitch]
+```
+
+- 時機：`run_mas` 自動提案（`pitches is None`）時，PITCH 訊息全部發出之後、記者審稿之前。關閉、設定不合法、或三版不重複 story 數 ≤ `MAS_EDITION_MAX` → 原樣回傳，不呼叫模型、不發訊息。
+- 請求：總編一次，system＝`EIC_SYSTEM + TRIM_SUFFIX`，user＝`{"edition_max", "must_drop", "section_min", "stories": [{"story_id", "section", "score", "title", "angle", "priority", "reason", ...rich_fields}]}`（`MAS_RICH_CONTEXT` 也開時帶 A1 三欄）。
+- 護欄（`guard_trim`）：只收本期名單內、不重複、刪了不會讓該版低於 `MAS_SECTION_MIN` 的稿；超過 `must_drop` 的忽略；不足（含失敗、格式錯）由 `program_trim` 依分數補。動作寫進 `MasResult.layout_log`。
+- 訊息：`eic → section_editor` 的 `DECISION`，payload＝`{"action": "TRIM", "by", "edition_max", "before", "after", "dropped": [{"story_id", "section", "why"}], "why"}`；`by="program"` 時 `llm_call_id` 為 null。被刪稿的 `PITCH` 訊息保留，只是不進審稿與 page plan。
+- 多一則訊息計入 `MAX_MESSAGES`（未改上限）。
+
+### B4 每版 0–`MAS_SECTION_MAX` 篇的排版（`MAS_OPEN_LAYOUT`，desk-v3，預設關閉）
+
+不改介面，只用測試釘住現有行為（`tests/test_desk_v3.py`）：
+
+- `slots_from_pitches`、`build_edition_view`、`render_html`、`telegram_digest` 都照 page plan 的實際篇數排，沒有寫死 4 篇。某版 0 篇時 page plan 沒有該版的 key，HTML 顯示「本版今日無新稿。」，Telegram 各版列不列該版。
+- 頭版仍由 `slots_from_pitches`（`FRONT_CAPACITY=6`）與 T1／T3 決定；`FRONT_PAGE_SIZE`／`FRONT_PAGE_PER_SECTION` 只用在 P 組的 `select_articles`。
+- P 組（`prepare_daily(mode="pipeline")`）不讀 `layout_limits`：`MAS_OPEN_LAYOUT`、`MAS_RICH_CONTEXT` 全開、`MAS_EDITION_MAX=3` 時結果與預設相同。
+
+### C1 刪稿申訴（`MAS_MORE_INTERACTION`，desk-v3，預設關閉）
+
+設定鍵 `MAS_MORE_INTERACTION`（`config.Settings.mas_more_interaction`，預設 false）。C1 只在 B3 真的刪了稿時才作用（所以也要 `MAS_OPEN_LAYOUT`）。`protocol.ALLOWED` 加 `("section_editor", "APPEAL")`。
+
+`daily/mas/orchestrator.py`：
+
+```python
+APPEAL_SYSTEM: str
+APPEAL_SCHEMA = {"appeal": bool, "story_id": int | None, "why": str}
+APPEAL_RULING_SUFFIX: str             # 接在 EIC_SYSTEM 後面
+APPEAL_RULING_SCHEMA = {"verdict": "UPHOLD"|"REVERSE", "swap_out": int | None, "why": str}
+appeal_section(pitches, gone) -> str | None          # 被刪最多的版，同數取 SECTIONS 順序在前
+guard_appeal_ruling(ruling, appealed, appeal_from, pitches, gone, limits) -> (verdict, swap_out, 不採用原因 | None)
+_appeal_trim(session, *, edition_date, pitches, cards, gone, why, limits, trim_message, client, clock, result) -> set[int]
+```
+
+- 流程（最多 1 輪）：B3 的 TRIM `DECISION` 之後，被刪最多的那版主編收到 `{"section", "dropped": [卡片＋eic_why], "kept": [卡片]}`（卡片同 B3 `stories`）。`appeal=true` 且 `story_id` 在 `dropped` 內才發 `section_editor → eic` 的 `APPEAL`（payload `{"section", "why", "trim_message_id"}`）；否則不發訊息，只記 `layout_log`。
+- 總編裁決請求 user＝`{"section_min", "appeal": {"story", "why", "eic_why"}, "kept": [卡片]}`，回 `eic → section_editor` 的 `DECISION`，payload＝`{"action": "APPEAL_RULING", "verdict", "story_id", "swap_out", "appeal_message_id", "why", ["program_reason"]}`。
+- 護欄：`REVERSE` 只在 `swap_out` 是目前保留、不是被申訴稿、換掉後該版不低於 `MAS_SECTION_MIN` 時成立（全期篇數不變）；回應失敗或不合規則一律當 `UPHOLD`，原因寫 `program_reason`。
+- 新訊息照常計入 `MAX_MESSAGES`；關閉時不發請求、不發訊息。
+
+### C2 版面異議要有總編回應（`MAS_MORE_INTERACTION`，desk-v3，預設關閉）
+
+同一個開關 `MAS_MORE_INTERACTION`，只在自動模式（`run_mas` 沒傳 `pitches`）作用，不需要 `MAS_OPEN_LAYOUT`。沒有新訊息類型（`PAGE_OBJECTION`、`DECISION` 本來就在白名單）。
+
+`daily/mas/orchestrator.py`：
+
+```python
+PAGE_REVIEW_SYSTEM: str
+PAGE_REVIEW_SCHEMA = {"action": "OK"|"OBJECT", "problem": str, "detail": str,
+                      "lead": int | None, "second": [int], "briefs": [int]}
+PAGE_RULING_SUFFIX: str               # 接在 EIC_SYSTEM 後面
+PAGE_RULING_SCHEMA = {"verdict": "ACCEPT"|"REJECT", "why": str}
+guard_page_proposal(review, plan_slots, eligible, hold_ids) -> (_Decision | None, 不採用原因 | None)
+_page_review(session, *, edition_date, client, clock, hold_ids, evidence_of, result) -> None
+```
+
+- 開啟時**不送**舊的頭版預審（`CHECKER_SCHEMA` 那次版面編輯呼叫與它的 `PAGE_OBJECTION`），改在 T1／T3 排定頭版之後、縮主稿之前審一次（最多 1 輪）。T3 程式發的 `OVER_CAPACITY／LAYOUT_REVIEW` 異議照舊。
+- 版面編輯請求 user＝`{"capacity", "front": [_story_card＋slot], "others": [_story_card], "section_counts": {版: 篇數}}`；`others`＝最新 page plan 各版裡、不在頭版、`kind=report`、非 HOLD、證據沒有注入標記的稿。
+- 回 `OK` 或無法解析 → 不發訊息，只記 `layout_log`。回 `OBJECT` → 發 `layout_editor → eic` 的 `PAGE_OBJECTION`，payload＝`{"page": "front", "problem", "detail", "proposal": {"lead", "second", "briefs"}, "plan_id"}`。
+- 提案護欄（`guard_page_proposal`）：頭版規則（`_decision_problems`：有主稿、不重複、≤ `FRONT_CAPACITY`、無 HOLD）、`second` ≤ 4、只用 `front`∪`others`、篇數不比現在少、跟現在不同、不能把兩個版都有位置（T1 連結）的稿撤下頭版。不合規則 → 不問總編，程式代發 `eic → layout_editor` 的 `DECISION`（`verdict=REJECT`、`by=program`、`program_reason`、`llm_call_id=null`）。
+- 合規則 → 總編請求 user＝`{"objection": {"problem", "detail"}, "current_front": [卡片＋slot], "proposed_front": [卡片＋slot]}`，回 `eic → layout_editor` 的 `DECISION`，payload＝`{"action": "PAGE_RULING", "objection_message_id", "proposal", "verdict", "by": "eic"|"program", "why", ["program_reason"]}`。總編回應失敗當 `REJECT`（`by=program`）。
+- `ACCEPT` → `apply_decision(..., min_front=現在頭版篇數)` 寫下一版 page plan（`decided_by_message_id`＝這則 DECISION）；仍不合規則時訊息標 `rejected`、版面不變。`REJECT` → 訊息 `handled`、版面不變。
+- 最多多 2 則訊息、2 次呼叫，計入 `MAX_MESSAGES`／額度；額度用完時 `_ask` 回 None＝當沒有異議。關閉時請求逐字不變。
+
+### C3 總編退稿（`MAS_MORE_INTERACTION`，desk-v3，預設關閉）
+
+同一個開關，自動模式才作用；接在 C2 `_page_review` 之後、`_maybe_shorten_lead` 之前。沒有新訊息類型（`("eic", "REQUEST_REVISION")`、`("reporter", "REVISION_DONE"|"REBUT")` 本來就在白名單）。
+
+`daily/mas/orchestrator.py`：
+
+```python
+EIC_REVISION_MAX = 2
+EIC_REQUEST_DETAIL_CHARS = 200
+EIC_REVIEW_SUFFIX: str                # 接在 EIC_SYSTEM 後面
+EIC_REVIEW_SCHEMA = {"requests": [{"story_id": int, "detail": str}]}
+guard_eic_requests(proposed, reviewable, limit=EIC_REVISION_MAX) -> list[(story_id, detail)]
+_eic_revisions(session, *, edition_date, client, clock, hold_ids, evidence_of, result) -> None
+```
+
+- 總編請求 user＝`{"max": 2, "front": [{"story_id", "headline", "deck", "summary"}]}`；只列最新 page plan 頭版裡 `status=checked`、非 HOLD 的稿；`summary`＝`rich_fields` 的 S1 摘要（200 字、有注入標記給空字串），不看 `MAS_RICH_CONTEXT`。記者已降級或額度用完時整段跳過。
+- 護欄：只收 `front` 裡、不重複、`detail` 非空（截 200 字）的前 2 篇；回應無效＝不退稿（不發訊息）。
+- 每篇：`eic → reporter` 的 `REQUEST_REVISION`（`target_version`＝原版、`correlation_id`＝`ER-YYYYMMDD-NNN`、payload `{"detail", "by": "eic"}`）→ 記者請求（`REPORTER_SYSTEM`＋`DRAFT_SCHEMA`，user 含要求、原稿標題／導言／正文、證據塊）。
+  - `REVISE` 且有標題、正文 → 寫新版（`caused_by_message_id`＝退稿訊息、`source_ids` 不變、`status=draft`），發 `reporter → eic` 的 `REVISION_DONE`（`{"new_version", "change"}`），再走原查核流程 `_check_and_maybe_revise`（同一個 `ER-` correlation_id；可能 CHALLENGE／RELEASE／HOLD）。
+  - `REBUT` → 發 `reporter → eic` 的 `REBUT`（`{"reason", "target_version"}`），原稿不動。回應無效 → 原稿不動，只記 `layout_log`。
+- 修稿重驗後變 HOLD 的稿不改 page plan，跟其他 HOLD 稿一樣由發佈前的人工核可擋下。
+- 最多 1 次總編呼叫＋每篇 1 次記者呼叫（＋查核流程）；訊息計入 `MAX_MESSAGES`。關閉時請求逐字不變。
+
+### C4 回放與 trace 顯示新訊息（desk-v3）
+
+純顯示，沒有開關（舊資料沒有這些訊息，輸出不變）。
+
+- `daily/replay.py`：`TYPE_LABELS` 加 `"APPEAL": "申訴"`；`PITCH_DECISIONS = ("TRIM", "APPEAL_RULING")`；`_desk_decision_text(payload, titles) -> str` 依 `payload.action` 產生 TRIM／APPEAL_RULING／PAGE_RULING 的說明（有 `program_reason` 時附在後面）。沒有 `action` 的舊 DECISION 文字不變。
+- beat：`APPEAL` 與 TRIM／APPEAL_RULING 的 `DECISION` 放 `phase="pitch"`（`APPEAL` `walk=true`）；PAGE_RULING 照舊 `layout`。APPEAL_RULING 的 `to` 用 `appeal_message_id` 找回申訴的版（`section_<版>`）。TRIM 的 `detail.dropped` 沿用既有欄位。
+- `daily/newsroom_page.py`：`TYPE_LABELS` 加 `"APPEAL": "申訴"`。測試保證 `protocol.ALLOWED` 的每種類型在兩邊都有中文標籤。
+- `format_trace` 本來就逐則印 type 與 payload，不用改；3D 編輯室（`office.html`）沒有訊息類型白名單，照 beat 播放，不用改。
+
+### D2 文章全文抓取（`FULLTEXT_ENABLED`，desk-v3，預設關閉）
+
+設計見 `docs/pr/desk-v3.md`「D 階段設計」。**沒有接上收集排程**；開關開著也只有呼叫 `fetch_pending` 才會抓。
+
+- 模組 `reddit_tracker/collection/fulltext.py`：
+  - `extract(html: str) -> str`：標準庫 `html.parser` 抽正文（`<article>` → `<main>` → 全頁；只收 `p/h2/h3/li/blockquote`，略過 `script/style/nav/header/footer/aside/form/iframe/...`），經 `sanitize_text`（去零寬／控制字元，`<<<`／`>>>` 改全形）。`EXTRACTOR = "stdlib-html/1"`。
+  - `HttpResponse(status_code, url, headers, body)`；`Getter = Callable[[str], HttpResponse]`（單次請求、不跟 redirect）。正式用 `requests_getter()`（timeout 10 秒、回應上限 2 MB）；測試一律注入假 getter。
+  - `RobotsCache(get).allowed(url) -> bool`：每個 origin 讀一次；4xx 允許，5xx／網路錯誤不允許。
+  - `fetch_fulltext(url, *, get, robots, allowed_domains, skip_domains=frozenset(), min_chars=200, store_max_chars=20000) -> FetchResult(status, http_status, final_url, text, error)`：不丟例外；redirect 手動跟最多 3 次，每跳都要在登錄表網域。
+  - `fetch_pending(session, item_ids, *, allowed_domains, get=None, clock, sleep, now, settings=None) -> list[ItemFulltext]`：開關關閉回 `[]`；表裡已有的素材跳過（每篇只抓一次），同網域間隔、單次上限照設定；只 `flush`，呼叫端 commit。`allowed_domains` 用 `daily/mas/orchestrator.registry_domains(registry)`。
+  - `fulltext_of(session, item_ids) -> dict[int, str]`：只回 `status=ok` 的全文（D3 用）。
+- 新表 `item_fulltext`（Alembic `c5e1a9d3f207`，接 `b8d4f0a17c33`；downgrade = drop table，不改 `source_items`）：`item_id`（PK，FK `source_items.id`）、`status`（`ok|robots_denied|paywalled|too_short|http_error|non_html|blocked_domain|error`）、`http_status`、`final_url`、`text`（只有 ok 有值）、`text_chars`、`content_sha1`、`extractor`、`fetched_at`、`error`。
+- 設定鍵：`FULLTEXT_ENABLED`（false）、`FULLTEXT_DOMAIN_INTERVAL_SECONDS`（5）、`FULLTEXT_MAX_PER_RUN`（60）、`FULLTEXT_MIN_CHARS`（200，短於此標 `too_short`）、`FULLTEXT_STORE_MAX_CHARS`（20000）、`FULLTEXT_SKIP_DOMAINS`（逗號分隔可註冊網域，一律當 `paywalled`）。HTTP 401/402/403 也標 `paywalled`，不嘗試繞過。
+
+### D3 記者、查核員看全文（`MAS_REPORTER_FULLTEXT`，desk-v3，預設關閉）
+
+只讀 `item_fulltext`（D2），不會觸發抓取。關閉時證據塊、數字檢查文字與請求逐字不變（`tests/test_desk_v3.py` 比對有無全文列時的記者請求）。
+
+- 設定鍵：`MAS_REPORTER_FULLTEXT`（false）、`MAS_REPORTER_FULLTEXT_CHARS`（2000，每篇進提示的上限）。
+- `daily/evidence.py`：
+  - `FulltextEvidenceItem(EvidenceItem)`：多一欄 `fulltext: str | None`。刻意用子類別：實驗二用 `asdict(EvidenceItem)` 寫案例檔，基底類別欄位不變。
+  - `with_fulltext(items, texts: dict[int, str], max_chars) -> list[EvidenceItem]`：有全文的列換成子類別（簡轉繁、截長），沒有的原物件保留。
+- `daily/mas/orchestrator.py`：
+  - `_attach_fulltext(session, items)`：開關開時用 `fulltext_of` 換上全文；`run_mas` 建 `evidence_of` 時與文稿編輯異議重建證據時呼叫。
+  - `_evidence_block`：該篇有可用全文時第三行是 `全文：…`，否則照舊 `摘要：…`。
+  - `_evidence_text`：查核數字檢查用的證據文字，有可用全文時接在 `標題 摘要` 後面。
+  - `evidence_has_injection` 也掃 `fulltext`；全文含注入標記時，整包照現有規則視為有注入（不上頭版、主編／總編摘要給空），且該篇提示退回摘要（`_usable_fulltext` 回 None）。
+- P 組（`writer.py`）與實驗二（`eval/exp2.py`）不受影響。

@@ -35,6 +35,8 @@ ALLOWED = frozenset({
     ("human", "RELEASE"),
     ("layout_editor", "PAGE_OBJECTION"),
     ("eic", "DECISION"),
+    # desk-v3 C1（MAS_MORE_INTERACTION）：分版主編對總編刪稿申訴一次
+    ("section_editor", "APPEAL"),
 })
 
 TOOLS = {

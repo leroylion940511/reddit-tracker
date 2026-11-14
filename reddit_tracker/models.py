@@ -393,6 +393,28 @@ class SourceItem(Base):
     )
 
 
+class ItemFulltext(Base):
+    """desk-v3 D2：素材的文章全文（預設關閉 `FULLTEXT_ENABLED`）。每篇素材最多一列，只抓一次。"""
+
+    __tablename__ = "item_fulltext"
+
+    item_id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer(), "sqlite"),
+        ForeignKey("source_items.id"),
+        primary_key=True,
+    )
+    # ok|robots_denied|paywalled|too_short|http_error|non_html|blocked_domain|error
+    status: Mapped[str] = mapped_column(String(16), index=True)
+    http_status: Mapped[int | None] = mapped_column(Integer)
+    final_url: Mapped[str | None] = mapped_column(Text)
+    text: Mapped[str | None] = mapped_column(Text)
+    text_chars: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    content_sha1: Mapped[str | None] = mapped_column(String(40))
+    extractor: Mapped[str] = mapped_column(String(32))
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    error: Mapped[str | None] = mapped_column(Text)
+
+
 class StoryCluster(Base):
     """不同媒體報導同一件事的事件（規格見 docs/v5/CLUSTERING.md）。"""
 
@@ -720,6 +742,7 @@ __all__ = [
     "EditionItem",
     "EditionItemSource",
     "Feedback",
+    "ItemFulltext",
     "KeywordSeed",
     "LLMRecord",
     "PostSnapshot",

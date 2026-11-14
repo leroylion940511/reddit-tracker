@@ -40,6 +40,7 @@ def test_v5_newsroom_migration_up_and_down(tmp_path, monkeypatch):
                 "request_hash", "prompt_text", "response_text", "latency_ms", "ok", "error",
                 "role", "run_variant", "edition_date", "story_id", "model_version",
             } <= record_columns
+            assert "item_fulltext" in tables
             item_columns = {column["name"] for column in inspect(engine).get_columns("source_items")}
             assert "cluster_id" in item_columns
         finally:
