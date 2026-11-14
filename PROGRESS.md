@@ -24,6 +24,16 @@
 - 👀 11/15 06:00 是第一期不需核可：08:35 發行的稿應全部是全文，只有 HOLD 的稿只出標題。
 - ⚠️ 試刊最後一天（11/15）與實驗紀錄從此沒有 `approved_by`；回放頁沒有 approve 階段。報告要說明「11/15 起關閉人工核可」。
 
+## 本次變更（2026-11-15 — HOLD 稿不再誤標「未核准」，`claude-auto`，未部署）
+
+自動開發 session，worktree `~/Documents/Developer/Lab/rt-wt-auto`。只讀了 `newsroom.log`（11/15 06:00 準備正常：版本守門 ok、Codex 呼叫全部成功），沒碰 production DB、沒呼叫 Codex。
+
+- ✅ **問題**：`DAILY_REQUIRE_APPROVAL=false`（production 11/14 起）時只有 HOLD 的稿會被扣，但網頁仍印標籤「未核准」與「未核准，本期不發行全文。」，原因寫錯。
+- ✅ **修正**（`cc27143`）：`ViewArticle.withheld_reason`（`hold`／`unapproved`，`daily/view.py` `_withheld_reason`）；`render.py` 依原因選字：HOLD →「暫扣」／「本稿暫扣，本期不發行全文。」，要核可而沒核可才是「未核准」。核可開啟時 HOLD 的稿也改寫「暫扣」（`daily hold` 後重畫的網頁同樣）。Telegram 摘要本來就不列被扣的稿，不受影響。
+- 不改提示詞、`request_hash`、發行規則（哪些稿出全文完全不變）；不需要 migration。README、`DAILY_EDITION.md` 已同步。
+- 全套 492 passed／7 skipped（worktree 沒有母本）；ruff 通過。
+- 👤 要不要在 11/20 凍結前併入 main 並 `newsroom-reload`：只改網頁文字，風險低；不併的話 11/15 之後若有 HOLD 稿，網頁會寫「未核准」，報告裡註明即可。
+
 ## 本次變更（2026-11-14 — 可關閉人工核可，`feat/no-approval`）
 
 - ✅ 新設定 `DAILY_REQUIRE_APPROVAL`（預設 `true`＝原行為）。`false` 時 mas 發行不需要 `daily approve`：checked／draft／challenged 都發全文，只有 HOLD 的稿照樣只出標題。閘門在 `daily/view.py` `_withheld_status`，網頁與 Telegram 共用。
