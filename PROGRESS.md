@@ -5,7 +5,7 @@
 > 2026-10-29 以前的段落已搬到 `docs/archive/`（見文末「更早的紀錄」）。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）。前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
+**Last updated:** 2026-11-15 07:10（`claude-auto`：HOLD 稿不再誤標「未核准」，未部署）。前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
 
 ## 線上現況（2026-11-13 查證）
 

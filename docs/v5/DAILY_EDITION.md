@@ -251,7 +251,7 @@ uv run python -m reddit_tracker.daily blind-export --dates YYYY-MM-DD --out DIR
 ```
 
 `approve`／`hold`（CLI 與回放頁 decision 路由）commit 後會用 `run.refresh_edition_html` 重畫這期的
-`site/daily/YYYY-MM-DD.html`：已發行的期數照發行規則（核准的出全文、其餘「未核准」），草稿照 06:00 預覽；
+`site/daily/YYYY-MM-DD.html`：已發行的期數照發行規則（核准的出全文、其餘「未核准」；HOLD 的稿標「暫扣」，2026-11-15 起），草稿照 06:00 預覽；
 **不會重送 Telegram**。重畫失敗只記 log，核准不受影響。
 
 `--now`（手冊步驟 3 第 8 點）：把「現在」固定在某個時間，評分、選題時間窗、證據包相關性的當天素材、

@@ -76,7 +76,7 @@ flowchart TD
 
 ## 人工核可
 
-- `DAILY_MODE=mas` 發行時依最新 `page_plans` 與核可狀態重新渲染：**未核可的稿只出標題**，正文換成「未核准，本期不發行全文。」
+- `DAILY_MODE=mas` 發行時依最新 `page_plans` 與核可狀態重新渲染：**未核可的稿只出標題**，正文換成「未核准，本期不發行全文。」；HOLD 的稿標「暫扣」，正文換成「本稿暫扣，本期不發行全文。」
 - `DAILY_REQUIRE_APPROVAL=false` 關掉人工核可：不用 `approve`，稿件照發全文；HOLD（查核員或真人扣稿）的稿仍只出標題。
 - 只有真人名字能核可，角色名（`eic`、`reporter`…）會被拒絕；寫入 `approved_by`／`approved_at`。
 - 核可或 HOLD 可用 CLI（`daily approve`／`daily hold`），或在回放頁操作（`/daily/<date>/newsroom/decision`）。回放頁不能改稿。

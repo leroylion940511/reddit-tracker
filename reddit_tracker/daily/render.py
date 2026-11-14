@@ -102,11 +102,22 @@ def _source_list(article: ViewArticle, anchor: str) -> str:
     return f'<ul class="sources">{"".join(items)}</ul>' if items else ""
 
 
+WITHHELD_LABELS = {
+    "hold": ("暫扣", "本稿暫扣，本期不發行全文。"),
+    "unapproved": ("未核准", "未核准，本期不發行全文。"),
+}
+
+
+def _withheld_label(article: ViewArticle) -> tuple[str, str]:
+    """（標籤, 說明）。HOLD 寫「暫扣」；要核可而沒核可才寫「未核准」。沒有原因的舊呼叫端照舊寫未核准。"""
+    return WITHHELD_LABELS.get(article.withheld_reason, WITHHELD_LABELS["unapproved"])
+
+
 def _article_html(article: ViewArticle) -> str:
     anchor = f"s{article.story_id or article.position}-{article.section}"
     tags = []
     if article.withheld:
-        tags.append("未核准")
+        tags.append(_withheld_label(article)[0])
     elif _preprint_only(article):
         tags.append(PREPRINT_LABEL)
     elif KIND_LABELS.get(article.kind):
@@ -128,7 +139,7 @@ def _article_html(article: ViewArticle) -> str:
     if article.withheld:
         return (
             f'<article class="brief" id="{article.anchor}"><h3>{tag_html}{escape(article.headline)}</h3>'
-            f'<p class="withheld">未核准，本期不發行全文。</p></article>'
+            f'<p class="withheld">{escape(_withheld_label(article)[1])}</p></article>'
         )
     deck = f'<p class="deck">{escape(article.deck)}</p>' if article.deck and article.writer != "template" else ""
     why = (

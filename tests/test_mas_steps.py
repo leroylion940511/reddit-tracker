@@ -523,7 +523,38 @@ def test_approval_not_required_publishes_unapproved_but_keeps_hold(session, monk
     )
     html = render_html(build_edition_view(session, DAY, MAS, SECTIONS, for_publish=True))
     assert "不用核可也該發出的正文" in html
-    assert "被 HOLD 的秘密正文" not in html and "未核准，本期不發行全文" in html
+    assert "被 HOLD 的秘密正文" not in html and "本稿暫扣，本期不發行全文" in html
+    # 2026-11-15：不需核可時沒有任何稿是「未核准」，扣稿原因要寫暫扣
+    assert "未核准" not in html
+
+
+def test_withheld_label_distinguishes_hold_from_unapproved(session, monkeypatch):
+    """要核可時：沒核可的寫「未核准」，HOLD 的寫「暫扣」；Telegram 摘要兩種都不列入頭版。"""
+    from reddit_tracker.config import get_settings
+    from reddit_tracker.daily.render import telegram_digest
+
+    monkeypatch.setenv("DAILY_REQUIRE_APPROVAL", "true")
+    get_settings.cache_clear()
+    pending, held = _story(session, 1), _story(session, 2)
+    for story, headline in ((pending, "待核標題"), (held, "扣稿標題")):
+        write_story_version(
+            session, story_id=story.id, run_variant=MAS, expected_latest=0,
+            headline=headline, body=f"{headline}的秘密正文。", now=NOW, status="checked",
+        )
+    hold_story(session, held.id)
+    add_page_plan(
+        session, edition_date=DAY, run_variant=MAS,
+        slots={"front": {"lead": pending.id, "second": [held.id], "briefs": []}, "sections": {}}, now=NOW,
+    )
+    view = build_edition_view(session, DAY, MAS, SECTIONS, for_publish=True)
+    reasons = {a.headline: a.withheld_reason for a in view.articles}
+    assert reasons == {"待核標題": "unapproved", "扣稿標題": "hold"}
+    html = render_html(view)
+    assert "秘密正文" not in html
+    assert "未核准，本期不發行全文" in html and "本稿暫扣，本期不發行全文" in html
+    digest = telegram_digest(view)
+    assert "待核標題" not in digest and "扣稿標題" not in digest
+    get_settings.cache_clear()
 
 
 def test_approval_gate_withholds_until_human(session, monkeypatch, tmp_path):
@@ -626,7 +657,7 @@ def test_late_approval_rerenders_site_html_without_resend(session, monkeypatch, 
 
     assert run_module.main(["hold", "--story", str(story.id), "--date", DAY.isoformat(), "--by", "張志晨"]) == 0
     page = html_path.read_text(encoding="utf-8")
-    assert "未核准，本期不發行全文" in page and "發行後才核准的正文" not in page
+    assert "本稿暫扣，本期不發行全文" in page and "發行後才核准的正文" not in page
     assert len(sent) == 1  # 只有 08:35 那次；核准／HOLD 不重送
     assert session.scalar(select(DailyEdition.status)) == "published"
 

@@ -36,6 +36,7 @@ class ViewArticle:
     status: str
     link_label: str = ""
     withheld: bool = False
+    withheld_reason: str = ""  # withheld 時：hold／unapproved（render 依此選標籤與說明）
     cluster_id: int | None = None
 
     @property
@@ -208,6 +209,14 @@ def _withheld_status(status: str) -> bool:
     return status in HELD_STATUSES
 
 
+def _withheld_reason(status: str) -> str:
+    """扣住全文的原因：`hold`（查核員或真人扣稿）或 `unapproved`（要核可但還沒核可）。
+
+    `DAILY_REQUIRE_APPROVAL=false` 時只有 HOLD 會被扣；網頁不能再寫「未核准」（2026-11-15）。
+    """
+    return "hold" if status in HELD_STATUSES else "unapproved"
+
+
 def _view_story(
     session: Session,
     story_id: int,
@@ -249,6 +258,7 @@ def _view_story(
         status="withheld" if withheld else version.status,
         link_label=link_label,
         withheld=withheld,
+        withheld_reason=_withheld_reason(version.status) if withheld else "",
         cluster_id=story.keeper_cluster_id,
     )
 
