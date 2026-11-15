@@ -5,7 +5,7 @@
 > 2026-10-29 以前的段落已搬到 `docs/archive/`（見文末「更早的紀錄」）。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-15 07:10（`claude-auto`：HOLD 稿不再誤標「未核准」，未部署）。前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
+**Last updated:** 2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）。前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
 
 ## 線上現況（2026-11-13 查證）
 
@@ -24,7 +24,15 @@
 - 👀 11/15 06:00 是第一期不需核可：08:35 發行的稿應全部是全文，只有 HOLD 的稿只出標題。
 - ⚠️ 試刊最後一天（11/15）與實驗紀錄從此沒有 `approved_by`；回放頁沒有 approve 階段。報告要說明「11/15 起關閉人工核可」。
 
-## 本次變更（2026-11-15 — HOLD 稿不再誤標「未核准」，`claude-auto`，未部署）
+## 部署（2026-11-15 19:08 台北 — HOLD 稿改標「暫扣」，依志晨指示）
+
+- ✅ main fast-forward `bc8b03c`→`ddc75b6`（`claude-auto` 的兩個 commit）。不需要 migration、`.env` 沒動。
+- ✅ 備份 `~/Documents/Developer/Lab/reddit_tracker_backups/deploy-20261115/`（sqlite `.backup`、integrity ok）。
+- ✅ `uv sync` 後 `deploy/install_launchd.sh newsroom-reload` 一次。log 有 `codex version guard ok: codex-cli 0.166.0`、三個 job 已註冊、scheduler Python process 1 個；首輪收集 19:08 ok。rsshub 未動。
+- ⚠️ main 領先 origin/main 2 個 commit（加上這筆紀錄是 3 個），**還沒 push**。
+- 👀 11/16 08:35 若有 HOLD 稿，網頁應顯示「暫扣」而不是「未核准」。11/15 已發行的那期沒有重畫。
+
+## 本次變更（2026-11-15 — HOLD 稿不再誤標「未核准」，`claude-auto`，已部署）
 
 自動開發 session，worktree `~/Documents/Developer/Lab/rt-wt-auto`。只讀了 `newsroom.log`（11/15 06:00 準備正常：版本守門 ok、Codex 呼叫全部成功），沒碰 production DB、沒呼叫 Codex。
 
@@ -32,7 +40,7 @@
 - ✅ **修正**（`cc27143`）：`ViewArticle.withheld_reason`（`hold`／`unapproved`，`daily/view.py` `_withheld_reason`）；`render.py` 依原因選字：HOLD →「暫扣」／「本稿暫扣，本期不發行全文。」，要核可而沒核可才是「未核准」。核可開啟時 HOLD 的稿也改寫「暫扣」（`daily hold` 後重畫的網頁同樣）。Telegram 摘要本來就不列被扣的稿，不受影響。
 - 不改提示詞、`request_hash`、發行規則（哪些稿出全文完全不變）；不需要 migration。README、`DAILY_EDITION.md` 已同步。
 - 全套 492 passed／7 skipped（worktree 沒有母本）；ruff 通過。
-- 👤 要不要在 11/20 凍結前併入 main 並 `newsroom-reload`：只改網頁文字，風險低；不併的話 11/15 之後若有 HOLD 稿，網頁會寫「未核准」，報告裡註明即可。
+- ✅ 志晨同意後已於 2026-11-15 19:08 部署，見上一節。
 
 ## 本次變更（2026-11-14 — 可關閉人工核可，`feat/no-approval`）
 
