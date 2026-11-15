@@ -147,3 +147,24 @@ def test_cases_round_trip_and_report(dev, tmp_path):
     assert "| (b) 只開程式工具 | 1/1 | 0/0 | 0/1 | 1（0） |" in text
     assert "| (c) 程式＋LLM | 還沒跑 |" in text
     assert "正常稿是 1 篇" in text and "標註說明。" in text
+
+
+def test_normal_cases_reject_duplicates_and_pool_only_stories(session):
+    """A 的 id 重複、或挑到 run_mas 候選池裡沒寫過稿的 story，build 要停，不默默產生案例。"""
+    from datetime import date, datetime, timezone
+    from types import SimpleNamespace
+
+    from reddit_tracker.daily.store import add_story, write_story_version
+
+    registry = SimpleNamespace(sources=[])
+    spec = {"section": "world", "kind": "report", "score": 0}
+    pool = add_story(session, edition_date=date(2026, 11, 9), run_variant="mas", spec={"keeper_cluster_id": 1, **spec})
+    written = add_story(session, edition_date=date(2026, 11, 9), run_variant="mas", spec={"keeper_cluster_id": 2, **spec})
+    write_story_version(session, story_id=written.id, run_variant="mas", expected_latest=0, headline="標題", body="正文 [S1]。",
+                        source_ids=[], status="checked", now=datetime(2026, 11, 8, 22, tzinfo=timezone.utc))
+    with pytest.raises(exp2.Exp2Error, match="重複"):
+        exp2.normal_cases(session, [written.id, written.id], registry)
+    with pytest.raises(exp2.Exp2Error, match="沒有寫過正文"):
+        exp2.normal_cases(session, [pool.id], registry)
+    with pytest.raises(exp2.Exp2Error, match="快照裡找不到"):  # 寫過稿的會往下走到快照檢查
+        exp2.normal_cases(session, [written.id], registry)

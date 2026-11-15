@@ -145,11 +145,17 @@ def normal_cases(session: Session, story_ids: list[int], registry) -> list[Case]
     """A 選的正常稿：證據包照 `run_mas` 的做法，從當期快照凍結的素材 id 組。`session` 是 production 的唯讀複本。"""
     names = {source.id: source.name for source in registry.sources}
     domains = registry_domains(registry)
+    if len(story_ids) != len(set(story_ids)):
+        raise Exp2Error(f"正常稿 id 重複：{sorted({i for i in story_ids if story_ids.count(i) > 1})}")
     out = []
     for story_id in story_ids:
         story = session.get(Story, story_id)
         if story is None or story.run_variant != "mas":
             raise Exp2Error(f"找不到 M 組稿 {story_id}")
+        version = latest_version(session, story_id)
+        if version is None or not (version.body or "").strip():
+            # run_mas 把每個候選事件都寫成 stories；沒寫過稿的不是「M 組稿」，A 也沒東西可判斷
+            raise Exp2Error(f"稿 {story_id} 沒有寫過正文，不是當期刊出的 M 組稿；請從 scripts/sample_exp2.py 的清單挑")
         snapshot = session.scalar(select(DailySnapshot).where(DailySnapshot.edition_date == story.edition_date))
         raw = next((c for c in (snapshot.candidates if snapshot else []) if c["keeper_cluster_id"] == story.keeper_cluster_id), None)
         if raw is None:

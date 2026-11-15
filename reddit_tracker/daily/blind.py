@@ -246,15 +246,34 @@ def _front_lead(session: Session, edition_date: date) -> Story | None:
 
 
 def sample_exp2(session: Session, dates: list[date], *, seed: int = EXP2_SEED, k: int = 25) -> list[int]:
-    """從指定日期的 M 組稿用固定種子抽 k 篇，給標註員 A 再挑 15 篇。"""
-    ids = []
-    for edition_date in dates:
-        ids.extend(session.scalars(
-            select(Story.id).where(Story.edition_date == edition_date, Story.run_variant == MAS)
-        ).all())
+    """從指定日期「有寫正文」的 M 組稿用固定種子抽 k 篇，給標註員 A 再挑 15 篇；回傳依 story id 排序。
+
+    `run_mas` 會把快照裡每個候選事件都寫成一列 M 組 `stories`（每天數千列），真的寫過稿的只有十幾篇，
+    所以只從 `_written`（送核准前最新版、正文非空，含 HOLD）裡抽。先依 story id 排序再抽，同樣的輸入重跑一樣。
+    """
+    ids = sorted(story.id for edition_date in dates for story, _ in _written(session, edition_date, MAS).values())
     if len(ids) <= k:
-        return list(ids)
-    return random.Random(seed).sample(list(ids), k)
+        return ids
+    return sorted(random.Random(seed).sample(ids, k))
+
+
+def describe_exp2(session: Session, story_ids: list[int]) -> list[dict]:
+    """給 A 挑稿用的清單：每篇的日期、版別、目前狀態、送核准前最新版的標題與來源數。"""
+    rows = []
+    for story_id in story_ids:
+        story = session.get(Story, story_id)
+        if story is None:
+            continue
+        version = _latest_agent_version(session, story_id)
+        rows.append({
+            "story_id": story_id,
+            "edition_date": story.edition_date.isoformat(),
+            "section": SECTION_LABELS.get(story.section, story.section),
+            "status": version.status if version else "",
+            "sources": len(version.source_ids or []) if version else 0,
+            "headline": version.headline if version else "",
+        })
+    return rows
 
 
 def _rate(errors: int, count: int) -> float | None:

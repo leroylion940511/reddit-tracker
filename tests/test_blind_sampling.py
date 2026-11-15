@@ -13,12 +13,15 @@ import pytest
 from reddit_tracker.daily import run as run_module
 from reddit_tracker.daily.blind import (
     BLIND_SEED,
+    EXP2_SEED,
     analyze_blind,
+    describe_exp2,
     export_blind_count,
     mapping_bytes,
     mapping_digest,
     private_mapping_path,
     sample_day,
+    sample_exp2,
     spot_check_sheet,
 )
 from reddit_tracker.daily.mas.protocol import post_message
@@ -310,3 +313,36 @@ def test_analyze_hold_sensitivity_counts_hold_as_blocked():
     assert result["hold_count"] == 1
     assert result["hold_blocked"]["main_errors"] == {PIPELINE: 1, MAS: 1}
     assert result["hold_blocked"]["main_per_10"][MAS] == 5.0
+
+
+def _pool_only(session, day, keepers):
+    """run_mas 把每個候選都寫成 stories；沒被選上的只有 story、沒有任何版本。"""
+    return [add_story(session, edition_date=day, run_variant=MAS, spec={
+        "keeper_cluster_id": keeper, "section": "world", "kind": "report", "score": 0,
+    }).id for keeper in keepers]
+
+
+def test_exp2_sample_only_takes_written_mas_stories(session):
+    days = [_edition(session, DAY, 12, p_only=(50,), m_empty=(70,)), _edition(session, OTHER_DAY, 12)]
+    pool = _pool_only(session, DAY, range(500, 540)) + _pool_only(session, OTHER_DAY, range(500, 540))
+    written = sorted(story.id for stories in days for (variant, keeper), story in stories.items()
+                     if variant == MAS and keeper != 70)
+    picked = sample_exp2(session, [DAY, OTHER_DAY], seed=EXP2_SEED)
+    assert len(picked) == 24 and picked == written  # 24 篇 ≤ 25：全取；候選池與空正文都不算
+    assert not set(picked) & set(pool)
+    fewer = sample_exp2(session, [DAY, OTHER_DAY], seed=EXP2_SEED, k=10)
+    assert len(fewer) == 10 and fewer == sorted(fewer) and set(fewer) <= set(written)
+    assert fewer == sample_exp2(session, [DAY, OTHER_DAY], seed=EXP2_SEED, k=10)
+
+
+def test_exp2_describe_lists_headline_status_and_sources(session):
+    stories = _edition(session, DAY, 3)
+    story = stories[(MAS, 2)]
+    hold_story(session, story.id)
+    (pool_id,) = _pool_only(session, DAY, [900])
+    rows = {row["story_id"]: row for row in describe_exp2(session, [story.id, stories[(MAS, 1)].id, pool_id, 999999])}
+    assert set(rows) == {story.id, stories[(MAS, 1)].id, pool_id}
+    assert rows[story.id]["headline"] == "事件2標題" and rows[story.id]["status"] == "hold"
+    assert rows[story.id]["section"] == "科技" and rows[story.id]["sources"] == 1
+    assert rows[stories[(MAS, 1)].id]["status"] == "checked"
+    assert rows[pool_id]["headline"] == "" and rows[pool_id]["sources"] == 0
