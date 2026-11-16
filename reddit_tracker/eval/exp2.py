@@ -141,6 +141,17 @@ def holdout_cases(session: Session, pairs, key_rows: list[dict], source_names: d
     return out
 
 
+def check_normal_pick(story_ids: list[int], candidates: list[int]) -> None:
+    """A 選的正常稿必須全部來自 `sample_exp2` 的候選清單（打錯字、抄到別天的 id 都要停）。"""
+    allowed = set(candidates)
+    outside = [story_id for story_id in story_ids if story_id not in allowed]
+    if outside:
+        raise Exp2Error(
+            f"正常稿 {outside} 不在 sample_exp2 的 {len(candidates)} 篇候選裡；"
+            "請確認 --sample-dates／--sample-seed 與給 A 的清單相同，或改從清單重挑"
+        )
+
+
 def normal_cases(session: Session, story_ids: list[int], registry) -> list[Case]:
     """A 選的正常稿：證據包照 `run_mas` 的做法，從當期快照凍結的素材 id 組。`session` 是 production 的唯讀複本。"""
     names = {source.id: source.name for source in registry.sources}

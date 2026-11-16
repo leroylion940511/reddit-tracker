@@ -1,7 +1,8 @@
 """實驗二：查核員開與關的三組執行（手冊 8.2）。設計見 docs/eval/EXP2_DESIGN.md。
 
     # 1. 凍結案例（不呼叫模型；只讀唯讀快照與 production DB）
-    uv run python scripts/run_exp2.py build --normal-ids 101,102,...（A 選的 15 篇 story id）
+    uv run python scripts/run_exp2.py build --normal-ids 101,102,... --sample-dates 2026-11-09,...（A 選的 15 篇 story id；
+    #    --sample-dates 與給 A 清單時的 sample_exp2.py --dates 相同，會檢查選稿都在 25 篇候選裡）
     # 2. 記者 v1，只產生一次（每篇 1 次 Codex）
     uv run python scripts/run_exp2.py draft --live
     # 3. 跑三組（已成功的呼叫從帳本重播，重跑不重複花額度）
@@ -26,7 +27,7 @@ import json
 import os
 import sys
 from dataclasses import asdict
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -162,6 +163,14 @@ def cmd_build(args) -> int:
         if len(story_ids) != exp2.NORMAL_COUNT and not args.force:
             raise SystemExit(f"正常稿要 {exp2.NORMAL_COUNT} 篇，收到 {len(story_ids)} 篇（確定要這樣請加 --force）")
         with _readonly_session(Path(args.prod_db)) as session:
+            if args.sample_dates:
+                from reddit_tracker.daily.blind import EXP2_SEED, sample_exp2
+
+                days = [date.fromisoformat(part) for part in args.sample_dates.split(",") if part.strip()]
+                seed = EXP2_SEED if args.sample_seed is None else args.sample_seed
+                exp2.check_normal_pick(story_ids, sample_exp2(session, days, seed=seed))
+            else:
+                print("⚠️ 沒給 --sample-dates：不檢查正常稿是否來自 sample_exp2 的候選清單。", file=sys.stderr)
             normal = exp2.normal_cases(session, story_ids, registry)
     else:
         print("⚠️ 沒給 --normal-ids：這份案例沒有正常稿，只能用來試跑。A 選完 15 篇後用 --force 重建。", file=sys.stderr)
@@ -236,6 +245,8 @@ def main(argv: list[str] | None = None) -> int:
     build.add_argument("--exp1-db", default=str(ROOT / "data" / "snapshots" / "2026-11-05.db"))
     build.add_argument("--prod-db", default=str(ROOT / "reddit_tracker.db"))
     build.add_argument("--normal-ids", help="A 選的正常稿 story id（逗號分隔，或一個檔案路徑）")
+    build.add_argument("--sample-dates", help="給 A 的候選清單用的日期（同 sample_exp2.py --dates）；給了就檢查 A 的選稿都在清單裡")
+    build.add_argument("--sample-seed", type=int, default=None, help="同 sample_exp2.py --seed（預設 EXP2_SEED）")
     build.add_argument("--force", action="store_true")
     build.set_defaults(func=cmd_build)
 

@@ -26,7 +26,7 @@
 | 保留集（最多 10 篇） | 實驗一 test | 最終答案「不是」、方法 A 卻合併的配對，依 pair_id 排序取前 10。第 2 則所屬事件（快照 `data/snapshots/2026-11-05.db` 的 `cluster_id`）照平常規則組證據包、第 2 則放 S1，再把第 1 則硬加在最後 |
 | 正常稿 15 篇 | A 從 `scripts/sample_exp2.py` 的 25 篇候選挑 | 照 `run_mas` 的做法，用當期 `daily_snapshots` 凍結的素材 id 組證據包 |
 
-- 正常稿候選：`sample_exp2.py --dates …` 只從當期**有寫正文**的 M 組稿（送核准前最新版、含 HOLD）依 story id 排序後用固定種子抽 25 篇，印出 id 與給 A 看的清單（日期、版別、狀態、來源數、標題）。`run_mas` 會把整個候選池都寫成 `stories`，2026-11-16 以前的版本是從全部 `stories` 抽，抽到的幾乎都是沒寫過稿的候選。`build` 遇到重複 id、或沒寫過正文的 story 會停。
+- 正常稿候選：`sample_exp2.py --dates …` 只從當期**有寫正文**的 M 組稿（送核准前最新版、含 HOLD）依 story id 排序後用固定種子抽 25 篇，印出 id 與給 A 看的清單（日期、版別、狀態、來源數、標題）。`run_mas` 會把整個候選池都寫成 `stories`，2026-11-16 以前的版本是從全部 `stories` 抽，抽到的幾乎都是沒寫過稿的候選。`build` 遇到重複 id、或沒寫過正文的 story 會停。`build --sample-dates <同一組日期>`（種子不同時加 `--sample-seed`）會重算這 25 篇，A 的選稿有任何一篇不在裡面就停；沒給 `--sample-dates` 只印警告、不檢查。
 - 無關素材用 `raw_evidence_item` 直接加進去，**不經過證據包的相關性過濾**（那道過濾是第一道防線，實驗要測的是第二道）。
 - 保留集的標註：2026-11-13 志晨轉述老師同意直接用現有的標註（`annotation/exp1/` 的 A、B 兩份與 `exp1_resolution_disagreements.csv`），不另外重標。以現有標註算，符合條件的配對是 5 組（T106、T457、T523、T767、T807），不到 10 篇，照實報。
 - `build` 把案例凍結在 `data/work/exp2/cases.json`；已存在就不覆寫（要 `--force`）。

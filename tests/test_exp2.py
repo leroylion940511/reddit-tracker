@@ -168,3 +168,11 @@ def test_normal_cases_reject_duplicates_and_pool_only_stories(session):
         exp2.normal_cases(session, [pool.id], registry)
     with pytest.raises(exp2.Exp2Error, match="快照裡找不到"):  # 寫過稿的會往下走到快照檢查
         exp2.normal_cases(session, [written.id], registry)
+
+
+def test_normal_pick_must_come_from_sample_list():
+    """A 的選稿有任何一篇不在 sample_exp2 的候選清單裡（打錯、抄到別天），build 要停。"""
+    exp2.check_normal_pick([3, 7], [1, 3, 5, 7])
+    exp2.check_normal_pick([], [1, 3])
+    with pytest.raises(exp2.Exp2Error, match=r"\[8\] 不在 sample_exp2 的 4 篇候選裡"):
+        exp2.check_normal_pick([3, 8], [1, 3, 5, 7])
