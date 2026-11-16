@@ -5,7 +5,7 @@
 > 2026-10-29 以前的段落已搬到 `docs/archive/`（見文末「更早的紀錄」）。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-16（`claude-auto`：實驗二正常稿抽樣修正，未併入 main）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
+**Last updated:** 2026-11-16（實驗二正常稿抽樣修正已 fast-forward 併入 main，不需重載；main 還沒 push）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
 
 ## 線上現況（2026-11-13 查證）
 
@@ -14,7 +14,7 @@
 - 查證當下 main 領先 origin/main 3 個 commit（`ff87ca0`、`7f72c69`、`4446959`）；部署後共 9 個，**還沒 push**。
 - production DB 523 MB、Alembic `b8d4f0a17c33`。全套（production checkout，有母本）413 passed／4 skipped。
 
-## 本次變更（2026-11-16 — 實驗二正常稿抽樣修正，`claude-auto`，未部署）
+## 本次變更（2026-11-16 — 實驗二正常稿抽樣修正，`claude-auto`，已併入 main）
 
 自動開發 session，worktree `~/Documents/Developer/Lab/rt-wt-auto`。只讀了 `newsroom.log`（11/16 06:00 準備正常：版本守門 ok、12 篇、`degraded=[]`），沒碰 production DB、沒呼叫 Codex。
 
@@ -22,7 +22,8 @@
 - ✅ **修正**：`daily/blind.py` `sample_exp2` 改從 `_written`（送核准前最新版、正文非空，含 HOLD）抽，依 story id 排序後再抽、輸出也排序；新增 `describe_exp2`。`scripts/sample_exp2.py` 補 `sys.path`，第一行仍是逗號分隔 id，下面印 Markdown 表（日期、版別、狀態、來源數、標題）。`eval/exp2.py` `normal_cases` 遇到重複 id 或沒寫過正文的 story 直接停（`Exp2Error`）。
 - 不改提示詞、`request_hash`、線上流程；不需要 migration。`EXP2_DESIGN.md` 已同步。
 - 測試：`test_blind_sampling.py` +2、`test_exp2.py` +1；全套 495 passed／7 skipped（worktree 沒有母本）；ruff 通過。用暫存 DB 實跑 `sample_exp2.py` 確認候選池的 story 不會被抽到。
-- 👤 **11/17 實驗二要用**：要先把這個 commit 併進 main（只動評估腳本，不需要 newsroom 重載），A 選稿前在 production checkout 跑 `uv run python scripts/sample_exp2.py --dates <日期>`。日期範圍設計文件沒寫死，建議用試刊七期（11/09–11/15）。若已經用舊版抽過並給了 A，舊清單要作廢重抽。
+- ✅ 志晨同意後已於 2026-11-16 fast-forward 併入 main（`cf61c30`→`8e4ea93`）；只動評估腳本，newsroom **沒有重載、不需要**。production checkout 相關測試 56 passed。main 領先 origin/main 4 個 commit（加上這筆紀錄 5 個），**還沒 push**。
+- 👤 **11/17 實驗二**：A 選稿前在 production checkout 跑 `uv run python scripts/sample_exp2.py --dates <日期>`。日期範圍設計文件沒寫死，建議用試刊七期（11/09–11/15）。若已經用舊版抽過並給了 A，舊清單要作廢重抽。
 
 ## 部署（2026-11-14 19:42 台北 — 關閉人工核可＋併入 desk-v3，依志晨指示）
 
