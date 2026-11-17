@@ -18,7 +18,7 @@
 
 - ℹ️ **2026-11-17 志晨確認：專題沒有人類標註員 A、B，改由 CLI 代替——A＝grok CLI（`grok -p`，grok-4.7），B＝agy CLI。** 手冊寫「A／B 做」的步驟（選稿、標註、盲計計數）都直接用這兩個工具跑，提示詞與原始輸出存 `annotation/`；報告要註明是 AI 工具代標。
 - ✅ **候選 25 篇**：production DB 唯讀重算 `sample_exp2`（11/09–11/15、種子 `20261211`），清單 `data/work/exp2/candidates_for_A.md`；給 A 的全文＋來源題目檔 `annotation/exp2/candidates_packet.txt`。
-- ✅ **A（grok）選稿**：提示詞 `annotation/exp2/prompt_A_pick.md`、schema `schema_pick.json`、原始輸出 `A_pick_raw.json`、解析後 `A_pick.json`。判定 ok 18／problem 7，picks 15：`41480,44224,44227,44229,44245,48568,48569,48575,54425,54434,59775,64577,69852,69866,69869`（全在候選內、無重複、全為 ok；排除較沒把握的 59769、59771、64571）。不跳過關，只跑一次。
+- ✅ **A（grok）選稿**：提示詞 `annotation/exp2/prompt_A_pick.md`、schema `schema_pick.json`、原始輸出 `A_pick_raw.json`、解析後 `A_pick.json`。判定 ok 18／problem 7，picks 15：`41480,44224,44227,44229,44245,48568,48569,48575,54425,54434,59775,64577,69852,69866,69869`（全在候選內、無重複、全為 ok；排除較沒把握的 59769、59771、64571）。grok 只跑一次，沒有重抽或挑結果。
 - ✅ `build --force --normal-ids … --sample-dates 2026-11-09,…,2026-11-15`：開發集 5、保留集 5（T106、T457、T523、T767、T807）、正常稿 15；舊的 11/13 試跑版改名 `cases.trial-20261113.json`。
 - ✅ `draft --live`（14:23–14:28）：v1 25/25，帳本 25 次 Codex 嘗試、沒有重試；人工掃過沒有模板稿或模型雜訊。
 - ⚠️ **線上品質問題（A 發現、已查證）**：11/15 已刊出的 M 組稿 69855（許淑華／蔣萬安）`why_it_matters` 在 `[S1]` 後面夾著模型雜訊「内 wait stop wrong? final already text need close proper. } … I'm generating need valid JSON exact.」。Codex 回傳的 JSON 欄位混進推理文字，目前流程沒有擋。11/20 前不改線上流程；凍結後加輸出檢查（欄位出現英文雜訊／JSON 字樣就重試或 HOLD），報告照實記。
