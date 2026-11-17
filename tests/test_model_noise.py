@@ -43,6 +43,9 @@ def test_chinese_news_with_english_names_is_clean():
         "Meta 開源 Llama 5，採用 open source 授權，開發者可在 Hugging Face 下載 [S1]。",
         "美國聯準會 Fed 維持利率不變，市場預期 12 月降息 [S1][S2]。",
         "研究以 arXiv 預印本形式發表，尚未經同儕審查。",
+        # 11/15 P 組模板稿 69845：直接貼英文摘要，不是模型雜訊
+        "據The Guardian World報導：Filipino entry, pop and rap song Sobra-Sobra, takes 19-year-old "
+        "to victory at grand final in Bangkok Carmelle Collado ha…",
         "",
         None,
     ]

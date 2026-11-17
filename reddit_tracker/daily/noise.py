@@ -10,7 +10,8 @@ Codex 回傳的 JSON 欄位混進推理文字，現行流程沒有擋。
 規則故意保守（寧可漏報，不要把正常中文稿裡的英文專有名詞當雜訊）：
 1. JSON 殘渣：稿件欄位名稱接冒號（`"body":`）、`{"`／`"}`／`\"`、單獨的 `}`／`{`。
 2. 英文第一人稱：`I'm`、`I'll`、`I need`、`let me`。
-3. 小寫英文連續 3 個字以上，而且其中有推理用語（wait、final、need、json…）。專有名詞多半大寫開頭，不會算進去。
+3. 小寫英文連續 3 個字以上，而且其中有 2 個以上不同的推理用語（wait、final、need、json…）。專有名詞多半大寫開頭，
+   不會算進去；只有一個用語的不算（P 組模板稿直接貼英文摘要，如 11/15 69845 的 “grand final”）。
 """
 
 from __future__ import annotations
@@ -24,7 +25,7 @@ _JSON_EDGE = re.compile(r'\{\s*"|"\s*\}|\\"')
 _LONE_BRACE = re.compile(r"(?:^|[\s。，；.,;!?？！])[{}](?=$|[\s。，；.,;!?？！])")
 _FIRST_PERSON = re.compile(r"\bI['’](?:m|ll|ve|d)\b|\bI (?:need|will|should|must|think)\b|\blet me\b", re.IGNORECASE)
 # 小寫英文字（可帶 ? ! . , 這類標點），連續 3 個以上
-_LOWER_RUN = re.compile(r"(?<![A-Za-z])(?:[a-z][a-z'’]*[?!.,]?\s+){2,}[a-z][a-z'’]*[?!.,]?")
+_LOWER_RUN = re.compile(r"(?<![A-Za-z'’])(?:[a-z][a-z'’]*[?!.,]?\s+){2,}[a-z][a-z'’]*[?!.,]?")
 META_WORDS = frozenset({
     "wait", "stop", "wrong", "final", "already", "need", "needs", "output", "answer", "json", "schema",
     "generating", "generate", "proper", "close", "oops", "hmm", "actually", "exact", "valid", "field",
@@ -45,7 +46,7 @@ def model_noise(text: str | None) -> list[str]:
         hits.extend(m.group(0).strip() for m in pattern.finditer(text))
     hits.extend(m.group(0).strip(" 。，；.,;!?？！") for m in _LONE_BRACE.finditer(text))
     for m in _LOWER_RUN.finditer(text):
-        if META_WORDS.intersection(_words(m.group(0))):
+        if len(META_WORDS.intersection(_words(m.group(0)))) >= 2:
             hits.append(m.group(0).strip())
     return list(dict.fromkeys(h for h in hits if h))
 

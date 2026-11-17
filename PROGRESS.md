@@ -5,7 +5,7 @@
 > 2026-10-29 以前的段落已搬到 `docs/archive/`（見文末「更早的紀錄」）。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-18（`claude-auto`：離線模型雜訊掃描，還沒併入 main）。前次：2026-11-17 14:30（實驗二：A＝grok 選完 15 篇、`build`、`draft --live` 25/25 完成；明天 `run`）。前次：2026-11-17（實驗二 `build` 檢查正常稿來自候選清單，已 fast-forward 併入 main，不需重載；main 還沒 push）。前次：2026-11-16（實驗二正常稿抽樣修正已 fast-forward 併入 main，不需重載；main 已 push）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
+**Last updated:** 2026-11-18 07:40（實驗二 `run` 第一天：(a)(b) 完成、(c) 停在 H-T807，11/19 接著跑；`claude-auto` 離線模型雜訊掃描，還沒併入 main）。前次：2026-11-17 14:30（實驗二：A＝grok 選完 15 篇、`build`、`draft --live` 25/25 完成；明天 `run`）。前次：2026-11-17（實驗二 `build` 檢查正常稿來自候選清單，已 fast-forward 併入 main，不需重載；main 還沒 push）。前次：2026-11-16（實驗二正常稿抽樣修正已 fast-forward 併入 main，不需重載；main 已 push）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
 
 ## 線上現況（2026-11-13 查證）
 
@@ -21,9 +21,10 @@
 - ✅ **起因**：11/17 查到 11/15 刊出的 69855 `why_it_matters` 混進 Codex 推理文字，線上沒有擋、11/20 前也不改線上流程；但報告要「照實記」，得先知道試刊與實驗二還有沒有別篇。
 - ✅ `reddit_tracker/daily/noise.py`：純函式 `model_noise(text)`／`story_noise(fields)`，規則保守（欄位名接冒號、`{"`／`"}`／`\"`、單獨的 `{`／`}`、英文第一人稱、含推理用語的小寫英文連續 3 字以上；大寫開頭的專有名詞不算）。**線上流程沒接**，凍結後做輸出檢查（重試或 HOLD）時直接沿用。
 - ✅ `scripts/scan_model_noise.py`：`--db <檔> --start … --end …`（`mode=ro`，每一版都掃，標最新版／狀態／是否核准）或 `--json data/work/exp2/v1.json`，印 Markdown 表；沒命中印「沒有發現模型雜訊。」。
-- ✅ 實跑：實驗二 v1（25 篇）沒有發現雜訊。
+- ✅ 實跑（全部唯讀）：實驗二 v1（25 篇）、(a)(b)(c) 已跑的稿都沒有雜訊；production 11/01–11/18 兩組所有版本只有 **69855 一篇**（11/15 M 組、最新版、已刊出全文）。第一版規則把 11/15 P 組模板稿 69845 的英文摘要（“grand final”）誤報，已收緊為「小寫英文串要有 2 個以上不同推理用語」並加進測試。
+- 👤 報告寫法建議：試刊與實驗二期間共 1 篇刊出稿混入模型雜訊（69855 `why_it_matters`），偵測規則與掃描指令如上；凍結後才接線上檢查。
 - 測試：新增 `tests/test_model_noise.py` 6 個（含 69855 原文、帶英文專有名詞的正常中文稿不誤報、腳本唯讀）；全套 502 passed／7 skipped（worktree 沒有母本）；ruff 通過。不改提示詞、`request_hash`、線上流程；不需要 migration。
-- 👤 **要志晨跑**（自動 session 不碰 DB）：production checkout 併入後 `uv run python scripts/scan_model_noise.py --db reddit_tracker.db --start 2026-11-09 --end 2026-11-15 --variant mas`（試刊七期；P 組也可以掃），結果貼進報告。實驗二 `run` 完成後，三組的稿在 `data/work/exp2/ledger.db`，同一個指令換 `--db` 掃。
+- 實驗二 (c) 跑完後再掃一次：`uv run python scripts/scan_model_noise.py --db /Users/leroy/reddit_tracker/data/work/exp2/arm_c.db --start 2026-11-17`（三組的稿在 `arm_{a,b,c}.db`，出刊日一律記成 2026-11-17）。
 
 ## 實驗二執行（2026-11-17 — 選稿、案例凍結、記者 v1）
 
@@ -33,7 +34,12 @@
 - ✅ `build --force --normal-ids … --sample-dates 2026-11-09,…,2026-11-15`：開發集 5、保留集 5（T106、T457、T523、T767、T807）、正常稿 15；舊的 11/13 試跑版改名 `cases.trial-20261113.json`。
 - ✅ `draft --live`（14:23–14:28）：v1 25/25，帳本 25 次 Codex 嘗試、沒有重試；人工掃過沒有模板稿或模型雜訊。
 - ⚠️ **線上品質問題（A 發現、已查證）**：11/15 已刊出的 M 組稿 69855（許淑華／蔣萬安）`why_it_matters` 在 `[S1]` 後面夾著模型雜訊「内 wait stop wrong? final already text need close proper. } … I'm generating need valid JSON exact.」。Codex 回傳的 JSON 欄位混進推理文字，目前流程沒有擋。11/20 前不改線上流程；凍結後加輸出檢查（欄位出現英文雜訊／JSON 字樣就重試或 HOLD），報告照實記。
-- ➡️ **11/18**：`run --arm all --live`（約 25–35 次；不要在 06:00–06:10 跑；額度不夠 11/19 用同一指令接著跑）→ `report --write`。✅ `FACT_CHECKER_PER_SOURCE` **定案維持關閉**（2026-11-17，志晨交給 Claude 決定）：(c) 與試刊七期／實驗三的 M 組是同一個查核員設定，結果才能對照；手冊只有三組，額度也緊，所以不另跑 `--per-source`。報告註明逐來源判斷是已實作但未評估的選項。
+- ✅ **11/18 07:19–07:22 `run --arm all --live`（Claude 依志晨指示在 production checkout 跑）**：本次 25 次新的 Codex 嘗試全部用完（(a) 1、(b) 13、(c) 11），沒有失敗重試。
+  - (a) 全關：dev 0/5、保留集 0/5 擋下，正常稿誤擋 0/15。
+  - (b) 只開程式工具：dev 5/5、保留集 2/5 擋下，正常稿誤擋 **6/15**。
+  - (c) 程式＋LLM：跑到保留集最後一篇 H-T807 時額度用完（`degraded=['copy_editor','fact_checker']`），**這一組不算**，`results_c.json` 沒寫；已成功的 11 次在帳本，重跑會重播。
+  - 沒有跑 `report --write`（(c) 沒完成，報告會缺一組）。
+- ➡️ **11/19（06:10 後）**：production checkout 再跑同一個指令 `uv run python scripts/run_exp2.py run --arm all --live`。(a)(b) 全部重播、不花額度；(c) 剩正常稿 15 篇＋H-T807，估約 15–25 次，25 次不夠就 11/20 再接。完成後 `report --write` 並 commit 報告。原計畫：`run --arm all --live`（約 25–35 次；不要在 06:00–06:10 跑；額度不夠 11/19 用同一指令接著跑）→ `report --write`。✅ `FACT_CHECKER_PER_SOURCE` **定案維持關閉**（2026-11-17，志晨交給 Claude 決定）：(c) 與試刊七期／實驗三的 M 組是同一個查核員設定，結果才能對照；手冊只有三組，額度也緊，所以不另跑 `--per-source`。報告註明逐來源判斷是已實作但未評估的選項。
 
 ## 本次變更（2026-11-17 — 實驗二 `build` 檢查正常稿來自候選清單，`claude-auto`，已併入 main）
 
