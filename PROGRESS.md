@@ -5,7 +5,7 @@
 > 2026-10-29 以前的段落已搬到 `docs/archive/`（見文末「更早的紀錄」）。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-17 14:30（實驗二：A＝grok 選完 15 篇、`build`、`draft --live` 25/25 完成；明天 `run`）。前次：2026-11-17（實驗二 `build` 檢查正常稿來自候選清單，已 fast-forward 併入 main，不需重載；main 還沒 push）。前次：2026-11-16（實驗二正常稿抽樣修正已 fast-forward 併入 main，不需重載；main 已 push）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
+**Last updated:** 2026-11-18（`claude-auto`：離線模型雜訊掃描，還沒併入 main）。前次：2026-11-17 14:30（實驗二：A＝grok 選完 15 篇、`build`、`draft --live` 25/25 完成；明天 `run`）。前次：2026-11-17（實驗二 `build` 檢查正常稿來自候選清單，已 fast-forward 併入 main，不需重載；main 還沒 push）。前次：2026-11-16（實驗二正常稿抽樣修正已 fast-forward 併入 main，不需重載；main 已 push）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
 
 ## 線上現況（2026-11-13 查證）
 
@@ -13,6 +13,17 @@
 - 11/13 是新程式的第一期：06:00–06:05 準備（P 影子 5 次、M 28 次 Codex），12 篇、`degraded=[]`；12 篇於 07:06 核准；08:35 發行（Telegram 533、534）。
 - 查證當下 main 領先 origin/main 3 個 commit（`ff87ca0`、`7f72c69`、`4446959`）；部署後共 9 個，**還沒 push**。
 - production DB 523 MB、Alembic `b8d4f0a17c33`。全套（production checkout，有母本）413 passed／4 skipped。
+
+## 本次變更（2026-11-18 — 離線模型雜訊掃描，`claude-auto`，未併入 main）
+
+自動開發 session，worktree `~/Documents/Developer/Lab/rt-wt-auto`。只讀了 `newsroom.log`（11/18 06:00 準備正常：12 篇、`degraded=[]`，06:08 畫完）與 `data/work/exp2/v1.json`；沒碰任何 DB、沒呼叫 Codex。
+
+- ✅ **起因**：11/17 查到 11/15 刊出的 69855 `why_it_matters` 混進 Codex 推理文字，線上沒有擋、11/20 前也不改線上流程；但報告要「照實記」，得先知道試刊與實驗二還有沒有別篇。
+- ✅ `reddit_tracker/daily/noise.py`：純函式 `model_noise(text)`／`story_noise(fields)`，規則保守（欄位名接冒號、`{"`／`"}`／`\"`、單獨的 `{`／`}`、英文第一人稱、含推理用語的小寫英文連續 3 字以上；大寫開頭的專有名詞不算）。**線上流程沒接**，凍結後做輸出檢查（重試或 HOLD）時直接沿用。
+- ✅ `scripts/scan_model_noise.py`：`--db <檔> --start … --end …`（`mode=ro`，每一版都掃，標最新版／狀態／是否核准）或 `--json data/work/exp2/v1.json`，印 Markdown 表；沒命中印「沒有發現模型雜訊。」。
+- ✅ 實跑：實驗二 v1（25 篇）沒有發現雜訊。
+- 測試：新增 `tests/test_model_noise.py` 6 個（含 69855 原文、帶英文專有名詞的正常中文稿不誤報、腳本唯讀）；全套 502 passed／7 skipped（worktree 沒有母本）；ruff 通過。不改提示詞、`request_hash`、線上流程；不需要 migration。
+- 👤 **要志晨跑**（自動 session 不碰 DB）：production checkout 併入後 `uv run python scripts/scan_model_noise.py --db reddit_tracker.db --start 2026-11-09 --end 2026-11-15 --variant mas`（試刊七期；P 組也可以掃），結果貼進報告。實驗二 `run` 完成後，三組的稿在 `data/work/exp2/ledger.db`，同一個指令換 `--db` 掃。
 
 ## 實驗二執行（2026-11-17 — 選稿、案例凍結、記者 v1）
 
