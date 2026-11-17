@@ -22,7 +22,7 @@
 - ✅ `build --force --normal-ids … --sample-dates 2026-11-09,…,2026-11-15`：開發集 5、保留集 5（T106、T457、T523、T767、T807）、正常稿 15；舊的 11/13 試跑版改名 `cases.trial-20261113.json`。
 - ✅ `draft --live`（14:23–14:28）：v1 25/25，帳本 25 次 Codex 嘗試、沒有重試；人工掃過沒有模板稿或模型雜訊。
 - ⚠️ **線上品質問題（A 發現、已查證）**：11/15 已刊出的 M 組稿 69855（許淑華／蔣萬安）`why_it_matters` 在 `[S1]` 後面夾著模型雜訊「内 wait stop wrong? final already text need close proper. } … I'm generating need valid JSON exact.」。Codex 回傳的 JSON 欄位混進推理文字，目前流程沒有擋。11/20 前不改線上流程；凍結後加輸出檢查（欄位出現英文雜訊／JSON 字樣就重試或 HOLD），報告照實記。
-- ➡️ **11/18**：`run --arm all --live`（約 25–35 次；不要在 06:00–06:10 跑；額度不夠 11/19 用同一指令接著跑）→ `report --write`。👤 `FACT_CHECKER_PER_SOURCE`：主結果建議維持關（與試刊相同）；要比較再另跑一次 (c) `--per-source`。
+- ➡️ **11/18**：`run --arm all --live`（約 25–35 次；不要在 06:00–06:10 跑；額度不夠 11/19 用同一指令接著跑）→ `report --write`。✅ `FACT_CHECKER_PER_SOURCE` **定案維持關閉**（2026-11-17，志晨交給 Claude 決定）：(c) 與試刊七期／實驗三的 M 組是同一個查核員設定，結果才能對照；手冊只有三組，額度也緊，所以不另跑 `--per-source`。報告註明逐來源判斷是已實作但未評估的選項。
 
 ## 本次變更（2026-11-17 — 實驗二 `build` 檢查正常稿來自候選清單，`claude-auto`，已併入 main）
 
