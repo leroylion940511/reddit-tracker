@@ -5,7 +5,7 @@
 > 2026-10-29 以前的段落已搬到 `docs/archive/`（見文末「更早的紀錄」）。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-17（實驗二 `build` 檢查正常稿來自候選清單，已 fast-forward 併入 main，不需重載；main 還沒 push）。前次：2026-11-16（實驗二正常稿抽樣修正已 fast-forward 併入 main，不需重載；main 已 push）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
+**Last updated:** 2026-11-17 14:30（實驗二：A＝grok 選完 15 篇、`build`、`draft --live` 25/25 完成；明天 `run`）。前次：2026-11-17（實驗二 `build` 檢查正常稿來自候選清單，已 fast-forward 併入 main，不需重載；main 還沒 push）。前次：2026-11-16（實驗二正常稿抽樣修正已 fast-forward 併入 main，不需重載；main 已 push）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
 
 ## 線上現況（2026-11-13 查證）
 
@@ -13,6 +13,16 @@
 - 11/13 是新程式的第一期：06:00–06:05 準備（P 影子 5 次、M 28 次 Codex），12 篇、`degraded=[]`；12 篇於 07:06 核准；08:35 發行（Telegram 533、534）。
 - 查證當下 main 領先 origin/main 3 個 commit（`ff87ca0`、`7f72c69`、`4446959`）；部署後共 9 個，**還沒 push**。
 - production DB 523 MB、Alembic `b8d4f0a17c33`。全套（production checkout，有母本）413 passed／4 skipped。
+
+## 實驗二執行（2026-11-17 — 選稿、案例凍結、記者 v1）
+
+- ℹ️ **2026-11-17 志晨確認：專題沒有人類標註員 A、B，改由 CLI 代替——A＝grok CLI（`grok -p`，grok-4.7），B＝agy CLI。** 手冊寫「A／B 做」的步驟（選稿、標註、盲計計數）都直接用這兩個工具跑，提示詞與原始輸出存 `annotation/`；報告要註明是 AI 工具代標。
+- ✅ **候選 25 篇**：production DB 唯讀重算 `sample_exp2`（11/09–11/15、種子 `20261211`），清單 `data/work/exp2/candidates_for_A.md`；給 A 的全文＋來源題目檔 `annotation/exp2/candidates_packet.txt`。
+- ✅ **A（grok）選稿**：提示詞 `annotation/exp2/prompt_A_pick.md`、schema `schema_pick.json`、原始輸出 `A_pick_raw.json`、解析後 `A_pick.json`。判定 ok 18／problem 7，picks 15：`41480,44224,44227,44229,44245,48568,48569,48575,54425,54434,59775,64577,69852,69866,69869`（全在候選內、無重複、全為 ok；排除較沒把握的 59769、59771、64571）。不跳過關，只跑一次。
+- ✅ `build --force --normal-ids … --sample-dates 2026-11-09,…,2026-11-15`：開發集 5、保留集 5（T106、T457、T523、T767、T807）、正常稿 15；舊的 11/13 試跑版改名 `cases.trial-20261113.json`。
+- ✅ `draft --live`（14:23–14:28）：v1 25/25，帳本 25 次 Codex 嘗試、沒有重試；人工掃過沒有模板稿或模型雜訊。
+- ⚠️ **線上品質問題（A 發現、已查證）**：11/15 已刊出的 M 組稿 69855（許淑華／蔣萬安）`why_it_matters` 在 `[S1]` 後面夾著模型雜訊「内 wait stop wrong? final already text need close proper. } … I'm generating need valid JSON exact.」。Codex 回傳的 JSON 欄位混進推理文字，目前流程沒有擋。11/20 前不改線上流程；凍結後加輸出檢查（欄位出現英文雜訊／JSON 字樣就重試或 HOLD），報告照實記。
+- ➡️ **11/18**：`run --arm all --live`（約 25–35 次；不要在 06:00–06:10 跑；額度不夠 11/19 用同一指令接著跑）→ `report --write`。👤 `FACT_CHECKER_PER_SOURCE`：主結果建議維持關（與試刊相同）；要比較再另跑一次 (c) `--per-source`。
 
 ## 本次變更（2026-11-17 — 實驗二 `build` 檢查正常稿來自候選清單，`claude-auto`，已併入 main）
 
