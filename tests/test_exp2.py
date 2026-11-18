@@ -147,6 +147,25 @@ def test_cases_round_trip_and_report(dev, tmp_path):
     assert "| (b) 只開程式工具 | 1/1 | 0/0 | 0/1 | 1（0） |" in text
     assert "| (c) 程式＋LLM | 還沒跑 |" in text
     assert "正常稿是 1 篇" in text and "標註說明。" in text
+    assert "## 被刪的來源" in text and "| (b) 只開程式工具 | 1 | 1 | 0 |" in text
+    assert "| (b) 只開程式工具 | E01 | " in text and "⚠️ 連帶誤刪 |" not in text
+
+
+def test_removal_counts_split_wrong_and_collateral():
+    dev = exp2.Case("E9", "dev", "world", "report", [{"item_id": 1, "title": "A|B", "source_name": "甲"}, {"item_id": 2}], [1])
+    normal = exp2.Case("N-9", "normal", "world", "report", [{"item_id": 3, "title": "正常", "source_name": "乙"}])
+
+    def outcome(case, removed, **flags):
+        return exp2.Outcome(case.case_id, case.group, "b", "checked", 2, False, removed, flags.get("blocked"),
+                            flags.get("false_block"), 1, 0)
+
+    rows = [outcome(dev, [1, 2], blocked=True), outcome(normal, [3], false_block=True)]
+    assert exp2.removal_counts(rows, [dev, normal]) == {"total": 3, "wrong": 1, "collateral": 2}
+    text = "\n".join(exp2._render_removed({"b": rows}, [dev, normal]))
+    assert "| (b) 只開程式工具 | E9 | 1 | 甲 | A／B | 無關來源 |" in text
+    assert "| (b) 只開程式工具 | E9 | 2 | — | （案例檔裡找不到） | ⚠️ 連帶誤刪 |" in text
+    assert "| (b) 只開程式工具 | N-9 | 3 | 乙 | 正常 | ⚠️ 連帶誤刪 |" in text
+    assert exp2._render_removed({"a": [outcome(dev, [])]}, [dev])[-1] == "沒有任何來源被刪。"
 
 
 def test_normal_cases_reject_duplicates_and_pool_only_stories(session):

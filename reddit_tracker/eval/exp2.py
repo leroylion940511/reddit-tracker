@@ -361,4 +361,38 @@ def render_report(results: dict[str, list[Outcome]], cases: list[Case], *, gener
             mark = ("✅" if o.blocked else "❌") if case.group != "normal" else ("⚠️" if o.false_block else "")
             cells.append(f"{mark} {o.status}／v{o.versions}／刪 {len(o.removed_item_ids)}".strip())
         out.append(f"| {case.case_id} | {case.group} | " + " | ".join(cells) + f" | {case.note[:50]} |")
+    out += _render_removed(results, cases)
     return "\n".join(out) + "\n"
+
+
+def removal_counts(outcomes: list[Outcome], cases: list[Case]) -> dict:
+    """被刪的來源分兩種：案例點名的無關來源（刪對）與其他來源（連帶誤刪；正常稿刪的全算這種）。"""
+    wrong = {case.case_id: set(case.wrong_item_ids) for case in cases}
+    hit = sum(item in wrong.get(o.case_id, ()) for o in outcomes for item in o.removed_item_ids)
+    total = sum(len(o.removed_item_ids) for o in outcomes)
+    return {"total": total, "wrong": hit, "collateral": total - hit}
+
+
+def _render_removed(results: dict[str, list[Outcome]], cases: list[Case]) -> list[str]:
+    by_case = {case.case_id: case for case in cases}
+    rows = []
+    for arm in ARMS:
+        for o in results.get(arm, []):
+            case = by_case.get(o.case_id)
+            items = {row.get("item_id"): row for row in case.evidence} if case else {}
+            for item_id in o.removed_item_ids:
+                row = items.get(item_id, {})
+                ok = case is not None and item_id in case.wrong_item_ids
+                title = str(row.get("title", "（案例檔裡找不到）")).replace("|", "／")[:40]
+                rows.append(f"| {ARM_NAMES[arm]} | {o.case_id} | {item_id} | {row.get('source_name', '—')} | {title} "
+                            f"| {'無關來源' if ok else '⚠️ 連帶誤刪'} |")
+    out = ["", "## 被刪的來源", "",
+           "「無關來源」＝案例點名要擋的那則；其他都算連帶誤刪（正常稿沒有無關來源，刪的全是誤刪）。", "",
+           "| 設定 | 刪除數 | 刪對（無關來源） | 連帶誤刪 |", "| --- | --- | --- | --- |"]
+    for arm in ARMS:
+        if arm in results:
+            n = removal_counts(results[arm], cases)
+            out.append(f"| {ARM_NAMES[arm]} | {n['total']} | {n['wrong']} | {n['collateral']} |")
+    if not rows:
+        return out + ["", "沒有任何來源被刪。"]
+    return out + ["", "| 設定 | 案例 | item_id | 來源 | 標題 | 判定 |", "| --- | --- | --- | --- | --- | --- |", *rows]

@@ -5,7 +5,7 @@
 > 2026-10-29 以前的段落已搬到 `docs/archive/`（見文末「更早的紀錄」）。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-19 06:20（實驗二三組完成，`docs/eval/exp2_results.md` 已寫入；(c) 雜訊掃描乾淨；main 還沒 push）。前次：2026-11-18 07:40（實驗二 `run` 第一天：(a)(b) 完成、(c) 停在 H-T807，11/19 接著跑；`claude-auto` 離線模型雜訊掃描，還沒併入 main）。前次：2026-11-17 14:30（實驗二：A＝grok 選完 15 篇、`build`、`draft --live` 25/25 完成；明天 `run`）。前次：2026-11-17（實驗二 `build` 檢查正常稿來自候選清單，已 fast-forward 併入 main，不需重載；main 還沒 push）。前次：2026-11-16（實驗二正常稿抽樣修正已 fast-forward 併入 main，不需重載；main 已 push）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
+**Last updated:** 2026-11-19（`claude-auto`：實驗二報告補「被刪的來源」一節，還沒併入 main）。前次：2026-11-19 06:20（實驗二三組完成，`docs/eval/exp2_results.md` 已寫入；(c) 雜訊掃描乾淨；main 還沒 push）。前次：2026-11-18 07:40（實驗二 `run` 第一天：(a)(b) 完成、(c) 停在 H-T807，11/19 接著跑；`claude-auto` 離線模型雜訊掃描，還沒併入 main）。前次：2026-11-17 14:30（實驗二：A＝grok 選完 15 篇、`build`、`draft --live` 25/25 完成；明天 `run`）。前次：2026-11-17（實驗二 `build` 檢查正常稿來自候選清單，已 fast-forward 併入 main，不需重載；main 還沒 push）。前次：2026-11-16（實驗二正常稿抽樣修正已 fast-forward 併入 main，不需重載；main 已 push）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
 
 ## 線上現況（2026-11-13 查證）
 
@@ -13,6 +13,26 @@
 - 11/13 是新程式的第一期：06:00–06:05 準備（P 影子 5 次、M 28 次 Codex），12 篇、`degraded=[]`；12 篇於 07:06 核准；08:35 發行（Telegram 533、534）。
 - 查證當下 main 領先 origin/main 3 個 commit（`ff87ca0`、`7f72c69`、`4446959`）；部署後共 9 個，**還沒 push**。
 - production DB 523 MB、Alembic `b8d4f0a17c33`。全套（production checkout，有母本）413 passed／4 skipped。
+
+## 本次變更（2026-11-19 — 實驗二報告補「被刪的來源」，`claude-auto`，還沒併入 main）
+
+自動開發 session，worktree `~/Documents/Developer/Lab/rt-wt-auto`。只唯讀讀了 production 的 `data/work/exp2/{cases,v1,results_a,results_b,results_c}.json`；沒碰任何 DB、沒呼叫 Codex、不改線上流程。
+
+- ✅ **起因**：`exp2_results.md` 只算「無關來源有沒有被刪」與「正常稿有沒有被刪」，看不出開發集／保留集裡**正當來源被連帶刪掉**的情況，報告寫 H-T807 取捨時會漏掉這個代價。
+- ✅ `reddit_tracker/eval/exp2.py`：`removal_counts(outcomes, cases)`（刪除數／刪對／連帶誤刪）與 `render_report` 結尾新增「## 被刪的來源」：每組一列統計＋逐筆明細（item_id、來源、標題前 40 字、判定）。判定只用 `cases.json` 的 `wrong_item_ids`，不重跑、不讀 arm DB。
+- ✅ `docs/eval/exp2_results.md` 用同一批 results 重產（主表與逐案表數字不變，只多一節；產生時間保留 06:18 並註明補產）。
+- 📌 **新結果**（給報告用）：
+
+  | 設定 | 刪除數 | 刪對（無關來源） | 連帶誤刪 |
+  | --- | --- | --- | --- |
+  | (b) 只開程式工具 | 22 | 10 | 12（E02 2、H-T767 1、H-T807 1；正常稿 6 篇共 8 則，N-54434 一篇就刪 3 則統一併購肯德基報導） |
+  | (c) 程式＋LLM | 12 | 9 | 3（E02 兩則蘇清泉道歉報導、H-T767 中央社幣安） |
+
+  - (c)「正常稿 0 誤擋」不等於沒有誤刪：開發集／保留集仍連帶刪了 3 個正當來源，這 3 個 (b) 也同樣刪了——查核員 LLM 沒有救回程式工具在**有無關來源的稿**上多刪的部分，只在正常稿上把程式工具的刪除全部否決。
+  - H-T807：(b) 刪的 2 則裡 1 則是無關來源（自由時報 TVBS 民調）、1 則是連帶誤刪（風傳媒）；(c) 兩則都保留。
+  - 👤 報告寫 H-T807 取捨時一起寫這點。
+- 測試：`tests/test_exp2.py` 新增 1 個、擴充 1 個；全套 503 passed／7 skipped（worktree 沒有母本）；ruff 通過。不需要 migration、不需重載服務。
+- 重產指令（日後 results 變動時）：在 production checkout `uv run python scripts/run_exp2.py report --write` 即可，會自帶新一節（產生時間會換成當下）。
 
 ## 本次變更（2026-11-18 — 離線模型雜訊掃描，`claude-auto`，已 fast-forward 併入 main：`0396c87`→`8b6cdbb`）
 
