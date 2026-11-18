@@ -5,7 +5,7 @@
 > 2026-10-29 以前的段落已搬到 `docs/archive/`（見文末「更早的紀錄」）。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-18 07:40（實驗二 `run` 第一天：(a)(b) 完成、(c) 停在 H-T807，11/19 接著跑；`claude-auto` 離線模型雜訊掃描，還沒併入 main）。前次：2026-11-17 14:30（實驗二：A＝grok 選完 15 篇、`build`、`draft --live` 25/25 完成；明天 `run`）。前次：2026-11-17（實驗二 `build` 檢查正常稿來自候選清單，已 fast-forward 併入 main，不需重載；main 還沒 push）。前次：2026-11-16（實驗二正常稿抽樣修正已 fast-forward 併入 main，不需重載；main 已 push）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
+**Last updated:** 2026-11-19 06:20（實驗二三組完成，`docs/eval/exp2_results.md` 已寫入；(c) 雜訊掃描乾淨；main 還沒 push）。前次：2026-11-18 07:40（實驗二 `run` 第一天：(a)(b) 完成、(c) 停在 H-T807，11/19 接著跑；`claude-auto` 離線模型雜訊掃描，還沒併入 main）。前次：2026-11-17 14:30（實驗二：A＝grok 選完 15 篇、`build`、`draft --live` 25/25 完成；明天 `run`）。前次：2026-11-17（實驗二 `build` 檢查正常稿來自候選清單，已 fast-forward 併入 main，不需重載；main 還沒 push）。前次：2026-11-16（實驗二正常稿抽樣修正已 fast-forward 併入 main，不需重載；main 已 push）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
 
 ## 線上現況（2026-11-13 查證）
 
@@ -14,7 +14,7 @@
 - 查證當下 main 領先 origin/main 3 個 commit（`ff87ca0`、`7f72c69`、`4446959`）；部署後共 9 個，**還沒 push**。
 - production DB 523 MB、Alembic `b8d4f0a17c33`。全套（production checkout，有母本）413 passed／4 skipped。
 
-## 本次變更（2026-11-18 — 離線模型雜訊掃描，`claude-auto`，未併入 main）
+## 本次變更（2026-11-18 — 離線模型雜訊掃描，`claude-auto`，已 fast-forward 併入 main：`0396c87`→`8b6cdbb`）
 
 自動開發 session，worktree `~/Documents/Developer/Lab/rt-wt-auto`。只讀了 `newsroom.log`（11/18 06:00 準備正常：12 篇、`degraded=[]`，06:08 畫完）與 `data/work/exp2/v1.json`；沒碰任何 DB、沒呼叫 Codex。
 
@@ -39,7 +39,19 @@
   - (b) 只開程式工具：dev 5/5、保留集 2/5 擋下，正常稿誤擋 **6/15**。
   - (c) 程式＋LLM：跑到保留集最後一篇 H-T807 時額度用完（`degraded=['copy_editor','fact_checker']`），**這一組不算**，`results_c.json` 沒寫；已成功的 11 次在帳本，重跑會重播。
   - 沒有跑 `report --write`（(c) 沒完成，報告會缺一組）。
-- ➡️ **11/19（06:10 後）**：production checkout 再跑同一個指令 `uv run python scripts/run_exp2.py run --arm all --live`。(a)(b) 全部重播、不花額度；(c) 剩正常稿 15 篇＋H-T807，估約 15–25 次，25 次不夠就 11/20 再接。完成後 `report --write` 並 commit 報告。原計畫：`run --arm all --live`（約 25–35 次；不要在 06:00–06:10 跑；額度不夠 11/19 用同一指令接著跑）→ `report --write`。✅ `FACT_CHECKER_PER_SOURCE` **定案維持關閉**（2026-11-17，志晨交給 Claude 決定）：(c) 與試刊七期／實驗三的 M 組是同一個查核員設定，結果才能對照；手冊只有三組，額度也緊，所以不另跑 `--per-source`。報告註明逐來源判斷是已實作但未評估的選項。
+- ✅ **11/19 06:17–06:18 `run --arm all --live`（Claude 依志晨 11/18 交代在這個 session 排程執行；06:00 準備已於 06:08 跑完）**：(a)(b) 全部重播；(c) 新的 Codex 嘗試 10 次，全部成功、沒有重試、沒有 `degraded`。三組 `results_{a,b,c}.json` 都寫好。
+  - **最終結果**（[`docs/eval/exp2_results.md`](docs/eval/exp2_results.md)，`report --write` 06:18）：
+
+    | 設定 | 開發集擋下 | 保留集擋下 | 正常稿誤擋 | LLM 呼叫（查核員） |
+    | --- | --- | --- | --- | --- |
+    | (a) 全關 | 0/5 | 0/5 | 0/15 | 1（0） |
+    | (b) 只開程式工具 | 5/5 | 2/5 | 6/15 | 14（0） |
+    | (c) 程式＋LLM | 5/5 | 1/5 | 0/15 | 21（14） |
+
+  - 讀法：程式工具抓得到可疑來源，但單獨用會誤刪 6/15 篇正常稿的來源；加 LLM 查核員後誤擋降到 0/15，代價是保留集少擋一篇——**H-T807**：(b) 刪 2 個來源，(c) 查核員有跑（1 次）但判定保留，維持 v1。保留集只有 5 篇，只能說「在這些案例上」。
+  - 模型雜訊：`scan_model_noise.py --db data/work/exp2/arm_c.db --start 2026-11-17` →「沒有發現模型雜訊。」
+  - 👤 報告要寫：H-T807 的取捨（(c) 少擋一篇換正常稿 0 誤擋）、保留集樣本小、A／B 是 AI 工具代標、11/18 那輪 (c) 因額度中斷而在 11/19 接續（帳本重播，已成功的呼叫沒有重做）。
+- 原計畫（已完成）：`run --arm all --live`（約 25–35 次；不要在 06:00–06:10 跑；額度不夠 11/19 用同一指令接著跑）→ `report --write`。✅ `FACT_CHECKER_PER_SOURCE` **定案維持關閉**（2026-11-17，志晨交給 Claude 決定）：(c) 與試刊七期／實驗三的 M 組是同一個查核員設定，結果才能對照；手冊只有三組，額度也緊，所以不另跑 `--per-source`。報告註明逐來源判斷是已實作但未評估的選項。
 
 ## 本次變更（2026-11-17 — 實驗二 `build` 檢查正常稿來自候選清單，`claude-auto`，已併入 main）
 
@@ -141,7 +153,7 @@ worktree `~/Documents/Developer/Lab/rt-wt-cleanup`。開發時 production 只做
 3. 👤 **實驗一結果**：已存檔（見上）。剩下志晨讀一遍 `exp1_results.md` 的 3 個錯誤分析與結論，改成自己的話；11/22 前。
 4. 👤 **請老師確認** `trial-dates.md` 的時程與用本機 Codex 當 LLM（手冊 6.9 第 1 條要正式 API），並告知 A、B。這裡沒有收到確認的紀錄；B 的七類錯誤計數練習（原訂 11/08 前）也沒有紀錄。
 5. 👤 **`FACT_CHECKER_PER_SOURCE`**：試刊已用預設關閉在跑；要不要在實驗二 (c) 組打開，最晚 11/17 前定案（`docs/pr/checker-per-source.md`）。
-6. **實驗二 11/17–11/18**：A 11/17 中午前選 15 篇正常稿 → `run_exp2.py build --normal-ids …` → `draft --live`（25 次 Codex）→ 隔天 `run --arm all --live` → `report --write`。額度與排程見 `docs/eval/EXP2_DESIGN.md`；不要在 06:00–06:10 準備期間跑。
+6. ✅ **實驗二**：2026-11-19 三組完成、`docs/eval/exp2_results.md` 已寫入（見「實驗二執行」）。剩 👤 志晨讀結果、把 H-T807 取捨與限制寫進報告。
 7. **11/20 打 `final-1120` 功能凍結**；之前不要 `brew upgrade codex`。
 8. **凍結後的清理**（都不要在 11/20 前做）：
    - `run_mas` 把整個候選池（每天約 4,800 個事件）都寫成 `stories` 並建證據包，實際只用 12 篇；先確認分版主編要不要全池，再改成只處理入選稿。
