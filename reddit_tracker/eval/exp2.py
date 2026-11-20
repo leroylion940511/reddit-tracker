@@ -365,6 +365,26 @@ def render_report(results: dict[str, list[Outcome]], cases: list[Case], *, gener
     return "\n".join(out) + "\n"
 
 
+MANUAL_MARKER = "<!-- 手寫分析從這裡開始：report --write 只重產上面，這行以下原樣保留 -->"
+
+
+def keep_manual(report: str, existing: str | None) -> str:
+    """把舊報告裡 MANUAL_MARKER 以下的手寫段落接回新產生的報告。
+
+    舊報告沒有標記、卻有程式不會產生的 `## ` 小節，就停（Exp2Error），不默默覆寫手寫內容。
+    """
+    if not existing:
+        return report
+    head, sep, manual = existing.partition(MANUAL_MARKER)
+    if sep:
+        return report.rstrip("\n") + "\n\n" + MANUAL_MARKER + manual
+    generated = {line for line in report.splitlines() if line.startswith("## ")}
+    extra = [line for line in head.splitlines() if line.startswith("## ") and line not in generated]
+    if extra:
+        raise Exp2Error(f"舊報告有手寫小節 {extra} 但沒有標記，會被覆寫；先在手寫段落前加一行 {MANUAL_MARKER}")
+    return report
+
+
 def removal_counts(outcomes: list[Outcome], cases: list[Case]) -> dict:
     """被刪的來源分兩種：案例點名的無關來源（刪對）與其他來源（連帶誤刪；正常稿刪的全算這種）。"""
     wrong = {case.case_id: set(case.wrong_item_ids) for case in cases}

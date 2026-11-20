@@ -5,7 +5,7 @@
 > 2026-10-29 以前的段落已搬到 `docs/archive/`（見文末「更早的紀錄」）。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-21（`claude-auto`：merge main，解 PROGRESS.md／exp2_results.md 衝突）。前次：2026-11-19（`claude-auto`：實驗二報告補「被刪的來源」一節）。前次：2026-11-19（實驗二報告補上錯誤分析／結論／限制草稿，待志晨改寫）。前次：2026-11-19 06:20（實驗二三組完成，`docs/eval/exp2_results.md` 已寫入；(c) 雜訊掃描乾淨；main 已 push `4d7c61f`）。前次：2026-11-18 07:40（實驗二 `run` 第一天：(a)(b) 完成、(c) 停在 H-T807，11/19 接著跑；`claude-auto` 離線模型雜訊掃描，還沒併入 main）。前次：2026-11-17 14:30（實驗二：A＝grok 選完 15 篇、`build`、`draft --live` 25/25 完成；明天 `run`）。前次：2026-11-17（實驗二 `build` 檢查正常稿來自候選清單，已 fast-forward 併入 main，不需重載；main 還沒 push）。前次：2026-11-16（實驗二正常稿抽樣修正已 fast-forward 併入 main，不需重載；main 已 push）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
+**Last updated:** 2026-11-21（`claude-auto`：merge main 解 PROGRESS.md／exp2_results.md 衝突；`report --write` 改成保留手寫分析，還沒併入 main）。前次：2026-11-19（`claude-auto`：實驗二報告補「被刪的來源」一節）。前次：2026-11-19（實驗二報告補上錯誤分析／結論／限制草稿，待志晨改寫）。前次：2026-11-19 06:20（實驗二三組完成，`docs/eval/exp2_results.md` 已寫入；(c) 雜訊掃描乾淨；main 已 push `4d7c61f`）。前次：2026-11-18 07:40（實驗二 `run` 第一天：(a)(b) 完成、(c) 停在 H-T807，11/19 接著跑；`claude-auto` 離線模型雜訊掃描，還沒併入 main）。前次：2026-11-17 14:30（實驗二：A＝grok 選完 15 篇、`build`、`draft --live` 25/25 完成；明天 `run`）。前次：2026-11-17（實驗二 `build` 檢查正常稿來自候選清單，已 fast-forward 併入 main，不需重載；main 還沒 push）。前次：2026-11-16（實驗二正常稿抽樣修正已 fast-forward 併入 main，不需重載；main 已 push）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
 
 ## 線上現況（2026-11-13 查證）
 
@@ -13,6 +13,17 @@
 - 11/13 是新程式的第一期：06:00–06:05 準備（P 影子 5 次、M 28 次 Codex），12 篇、`degraded=[]`；12 篇於 07:06 核准；08:35 發行（Telegram 533、534）。
 - 查證當下 main 領先 origin/main 3 個 commit（`ff87ca0`、`7f72c69`、`4446959`）；部署後共 9 個，**還沒 push**。
 - production DB 523 MB、Alembic `b8d4f0a17c33`。全套（production checkout，有母本）413 passed／4 skipped。
+
+## 本次變更（2026-11-21 — 實驗二 `report --write` 保留手寫分析，`claude-auto`，還沒併入 main）
+
+自動開發 session，worktree `~/Documents/Developer/Lab/rt-wt-auto`。沒讀 production 資料、沒碰任何 DB、沒呼叫 Codex。
+
+- ✅ **merge main**（`754ccaa`）：`PROGRESS.md`、`docs/eval/exp2_results.md` 兩個 Markdown 衝突，兩邊都保留。報告順序＝程式產生的「被刪的來源」在前、main 的錯誤分析／結論／限制草稿在後；兩節的數字互相核對過（(b) 正常稿刪 8 則、E02／H-T767／H-T807 的連帶誤刪數一致）。push 狀態兩邊說法不同，以 main 為準（`4d7c61f` 已 push）。沒有重跑 `report`（arm DB 與 results 在 production 的 `data/work/exp2/`，不碰）。
+- ✅ **起因**：手寫分析放在 `exp2_results.md` 裡，`report --write` 會整檔覆寫，所以只能靠「不要再跑」的口頭規定；日後補跑（例如 `--per-source`）或改產生段落都會把分析洗掉。
+- ✅ `eval/exp2.py` 新增 `MANUAL_MARKER`、`keep_manual(report, existing)`：舊檔有標記 → 標記那行以下原樣接回新報告；沒標記卻有程式不會產生的 `## ` 小節 → `Exp2Error` 停（exit 2），不覆寫。`run_exp2.py report --write` 寫檔前先過這一步。
+- ✅ `exp2_results.md` 在手寫段落前加標記行（HTML 註解，渲染看不到），說明文字改成「重跑只重產標記以上」。
+- 測試：`test_exp2.py` +2（標記保留／重跑不變／沒標記就停；以及實際報告檔有標記、手寫三節在標記之下）；全套 505 passed／7 skipped（worktree 沒有母本）；ruff 通過。只動評估腳本，不需要 migration、不需重載服務。
+- ⚠️ **併入 main 之前，production checkout 仍是舊程式，`report --write` 照樣會覆寫**；下面「實驗二執行」那條警告在併入前仍有效。
 
 ## 本次變更（2026-11-19 — 實驗二報告補「被刪的來源」，`claude-auto`，還沒併入 main）
 
@@ -70,7 +81,7 @@
 
   - 讀法：程式工具抓得到可疑來源，但單獨用會誤刪 6/15 篇正常稿的來源；加 LLM 查核員後誤擋降到 0/15，代價是保留集少擋一篇——**H-T807**：(b) 刪 2 個來源，(c) 查核員有跑（1 次）但判定保留，維持 v1。保留集只有 5 篇，只能說「在這些案例上」。
   - 模型雜訊：`scan_model_noise.py --db data/work/exp2/arm_c.db --start 2026-11-17` →「沒有發現模型雜訊。」
-  - ✅ 2026-11-19 `exp2_results.md` 已補「錯誤分析」（4 類：(b) 認不出中文名字而誤擋、H-T807 事件定義寬嚴、同人物不同事件程式不點名、擋下時連正確來源一起刪——H-T767 是 `FACT_CHECKER_PER_SOURCE` 關閉造成的）、「結論」、「限制」，是 Claude 寫的草稿。⚠️ **不要再跑 `report --write`**，會覆寫這幾節。
+  - ✅ 2026-11-19 `exp2_results.md` 已補「錯誤分析」（4 類：(b) 認不出中文名字而誤擋、H-T807 事件定義寬嚴、同人物不同事件程式不點名、擋下時連正確來源一起刪——H-T767 是 `FACT_CHECKER_PER_SOURCE` 關閉造成的）、「結論」、「限制」，是 Claude 寫的草稿。⚠️ **不要再跑 `report --write`**，會覆寫這幾節（2026-11-21 `claude-auto` 已改成保留標記以下的手寫段落，併入 main 後才解除）。
   - 👤 志晨讀過改成自己的話。原本列的要寫：H-T807 的取捨（(c) 少擋一篇換正常稿 0 誤擋）、保留集樣本小、A／B 是 AI 工具代標、11/18 那輪 (c) 因額度中斷而在 11/19 接續（帳本重播，已成功的呼叫沒有重做）。
 - 原計畫（已完成）：`run --arm all --live`（約 25–35 次；不要在 06:00–06:10 跑；額度不夠 11/19 用同一指令接著跑）→ `report --write`。✅ `FACT_CHECKER_PER_SOURCE` **定案維持關閉**（2026-11-17，志晨交給 Claude 決定）：(c) 與試刊七期／實驗三的 M 組是同一個查核員設定，結果才能對照；手冊只有三組，額度也緊，所以不另跑 `--per-source`。報告註明逐來源判斷是已實作但未評估的選項。
 

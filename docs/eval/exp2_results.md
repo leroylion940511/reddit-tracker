@@ -94,7 +94,9 @@
 | (c) 程式＋LLM | H-T767 | 38411 | 中央社 聚焦 | 加密貨幣交易所幣安遭竊63億美元資產追回95% 分階段恢復提款 | ⚠️ 連帶誤刪 |
 | (c) 程式＋LLM | H-T767 | 33061 | Yahoo Finance | Elon Musk, CZ Trade Blows Over SpaceX Sh | 無關來源 |
 
-> 以下各節是 2026-11-19 依 `data/work/exp2/` 的結果、`cases.json` 與 `arm_{b,c}.db` 的 `agent_messages` 寫的分析草稿，不是 `report --write` 產生的；**重跑 `report --write` 會覆寫掉**。草稿由 Claude 撰寫，請志晨看過、改成自己的話再交。
+<!-- 手寫分析從這裡開始：report --write 只重產上面，這行以下原樣保留 -->
+
+> 以下各節是 2026-11-19 依 `data/work/exp2/` 的結果、`cases.json` 與 `arm_{b,c}.db` 的 `agent_messages` 寫的分析草稿，不是 `report --write` 產生的；重跑 `report --write` 只重產上一行標記以上的部分，這幾節原樣保留（2026-11-21 起；舊版程式仍會覆寫）。草稿由 Claude 撰寫，請志晨看過、改成自己的話再交。
 
 ## 錯誤分析
 

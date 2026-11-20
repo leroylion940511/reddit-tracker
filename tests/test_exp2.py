@@ -168,6 +168,29 @@ def test_removal_counts_split_wrong_and_collateral():
     assert exp2._render_removed({"a": [outcome(dev, [])]}, [dev])[-1] == "沒有任何來源被刪。"
 
 
+def test_keep_manual_preserves_hand_written_sections():
+    """report --write 只重產標記以上；沒標記卻有手寫小節就停，不默默覆寫。"""
+    new = "# 報告\n\n## 逐案結果\n\n新數字\n\n## 被刪的來源\n"
+    assert exp2.keep_manual(new, None) == new
+    assert exp2.keep_manual(new, "# 報告\n\n## 逐案結果\n\n舊數字\n") == new
+    old = "# 報告\n\n## 逐案結果\n\n舊數字\n\n" + exp2.MANUAL_MARKER + "\n\n## 錯誤分析\n\n手寫。\n"
+    merged = exp2.keep_manual(new, old)
+    assert "新數字" in merged and "舊數字" not in merged
+    assert merged.endswith(exp2.MANUAL_MARKER + "\n\n## 錯誤分析\n\n手寫。\n")
+    assert exp2.keep_manual(new, merged) == merged  # 重跑結果不變
+    with pytest.raises(exp2.Exp2Error, match="錯誤分析"):
+        exp2.keep_manual(new, "# 報告\n\n## 逐案結果\n\n## 錯誤分析\n\n手寫。\n")
+
+
+def test_committed_exp2_report_keeps_manual_sections():
+    from pathlib import Path
+
+    doc = (Path(__file__).resolve().parents[1] / "docs" / "eval" / "exp2_results.md").read_text(encoding="utf-8")
+    head, sep, manual = doc.partition(exp2.MANUAL_MARKER)
+    assert sep and "## 被刪的來源" in head
+    assert all(f"## {name}" in manual for name in ("錯誤分析", "結論", "限制"))
+
+
 def test_normal_cases_reject_duplicates_and_pool_only_stories(session):
     """A 的 id 重複、或挑到 run_mas 候選池裡沒寫過稿的 story，build 要停，不默默產生案例。"""
     from datetime import date, datetime, timezone

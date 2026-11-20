@@ -10,6 +10,7 @@
     # 4. 結果表
     uv run python scripts/run_exp2.py report            # 印到 stdout
     uv run python scripts/run_exp2.py report --write    # 寫 docs/eval/exp2_results.md
+    #    （舊檔 exp2.MANUAL_MARKER 那行以下的手寫分析原樣保留；有手寫小節卻沒標記就停）
 
 - 所有產出都在 `data/work/exp2/`（不進版控）：`cases.json`、`v1.json`、`results_<組>.json`、
   帳本 `ledger.db`（每次真 Codex 嘗試一筆 `llm_records`）、額度檔 `llm-quota.json`。
@@ -228,6 +229,7 @@ def cmd_report(args) -> int:
         print(report)
         return 0
     out = ROOT / "docs" / "eval" / "exp2_results.md"
+    report = exp2.keep_manual(report, out.read_text(encoding="utf-8") if out.is_file() else None)
     out.write_text(report, encoding="utf-8")
     print(f"寫入 {out}")
     return 0
