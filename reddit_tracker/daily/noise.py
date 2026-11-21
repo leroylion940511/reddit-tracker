@@ -4,8 +4,8 @@
 「wait stop wrong? final already text need close proper. } … I'm generating need valid JSON exact.」，
 Codex 回傳的 JSON 欄位混進推理文字，現行流程沒有擋。
 
-這裡只提供純函式，**線上流程還沒接**（11/20 凍結前不改線上行為）；目前只給
-`scripts/scan_model_noise.py` 離線掃描已存的稿，報告用。凍結後要接成輸出檢查（重試或 HOLD）時沿用同一套規則。
+這裡只提供純函式。用在兩處：`scripts/scan_model_noise.py` 離線掃描已存的稿（報告用）；
+M 組 `orchestrator.noise_hold`（`MAS_NOISE_CHECK`，預設關閉）出刊前掃到就 system HOLD，不重試。
 
 規則故意保守（寧可漏報，不要把正常中文稿裡的英文專有名詞當雜訊）：
 1. JSON 殘渣：稿件欄位名稱接冒號（`"body":`）、`{"`／`"}`／`\"`、單獨的 `}`／`{`。

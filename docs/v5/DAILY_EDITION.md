@@ -366,6 +366,7 @@ def reporter_draft(session, client, *, edition_date, story, evidence, degraded) 
 | `MAS_MORE_INTERACTION` | false | 刪稿申訴（C1）、頭版異議由總編裁決（C2）、總編退稿（C3） | C1 需 `MAS_OPEN_LAYOUT` 且真的刪稿；C2／C3 不需要 | C1–C3 |
 | `FULLTEXT_ENABLED` | false | 允許 `fetch_pending` 抓全文寫 `item_fulltext`；**未接排程** | `FULLTEXT_*` 速率與長度設定；migration `c5e1a9d3f207` | D2 |
 | `MAS_REPORTER_FULLTEXT` | false | 記者、查核員證據塊與數字檢查用全文 | `item_fulltext` 有 `status=ok` 的列（D2 抓過）；`MAS_REPORTER_FULLTEXT_CHARS`(2000) | D3 |
+| `MAS_NOISE_CHECK` | false | 出刊前掃每篇最新版，混進模型雜訊就 system HOLD | 無（不呼叫模型） | 模型雜訊檢查 |
 
 - 只影響 M 組（`DAILY_MODE=mas`）；P 組（pipeline）與實驗二（`eval/exp2.py`）不讀這些開關。
 - C4（回放／newsroom 標籤）沒有開關，舊資料輸出不變。
@@ -555,3 +556,17 @@ _eic_revisions(session, *, edition_date, client, clock, hold_ids, evidence_of, r
   - `_evidence_text`：查核數字檢查用的證據文字，有可用全文時接在 `標題 摘要` 後面。
   - `evidence_has_injection` 也掃 `fulltext`；全文含注入標記時，整包照現有規則視為有注入（不上頭版、主編／總編摘要給空），且該篇提示退回摘要（`_usable_fulltext` 回 None）。
 - P 組（`writer.py`）與實驗二（`eval/exp2.py`）不受影響。
+
+### 模型雜訊檢查（`MAS_NOISE_CHECK`，預設關閉，2026-11-22 `claude-auto`）
+
+起因：11/15 刊出的 M 組稿 69855 `why_it_matters` 混進 Codex 推理文字（「wait stop wrong? final already…」），流程沒有擋（見 PROGRESS「離線模型雜訊掃描」）。
+
+- 規則：`daily/noise.py` 的 `story_noise`（與 `scripts/scan_model_noise.py` 同一套，保守、寧可漏報）。
+- `daily/mas/orchestrator.py`：
+  - `noise_hold(session, *, edition_date, story_ids, clock, result) -> dict[int, dict[str, list[str]]]`：掃 `headline／deck／body／why_it_matters`，命中就發 `system → human` 的 `HOLD`（`target_version`＝該版，`payload = {"detail": …, "noise": {欄位: [片段]}}`），回傳並寫進 `MasResult.noise_log`。已是 `hold` 或沒有正文的稿跳過，所以重跑不會重複發。
+  - `run_mas` 在文稿編輯（`_copy_edit_front`）之後、`settle_messages` 之前呼叫，只在開關打開時；記者、修稿、總編退稿、文稿編輯產生的版本都會掃到。
+  - 訊息超過一期上限（`MAX_MESSAGES`）被標 `expired` 時仍直接 `hold_story`。
+- 不重試、不多呼叫模型、不改任何請求與 `request_hash`；已排進版面的 HOLD 稿不移出，發行時跟其他 HOLD 稿一樣只出標題（「暫扣」）。⚠️ 雜訊若在 `headline`，標題仍會印出。
+- `daily/run.py`：有命中時 `edition.stats["noise_hold"] = {story_id: {欄位: [片段]}}`；沒有命中不加這個鍵（關閉時 stats 不變）。
+- P 組（`writer.py`）與實驗二（`eval/exp2.py`）不受影響。
+- 測試：`tests/test_noise_hold.py`（關閉時雜訊稿照常出全文；開啟時只扣那一篇、訊息內容、重跑不重複）。

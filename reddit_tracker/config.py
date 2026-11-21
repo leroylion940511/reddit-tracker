@@ -134,6 +134,9 @@ class Settings(BaseSettings):
     # 預設關閉＝請求逐字不變。只讀表，不會觸發抓取。
     mas_reporter_fulltext: bool = False
     mas_reporter_fulltext_chars: int = 2000
+    # 出刊前掃 M 組每篇最新版的標題／導言／正文／重要性（daily/noise.py），混進模型推理文字或 JSON 殘渣就 system HOLD。
+    # 不多呼叫模型、不改請求；預設關閉＝行為不變（11/15 69855 的問題，凍結後才接）。
+    mas_noise_check: bool = False
     gemini_daily_model: str = "gemini-3.5-flash-lite"
 
     # --- 舊排程（候選探索、舊版日報編採與發送）已在 commit 2d95c07 移除；設 true 也不會復活 ---

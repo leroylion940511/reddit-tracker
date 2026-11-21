@@ -522,6 +522,7 @@ def _finish_mas(
         "sections": {k: sum(1 for a in edition.articles if a.section == k) for k in sections},
         "degraded": list(result.degraded),
         "injection_log": list(result.injection_log),
+        **({"noise_hold": {str(k): v for k, v in result.noise_log.items()}} if result.noise_log else {}),
         "llm_requests": session.scalar(select(func.count()).select_from(LLMRecord).where(
             LLMRecord.edition_date == edition_date, LLMRecord.run_variant == MAS,
             LLMRecord.provider == "codex")),

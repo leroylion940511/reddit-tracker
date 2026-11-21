@@ -19,8 +19,9 @@ from ...llm.quota import QuotaExhausted
 from ...llm.records import bind_log_session, complete_logged, last_record_id, llm_log_meta, reset_last_record
 from ...models import AgentMessage, PagePlan, Story, StoryVersion
 from ..evidence import EvidenceItem, EvidencePack, build_evidence_from_ids, with_fulltext
+from ..noise import story_noise
 from ..scoring import DESK_POOL_PER_SECTION, SECTION_KINDS, SECTION_QUOTAS, ScoredCluster, select_articles
-from ..store import MAS, add_page_plan, add_story, latest_version, write_story_version
+from ..store import MAS, add_page_plan, add_story, hold_story, latest_version, write_story_version
 from ..writer import finalize_story, template_story, unsupported_numbers
 from .layout import layout_limits
 from .protocol import (
@@ -268,6 +269,8 @@ class MasResult:
     rejected_decision_ids: list[int] = field(default_factory=list)
     # desk-v3 B2（MAS_OPEN_LAYOUT）：程式對分版主編選稿套的護欄紀錄（截斷、剔除、補足、退回）
     layout_log: list[str] = field(default_factory=list)
+    # MAS_NOISE_CHECK：因模型雜訊被 HOLD 的稿（story_id → 命中的欄位與片段）
+    noise_log: dict[int, dict[str, list[str]]] = field(default_factory=dict)
 
 
 def registry_domains(registry) -> frozenset[str]:
@@ -981,8 +984,41 @@ def run_mas(
             _copy_edit_front(session, edition_date=edition_date, client=client, clock=clock, degraded=result.degraded)
         elif _quota_left(client) == 0 and "copy_editor" not in result.degraded:
             result.degraded.append("copy_editor")
+        if get_settings().mas_noise_check:
+            noise_hold(session, edition_date=edition_date, story_ids=[p.story_id for p in pitches], clock=clock,
+                       result=result)
         settle_messages(session, edition_date, MAS)
     return result
+
+
+NOISE_FIELDS = ("headline", "deck", "body", "why_it_matters")
+
+
+def noise_hold(session: Session, *, edition_date: date, story_ids, clock, result: MasResult) -> dict[int, dict]:
+    """MAS_NOISE_CHECK：文稿編輯之後掃每篇最新版，欄位混進模型雜訊就 system HOLD（不重試、不多呼叫模型）。
+
+    放在最後一步，記者、修稿、總編退稿、文稿編輯產生的版本都會掃到。HOLD 的稿已在版面上的不移出，
+    跟其他 HOLD 稿一樣發行時只出標題（「暫扣」）。訊息超過一期上限被標 expired 時仍直接 hold，不讓雜訊稿出全文。
+    """
+    found: dict[int, dict] = {}
+    for story_id in dict.fromkeys(story_ids):
+        version = latest_version(session, story_id)
+        if version is None or version.status == "hold" or not (version.body or "").strip():
+            continue
+        hits = story_noise({name: getattr(version, name) for name in NOISE_FIELDS})
+        if not hits:
+            continue
+        message = post_message(
+            session, run_variant=MAS, edition_date=edition_date, sender="system", recipient="human", type="HOLD",
+            now=clock.tick(), story_id=story_id, target_version=version.version,
+            payload={"detail": "稿件欄位混進模型推理文字或 JSON 殘渣，HOLD", "noise": hits},
+        )
+        if message.status != "pending":
+            hold_story(session, story_id)
+        found[story_id] = hits
+        logger.warning("model noise HOLD: edition=%s story=%s fields=%s", edition_date, story_id, sorted(hits))
+    result.noise_log.update(found)
+    return found
 
 
 def rich_fields(evidence: list[EvidenceItem] | None) -> dict:
