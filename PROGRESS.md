@@ -26,6 +26,7 @@
 - ⚠️ 11/14、11/15 雜湊比手冊要求晚記（交 B 前有 commit，但不是當天），報告已照實寫。
 - 待補（需 production DB，只讀）：試刊 7 期成本列 `scripts/trial_metrics.py --start 2026-11-09 --end 2026-11-15`，填進 `exp3_results.md`「結論」的倍數。
 - 測試：新增 `tests/test_exp3.py` 6 個；全套 514 passed／7 skipped（worktree 沒有母本）；ruff 通過。只動評估腳本與文件，不需要 migration、不需重載。
+- ✅ 2026-11-23 07:29 已 fast-forward 併入 main（`dafaf4c`→`f1843f8`）；production 全套 517 passed／4 skipped，production 上不帶 `--write` 重產數字一致。只動評估腳本與文件，newsroom **沒有重載、不需要**。main **還沒 push**。
 
 ## 本次變更（2026-11-22 — M 組出刊前模型雜訊檢查 `MAS_NOISE_CHECK`，`claude-auto`，已 fast-forward 併入 main）
 
