@@ -5,7 +5,7 @@
 > 2026-10-29 以前的段落已搬到 `docs/archive/`（見文末「更早的紀錄」）。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-22（`claude-auto`：M 組出刊前模型雜訊檢查 `MAS_NOISE_CHECK`，預設關閉，還沒併入 main）。前次：2026-11-21（`claude-auto`：merge main 解 PROGRESS.md／exp2_results.md 衝突；`report --write` 改成保留手寫分析；志晨同意後 fast-forward 併入 main `c335f2c`→`claude-auto`，不需重載）。前次：2026-11-19（`claude-auto`：實驗二報告補「被刪的來源」一節）。前次：2026-11-19（實驗二報告補上錯誤分析／結論／限制草稿，待志晨改寫）。前次：2026-11-19 06:20（實驗二三組完成，`docs/eval/exp2_results.md` 已寫入；(c) 雜訊掃描乾淨；main 已 push `4d7c61f`）。前次：2026-11-18 07:40（實驗二 `run` 第一天：(a)(b) 完成、(c) 停在 H-T807，11/19 接著跑；`claude-auto` 離線模型雜訊掃描，還沒併入 main）。前次：2026-11-17 14:30（實驗二：A＝grok 選完 15 篇、`build`、`draft --live` 25/25 完成；明天 `run`）。前次：2026-11-17（實驗二 `build` 檢查正常稿來自候選清單，已 fast-forward 併入 main，不需重載；main 還沒 push）。前次：2026-11-16（實驗二正常稿抽樣修正已 fast-forward 併入 main，不需重載；main 已 push）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
+**Last updated:** 2026-11-22（`claude-auto`：M 組出刊前模型雜訊檢查 `MAS_NOISE_CHECK`，預設關閉；志晨同意後 fast-forward 併入 main，開關沒開、不需重載）。前次：2026-11-21（`claude-auto`：merge main 解 PROGRESS.md／exp2_results.md 衝突；`report --write` 改成保留手寫分析；志晨同意後 fast-forward 併入 main `c335f2c`→`claude-auto`，不需重載）。前次：2026-11-19（`claude-auto`：實驗二報告補「被刪的來源」一節）。前次：2026-11-19（實驗二報告補上錯誤分析／結論／限制草稿，待志晨改寫）。前次：2026-11-19 06:20（實驗二三組完成，`docs/eval/exp2_results.md` 已寫入；(c) 雜訊掃描乾淨；main 已 push `4d7c61f`）。前次：2026-11-18 07:40（實驗二 `run` 第一天：(a)(b) 完成、(c) 停在 H-T807，11/19 接著跑；`claude-auto` 離線模型雜訊掃描，還沒併入 main）。前次：2026-11-17 14:30（實驗二：A＝grok 選完 15 篇、`build`、`draft --live` 25/25 完成；明天 `run`）。前次：2026-11-17（實驗二 `build` 檢查正常稿來自候選清單，已 fast-forward 併入 main，不需重載；main 還沒 push）。前次：2026-11-16（實驗二正常稿抽樣修正已 fast-forward 併入 main，不需重載；main 已 push）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
 
 ## 線上現況（2026-11-13 查證）
 
@@ -14,7 +14,7 @@
 - 查證當下 main 領先 origin/main 3 個 commit（`ff87ca0`、`7f72c69`、`4446959`）；部署後共 9 個，**還沒 push**。
 - production DB 523 MB、Alembic `b8d4f0a17c33`。全套（production checkout，有母本）413 passed／4 skipped。
 
-## 本次變更（2026-11-22 — M 組出刊前模型雜訊檢查 `MAS_NOISE_CHECK`，`claude-auto`，還沒併入 main）
+## 本次變更（2026-11-22 — M 組出刊前模型雜訊檢查 `MAS_NOISE_CHECK`，`claude-auto`，已 fast-forward 併入 main）
 
 自動開發 session，worktree `~/Documents/Developer/Lab/rt-wt-auto`。只讀了 `newsroom.log`（11/22 06:00 準備正常：12 篇、`degraded=[]`，06:05 完成）；沒碰任何 DB、沒呼叫 Codex。`main` 沒有新 commit，merge 不需要。
 
@@ -23,7 +23,8 @@
 - 選 HOLD 不選重試：重試會多呼叫 Codex、改變實驗紀錄的呼叫數；試刊與實驗二期間只有 69855 一篇命中，HOLD 的代價是偶爾少一篇全文。
 - ⚠️ 雜訊若在 `headline`，暫扣稿的標題仍會印出（目前沒有案例）。
 - 測試：新增 `tests/test_noise_hold.py` 3 個（關閉時 69855 原文照常出全文、開啟時只扣那一篇、重跑不重複發 HOLD）；全套 508 passed／7 skipped（worktree 沒有母本）；ruff 通過。不需要 migration。
-- 👤 要用的話：併入 main → production `.env` 加 `MAS_NOISE_CHECK=true` → `deploy/install_launchd.sh newsroom-reload`。只要併入、不開開關，不需要重載。
+- ✅ 志晨同意後已於 2026-11-22 fast-forward 併入 main（`eb0fe2f`→本筆紀錄）；**開關沒開**，`.env` 沒動，newsroom **沒有重載、不需要**。main **還沒 push**。
+- 👤 要開的話：production `.env` 加 `MAS_NOISE_CHECK=true` → `deploy/install_launchd.sh newsroom-reload`（下一次 06:00 準備起生效）。
 
 ## 本次變更（2026-11-21 — 實驗二 `report --write` 保留手寫分析，`claude-auto`，已 fast-forward 併入 main）
 
@@ -204,7 +205,7 @@ worktree `~/Documents/Developer/Lab/rt-wt-cleanup`。開發時 production 只做
    - origin 上已併入的舊分支還在（本機的 11/13 已刪）；`.env` 備份裡還有舊的 `MINIMAX_API_KEY`，不再用就去撤銷。
    - `docs/v5/` 的歷史檔移到 `docs/archive/`；`CLAUDE.md` 與 `AGENTS.md` 內容相同，擇一為主。
    - `orchestrator.py`（1,163 行）、`run.py`（1,004 行）交付不要求就不拆。
-   - ✅ 模型雜訊輸出檢查：2026-11-22 在 `claude-auto` 做成 `MAS_NOISE_CHECK`（預設關閉），👤 決定要不要併入、開啟。
+   - ✅ 模型雜訊輸出檢查：2026-11-22 做成 `MAS_NOISE_CHECK`（預設關閉），已併入 main；👤 決定什麼時候開。
 
 - ℹ️ `agent_messages` 有 342 列 11/12 以前的訊息停在 `pending`（結案邏輯 11/13 才生效）。是試刊資料，不回填，報告裡註明。
 - ⚠️ 11/04、11/05、11/07–11/12 的 M 組稿都是 08:35 之後才核准，讀者只收到標題短訊；11/13 起是發行前核准。報告照實記。
