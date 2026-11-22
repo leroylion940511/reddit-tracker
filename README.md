@@ -248,6 +248,7 @@ REDDIT_TRACKER_NO_DOTENV=1 uv run python -m pytest -q
 | `scripts/exp1_results.py` ＋ `reddit_tracker/eval/exp1_results.py` | 實驗一結果表：Precision／Recall／錯誤合併率（Wilson 區間）、F1（bootstrap）、exact McNemar、κ；`--write` 才寫 `docs/eval/cluster_pairs_v1.csv`（不覆寫）與 `exp1_results.md` |
 | `scripts/export_blind_count.py` ／ `daily blind-export` ＋ `daily/blind.py` | 實驗三盲計：每天從 P、M 都有寫的事件抽 8 篇（4 P／4 M）去識別化匯出，只 commit 對照表 SHA-256 |
 | `scripts/analyze_blind_count.py` | 驗證對照表雜湊後算 P／M 的七類錯誤、每 10 篇主指標、HOLD 敏感度版本與猜組別正確率 |
+| `scripts/exp3_results.py` ＋ `reddit_tracker/eval/exp3.py` | 實驗三結果表：B（agy）原始輸出 `--from-raw DIR` 解析成 `docs/eval/exp3/B_labels.json`，逐期／合計主指標、M−P、exact 符號檢定、各類錯誤、猜組別、逐篇明細；`--write` 寫 `docs/eval/exp3_results.md`（保留手寫分析標記以下） |
 | `scripts/sample_exp2.py` | 實驗二：從 M 組稿固定種子抽 25 篇 |
 | `scripts/run_exp2.py` ＋ `reddit_tracker/eval/exp2.py` | 實驗二：查核員全關／只開程式工具／程式＋LLM 三組執行與結果表。`build` 凍結案例、`draft` 產生共用的 v1、`run` 跑三組、`report` 出表；不加 `--live` 只重播帳本。設計見 [`docs/eval/EXP2_DESIGN.md`](docs/eval/EXP2_DESIGN.md) |
 | `scripts/export_1027_fixtures.py` | 從 10/27 唯讀母本匯出回歸集 fixture |

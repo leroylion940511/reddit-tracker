@@ -5,7 +5,7 @@
 > 2026-10-29 以前的段落已搬到 `docs/archive/`（見文末「更早的紀錄」）。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-22（`claude-auto`：M 組出刊前模型雜訊檢查 `MAS_NOISE_CHECK`，預設關閉；志晨同意後 fast-forward 併入 main，開關沒開、不需重載）。前次：2026-11-21（`claude-auto`：merge main 解 PROGRESS.md／exp2_results.md 衝突；`report --write` 改成保留手寫分析；志晨同意後 fast-forward 併入 main `c335f2c`→`claude-auto`，不需重載）。前次：2026-11-19（`claude-auto`：實驗二報告補「被刪的來源」一節）。前次：2026-11-19（實驗二報告補上錯誤分析／結論／限制草稿，待志晨改寫）。前次：2026-11-19 06:20（實驗二三組完成，`docs/eval/exp2_results.md` 已寫入；(c) 雜訊掃描乾淨；main 已 push `4d7c61f`）。前次：2026-11-18 07:40（實驗二 `run` 第一天：(a)(b) 完成、(c) 停在 H-T807，11/19 接著跑；`claude-auto` 離線模型雜訊掃描，還沒併入 main）。前次：2026-11-17 14:30（實驗二：A＝grok 選完 15 篇、`build`、`draft --live` 25/25 完成；明天 `run`）。前次：2026-11-17（實驗二 `build` 檢查正常稿來自候選清單，已 fast-forward 併入 main，不需重載；main 還沒 push）。前次：2026-11-16（實驗二正常稿抽樣修正已 fast-forward 併入 main，不需重載；main 已 push）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
+**Last updated:** 2026-11-23（`claude-auto`：實驗三 B（agy）盲計 7 期完成、`docs/eval/exp3_results.md` 已寫入）。前次：2026-11-22（`claude-auto`：M 組出刊前模型雜訊檢查 `MAS_NOISE_CHECK`，預設關閉；志晨同意後 fast-forward 併入 main，開關沒開、不需重載）。前次：2026-11-21（`claude-auto`：merge main 解 PROGRESS.md／exp2_results.md 衝突；`report --write` 改成保留手寫分析；志晨同意後 fast-forward 併入 main `c335f2c`→`claude-auto`，不需重載）。前次：2026-11-19（`claude-auto`：實驗二報告補「被刪的來源」一節）。前次：2026-11-19（實驗二報告補上錯誤分析／結論／限制草稿，待志晨改寫）。前次：2026-11-19 06:20（實驗二三組完成，`docs/eval/exp2_results.md` 已寫入；(c) 雜訊掃描乾淨；main 已 push `4d7c61f`）。前次：2026-11-18 07:40（實驗二 `run` 第一天：(a)(b) 完成、(c) 停在 H-T807，11/19 接著跑；`claude-auto` 離線模型雜訊掃描，還沒併入 main）。前次：2026-11-17 14:30（實驗二：A＝grok 選完 15 篇、`build`、`draft --live` 25/25 完成；明天 `run`）。前次：2026-11-17（實驗二 `build` 檢查正常稿來自候選清單，已 fast-forward 併入 main，不需重載；main 還沒 push）。前次：2026-11-16（實驗二正常稿抽樣修正已 fast-forward 併入 main，不需重載；main 已 push）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
 
 ## 線上現況（2026-11-13 查證）
 
@@ -13,6 +13,19 @@
 - 11/13 是新程式的第一期：06:00–06:05 準備（P 影子 5 次、M 28 次 Codex），12 篇、`degraded=[]`；12 篇於 07:06 核准；08:35 發行（Telegram 533、534）。
 - 查證當下 main 領先 origin/main 3 個 commit（`ff87ca0`、`7f72c69`、`4446959`）；部署後共 9 個，**還沒 push**。
 - production DB 523 MB、Alembic `b8d4f0a17c33`。全套（production checkout，有母本）413 passed／4 skipped。
+
+## 本次變更（2026-11-23 — 實驗三盲計與結果，`claude-auto`）
+
+自動開發 session，worktree `~/Documents/Developer/Lab/rt-wt-auto`。只唯讀讀了 production 的 `annotation/2026-11-{09..15}/`（blind.txt、mapping.sha256）、`annotation/_private/` 對照表與 `newsroom.log`；沒碰任何 DB、沒呼叫 Codex。`main` 沒有新 commit，merge 不需要。
+
+- ✅ **起因**：實驗三（手冊 8.3，三個必做實驗之一）只差 B 的錯誤計數；B 改由 agy 代標（2026-11-17 志晨確認），一直沒有跑。
+- ✅ 11/14、11/15 的對照表雜湊先 commit（`3e11801`）再交給 B。
+- ✅ B＝agy 逐期盲計（提示詞 `docs/eval/exp3/prompt_B_count.md`、schema `schema_count.json`；空資料夾、`--mode plan --sandbox`；每期只跑一次），7 期 56 篇全部完成；解析後的標註與理由存 `docs/eval/exp3/B_labels.json`，原始輸出在 worktree `annotation/exp3/`（gitignored）。
+- ✅ `reddit_tracker/eval/exp3.py`＋`scripts/exp3_results.py`：沿用 `analyze_blind`，逐期／合計主指標、M−P、exact 符號檢定、七類、猜組別、逐篇明細；對照表沿用 `analyze_blind_count._load` 驗雜湊；`--write` 保留手寫分析。介面見 README 腳本表。
+- 📌 **結果**（`docs/eval/exp3_results.md`）：M 每 10 篇 3.2 個第 1–5 類錯誤、P 5.0 個（各 28 篇）；逐期 4 期 P 較多、3 期 M 較多，符號檢定 p=1 → 看不出一致差異。兩組最多都是無關來源（P 8、M 5）；P 的標題與內文不一較多（5 vs 2），多半是一次寫整版造成正文截斷（混淆因素）。7 期無降級、抽樣無 HOLD；B 猜組別 0.42，盲化沒失效。錯誤分析／結論／限制已直接定稿在報告標記以下。
+- ⚠️ 11/14、11/15 雜湊比手冊要求晚記（交 B 前有 commit，但不是當天），報告已照實寫。
+- 待補（需 production DB，只讀）：試刊 7 期成本列 `scripts/trial_metrics.py --start 2026-11-09 --end 2026-11-15`，填進 `exp3_results.md`「結論」的倍數。
+- 測試：新增 `tests/test_exp3.py` 6 個；全套 514 passed／7 skipped（worktree 沒有母本）；ruff 通過。只動評估腳本與文件，不需要 migration、不需重載。
 
 ## 本次變更（2026-11-22 — M 組出刊前模型雜訊檢查 `MAS_NOISE_CHECK`，`claude-auto`，已 fast-forward 併入 main）
 
@@ -198,6 +211,7 @@ worktree `~/Documents/Developer/Lab/rt-wt-cleanup`。開發時 production 只做
 4. 👤 **請老師確認** `trial-dates.md` 的時程與用本機 Codex 當 LLM（手冊 6.9 第 1 條要正式 API），並告知 A、B。這裡沒有收到確認的紀錄；B 的七類錯誤計數練習（原訂 11/08 前）也沒有紀錄。
 5. 👤 **`FACT_CHECKER_PER_SOURCE`**：試刊已用預設關閉在跑；要不要在實驗二 (c) 組打開，最晚 11/17 前定案（`docs/pr/checker-per-source.md`）。
 6. ✅ **實驗二**：2026-11-19 三組完成、`docs/eval/exp2_results.md` 已寫入（見「實驗二執行」）。分析／結論／限制草稿已寫進 `exp2_results.md`，剩 👤 志晨讀過改寫。
+6b. ✅ **實驗三**：2026-11-23 B（agy）盲計 7 期完成，`docs/eval/exp3_results.md` 已寫入並定稿分析；剩試刊 7 期成本列（`trial_metrics.py`，需 production DB）。
 7. **11/20 打 `final-1120` 功能凍結**；之前不要 `brew upgrade codex`。
 8. **凍結後的清理**（都不要在 11/20 前做）：
    - `run_mas` 把整個候選池（每天約 4,800 個事件）都寫成 `stories` 並建證據包，實際只用 12 篇；先確認分版主編要不要全池，再改成只處理入選稿。

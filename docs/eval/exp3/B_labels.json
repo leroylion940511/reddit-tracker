@@ -1,0 +1,632 @@
+{
+ "2026-11-09": {
+  "1": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "P",
+   "reason": "全為 0；單一來源，標題、內文與台灣版分版皆與來源一致，內文僅出現日期數字「7日」。"
+  },
+  "2": {
+   "class1": 1,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "M",
+   "reason": "第1類為 1：`yahoo-finance` 講黃仁勳發內部信承認婚外情並配合董事會調查，`cnbc-top` 講美國兩黨國會議員希望就此詢問黃仁勳，屬由原事件引起但主角與行動不同的後續事件；其餘各類無誤。"
+  },
+  "3": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "P",
+   "reason": "全為 0；兩來源皆報導南非地方選舉 ANC 表現重挫，正文數字 99% 與 31% 皆出自 `aljazeera`，標題、譯名與國際版分版皆正確。"
+  },
+  "4": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "P",
+   "reason": "全為 0；單一來源，標題與內文均與 `ltn-politics` 摘要一致，無金額人數等數字或分版問題。"
+  },
+  "5": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "P",
+   "reason": "全為 0；三來源皆為力晶投控登錄興櫃與推 1088 元股東會禮品（標題各異，屬共用新聞稿非標題幾乎一樣的轉載），1088 元有出處，力晶投控屬科技公司放科技版未達明顯分版錯誤。"
+  },
+  "6": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 1,
+   "guess": "M",
+   "reason": "第7類為 1：`setn`「副總統蕭美琴助講挺蘇巧慧！盼繁星與洋流匯聚領航台灣」與 `cna-local`「副總統助講挺蘇巧慧 盼繁星與洋流匯聚領航台灣」標題幾乎一樣且內文為轉載中央社，卻分開列為多來源；其餘各類無誤。"
+  },
+  "7": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "M",
+   "reason": "全為 0；六個獨立來源皆報導輝達啟動獨立調查與黃仁勳致員工信承認婚外情，標題、內文、科技版分版皆無誤且無無出處數字。"
+  },
+  "8": {
+   "class1": 1,
+   "class2": 1,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "不知道",
+   "reason": "第1類為 1：`ettoday-realtime` 與 `cna-politics` 聚焦沈伯洋回應，與 `storm`、`ltn-politics`、`setn` 報導蔣萬安反嗆屬不同主角與行動的後續事件；第2類為 1：正文在「沈…」處截斷，完全找不到標題所稱曹興誠轟「依附著中共邪靈政權」及蔣萬安反嗆「熟悉的大罷免都回來了」的說法。"
+  }
+ },
+ "2026-11-10": {
+  "1": {
+   "class1": 0,
+   "class2": 1,
+   "class3": 0,
+   "class4": 1,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "P",
+   "reason": "第2類：標題的「擬砸近20億元」與「轉型封測一站式整合服務商」在被截斷的正文中皆找不到；第4類：yahoo-tw-stock 標題稱斥資23.5億元，與 cna-stock 摘要的約新台幣19.6億元（及 udn-money、ltn-business 的近20億元）說法矛盾，正文未說明。"
+  },
+  "2": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "M",
+   "reason": "四個來源均報導 Massie 推動眾院表決彈劾國防部長 Hegseth 的同一事件，標題、正文、數字（兩天內）與來源一致，無譯名不一、矛盾或分版錯誤。"
+  },
+  "3": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "P",
+   "reason": "六個來源均為不同媒體報導易遊網遭駭逾69萬人個資外洩一事，標題、正文與數字皆有出處且無矛盾，分在台灣版合理。"
+  },
+  "4": {
+   "class1": 1,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "P",
+   "reason": "第1類：來源 abcnews-intl 講的是教宗結束烏拉圭訪問並慶祝當地天主教節日，屬同主題但不同行動，非教宗訪阿根廷演說與主持彌撒的同一事件；其餘類別無誤，正文亦已標明 BBC/FT 與衛報對批評力道的不同描述。"
+  },
+  "5": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "M",
+   "reason": "單一來源 ltn-politics，標題、正文與數字（17年）均與來源一致，台灣政治司法新聞分在台灣版正確。"
+  },
+  "6": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "M",
+   "reason": "單一來源 yahoo-tw-stock，正文 1,134,087 仟元與標題 11.34 億元及年增 20.51% 皆有出處且一致，科技公司營收分在科技版無明顯分版錯誤。"
+  },
+  "7": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "P",
+   "reason": "五個來源皆屬克拉科夫槍擊案及48小時內嫌犯送醫不治的更新報導，標題、正文與各項數字均有出處，傷者人數差異（16傷與聯合早報的至少15傷）正文已標明。"
+  },
+  "8": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 1,
+   "class7": 0,
+   "guess": "M",
+   "reason": "第6類：事件主角為美國科技公司輝達執行長黃仁勳，核心為承認婚外情及董事會針對美國國安與公司機密啟動獨立調查，依分版表應屬科技版或國際版，放在台灣版明顯分版錯誤；其餘無誤。"
+  }
+ },
+ "2026-11-11": {
+  "1": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 1,
+   "class7": 0,
+   "guess": "P",
+   "reason": "財政部公布台灣10月出口統計屬於台灣財經新聞，依分版表應歸類於台灣版而非科技版（分版錯）；其餘來源、數字與標題皆一致無誤。"
+  },
+  "2": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "P",
+   "reason": "兩篇來源皆報導同一份桃園市長民調，正文數字、差距與標題及來源均相符，分版與命名皆無誤。"
+  },
+  "3": {
+   "class1": 1,
+   "class2": 0,
+   "class3": 0,
+   "class4": 1,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "P",
+   "reason": "來源 aljazeera 報導格什姆島爆炸與美軍封鎖陸路補給線，與川普淡化對伊朗動武及油價走低非同一具體事件（無關來源）；且 ft-home 與 guardian-world 稱布蘭特原油跌破90美元、跌近3%至89.66美元，正文僅採 yahoo-finance 的92.33美元、跌幅0.23%卻未說明差異（矛盾沒標）。"
+  },
+  "4": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "M",
+   "reason": "五篇來源皆報導台積電董事會核准各5億美元認購 Anthropic 與 OpenAI 股票，正文數字與標題皆出自 udn-money，分版與來源列表皆無明顯錯誤。"
+  },
+  "5": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "M",
+   "reason": "五篇來源皆報導謝新隆千萬元交保與謝典霖11日開延押庭，正文金額、限制期間與開庭時間皆有來源出處，標題、人名與分版皆無誤。"
+  },
+  "6": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "P",
+   "reason": "四篇來源皆報導台積電10月營收5,868.9億元創新高，正文營收與第4季財測數字皆出自 rti-news，標題、來源與科技版分類皆無誤。"
+  },
+  "7": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "M",
+   "reason": "六篇來源皆聚焦馬西提彈劾赫格塞斯及各方回應，正文8項條款與參議院三分之二門檻皆有出處，人名譯名與分版均一致無誤。"
+  },
+  "8": {
+   "class1": 1,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "M",
+   "reason": "來源混列多起主角與行動不同的後續事件，如 technews-tw 報導輝達股東提起集體訴訟、cna-economy 報導吳誠文回應台灣供應鏈，與 ettoday-realtime 及 ltn-politics 報導蔣萬安受訪回應輝達總部非同一事件（無關來源）；其餘類別無誤。"
+  }
+ },
+ "2026-11-12": {
+  "1": {
+   "class1": 0,
+   "class2": 1,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "P",
+   "reason": "第2類：標題提及「US Treasury Secretary」與「after alleged Iranian threats」，但正文僅節錄BBC摘要「live on military bases due to safety concerns」，未提及財政部長頭銜與伊朗威脅。"
+  },
+  "2": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 1,
+   "guess": "M",
+   "reason": "第7類：technews-tw與rti-news標題僅前後詞序對調且摘要內文完全相同，明顯為同一篇轉載稿卻分開列為兩個來源。"
+  },
+  "3": {
+   "class1": 1,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "P",
+   "reason": "第1類：主事件為蔡英文回應羅大佑「未婚未育」批評，但storm（沈政男發文聲援）、yahoo-tw-stock（蕭美琴受訪回應）與setn（曹興誠駁斥外省人說法）皆為不同主角與不同行動的後續事件，屬無關來源。"
+  },
+  "4": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "M",
+   "reason": "七類皆無錯誤：四個來源皆報導西班牙14年來首次全國大罷工，標題、正文、數字與國際版分類皆無誤。"
+  },
+  "5": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 1,
+   "class7": 1,
+   "guess": "M",
+   "reason": "第6類：統一洽購肯德基、必勝客亞洲餐飲業務屬台灣財經新聞，放進科技版明顯分版錯誤；第7類：technews-tw與yahoo-tw-stock標題幾乎相同且摘要皆為中央社同篇轉載稿，卻分開列出。"
+  },
+  "6": {
+   "class1": 1,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "P",
+   "reason": "第1類：主事件為廣達公布前三季財報與明年伺服器展望，但來源ltn-business報導的是英業達法說會，主角與事件皆不同，屬無關來源。"
+  },
+  "7": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "M",
+   "reason": "七類皆無錯誤：四個來源皆報導歐洲多國學校同日接獲虛假炸彈威脅與疏散事件，正文亦區分「數百校疏散」與「義大利數千校接獲威脅」，標題、數字與國際版分類皆正確。"
+  },
+  "8": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "P",
+   "reason": "七類皆無錯誤：六個來源皆報導電電公會11日發布首部產業白皮書與拜會經濟部，標題、正文、數字、人名與台灣版分類皆無誤。"
+  }
+ },
+ "2026-11-13": {
+  "1": {
+   "class1": 1,
+   "class2": 1,
+   "class3": 0,
+   "class4": 0,
+   "class5": 1,
+   "class6": 0,
+   "class7": 0,
+   "guess": "P",
+   "reason": "第1類：來源 cnbc-top 主體為烏克蘭警告 Starshield 衛星網路中斷，與美特使赴莫斯科會普丁非同一事件；第2類：標題寫「阿布達比三方會談」，正文僅寫「阿拉伯聯合大公國」而找不到「阿布達比」；第5類：標題寫「普丁」，正文寫「Vladimir Putin」，同一人名兩種寫法。"
+  },
+  "2": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "P",
+   "reason": "單一來源報導，標題、正文、引述與人名皆與來源一致，歸台灣版合理，未見七類錯誤。"
+  },
+  "3": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 1,
+   "guess": "M",
+   "reason": "第7類：來源 npr-news（Israeli strike on a Gaza hospital kills 6 people, health authorities say）與 cbsnews-world（Israeli strike on Gaza hospital kills 6, health authorities say）標題幾乎完全相同，屬同一來源轉載卻分開列；其餘無誤（傷者人數差異正文已分別說明）。"
+  },
+  "4": {
+   "class1": 0,
+   "class2": 1,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "P",
+   "reason": "第2類：標題稱仁寶分割「伺服器」研發銷售業務，但正文僅寫「基礎設施解決方案事業群（ISBG）」與「雲端基礎設施」，全文找不到「伺服器」一詞；其餘項目無誤。"
+  },
+  "5": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "M",
+   "reason": "六個來源皆針對同一場微軟服務中斷事件，數字「近13萬」出自衛報摘要，微軟說明原因前後差異及 AWS/Google 是否相關皆已於正文交代，未見七類錯誤。"
+  },
+  "6": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "M",
+   "reason": "六個來源均為 G7 外長聯合聲明挺台海和平及台灣外交部回應，標題與內文一致、無未標矛盾或無出處數字，放台灣版亦非明顯分版錯，未見七類錯誤。"
+  },
+  "7": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "不知道",
+   "reason": "正文雖有截斷語句，但對照七類標準，兩來源屬同一事件且非轉載、財務數字皆有出處、標題「逼近5元」與正文4.94元相符，且含 AI 治理計畫放科技版非明顯分版錯，七類皆為 0。"
+  },
+  "8": {
+   "class1": 1,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "P",
+   "reason": "第1類：來源 ltn-business（「台積電才爆個資遭兜售外流 大聯大也發生資安事件」）主角與行動為大聯大公告資安事件，僅以台積電作背景提及，與本篇台積電員工個資外洩非同一事件；其餘項目無誤。"
+  }
+ },
+ "2026-11-14": {
+  "1": {
+   "class1": 1,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "不知道",
+   "reason": "第1類：npr-news 聚焦范霍倫對外援政策的規劃專訪，aljazeera 為其個人簡介且未提挑戰舒默一事，兩者皆非「挑戰舒默競選參議院領袖」同一事件。"
+  },
+  "2": {
+   "class1": 1,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "不知道",
+   "reason": "第1類：cnbc-top 聚焦黃仁勳辭職後 Lutnick 家族及兒子公司與 Nvidia 的財務關係遭檢視，未提國會作證要求；yahoo-finance 則為 Lutnick 據傳同意下月赴國會作證的後續行動，與參院要求兩人作證分屬不同事件。"
+  },
+  "3": {
+   "class1": 0,
+   "class2": 1,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "不知道",
+   "reason": "第2類：標題稱「反超」與「政見辯論後黃金交叉」，但正文僅照搬截斷的導言（38.4% 對 35.1%、差距 3.3 個百分點），完全找不到反超或黃金交叉的說法。"
+  },
+  "4": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 1,
+   "class7": 0,
+   "guess": "不知道",
+   "reason": "第6類：本篇為習近平在北京紀念孫中山大會發表對台統一談話及陸委會回應，屬兩岸新聞；依分版表兩岸應歸國際版，卻誤置於台灣版。"
+  },
+  "5": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "不知道",
+   "reason": "各項均無錯誤：五個來源皆報導川普受訪談黎智英獲釋前景，標題與內文一致，數字（78歲、20年）皆有出處，譯名與國際版分版亦無問題。"
+  },
+  "6": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "不知道",
+   "reason": "各項均無錯誤：五個來源皆聚焦 Kalshi 終止小川普顧問合約，正文妥善整合競業投資與政治審視等不同說法，標題、譯名與科技版分版皆無明顯錯誤。"
+  },
+  "7": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "不知道",
+   "reason": "各項均無錯誤：六個來源皆圍繞 Microsoft 365 全球大當機事件，標題與內文相符，數字（74個國家和地區、第二天）皆有來源依據，分版為科技版亦屬合理。"
+  },
+  "8": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "不知道",
+   "reason": "各項均無錯誤：四個來源皆為浩鼎與諾華簽署 ADC 藥物合作暨授權協議，正文與標題一致，無無出處數字或明顯分版錯誤。"
+  }
+ },
+ "2026-11-15": {
+  "1": {
+   "class1": 1,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "不知道",
+   "reason": "第1類：來源 cna-politics 報導的是13日蔣萬安赴饒河夜市掃街拜票與走訪東發號致意，與其餘三篇14日許淑華爆未付款及蔣辦告發非同一具體事件；其餘類別無誤。"
+  },
+  "2": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "不知道",
+   "reason": "三篇來源皆指向輝達接洽哈斯與董事會回應同一事件，標題、數字（約7年）、譯名與分版均正確，且正文已明示金融時報與輝達董事會說法不同。"
+  },
+  "3": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "不知道",
+   "reason": "四篇來源皆報導澤連斯基稱美方提議以撤出頓巴斯換取加入北約可能性，標題與內文一致，無無出處數字、譯名不一或分版錯誤。"
+  },
+  "4": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "不知道",
+   "reason": "兩篇來源皆圍繞川普點名庫克接替黃仁勳及分析師評估機率幾乎為零，標題、內文、譯名與科技分版皆無誤。"
+  },
+  "5": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "不知道",
+   "reason": "單一來源報導丁守中等提出兩岸和平倡議與梁文傑批評，260名等資訊有出處，屬台灣國內政治爭議放台灣版無明顯分版錯，其餘無誤。"
+  },
+  "6": {
+   "class1": 0,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "不知道",
+   "reason": "兩篇來源皆報導高雄市長政見會柯志恩發言，標題與內文一致，53萬票、13579、第1個月、38個行政區等數字皆出自 rti-news，無誤。"
+  },
+  "7": {
+   "class1": 0,
+   "class2": 1,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "不知道",
+   "reason": "第2類：標題稱「Philippines’ Carmelle wins first Eurovision contest in Asia」，但正文於「Carmelle Collado ha…」處截斷，正文完全找不到首屆亞洲歐洲歌唱大賽的說法；其餘類別無誤。"
+  },
+  "8": {
+   "class1": 1,
+   "class2": 0,
+   "class3": 0,
+   "class4": 0,
+   "class5": 0,
+   "class6": 0,
+   "class7": 0,
+   "guess": "不知道",
+   "reason": "第1類：來源 yahoo-finance 報導美中首次貿易理事會討論關稅與農產品貿易，與其餘五篇報導美中俄領袖三方會談非同一具體事件；其餘類別無誤。"
+  }
+ }
+}
