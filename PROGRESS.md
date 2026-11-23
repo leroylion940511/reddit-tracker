@@ -42,7 +42,7 @@
 - 📌 11/19 M 組：訊息 34 則（提案 12、放行 12、異議 2、看過沒問題 1、要求修稿 1、版面異議 2、修稿完成 3、總編決定 1）；3 篇改稿全部放行、HOLD 0；模型呼叫 30 次（記者 16 次占 311 秒，失敗 1）；第一則提案到最後一個互動 6 分 46 秒。數字和 `summary`（訊息 34、呼叫 30）一致。
 - 視覺：fixture 靜態頁在 desktop app 瀏覽器確認卡片、矩陣、角色表與 Markdown 輸出。
 - 測試：`tests/test_replay_threads.py` 加 2 個；全套 524 passed／7 skipped（worktree 沒有母本）；ruff 通過。**不需要重載 newsroom**。
-- ⚠️ R1–R4 都只在 fixture 靜態頁看過，還沒在真的 FastAPI web（`/daily/{date}/newsroom/office`）開過一次；下次互動 session 起 web 看一眼。
+- ✅ 併入 main 後用 production checkout 起 `python -m reddit_tracker.web`（只打 GET，看完就關）：11/19 M 組四個分頁、`C` 跳異議、3D 都正常；11/19 P 組只有「流水」泳道、下個異議停用；11/23 M 組 `card`（訊息 27、呼叫 27）和 `summary` 一致。
 - ➡️ 下一步：時程第 6 項「發表申請單內容草稿」（12/10 前）。
 
 ## 本次變更（2026-11-23 晚 — 回放頁 R3 播放控制，`claude-auto`）
