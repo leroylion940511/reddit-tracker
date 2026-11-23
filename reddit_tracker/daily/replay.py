@@ -305,6 +305,45 @@ def build_threads(beats: list[dict]) -> dict[str, dict]:
     return threads
 
 
+LANE_ORDER = [  # 泳道由左到右：提案 → 總編 → 寫稿查核 → 文稿版面 → 真人
+    ("section_taiwan", "台編"), ("section_world", "國編"), ("section_tech", "科編"), ("eic", "總編"),
+    ("reporter", "記者"), ("fact_checker", "查核"), ("checktool", "工具"), ("copy_editor", "文稿"),
+    ("layout_editor", "版面"), ("human", "真人"), ("system", "程式"), ("pipeline", "流水"),
+]
+LANE_KINDS = ("llm", "message", "approve")
+
+
+def build_lanes(beats: list[dict], run_variant: str = "mas") -> dict:
+    """角色泳道時序圖（回放頁 R2）：每個角色一條泳道，訊息是箭頭、模型呼叫是區塊。
+
+    只收「互動」：模型呼叫、角色訊息、真人核准；收集、聚合、版面計畫不列。M 組頁面不列 P 組流水線的呼叫。
+    """
+    events = []
+    for beat in beats:
+        if beat["kind"] not in LANE_KINDS:
+            continue
+        if run_variant == "mas" and beat.get("actor") == "pipeline":
+            continue
+        detail = beat.get("detail") or {}
+        to = beat.get("to") if beat["kind"] == "message" else None
+        event = {"i": beat["i"], "at": beat["at"], "kind": beat["kind"], "actor": beat.get("actor"),
+                 "to": to if to != beat.get("actor") else None, "type": beat.get("type"),
+                 "status": beat.get("status"), "story_id": beat.get("story_id"),
+                 "say": _short(beat.get("say"), 80)}
+        if beat["kind"] == "llm":
+            event["secs"] = beat.get("secs") or 0
+            event["ok"] = detail.get("ok", True)
+        if beat.get("type") == "CHALLENGE":
+            event["objection"] = bool(beat.get("walk"))
+        events.append(event)
+    used = {e["actor"] for e in events} | {e["to"] for e in events if e["to"]}
+    lanes = [{"id": key, "short": short, "label": ROLE_LABELS.get(key, key)} for key, short in LANE_ORDER if key in used]
+    known = {lane["id"] for lane in lanes}
+    lanes += [{"id": key, "short": ROLE_LABELS.get(key, key)[:2], "label": ROLE_LABELS.get(key, key)}
+              for key in sorted(used - known)]
+    return {"lanes": lanes, "events": events}
+
+
 def build_replay(session: Session, edition_date: date, run_variant: str = "mas") -> dict:
     """一期的回放資料（純 dict，可直接 json.dumps）。沒有這一期的資料時 beats 是空的。"""
     edition = session.scalar(select(DailyEdition).where(DailyEdition.edition_date == edition_date))
@@ -733,6 +772,7 @@ def build_replay(session: Session, edition_date: date, run_variant: str = "mas")
         "phases": [{"id": key, "label": label} for key, label in PHASES if any(b["phase"] == key for b in beats)],
         "roles": ROLE_LABELS, "stories": stories_out, "plans": plan_out, "beats": beats,
         "threads": build_threads(beats),
+        "lanes": build_lanes(beats, run_variant),
         "summary": {
             "collected": totals["new"], "fetch_runs": totals["runs"], "fetch_failed": totals["failed"],
             "sources": totals["sources"], "candidates": candidates, "written": len(versions),

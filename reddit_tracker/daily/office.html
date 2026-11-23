@@ -74,6 +74,13 @@ ul.kv{list-style:none;margin:4px 0;padding:0;font-size:12.5px}ul.kv li{padding:2
 #stories li.open{background:#fbf7ee;cursor:default}
 #stories .head{cursor:pointer}
 #stories .caret{float:right;color:var(--muted);font-size:11px}
+#lanes .lhead{position:sticky;top:0;z-index:1;background:var(--panel);border-bottom:1px solid var(--rule)}
+#lanes .legend{display:flex;flex-wrap:wrap;gap:2px 8px;padding:4px 10px 5px;font-size:10.5px;color:var(--muted)}
+#lanes .legend i{display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:3px;border-radius:2px}
+#lanes svg{display:block;width:100%;height:auto}
+#lanes g.ev{cursor:pointer}#lanes g.ev .bg{fill:transparent}#lanes g.ev:hover .bg{fill:#f3ead8}
+#lanes g.ev.cur .bg{fill:#fbeeda}#lanes g.ev.future{opacity:.45}
+#lanes g.ev.cur .tm{fill:var(--accent);font-weight:700}
 ol.thread{list-style:none;margin:8px 0 2px;padding:0 0 0 10px;border-left:2px solid var(--rule)}
 ol.thread li{position:relative;padding:4px 6px 5px 10px;border:0;border-radius:6px;cursor:pointer;font-size:12px}
 ol.thread li::before{content:'';position:absolute;left:-16px;top:9px;width:9px;height:9px;border-radius:50%;background:#fff;border:2px solid var(--rule)}
@@ -125,8 +132,8 @@ ol.thread .say{margin-top:2px;color:var(--ink)}
   </div>
   <aside id="panel">
     <section id="now" aria-live="polite"></section>
-    <div id="tabs"><button type="button" class="on" data-tab="log">逐步紀錄</button><button type="button" data-tab="stories">稿件</button></div>
-    <div id="lists"><ol id="log"></ol><ul id="stories" hidden></ul></div>
+    <div id="tabs"><button type="button" class="on" data-tab="log">逐步紀錄</button><button type="button" data-tab="stories">稿件</button><button type="button" data-tab="lanes">互動</button></div>
+    <div id="lists"><ol id="log"></ol><ul id="stories" hidden></ul><div id="lanes" hidden></div></div>
   </aside>
   <footer id="transport">
     <button type="button" id="prev" title="上一步（←）">⏮</button>
@@ -658,9 +665,52 @@ function renderStories() {
     ul.appendChild(li);
   }
 }
+const LANES = DATA.lanes || {lanes: [], events: []};
+const LANE_COLOR = {PITCH:'#2d4263', CHALLENGE:'#c26a00', NONE:'#a39a8a', REQUEST_REVISION:'#6b3487', PAGE_OBJECTION:'#6b3487', APPEAL:'#6b3487',
+  REVISION_DONE:'#1d5fa0', RELEASE:'#1f7a3a', HOLD:'#b3261e', DECISION:'#8a1c1c', REBUT:'#c26a00'};
+const LANE_LEGEND = [['PITCH','提案'], ['CHALLENGE','異議'], ['NONE','看過沒問題'], ['REQUEST_REVISION','要求修稿／版面異議'], ['REVISION_DONE','修稿完成'], ['RELEASE','放行'], ['HOLD','HOLD'], ['DECISION','總編決定']];
+const laneEls = [];
+function buildLanes() {
+  const box = $('lanes'), NS = 'http://www.w3.org/2000/svg', lanes = LANES.lanes, events = LANES.events;
+  if (!events.length) { box.appendChild(el('p', 'sub', '這一期這一組沒有角色之間的互動。')).style.padding = '10px 12px'; return; }
+  const W = 360, GUT = 46, col = (W - GUT - 4) / lanes.length, x = {}; lanes.forEach((l, n) => { x[l.id] = GUT + col * (n + .5); });
+  const svgEl = (tag, attrs, parent, text) => { const n = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v); if (text != null) n.textContent = text; parent?.appendChild(n); return n; };
+  const head = el('div', 'lhead'), hs = svgEl('svg', {viewBox: `0 0 ${W} 22`}, head);
+  for (const l of lanes) { const t = svgEl('text', {x: x[l.id], y: 15, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 600, fill: '#1f1c18'}, hs, l.short); svgEl('title', {}, t, l.label); }
+  const legend = el('div', 'legend'); for (const [k, label] of LANE_LEGEND) { const sp = el('span'); const sw = el('i'); sw.style.background = LANE_COLOR[k]; sp.appendChild(sw); sp.appendChild(document.createTextNode(label)); legend.appendChild(sp); }
+  const blk = el('span'); const sw = el('i'); sw.style.cssText = 'background:#e9e2d2;border:1px solid #8a7f6c;height:8px;width:8px'; blk.appendChild(sw); blk.appendChild(document.createTextNode('模型呼叫（高度≈秒數）')); legend.appendChild(blk);
+  head.appendChild(legend); box.appendChild(head);
+  let y = 4; const rows = events.map((e) => { const h = e.kind === 'llm' ? 18 + Math.min(e.secs || 0, 90) * .5 : 18; const r = {e, y, h}; y += h; return r; });
+  const svg = svgEl('svg', {viewBox: `0 0 ${W} ${y + 6}`, role: 'img', 'aria-label': '角色泳道時序圖'});
+  const defs = svgEl('defs', {}, svg);
+  for (const [k, c] of Object.entries(LANE_COLOR)) { const m = svgEl('marker', {id: 'ah-' + k, viewBox: '0 0 8 8', refX: 7, refY: 4, markerWidth: 6, markerHeight: 6, orient: 'auto-start-reverse'}, defs); svgEl('path', {d: 'M0,0 L8,4 L0,8 z', fill: c}, m); }
+  for (const l of lanes) svgEl('line', {x1: x[l.id], x2: x[l.id], y1: 0, y2: y + 6, stroke: '#d9d0bf', 'stroke-dasharray': '2 3'}, svg);
+  for (const {e, y: top, h} of rows) {
+    const g = svgEl('g', {class: 'ev future', 'data-i': e.i}, svg), mid = top + h / 2, ax = x[e.actor] ?? GUT + 4;
+    svgEl('rect', {class: 'bg', x: 0, y: top, width: W, height: h}, g);
+    svgEl('text', {class: 'tm', x: 3, y: Math.min(mid + 3, top + 13), 'font-size': 9, 'font-family': 'ui-monospace,Menlo,monospace', fill: '#6f675b'}, g, e.at);
+    const key = e.type === 'CHALLENGE' && !e.objection ? 'NONE' : e.type;
+    if (e.kind === 'llm') {
+      svgEl('rect', {x: ax - Math.min(11, col / 2 - 2), y: top + 2, width: Math.min(22, col - 4), height: h - 4, rx: 3, fill: e.ok === false ? '#fbd5d0' : '#e9e2d2', stroke: e.ok === false ? '#b3261e' : '#8a7f6c'}, g);
+      if (h >= 26) svgEl('text', {x: ax, y: mid + 3, 'text-anchor': 'middle', 'font-size': 8, fill: '#1f1c18'}, g, `${Math.round(e.secs)}s`);
+    } else if (e.kind === 'approve') {
+      svgEl('path', {d: `M${ax},${mid - 6} l6,6 l-6,6 l-6,-6 z`, fill: '#1f7a3a'}, g);
+    } else {
+      const c = LANE_COLOR[key] || '#6f675b', tx = e.to ? x[e.to] : null, dash = e.status === 'rejected' ? '3 3' : null;
+      if (tx != null) { const line = svgEl('line', {x1: ax, y1: mid, x2: tx + (tx > ax ? -3 : 3), y2: mid, stroke: c, 'stroke-width': 2, 'marker-end': `url(#ah-${LANE_COLOR[key] ? key : 'PITCH'})`}, g); if (dash) line.setAttribute('stroke-dasharray', dash); }
+      svgEl('circle', {cx: ax, cy: mid, r: 3, fill: c}, g);
+    }
+    const who = `${ROLES[e.actor] || e.actor}${e.to ? ' → ' + (ROLES[e.to] || e.to) : ''}`;
+    svgEl('title', {}, g, `${e.at} ${who}｜${e.type || (e.kind === 'llm' ? `模型呼叫 ${e.secs} 秒` : '核准')}${e.story_id && STORIES[e.story_id] ? '｜《' + STORIES[e.story_id].headline + '》' : ''}\n${e.say}`);
+    g.addEventListener('click', () => jump(e.i)); laneEls.push([e.i, g]);
+  }
+  box.appendChild(svg);
+}
 function renderProgress() {
   const i = st.i; $('seek').value = Math.max(0, i); $('count').textContent = `${i + 1} / ${BEATS.length}`;
   logItems.forEach((li, n) => { li.classList.toggle('cur', n === i); li.classList.toggle('future', n > i); });
+  let curLane = null; for (const [n, g] of laneEls) { g.classList.toggle('cur', n === i); g.classList.toggle('future', n > i); if (n <= i) curLane = g; }
+  if (curLane && !$('lanes').hidden) { const box = $('lists'), r = curLane.getBoundingClientRect(), b = box.getBoundingClientRect(); if (r.top < b.top + 60 || r.bottom > b.bottom) box.scrollTop += r.top - b.top - box.clientHeight / 2; }
   for (const li of document.querySelectorAll('ol.thread li[data-i]')) { const n = Number(li.dataset.i); li.classList.toggle('cur', n === i); li.classList.toggle('done', n < i); }
   if (i >= 0) { const li = logItems[i], box = $('lists'); if (!$('log').hidden) box.scrollTop = Math.max(0, li.offsetTop - box.clientHeight / 2); }
   const b = BEATS[i]; $('clocktime').textContent = b ? b.at : '--:--:--'; $('clockday').textContent = b ? `${b.day}（台北）` : DATA.date;
@@ -759,14 +809,14 @@ function toggle() {
 }
 
 /* ───────────────────────── 啟動 ───────────────────────── */
-buildLists(); rebuild(0); renderNow(null); renderProgress();
+buildLists(); buildLanes(); rebuild(0); renderNow(null); renderProgress();
 if (!BEATS.length) { $('start').firstElementChild.textContent = '這一期沒有可回放的紀錄'; $('start').firstElementChild.disabled = true; }
 $('startbtn').addEventListener('click', toggle); $('play').addEventListener('click', toggle);
 $('prev').addEventListener('click', () => jump(st.i - 1, false)); $('next').addEventListener('click', () => jump(st.i + 1, false));
 $('seek').addEventListener('change', (e) => jump(Number(e.target.value)));
 $('speed').addEventListener('change', (e) => { st.speed = Number(e.target.value) || 1; });
 $('follow').addEventListener('change', (e) => { st.follow = e.target.checked; });
-for (const btn of $('tabs').children) btn.addEventListener('click', () => { for (const b of $('tabs').children) b.classList.toggle('on', b === btn); $('log').hidden = btn.dataset.tab !== 'log'; $('stories').hidden = btn.dataset.tab !== 'stories'; });
+for (const btn of $('tabs').children) btn.addEventListener('click', () => { for (const b of $('tabs').children) b.classList.toggle('on', b === btn); for (const id of ['log', 'stories', 'lanes']) $(id).hidden = btn.dataset.tab !== id; renderProgress(); });
 window.addEventListener('keydown', (e) => {
   if (e.target.matches('input,select,button,summary')) return;
   if (e.code === 'Space') { e.preventDefault(); toggle(); } else if (e.code === 'ArrowRight') jump(st.i + 1, false); else if (e.code === 'ArrowLeft') jump(st.i - 1, false);

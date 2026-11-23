@@ -1,9 +1,9 @@
-"""回放頁 R1：稿件協商串（`build_threads`）。fixture 是 11/19 M 組真實的 build_replay 輸出。"""
+"""回放頁 R1 稿件協商串（`build_threads`）、R2 角色泳道（`build_lanes`）。fixture 是 11/19 M 組真實的 build_replay 輸出。"""
 import json
 from pathlib import Path
 
 from reddit_tracker.daily.office_page import render_office
-from reddit_tracker.daily.replay import build_replay, build_threads
+from reddit_tracker.daily.replay import build_lanes, build_replay, build_threads
 from tests.test_mas_steps import DAY
 from tests.test_replay_office import _run
 
@@ -58,3 +58,37 @@ def test_build_replay_and_office_page_carry_threads(session):
     assert challenged and any(s["type"] == "REVISION_DONE" for s in challenged[0]["steps"])
     html = render_office(session, DAY, "mas")
     assert '"threads"' in html and "threadNode" in html
+
+
+# ── 回放頁 R2：角色泳道時序圖（`build_lanes`） ──
+
+def test_lanes_cover_only_interactions_in_beat_order():
+    data = json.loads(FIXTURE.read_text(encoding="utf-8"))
+    lanes = build_lanes(data["beats"], "mas")
+    assert [lane["short"] for lane in lanes["lanes"]] == ["台編", "國編", "科編", "總編", "記者", "查核", "工具", "文稿", "版面"]
+    events = lanes["events"]
+    assert {e["kind"] for e in events} <= {"llm", "message", "approve"}
+    assert all(e["actor"] != "pipeline" for e in events)  # M 組頁面不畫 P 組流水線
+    assert [e["i"] for e in events] == sorted(e["i"] for e in events)
+    lane_ids = {lane["id"] for lane in lanes["lanes"]}
+    assert all(e["actor"] in lane_ids and (e["to"] is None or e["to"] in lane_ids) for e in events)
+    pitches = [e for e in events if e["type"] == "PITCH"]
+    assert len(pitches) == 3 and all(e["to"] == "eic" for e in pitches)
+    challenges = {e["i"]: e["objection"] for e in events if e["type"] == "CHALLENGE"}
+    assert sorted(challenges.values()) == [False, True, True]
+    failed = [e for e in events if e["kind"] == "llm" and e["ok"] is False]
+    assert len(failed) == 1 and failed[0]["actor"] == "reporter"
+
+
+def test_pipeline_lanes_keep_the_pipeline_actor():
+    data = json.loads(FIXTURE.read_text(encoding="utf-8"))
+    lanes = build_lanes(data["beats"], "pipeline")
+    assert any(lane["id"] == "pipeline" for lane in lanes["lanes"])
+
+
+def test_build_replay_and_office_page_carry_lanes(session):
+    _run(session)
+    data = build_replay(session, DAY, "mas")
+    assert data["lanes"]["events"] and {e["i"] for e in data["lanes"]["events"]} <= {b["i"] for b in data["beats"]}
+    html = render_office(session, DAY, "mas")
+    assert 'data-tab="lanes"' in html and "buildLanes" in html

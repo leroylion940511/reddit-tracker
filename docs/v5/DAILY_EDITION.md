@@ -283,6 +283,7 @@ uv run python -m reddit_tracker.daily blind-export --dates YYYY-MM-DD --out DIR
 | `beats` | 見下表 |
 | `summary` | 收集則數與抓取次數、候選事件數、稿數、訊息數、各角色呼叫次數、降級、發行時間 |
 | `threads` | 稿件協商串（2026-11-23，回放頁 R1）：story id（字串）→ 見下方「稿件協商串」 |
+| `lanes` | 角色泳道時序圖（2026-11-23，回放頁 R2）：見下方「角色泳道 `lanes`」 |
 
 每個 beat：`i`（順序）、`at`／`day`／`iso`（台北時間）、`phase`、`kind`、`actor`、`mode`、`title`、`say`（氣泡文字）、
 `detail`（右側面板：提示詞、回應、payload、diff…）、選用的 `to`、`type`／`type_label`／`status`（訊息）、`story_id`、
@@ -324,6 +325,20 @@ uv run python -m reddit_tracker.daily blind-export --dates YYYY-MM-DD --out DIR
 
 頁面：「稿件」分頁每篇顯示異議／要求修稿／改稿次數、放行或 HOLD、模型耗時；點標題展開整串，
 點任一步跳到那一步（`jump(i)`），播放時目前那步會標出；diff 只顯示在「修稿完成」那步。
+
+### 角色泳道 `lanes`（2026-11-23，回放頁 R2）
+
+`build_lanes(beats, run_variant) -> {"lanes": [...], "events": [...]}`：只從 `beats` 整理。只收互動（`kind` 是 `llm`、`message`、`approve`）；
+M 組頁面不列 P 組流水線（`actor=pipeline`）的呼叫。
+
+- `lanes`：有出現的角色，固定順序 台編、國編、科編、總編、記者、查核、工具（checktool）、文稿、版面、真人、程式、流水；每條 `{id, short, label}`。
+- `events`：依 beat 順序，每個 `{i, at, kind, actor, to, type, status, story_id, say}`（`say` 截到 80 字）；
+  模型呼叫另有 `secs`、`ok`；CHALLENGE 另有 `objection`（同協商串）。訊息的 `to` 等於 `actor` 時記 `null`。
+
+頁面：「互動」分頁是純 SVG（不加套件）。一個事件一列、時間往下；訊息是從發送者到接收者的箭頭，
+顏色依種類（提案、異議、看過沒問題、要求修稿／版面異議、修稿完成、放行、HOLD、總編決定），被程式拒絕的畫虛線；
+模型呼叫是方塊，高度約與秒數成正比（90 秒封頂），失敗是紅框；真人核准是綠色菱形。滑過顯示完整說明，點擊跳到那一步；
+播放時目前那列會標出並捲到中間。
 
 ### 訊息的時間、連結與狀態（2026-11-12 起）
 
