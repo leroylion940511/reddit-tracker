@@ -1,0 +1,4226 @@
+{
+ "date": "2026-11-19",
+ "variant": "mas",
+ "timing": "recorded",
+ "phases": [
+  {
+   "id": "collect",
+   "label": "收集"
+  },
+  {
+   "id": "cluster",
+   "label": "聚合／快照"
+  },
+  {
+   "id": "pipeline",
+   "label": "流水線 P"
+  },
+  {
+   "id": "pitch",
+   "label": "提案"
+  },
+  {
+   "id": "write",
+   "label": "寫稿／查核"
+  },
+  {
+   "id": "layout",
+   "label": "版面協商"
+  },
+  {
+   "id": "copy",
+   "label": "文稿"
+  },
+  {
+   "id": "publish",
+   "label": "發行"
+  }
+ ],
+ "roles": {
+  "eic": "總編輯",
+  "section_taiwan": "台灣版主編",
+  "section_world": "國際版主編",
+  "section_tech": "科技版主編",
+  "section_editor": "分版主編",
+  "reporter": "記者",
+  "fact_checker": "查核員",
+  "copy_editor": "文稿編輯",
+  "layout_editor": "版面編輯",
+  "system": "程式",
+  "human": "真人審核",
+  "wire": "傳真機（RSSHub）",
+  "researcher": "資料員（RSS）",
+  "pipeline": "流水線（P 組）",
+  "checktool": "查核工具（程式）"
+ },
+ "stories": {
+  "86089": {
+   "id": 86089,
+   "section": "taiwan",
+   "section_label": "台灣",
+   "kind": "report",
+   "score": 48.0,
+   "headline": "施振榮抵深圳出席APEC　代表團：接機層級未如期待但可接受",
+   "source_title": "中國APEC資深官員接機　代表團：不是完全滿意尚可接受",
+   "final_status": "checked",
+   "versions": 2,
+   "front": true,
+   "lead": true
+  },
+  "86090": {
+   "id": 86090,
+   "section": "world",
+   "section_label": "國際",
+   "kind": "report",
+   "score": 40.7,
+   "headline": "輝達停止向中國供應Hopper晶片　未說明原因與期限",
+   "source_title": "英偉達稱已停止向中國供應Hopper高端晶片",
+   "final_status": "checked",
+   "versions": 1,
+   "front": true,
+   "lead": false
+  },
+  "86091": {
+   "id": 86091,
+   "section": "world",
+   "section_label": "國際",
+   "kind": "report",
+   "score": 39.9,
+   "headline": "美民主黨提名 Jeffries 出任眾院議長，有望成首位黑人議長",
+   "source_title": "Democrats nominate Hakeem Jeffries as first Black House speaker despite progressives’ concerns",
+   "final_status": "checked",
+   "versions": 1,
+   "front": true,
+   "lead": false
+  },
+  "86093": {
+   "id": 86093,
+   "section": "tech",
+   "section_label": "科技",
+   "kind": "report",
+   "score": 37.1,
+   "headline": "《Grand Theft Auto VI》上市，預購銷售額已逾十五億美元",
+   "source_title": "Tell us: are you playing Grand Theft Auto VI?",
+   "final_status": "checked",
+   "versions": 2,
+   "front": true,
+   "lead": false
+  },
+  "86094": {
+   "id": 86094,
+   "section": "taiwan",
+   "section_label": "台灣",
+   "kind": "report",
+   "score": 36.0,
+   "headline": "近期約800萬筆個資外洩 政院要求督促業者通知當事人",
+   "source_title": "數發部：近期8百萬筆個資外洩 要求企業72小時內通知當事人",
+   "final_status": "checked",
+   "versions": 1,
+   "front": true,
+   "lead": false
+  },
+  "86096": {
+   "id": 86096,
+   "section": "taiwan",
+   "section_label": "台灣",
+   "kind": "report",
+   "score": 35.1,
+   "headline": "王鴻薇堂妹王鴻嬪表態「拒投蔣萬安」",
+   "source_title": "這次拒投藍！ 王鴻薇堂妹2年前「覺醒」批蔣萬安影片曝",
+   "final_status": "checked",
+   "versions": 1,
+   "front": false,
+   "lead": false
+  },
+  "86097": {
+   "id": 86097,
+   "section": "taiwan",
+   "section_label": "台灣",
+   "kind": "report",
+   "score": 33.5,
+   "headline": "藍拚普發2萬元20日三讀　賴清德籲審慎",
+   "source_title": "[政治] 藍拚普發2萬20日三讀 賴清德籲在野黨審慎、勿一意孤行",
+   "final_status": "checked",
+   "versions": 1,
+   "front": false,
+   "lead": false
+  },
+  "86100": {
+   "id": 86100,
+   "section": "world",
+   "section_label": "國際",
+   "kind": "report",
+   "score": 33.0,
+   "headline": "Voyager 1距地球達一光日　航行49年創紀錄",
+   "source_title": "Voyager 1 reaches one light-day from Earth after 49 years in space",
+   "final_status": "checked",
+   "versions": 1,
+   "front": false,
+   "lead": false
+  },
+  "86103": {
+   "id": 86103,
+   "section": "world",
+   "section_label": "國際",
+   "kind": "report",
+   "score": 31.8,
+   "headline": "美媒指輝達2022年牽線阿里巴巴與黃樂　涉晶片出口管制爭議",
+   "source_title": "美媒驚爆輝達4年前為黃樂開路！阿里巴巴成首批客戶 Megaspeed交易鏈遭起底",
+   "final_status": "checked",
+   "versions": 1,
+   "front": false,
+   "lead": false
+  },
+  "86118": {
+   "id": 86118,
+   "section": "tech",
+   "section_label": "科技",
+   "kind": "report",
+   "score": 29.8,
+   "headline": "輝達投資景碩逾10億美元、與矽品簽約擴大先進封裝產能",
+   "source_title": "輝達代理 CEO 喊話擴大與台廠合作 矽品、景碩全力擴增產能",
+   "final_status": "checked",
+   "versions": 1,
+   "front": true,
+   "lead": false
+  },
+  "86123": {
+   "id": 86123,
+   "section": "tech",
+   "section_label": "科技",
+   "kind": "report",
+   "score": 29.3,
+   "headline": "德意志銀行文件外洩，揭露人脈關係與系統性缺失",
+   "source_title": "What do Deutsche Bank leaks reveal about Trump, Epstein and Russia?",
+   "final_status": "checked",
+   "versions": 2,
+   "front": false,
+   "lead": false
+  },
+  "86127": {
+   "id": 86127,
+   "section": "tech",
+   "section_label": "科技",
+   "kind": "report",
+   "score": 28.6,
+   "headline": "CFTC要求停辦川普言論押注，Kalshi暫停相關市場",
+   "source_title": "Trump admin orders Kalshi to halt wagers on what words Trump will say",
+   "final_status": "checked",
+   "versions": 1,
+   "front": false,
+   "lead": false
+  }
+ },
+ "plans": [
+  {
+   "version": 1,
+   "decided_by": null,
+   "front": {
+    "lead": 86089,
+    "second": [
+     86090,
+     86091,
+     86093,
+     86094
+    ],
+    "briefs": [
+     86118
+    ]
+   },
+   "sections": {
+    "taiwan": [
+     {
+      "story_id": 86089,
+      "display": "link"
+     },
+     {
+      "story_id": 86094,
+      "display": "link"
+     },
+     {
+      "story_id": 86096,
+      "display": "full"
+     },
+     {
+      "story_id": 86097,
+      "display": "full"
+     }
+    ],
+    "world": [
+     {
+      "story_id": 86090,
+      "display": "link"
+     },
+     {
+      "story_id": 86091,
+      "display": "link"
+     },
+     {
+      "story_id": 86100,
+      "display": "full"
+     },
+     {
+      "story_id": 86103,
+      "display": "full"
+     }
+    ],
+    "tech": [
+     {
+      "story_id": 86093,
+      "display": "link"
+     },
+     {
+      "story_id": 86118,
+      "display": "link"
+     },
+     {
+      "story_id": 86123,
+      "display": "full"
+     },
+     {
+      "story_id": 86127,
+      "display": "full"
+     }
+    ]
+   }
+  },
+  {
+   "version": 2,
+   "decided_by": 622,
+   "front": {
+    "lead": 86089,
+    "second": [
+     86090,
+     86094,
+     86091
+    ],
+    "briefs": [
+     86118,
+     86093
+    ]
+   },
+   "sections": {
+    "taiwan": [
+     {
+      "story_id": 86089,
+      "display": "link"
+     },
+     {
+      "story_id": 86094,
+      "display": "link"
+     },
+     {
+      "story_id": 86096,
+      "display": "full"
+     },
+     {
+      "story_id": 86097,
+      "display": "full"
+     }
+    ],
+    "world": [
+     {
+      "story_id": 86090,
+      "display": "link"
+     },
+     {
+      "story_id": 86091,
+      "display": "link"
+     },
+     {
+      "story_id": 86100,
+      "display": "full"
+     },
+     {
+      "story_id": 86103,
+      "display": "full"
+     }
+    ],
+    "tech": [
+     {
+      "story_id": 86093,
+      "display": "link"
+     },
+     {
+      "story_id": 86118,
+      "display": "link"
+     },
+     {
+      "story_id": 86123,
+      "display": "full"
+     },
+     {
+      "story_id": 86127,
+      "display": "full"
+     }
+    ]
+   }
+  }
+ ],
+ "beats": [
+  {
+   "i": 0,
+   "at": "09:59:58",
+   "day": "11-18",
+   "iso": "2026-11-18T09:59:58+08:00",
+   "phase": "collect",
+   "kind": "collect",
+   "actor": "wire",
+   "mode": "print",
+   "title": "收集 11-18 06:00–10:00",
+   "say": "RSSHub 傳來 134 則新素材（15 個來源）",
+   "sheets": [
+    {
+     "label": "Yahoo Finance",
+     "n": 39
+    },
+    {
+     "label": "三立新聞",
+     "n": 30
+    },
+    {
+     "label": "風傳媒",
+     "n": 15
+    },
+    {
+     "label": "中央社 聚焦",
+     "n": 10
+    },
+    {
+     "label": "中央社 國際",
+     "n": 7
+    },
+    {
+     "label": "Nikkei Asia",
+     "n": 7
+    }
+   ],
+   "detail": {
+    "window": "11-18 06:00–10:00",
+    "runs": 67,
+    "failed": 0,
+    "unchanged": 0,
+    "new": 134,
+    "sources": [
+     {
+      "name": "Yahoo Finance",
+      "new": 39
+     },
+     {
+      "name": "三立新聞",
+      "new": 30
+     },
+     {
+      "name": "風傳媒",
+      "new": 15
+     },
+     {
+      "name": "中央社 聚焦",
+      "new": 10
+     },
+     {
+      "name": "中央社 國際",
+      "new": 7
+     },
+     {
+      "name": "Nikkei Asia",
+      "new": 7
+     },
+     {
+      "name": "聯合早報 國際即時",
+      "new": 5
+     },
+     {
+      "name": "CNBC（RSSHub）",
+      "new": 4
+     },
+     {
+      "name": "鏡週刊 政治",
+      "new": 4
+     },
+     {
+      "name": "中央社 產經",
+      "new": 3
+     },
+     {
+      "name": "Hugging Face Daily Papers",
+      "new": 3
+     },
+     {
+      "name": "公視 即時",
+      "new": 3
+     },
+     {
+      "name": "聯合早報 中國即時",
+      "new": 2
+     },
+     {
+      "name": "中央社 娛樂",
+      "new": 1
+     },
+     {
+      "name": "36Kr 熱榜",
+      "new": 1
+     }
+    ]
+   },
+   "state": {
+    "collected": 134
+   }
+  },
+  {
+   "i": 1,
+   "at": "09:59:59",
+   "day": "11-18",
+   "iso": "2026-11-18T09:59:59+08:00",
+   "phase": "collect",
+   "kind": "collect",
+   "actor": "researcher",
+   "mode": "browse",
+   "title": "收集 11-18 06:00–10:00",
+   "say": "上網查了 230 次 RSS，找到 623 則新素材",
+   "sheets": [
+    {
+     "label": "Yahoo 股市新聞",
+     "n": 107
+    },
+    {
+     "label": "自由時報 地方",
+     "n": 77
+    },
+    {
+     "label": "ETtoday 即時",
+     "n": 54
+    },
+    {
+     "label": "自由時報 生活",
+     "n": 30
+    },
+    {
+     "label": "自由時報 娛樂",
+     "n": 29
+    },
+    {
+     "label": "科技新報",
+     "n": 23
+    }
+   ],
+   "detail": {
+    "window": "11-18 06:00–10:00",
+    "runs": 230,
+    "failed": 0,
+    "unchanged": 29,
+    "new": 623,
+    "sources": [
+     {
+      "name": "Yahoo 股市新聞",
+      "new": 107
+     },
+     {
+      "name": "自由時報 地方",
+      "new": 77
+     },
+     {
+      "name": "ETtoday 即時",
+      "new": 54
+     },
+     {
+      "name": "自由時報 生活",
+      "new": 30
+     },
+     {
+      "name": "自由時報 娛樂",
+      "new": 29
+     },
+     {
+      "name": "科技新報",
+      "new": 23
+     },
+     {
+      "name": "自由時報 體育",
+      "new": 23
+     },
+     {
+      "name": "中央廣播電台",
+      "new": 22
+     },
+     {
+      "name": "自由時報 財經",
+      "new": 22
+     },
+     {
+      "name": "BBC Sport",
+      "new": 21
+     },
+     {
+      "name": "NYT Home",
+      "new": 18
+     },
+     {
+      "name": "Al Jazeera",
+      "new": 18
+     },
+     {
+      "name": "自由時報 社會",
+      "new": 17
+     },
+     {
+      "name": "The Guardian World",
+      "new": 16
+     },
+     {
+      "name": "自由時報 政治",
+      "new": 15
+     },
+     {
+      "name": "自由時報 國際",
+      "new": 12
+     },
+     {
+      "name": "RFI 中文",
+      "new": 12
+     },
+     {
+      "name": "Variety",
+      "new": 12
+     },
+     {
+      "name": "The Verge",
+      "new": 8
+     },
+     {
+      "name": "TechCrunch",
+      "new": 8
+     },
+     {
+      "name": "The Diplomat",
+      "new": 7
+     },
+     {
+      "name": "ESPN",
+      "new": 6
+     },
+     {
+      "name": "BBC Business",
+      "new": 5
+     },
+     {
+      "name": "Hacker News 首頁",
+      "new": 5
+     },
+     {
+      "name": "關鍵評論網",
+      "new": 5
+     },
+     {
+      "name": "經濟日報",
+      "new": 5
+     },
+     {
+      "name": "SCMP China",
+      "new": 4
+     },
+     {
+      "name": "CNBC Top News",
+      "new": 4
+     },
+     {
+      "name": "The Guardian Sport",
+      "new": 4
+     },
+     {
+      "name": "Ars Technica",
+      "new": 4
+     }
+    ]
+   },
+   "state": {
+    "collected": 623
+   }
+  },
+  {
+   "i": 2,
+   "at": "13:59:58",
+   "day": "11-18",
+   "iso": "2026-11-18T13:59:58+08:00",
+   "phase": "collect",
+   "kind": "collect",
+   "actor": "wire",
+   "mode": "print",
+   "title": "收集 11-18 10:00–14:00",
+   "say": "RSSHub 傳來 276 則新素材（25 個來源）",
+   "sheets": [
+    {
+     "label": "三立新聞",
+     "n": 60
+    },
+    {
+     "label": "風傳媒",
+     "n": 36
+    },
+    {
+     "label": "中央社 國際",
+     "n": 22
+    },
+    {
+     "label": "Hugging Face Daily Papers",
+     "n": 18
+    },
+    {
+     "label": "Yahoo Finance",
+     "n": 17
+    },
+    {
+     "label": "聯合早報 中國即時",
+     "n": 16
+    }
+   ],
+   "detail": {
+    "window": "11-18 10:00–14:00",
+    "runs": 82,
+    "failed": 0,
+    "unchanged": 0,
+    "new": 276,
+    "sources": [
+     {
+      "name": "三立新聞",
+      "new": 60
+     },
+     {
+      "name": "風傳媒",
+      "new": 36
+     },
+     {
+      "name": "中央社 國際",
+      "new": 22
+     },
+     {
+      "name": "Hugging Face Daily Papers",
+      "new": 18
+     },
+     {
+      "name": "Yahoo Finance",
+      "new": 17
+     },
+     {
+      "name": "聯合早報 中國即時",
+      "new": 16
+     },
+     {
+      "name": "中央社 產經",
+      "new": 12
+     },
+     {
+      "name": "CNBC（RSSHub）",
+      "new": 12
+     },
+     {
+      "name": "Nikkei Asia",
+      "new": 12
+     },
+     {
+      "name": "中央社 生活",
+      "new": 11
+     },
+     {
+      "name": "中央社 政治",
+      "new": 8
+     },
+     {
+      "name": "中央社 聚焦",
+      "new": 7
+     },
+     {
+      "name": "聯合早報 國際即時",
+      "new": 7
+     },
+     {
+      "name": "中央社 證券",
+      "new": 5
+     },
+     {
+      "name": "中央社 地方",
+      "new": 5
+     },
+     {
+      "name": "36Kr 熱榜",
+      "new": 5
+     },
+     {
+      "name": "中央社 社會",
+      "new": 4
+     },
+     {
+      "name": "中央社 科技",
+      "new": 4
+     },
+     {
+      "name": "公視 即時",
+      "new": 3
+     },
+     {
+      "name": "中央社 兩岸",
+      "new": 3
+     },
+     {
+      "name": "報導者（RSSHub）",
+      "new": 2
+     },
+     {
+      "name": "鏡週刊 政治",
+      "new": 2
+     },
+     {
+      "name": "中央社 娛樂",
+      "new": 2
+     },
+     {
+      "name": "中央社 運動",
+      "new": 2
+     },
+     {
+      "name": "中央社 文化",
+      "new": 1
+     }
+    ]
+   },
+   "state": {
+    "collected": 276
+   }
+  },
+  {
+   "i": 3,
+   "at": "13:59:59",
+   "day": "11-18",
+   "iso": "2026-11-18T13:59:59+08:00",
+   "phase": "collect",
+   "kind": "collect",
+   "actor": "researcher",
+   "mode": "browse",
+   "title": "收集 11-18 10:00–14:00",
+   "say": "上網查了 280 次 RSS，找到 1649 則新素材",
+   "sheets": [
+    {
+     "label": "arXiv cs.AI",
+     "n": 401
+    },
+    {
+     "label": "ETtoday 即時",
+     "n": 197
+    },
+    {
+     "label": "Yahoo 股市新聞",
+     "n": 196
+    },
+    {
+     "label": "arXiv cs.CL",
+     "n": 162
+    },
+    {
+     "label": "自由時報 地方",
+     "n": 110
+    },
+    {
+     "label": "自由時報 政治",
+     "n": 90
+    }
+   ],
+   "detail": {
+    "window": "11-18 10:00–14:00",
+    "runs": 280,
+    "failed": 0,
+    "unchanged": 47,
+    "new": 1649,
+    "sources": [
+     {
+      "name": "arXiv cs.AI",
+      "new": 401
+     },
+     {
+      "name": "ETtoday 即時",
+      "new": 197
+     },
+     {
+      "name": "Yahoo 股市新聞",
+      "new": 196
+     },
+     {
+      "name": "arXiv cs.CL",
+      "new": 162
+     },
+     {
+      "name": "自由時報 地方",
+      "new": 110
+     },
+     {
+      "name": "自由時報 政治",
+      "new": 90
+     },
+     {
+      "name": "自由時報 財經",
+      "new": 62
+     },
+     {
+      "name": "中央廣播電台",
+      "new": 55
+     },
+     {
+      "name": "科技新報",
+      "new": 45
+     },
+     {
+      "name": "自由時報 生活",
+      "new": 40
+     },
+     {
+      "name": "經濟日報",
+      "new": 39
+     },
+     {
+      "name": "自由時報 社會",
+      "new": 23
+     },
+     {
+      "name": "自由時報 娛樂",
+      "new": 18
+     },
+     {
+      "name": "自由時報 國際",
+      "new": 17
+     },
+     {
+      "name": "iThome",
+      "new": 17
+     },
+     {
+      "name": "Al Jazeera",
+      "new": 16
+     },
+     {
+      "name": "自由時報 體育",
+      "new": 15
+     },
+     {
+      "name": "The Guardian World",
+      "new": 14
+     },
+     {
+      "name": "ESPN",
+      "new": 13
+     },
+     {
+      "name": "CNBC Top News",
+      "new": 12
+     },
+     {
+      "name": "NYT Home",
+      "new": 9
+     },
+     {
+      "name": "Financial Times",
+      "new": 9
+     },
+     {
+      "name": "巴哈姆特 GNN",
+      "new": 9
+     },
+     {
+      "name": "BBC Business",
+      "new": 8
+     },
+     {
+      "name": "Focus Taiwan",
+      "new": 7
+     },
+     {
+      "name": "Hacker News 首頁",
+      "new": 7
+     },
+     {
+      "name": "4Gamers",
+      "new": 7
+     },
+     {
+      "name": "INSIDE",
+      "new": 6
+     },
+     {
+      "name": "SCMP China",
+      "new": 5
+     },
+     {
+      "name": "Variety",
+      "new": 5
+     }
+    ]
+   },
+   "state": {
+    "collected": 1649
+   }
+  },
+  {
+   "i": 4,
+   "at": "17:59:58",
+   "day": "11-18",
+   "iso": "2026-11-18T17:59:58+08:00",
+   "phase": "collect",
+   "kind": "collect",
+   "actor": "wire",
+   "mode": "print",
+   "title": "收集 11-18 14:00–18:00",
+   "say": "RSSHub 傳來 317 則新素材（24 個來源）",
+   "sheets": [
+    {
+     "label": "三立新聞",
+     "n": 60
+    },
+    {
+     "label": "中央社 地方",
+     "n": 25
+    },
+    {
+     "label": "鏡週刊 政治",
+     "n": 25
+    },
+    {
+     "label": "聯合早報 中國即時",
+     "n": 21
+    },
+    {
+     "label": "中央社 政治",
+     "n": 20
+    },
+    {
+     "label": "Yahoo Finance",
+     "n": 19
+    }
+   ],
+   "detail": {
+    "window": "11-18 14:00–18:00",
+    "runs": 74,
+    "failed": 0,
+    "unchanged": 0,
+    "new": 317,
+    "sources": [
+     {
+      "name": "三立新聞",
+      "new": 60
+     },
+     {
+      "name": "中央社 地方",
+      "new": 25
+     },
+     {
+      "name": "鏡週刊 政治",
+      "new": 25
+     },
+     {
+      "name": "聯合早報 中國即時",
+      "new": 21
+     },
+     {
+      "name": "中央社 政治",
+      "new": 20
+     },
+     {
+      "name": "Yahoo Finance",
+      "new": 19
+     },
+     {
+      "name": "中央社 國際",
+      "new": 17
+     },
+     {
+      "name": "公視 即時",
+      "new": 17
+     },
+     {
+      "name": "中央社 社會",
+      "new": 16
+     },
+     {
+      "name": "中央社 產經",
+      "new": 12
+     },
+     {
+      "name": "中央社 聚焦",
+      "new": 11
+     },
+     {
+      "name": "中央社 生活",
+      "new": 11
+     },
+     {
+      "name": "風傳媒",
+      "new": 11
+     },
+     {
+      "name": "Nikkei Asia",
+      "new": 10
+     },
+     {
+      "name": "中央社 證券",
+      "new": 9
+     },
+     {
+      "name": "Hugging Face Daily Papers",
+      "new": 8
+     },
+     {
+      "name": "中央社 兩岸",
+      "new": 7
+     },
+     {
+      "name": "CNBC（RSSHub）",
+      "new": 5
+     },
+     {
+      "name": "聯合早報 國際即時",
+      "new": 3
+     },
+     {
+      "name": "中央社 文化",
+      "new": 3
+     },
+     {
+      "name": "中央社 運動",
+      "new": 2
+     },
+     {
+      "name": "中央社 娛樂",
+      "new": 2
+     },
+     {
+      "name": "中央社 科技",
+      "new": 2
+     },
+     {
+      "name": "36Kr 熱榜",
+      "new": 1
+     }
+    ]
+   },
+   "state": {
+    "collected": 317
+   }
+  },
+  {
+   "i": 5,
+   "at": "17:59:59",
+   "day": "11-18",
+   "iso": "2026-11-18T17:59:59+08:00",
+   "phase": "collect",
+   "kind": "collect",
+   "actor": "researcher",
+   "mode": "browse",
+   "title": "收集 11-18 14:00–18:00",
+   "say": "上網查了 240 次 RSS，找到 1074 則新素材",
+   "sheets": [
+    {
+     "label": "Yahoo 股市新聞",
+     "n": 149
+    },
+    {
+     "label": "ETtoday 即時",
+     "n": 110
+    },
+    {
+     "label": "自由時報 地方",
+     "n": 107
+    },
+    {
+     "label": "自由時報 政治",
+     "n": 105
+    },
+    {
+     "label": "經濟日報",
+     "n": 51
+    },
+    {
+     "label": "Product Hunt",
+     "n": 48
+    }
+   ],
+   "detail": {
+    "window": "11-18 14:00–18:00",
+    "runs": 240,
+    "failed": 0,
+    "unchanged": 37,
+    "new": 1074,
+    "sources": [
+     {
+      "name": "Yahoo 股市新聞",
+      "new": 149
+     },
+     {
+      "name": "ETtoday 即時",
+      "new": 110
+     },
+     {
+      "name": "自由時報 地方",
+      "new": 107
+     },
+     {
+      "name": "自由時報 政治",
+      "new": 105
+     },
+     {
+      "name": "經濟日報",
+      "new": 51
+     },
+     {
+      "name": "Product Hunt",
+      "new": 48
+     },
+     {
+      "name": "中央廣播電台",
+      "new": 44
+     },
+     {
+      "name": "BBC Sport",
+      "new": 42
+     },
+     {
+      "name": "自由時報 財經",
+      "new": 42
+     },
+     {
+      "name": "科技新報",
+      "new": 34
+     },
+     {
+      "name": "自由時報 娛樂",
+      "new": 31
+     },
+     {
+      "name": "自由時報 社會",
+      "new": 27
+     },
+     {
+      "name": "公視新聞網",
+      "new": 25
+     },
+     {
+      "name": "自由時報 生活",
+      "new": 23
+     },
+     {
+      "name": "自由時報 體育",
+      "new": 21
+     },
+     {
+      "name": "巴哈姆特 GNN",
+      "new": 19
+     },
+     {
+      "name": "Al Jazeera",
+      "new": 17
+     },
+     {
+      "name": "自由時報 國際",
+      "new": 14
+     },
+     {
+      "name": "The Guardian Culture",
+      "new": 12
+     },
+     {
+      "name": "The Guardian World",
+      "new": 11
+     },
+     {
+      "name": "Variety",
+      "new": 10
+     },
+     {
+      "name": "iThome",
+      "new": 10
+     },
+     {
+      "name": "4Gamers",
+      "new": 9
+     },
+     {
+      "name": "RFI 中文",
+      "new": 8
+     },
+     {
+      "name": "BBC Business",
+      "new": 8
+     },
+     {
+      "name": "BBC World",
+      "new": 8
+     },
+     {
+      "name": "DW English",
+      "new": 7
+     },
+     {
+      "name": "SCMP China",
+      "new": 7
+     },
+     {
+      "name": "Focus Taiwan",
+      "new": 7
+     },
+     {
+      "name": "The Guardian Sport",
+      "new": 7
+     }
+    ]
+   },
+   "state": {
+    "collected": 1074
+   }
+  },
+  {
+   "i": 6,
+   "at": "21:59:58",
+   "day": "11-18",
+   "iso": "2026-11-18T21:59:58+08:00",
+   "phase": "collect",
+   "kind": "collect",
+   "actor": "wire",
+   "mode": "print",
+   "title": "收集 11-18 18:00–22:00",
+   "say": "RSSHub 傳來 291 則新素材（22 個來源）",
+   "sheets": [
+    {
+     "label": "三立新聞",
+     "n": 60
+    },
+    {
+     "label": "Yahoo Finance",
+     "n": 43
+    },
+    {
+     "label": "風傳媒",
+     "n": 25
+    },
+    {
+     "label": "公視 即時",
+     "n": 20
+    },
+    {
+     "label": "CNBC（RSSHub）",
+     "n": 19
+    },
+    {
+     "label": "中央社 國際",
+     "n": 15
+    }
+   ],
+   "detail": {
+    "window": "11-18 18:00–22:00",
+    "runs": 68,
+    "failed": 0,
+    "unchanged": 0,
+    "new": 291,
+    "sources": [
+     {
+      "name": "三立新聞",
+      "new": 60
+     },
+     {
+      "name": "Yahoo Finance",
+      "new": 43
+     },
+     {
+      "name": "風傳媒",
+      "new": 25
+     },
+     {
+      "name": "公視 即時",
+      "new": 20
+     },
+     {
+      "name": "CNBC（RSSHub）",
+      "new": 19
+     },
+     {
+      "name": "中央社 國際",
+      "new": 15
+     },
+     {
+      "name": "中央社 政治",
+      "new": 15
+     },
+     {
+      "name": "鏡週刊 政治",
+      "new": 12
+     },
+     {
+      "name": "中央社 產經",
+      "new": 11
+     },
+     {
+      "name": "中央社 生活",
+      "new": 11
+     },
+     {
+      "name": "中央社 聚焦",
+      "new": 9
+     },
+     {
+      "name": "聯合早報 中國即時",
+      "new": 9
+     },
+     {
+      "name": "中央社 證券",
+      "new": 8
+     },
+     {
+      "name": "中央社 社會",
+      "new": 7
+     },
+     {
+      "name": "中央社 地方",
+      "new": 7
+     },
+     {
+      "name": "中央社 兩岸",
+      "new": 6
+     },
+     {
+      "name": "聯合早報 國際即時",
+      "new": 4
+     },
+     {
+      "name": "Hugging Face Daily Papers",
+      "new": 3
+     },
+     {
+      "name": "中央社 文化",
+      "new": 2
+     },
+     {
+      "name": "Nikkei Asia",
+      "new": 2
+     },
+     {
+      "name": "中央社 運動",
+      "new": 2
+     },
+     {
+      "name": "36Kr 熱榜",
+      "new": 1
+     }
+    ]
+   },
+   "state": {
+    "collected": 291
+   }
+  },
+  {
+   "i": 7,
+   "at": "21:59:59",
+   "day": "11-18",
+   "iso": "2026-11-18T21:59:59+08:00",
+   "phase": "collect",
+   "kind": "collect",
+   "actor": "researcher",
+   "mode": "browse",
+   "title": "收集 11-18 18:00–22:00",
+   "say": "上網查了 233 次 RSS，找到 881 則新素材",
+   "sheets": [
+    {
+     "label": "Yahoo 股市新聞",
+     "n": 139
+    },
+    {
+     "label": "ETtoday 即時",
+     "n": 132
+    },
+    {
+     "label": "自由時報 地方",
+     "n": 78
+    },
+    {
+     "label": "自由時報 政治",
+     "n": 56
+    },
+    {
+     "label": "中央廣播電台",
+     "n": 48
+    },
+    {
+     "label": "BBC Sport",
+     "n": 34
+    }
+   ],
+   "detail": {
+    "window": "11-18 18:00–22:00",
+    "runs": 233,
+    "failed": 0,
+    "unchanged": 28,
+    "new": 881,
+    "sources": [
+     {
+      "name": "Yahoo 股市新聞",
+      "new": 139
+     },
+     {
+      "name": "ETtoday 即時",
+      "new": 132
+     },
+     {
+      "name": "自由時報 地方",
+      "new": 78
+     },
+     {
+      "name": "自由時報 政治",
+      "new": 56
+     },
+     {
+      "name": "中央廣播電台",
+      "new": 48
+     },
+     {
+      "name": "BBC Sport",
+      "new": 34
+     },
+     {
+      "name": "經濟日報",
+      "new": 28
+     },
+     {
+      "name": "自由時報 財經",
+      "new": 22
+     },
+     {
+      "name": "公視新聞網",
+      "new": 22
+     },
+     {
+      "name": "Al Jazeera",
+      "new": 19
+     },
+     {
+      "name": "CNBC Top News",
+      "new": 19
+     },
+     {
+      "name": "ESPN",
+      "new": 17
+     },
+     {
+      "name": "自由時報 社會",
+      "new": 16
+     },
+     {
+      "name": "NYT Home",
+      "new": 16
+     },
+     {
+      "name": "NPR News",
+      "new": 14
+     },
+     {
+      "name": "巴哈姆特 GNN",
+      "new": 13
+     },
+     {
+      "name": "The Guardian World",
+      "new": 12
+     },
+     {
+      "name": "自由時報 娛樂",
+      "new": 11
+     },
+     {
+      "name": "4Gamers",
+      "new": 11
+     },
+     {
+      "name": "SCMP China",
+      "new": 10
+     },
+     {
+      "name": "Variety",
+      "new": 10
+     },
+     {
+      "name": "自由時報 體育",
+      "new": 10
+     },
+     {
+      "name": "自由時報 國際",
+      "new": 9
+     },
+     {
+      "name": "MarketWatch",
+      "new": 9
+     },
+     {
+      "name": "自由時報 生活",
+      "new": 9
+     },
+     {
+      "name": "Focus Taiwan",
+      "new": 8
+     },
+     {
+      "name": "BBC World",
+      "new": 8
+     },
+     {
+      "name": "關鍵評論網",
+      "new": 7
+     },
+     {
+      "name": "The Guardian Sport",
+      "new": 7
+     },
+     {
+      "name": "ScienceDaily",
+      "new": 7
+     }
+    ]
+   },
+   "state": {
+    "collected": 881
+   }
+  },
+  {
+   "i": 8,
+   "at": "01:59:58",
+   "day": "11-19",
+   "iso": "2026-11-19T01:59:58+08:00",
+   "phase": "collect",
+   "kind": "collect",
+   "actor": "wire",
+   "mode": "print",
+   "title": "收集 11-18 22:00–02:00",
+   "say": "RSSHub 傳來 194 則新素材（22 個來源）",
+   "sheets": [
+    {
+     "label": "三立新聞",
+     "n": 52
+    },
+    {
+     "label": "Yahoo Finance",
+     "n": 43
+    },
+    {
+     "label": "風傳媒",
+     "n": 19
+    },
+    {
+     "label": "CNBC（RSSHub）",
+     "n": 19
+    },
+    {
+     "label": "中央社 國際",
+     "n": 10
+    },
+    {
+     "label": "聯合早報 國際即時",
+     "n": 8
+    }
+   ],
+   "detail": {
+    "window": "11-18 22:00–02:00",
+    "runs": 69,
+    "failed": 0,
+    "unchanged": 0,
+    "new": 194,
+    "sources": [
+     {
+      "name": "三立新聞",
+      "new": 52
+     },
+     {
+      "name": "Yahoo Finance",
+      "new": 43
+     },
+     {
+      "name": "風傳媒",
+      "new": 19
+     },
+     {
+      "name": "CNBC（RSSHub）",
+      "new": 19
+     },
+     {
+      "name": "中央社 國際",
+      "new": 10
+     },
+     {
+      "name": "聯合早報 國際即時",
+      "new": 8
+     },
+     {
+      "name": "聯合早報 中國即時",
+      "new": 7
+     },
+     {
+      "name": "Nikkei Asia",
+      "new": 5
+     },
+     {
+      "name": "Hugging Face Daily Papers",
+      "new": 4
+     },
+     {
+      "name": "中央社 政治",
+      "new": 4
+     },
+     {
+      "name": "中央社 兩岸",
+      "new": 3
+     },
+     {
+      "name": "Hugging Face Blog",
+      "new": 3
+     },
+     {
+      "name": "中央社 證券",
+      "new": 2
+     },
+     {
+      "name": "36Kr 熱榜",
+      "new": 2
+     },
+     {
+      "name": "中央社 生活",
+      "new": 2
+     },
+     {
+      "name": "中央社 社會",
+      "new": 2
+     },
+     {
+      "name": "中央社 地方",
+      "new": 2
+     },
+     {
+      "name": "中央社 聚焦",
+      "new": 2
+     },
+     {
+      "name": "鏡週刊 政治",
+      "new": 2
+     },
+     {
+      "name": "中央社 產經",
+      "new": 1
+     },
+     {
+      "name": "中央社 科技",
+      "new": 1
+     },
+     {
+      "name": "中央社 運動",
+      "new": 1
+     }
+    ]
+   },
+   "state": {
+    "collected": 194
+   }
+  },
+  {
+   "i": 9,
+   "at": "01:59:59",
+   "day": "11-19",
+   "iso": "2026-11-19T01:59:59+08:00",
+   "phase": "collect",
+   "kind": "collect",
+   "actor": "researcher",
+   "mode": "browse",
+   "title": "收集 11-18 22:00–02:00",
+   "say": "上網查了 227 次 RSS，找到 506 則新素材",
+   "sheets": [
+    {
+     "label": "Yahoo 股市新聞",
+     "n": 54
+    },
+    {
+     "label": "ETtoday 即時",
+     "n": 41
+    },
+    {
+     "label": "Nature",
+     "n": 40
+    },
+    {
+     "label": "自由時報 地方",
+     "n": 33
+    },
+    {
+     "label": "自由時報 政治",
+     "n": 30
+    },
+    {
+     "label": "BBC Sport",
+     "n": 30
+    }
+   ],
+   "detail": {
+    "window": "11-18 22:00–02:00",
+    "runs": 227,
+    "failed": 8,
+    "unchanged": 31,
+    "new": 506,
+    "sources": [
+     {
+      "name": "Yahoo 股市新聞",
+      "new": 54
+     },
+     {
+      "name": "ETtoday 即時",
+      "new": 41
+     },
+     {
+      "name": "Nature",
+      "new": 40
+     },
+     {
+      "name": "自由時報 地方",
+      "new": 33
+     },
+     {
+      "name": "自由時報 政治",
+      "new": 30
+     },
+     {
+      "name": "BBC Sport",
+      "new": 30
+     },
+     {
+      "name": "BBC World",
+      "new": 24
+     },
+     {
+      "name": "Al Jazeera",
+      "new": 22
+     },
+     {
+      "name": "Variety",
+      "new": 21
+     },
+     {
+      "name": "CNBC Top News",
+      "new": 19
+     },
+     {
+      "name": "自由時報 國際",
+      "new": 13
+     },
+     {
+      "name": "ESPN",
+      "new": 13
+     },
+     {
+      "name": "中央廣播電台",
+      "new": 13
+     },
+     {
+      "name": "自由時報 生活",
+      "new": 11
+     },
+     {
+      "name": "ABC News International",
+      "new": 10
+     },
+     {
+      "name": "NYT Home",
+      "new": 10
+     },
+     {
+      "name": "DW English",
+      "new": 8
+     },
+     {
+      "name": "The Verge",
+      "new": 8
+     },
+     {
+      "name": "Hacker News 首頁",
+      "new": 8
+     },
+     {
+      "name": "The Guardian Culture",
+      "new": 8
+     },
+     {
+      "name": "The Guardian World",
+      "new": 7
+     },
+     {
+      "name": "經濟日報",
+      "new": 7
+     },
+     {
+      "name": "RFI 中文",
+      "new": 6
+     },
+     {
+      "name": "SCMP China",
+      "new": 6
+     },
+     {
+      "name": "CBS News World",
+      "new": 5
+     },
+     {
+      "name": "自由時報 社會",
+      "new": 5
+     },
+     {
+      "name": "聯合國新聞 中文",
+      "new": 5
+     },
+     {
+      "name": "自由時報 財經",
+      "new": 4
+     },
+     {
+      "name": "MarketWatch",
+      "new": 4
+     },
+     {
+      "name": "The Guardian Sport",
+      "new": 4
+     }
+    ]
+   },
+   "state": {
+    "collected": 506
+   }
+  },
+  {
+   "i": 10,
+   "at": "05:59:58",
+   "day": "11-19",
+   "iso": "2026-11-19T05:59:58+08:00",
+   "phase": "collect",
+   "kind": "collect",
+   "actor": "wire",
+   "mode": "print",
+   "title": "收集 11-19 02:00–06:00",
+   "say": "RSSHub 傳來 98 則新素材（9 個來源）",
+   "sheets": [
+    {
+     "label": "Yahoo Finance",
+     "n": 45
+    },
+    {
+     "label": "中央社 國際",
+     "n": 12
+    },
+    {
+     "label": "CNBC（RSSHub）",
+     "n": 12
+    },
+    {
+     "label": "三立新聞",
+     "n": 12
+    },
+    {
+     "label": "Nikkei Asia",
+     "n": 7
+    },
+    {
+     "label": "Hugging Face Daily Papers",
+     "n": 4
+    }
+   ],
+   "detail": {
+    "window": "11-19 02:00–06:00",
+    "runs": 67,
+    "failed": 0,
+    "unchanged": 0,
+    "new": 98,
+    "sources": [
+     {
+      "name": "Yahoo Finance",
+      "new": 45
+     },
+     {
+      "name": "中央社 國際",
+      "new": 12
+     },
+     {
+      "name": "CNBC（RSSHub）",
+      "new": 12
+     },
+     {
+      "name": "三立新聞",
+      "new": 12
+     },
+     {
+      "name": "Nikkei Asia",
+      "new": 7
+     },
+     {
+      "name": "Hugging Face Daily Papers",
+      "new": 4
+     },
+     {
+      "name": "中央社 政治",
+      "new": 2
+     },
+     {
+      "name": "中央社 證券",
+      "new": 2
+     },
+     {
+      "name": "Hugging Face Blog",
+      "new": 2
+     }
+    ]
+   },
+   "state": {
+    "collected": 98
+   }
+  },
+  {
+   "i": 11,
+   "at": "05:59:59",
+   "day": "11-19",
+   "iso": "2026-11-19T05:59:59+08:00",
+   "phase": "collect",
+   "kind": "collect",
+   "actor": "researcher",
+   "mode": "browse",
+   "title": "收集 11-19 02:00–06:00",
+   "say": "上網查了 225 次 RSS，找到 243 則新素材",
+   "sheets": [
+    {
+     "label": "Yahoo 股市新聞",
+     "n": 22
+    },
+    {
+     "label": "BBC Sport",
+     "n": 22
+    },
+    {
+     "label": "The Guardian World",
+     "n": 21
+    },
+    {
+     "label": "Variety",
+     "n": 21
+    },
+    {
+     "label": "Al Jazeera",
+     "n": 16
+    },
+    {
+     "label": "NYT Home",
+     "n": 15
+    }
+   ],
+   "detail": {
+    "window": "11-19 02:00–06:00",
+    "runs": 225,
+    "failed": 0,
+    "unchanged": 34,
+    "new": 243,
+    "sources": [
+     {
+      "name": "Yahoo 股市新聞",
+      "new": 22
+     },
+     {
+      "name": "BBC Sport",
+      "new": 22
+     },
+     {
+      "name": "The Guardian World",
+      "new": 21
+     },
+     {
+      "name": "Variety",
+      "new": 21
+     },
+     {
+      "name": "Al Jazeera",
+      "new": 16
+     },
+     {
+      "name": "NYT Home",
+      "new": 15
+     },
+     {
+      "name": "CNBC Top News",
+      "new": 12
+     },
+     {
+      "name": "The Verge",
+      "new": 11
+     },
+     {
+      "name": "經濟日報",
+      "new": 9
+     },
+     {
+      "name": "The Guardian Technology",
+      "new": 8
+     },
+     {
+      "name": "Hacker News 首頁",
+      "new": 8
+     },
+     {
+      "name": "Ars Technica",
+      "new": 7
+     },
+     {
+      "name": "ESPN",
+      "new": 7
+     },
+     {
+      "name": "自由時報 國際",
+      "new": 6
+     },
+     {
+      "name": "DW English",
+      "new": 6
+     },
+     {
+      "name": "MarketWatch",
+      "new": 6
+     },
+     {
+      "name": "TechCrunch",
+      "new": 6
+     },
+     {
+      "name": "The Guardian Sport",
+      "new": 6
+     },
+     {
+      "name": "美國之音 中文",
+      "new": 4
+     },
+     {
+      "name": "Financial Times",
+      "new": 4
+     },
+     {
+      "name": "NPR News",
+      "new": 3
+     },
+     {
+      "name": "自由時報 財經",
+      "new": 3
+     },
+     {
+      "name": "BBC Business",
+      "new": 3
+     },
+     {
+      "name": "The Guardian Environment",
+      "new": 3
+     },
+     {
+      "name": "STAT News",
+      "new": 3
+     },
+     {
+      "name": "ETtoday 即時",
+      "new": 3
+     },
+     {
+      "name": "BBC World",
+      "new": 2
+     },
+     {
+      "name": "CBS News World",
+      "new": 2
+     },
+     {
+      "name": "Nature",
+      "new": 1
+     },
+     {
+      "name": "The Economist 財經",
+      "new": 1
+     }
+    ]
+   },
+   "state": {
+    "collected": 243
+   }
+  },
+  {
+   "i": 12,
+   "at": "06:00:00",
+   "day": "11-19",
+   "iso": "2026-11-19T06:00:00+08:00",
+   "phase": "cluster",
+   "kind": "cluster",
+   "actor": "system",
+   "mode": "sort",
+   "title": "事件聚合（程式）",
+   "say": "把素材分組成事件：共 5403 個候選事件。不確定就不合併。",
+   "detail": {
+    "candidate_clusters": 5403,
+    "entity_merges": 0,
+    "llm_merges": 0,
+    "rejected_merges": 0,
+    "section_rewrites": {
+     "cross_strait→taiwan": 8,
+     "cross_strait→world": 197,
+     "finance→taiwan": 489,
+     "finance→tech": 400,
+     "finance→world": 447,
+     "life_env→taiwan": 12
+    }
+   }
+  },
+  {
+   "i": 13,
+   "at": "06:00:00",
+   "day": "11-19",
+   "iso": "2026-11-19T06:00:00+08:00",
+   "phase": "cluster",
+   "kind": "snapshot",
+   "actor": "system",
+   "mode": "stamp",
+   "title": "06:00 快照",
+   "say": "快照蓋章：凍結 5403 個候選事件與證據素材，P、M 兩組都從這一份開始。",
+   "detail": {
+    "candidates": 5403,
+    "briefs": 8
+   }
+  },
+  {
+   "i": 14,
+   "at": "06:00:09",
+   "day": "11-19",
+   "iso": "2026-11-19T06:00:09+08:00",
+   "phase": "pipeline",
+   "kind": "llm",
+   "actor": "pipeline",
+   "mode": "think",
+   "title": "跨語言合併（建快照時，P、M 共用）",
+   "say": "編輯會議第二意見：跨語言同一事件 1 組（程式還要確認共同實體）",
+   "secs": 8.8,
+   "detail": {
+    "llm_id": 658,
+    "secs": 8.8,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "回傳 {\"groups\":[[id,id],...]}，沒有就回傳 {\"groups\":[]}。\n\n[{\"id\": 76348, \"title\": \"中國APEC資深官員接機　代表團：不是完全滿意尚可接受\"}, {\"id\": 79119, \"title\": \"中美俄實現「會前合體」！ 習近平與施振榮、高市握手了\"}, {\"id\": 76807, \"title\": \"數發部：近期8百萬筆個資外洩 要求企業72小時內通知當事人\"}, {\"id\": 75011, \"title\": \"這次拒投藍！ 王鴻薇堂妹2年前「覺醒」批蔣萬安影片曝\"}, {\"id\": 71946, \"title\": \"藍白拚選前三讀普發2萬！賴清德批有違憲之虞　籲審慎勿一意孤行\"}, {\"id\": 78323, \"title\": \"[財經] 證交所宣布台股新制 優化零股交易、千金股升降調為1元\"}, {\"id\": 77954, \"title\": \"教學現場就是研發基地！ 教育部推動中小學教師教學創新行動計畫，開創教師自主專業成長新路徑\"}, {\"id\": 76641, \"title\": \"台塑新智能攜手立碁 搶攻防災微電網標案\"}, {\"id\": 74478, \"title\": \"US midterms: Democrats seal 56-44 Senate majority with Alaska win\"}, {\"id\": 79315, \"title\": \"Democrats nominate Hakeem Jeffries as first Black House speaker despite progressives’ concerns\"}, {\"id\": 78351, \"title\": \"川普抵達深圳 習近平遵循禮尚往來親自接機\"}, {\"id\": 66588, \"title\": \"APEC工商領導人峰會 安華籲公平貿易技術共享\"}, {\"id\": 71306, \"title\": \"Voyager 1 reaches one light-day from Earth after 49 years in space\"}, {\"id\": 70754, \"title\": \"Xi, Putin vow to lead multipolar world, slam protectionism\"}, {\"id\": 78711, \"title\": \"美媒驚爆輝達4年前為黃樂開路！阿里巴巴成首批客戶 Megaspeed交易鏈遭起底\"}, {\"id\": 76438, \"title\": \"英偉達稱已停止向中國供應Hopper高端晶片\"}, {\"id\": 67775, \"title\": \"Tell us: are you playing Grand Theft Auto VI?\"}, {\"id\": 76229, \"title\": \"輝達代理 CEO 喊話擴大與台廠合作 矽品、景碩全力擴增產能\"}, {\"id\": 72875, \"title\": \"What do Deutsche Bank leaks reveal about Trump, Epstein and Russia?\"}, {\"id\": 75504, \"title\": \"Trump admin orders Kalshi to halt wagers on what words Trump will say\"}, {\"id\": 79500, \"title\": \"Skydance's David Ellison calls Elon Musk 'the greatest entrepreneur of our time'\"}, {\"id\": 78016, \"title\": \"施吉生技23日登錄興櫃　電漿醫療、AI醫療雙引擎搶攻亞洲商機\"}, {\"id\": 76590, \"title\": \"黃仁勳路線立刻被推翻！輝達代理CEO震撼宣布：從此不再賣給中國H200晶片\"}, {\"id\": 78499, \"title\": \"US lawmakers launch probe into Lutnick’s actions amid Nvidia scandal\"}]",
+    "response": "{\"groups\":[[76438,76590]]}"
+   }
+  },
+  {
+   "i": 15,
+   "at": "06:00:59",
+   "day": "11-19",
+   "iso": "2026-11-19T06:00:59+08:00",
+   "phase": "pipeline",
+   "kind": "llm",
+   "actor": "pipeline",
+   "mode": "think",
+   "title": "流水線撰稿｜頭版",
+   "say": "頭版：一次呼叫寫完整版 6 篇",
+   "secs": 46.4,
+   "detail": {
+    "llm_id": 659,
+    "secs": 46.4,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "板塊：頭版。替每個 id 各寫一則新聞，回傳 {\"stories\":[{\"id\":1,\"headline\":\"不超過 40 字\",\"deck\":\"一句話重點\",\"body\":\"150 到 400 字正文，可分段\",\"why_it_matters\":\"一句話說明對台灣讀者的意義\"}]}。\n\n譯名一律使用中央社譯名，括號內的寫法都改成括號前的譯名：川普（Trump／特朗普）、習近平（Xi Jinping）、高市早苗（Sanae Takaichi）、盧比歐（Rubio／魯比歐）、貝森特（Bessent）、賴清德（Lai Ching-te）、黃仁勳（Jensen Huang）、輝達（Nvidia／英偉達）、台積電（TSMC／台積公司）、三星（Samsung）。\n\n{\"stories\":[{\"id\":1,\"kind\":\"report\",\"evidence\":[{\"outlet\":\"自由時報 財經\",\"title\":\"中國APEC資深官員接機　代表團：不是完全滿意尚可接受\",\"summary\":\"亞太經濟合作會議（APEC）台灣領袖代表施振榮18日上午抵達中國深圳，中國接機代表為中央APEC籌委會高官程烈等人。我代表團成員認為，這代表中方尊重APEC體制，雖然不是完全滿意，但是可以...…\",\"published_at\":\"2026-11-19T02:36+08:00\"},{\"outlet\":\"中央廣播電台\",\"title\":\"[國際] 施振榮抵達深圳APEC首日 代表團：中方慎重處理相關安排\",\"summary\":\"APEC領袖代表、宏碁集團創辦人施振榮18日飛抵中國深圳，今天(19日)將出席深圳APEC領袖峰會。我方代表團成員表示，中方依照APEC慣例慎重處理施振榮18日參與的相關安排，其中，中方接機層級雖未如我方希望的部長層級，但經與其他經濟體核對，待遇一致，我方雖不滿意，但可接受。 此次中方安排由中國APEC資深官員程烈，率廣東省APEC籌委會一級巡視員方濤、深圳市APEC籌委會一級巡視員莫士龍為施振榮接機。 代表團成員說明，我方希望參與APEC不要與兩岸關係掛鉤，儘管國台辦多次做出錯誤說明，但我方不斷在國內透過新聞稿及其他方式、甚至當面多次向中方表達嚴正關切，最後中方沒有提出以國台辦人員接機，而是告知將由身為中國外交部官員的陳烈代表中國中央政府接機，尚符合我方期待以APEC慣例、模式處理台灣參與。 談到施振榮在18日深圳APEC經濟體領袖歡迎晚宴的座位以及大合照位置，代表團成員表示，雖然仍在與\",\"published_at\":\"2026-11-19T00:30+08:00\"},{\"outlet\":\"ETtoday 即時\",\"title\":\"中美俄實現「會前合體」！ 習近平與施振榮、高市握手了\",\"summary\":\"APEC經濟領袖會議登場，今（18）日晚間於深圳國際交流中心舉行大合照與歡迎晚宴。大合照環節，中美俄元首在現場碰面，實現了會前合體。此外，大陸國家主席習近平與各經濟體領袖一一握手，其中也包括我領袖代表施振榮與日本首相高市早苗。 《詳全文...》\",\"published_at\":\"2026-11-19T00:24+08:00\"},{\"outlet\":\"中央社\",\"title\":\"APEC深圳峰會台灣帶什麼去？領袖代表施振榮：「台灣將帶著微笑曲線而來」，知情人士稱契合國際戰略\",\"summary\":\"2026年11月18日，宏碁集團創辦人施振榮在桃園機場出發前發表談話，表示將與各國交流分享台灣科技及AI產業優勢。（中央社） 2026年11月18日，宏碁集團創辦人施振榮在桃園機場出發前發表談話，表示將與各國交流分享台灣科技及AI產業優勢。（中央社） APEC深圳峰會領袖代表施振榮行前談話時提到「台灣將帶著微笑曲線而來」。知情人士表示，施振榮從提出「微笑曲線」到「新王道」哲學，談的是多方共贏概念，這與台灣國際戰略吻合。 宏碁集團創辦人施振榮為亞太經濟合作（APEC）深圳峰會領袖代表，上午在桃園機場發表行前談話時提到，將與APEC各會員積極交流，分享台灣在人工智慧（AI）產業、供應鏈長期累積的經驗及優勢，向國際社會展現台灣的實力及貢獻，「台灣將帶著微笑曲線而來」。 市場正在關注哪些大事？ 每週導讀華爾街日報，幫你過濾雜訊 想掌握全球大事、讀懂國際局勢？歡迎追蹤風傳媒國際頻道「 風國際 」。 \",\"published_at\":\"2026-11-18T23:35+08:00\"},{\"outlet\":\"鏡週刊 政治\",\"title\":\"APEC晚宴登場！施振榮與習近平握手合影 大合照位置曝光\",\"summary\":\"施振榮與習近平握手。（鏡新聞提供） 2026亞太經濟合作會議（APEC）領袖峰會將於11月18日至19日於中國深圳舉行，台灣派出施振榮代表出席。今（18日）晚由中國主辦的晚宴開始前，中國國家主席習近平主動與施振榮、施振榮妻子葉紫華握手，畫面曝光。 施振榮今日啟程前表示，很榮幸接受總統賴清的託付，代表總統前往中國深圳出席今年的APEC經濟領袖會議，這次他將遵照賴總統的指示，與各國會員積極交流，分享台灣在這些議題長期累積的豐富經驗及優勢，向國際社會展現台灣的實力及貢獻，「台灣，帶著微笑曲線而來」。 施振榮伉儷與習近平伉儷合影。（鏡新聞提供） 中國今傍晚舉辦晚宴宴請參與嘉賓，習近平與妻子彭麗媛，陸續美國總統川普、日本首相高市早苗等人握手，其中也包含施振榮與葉紫華；大合照部分，施振榮伉儷則被安排在第2排的最左側。 大合照階段，施振榮與葉紫華位置被安排在第2排最左側。（新華社）\",\"published_at\":\"2026-11-18T23:08+08:00\"},{\"outlet\":\"風傳媒\",\"title\":\"AP…（共 13827 字，已截短）",
+    "response": "{\"stories\":[{\"id\":1,\"headline\":\"施振榮抵深圳出席APEC　代表團稱接待可接受\",\"deck\":\"台灣代表團表示，接機層級未達期待，但與其他經濟體待遇一致，尚可接受。\",\"body\":\"據中央廣播電台報導，台灣APEC領袖代表施振榮18日抵達中國深圳，預定19日出席領袖峰會。代表團成員表示，中方接機層級未達我方期待的部長層級，但經與其他經濟體核對，待遇一致，雖不滿意仍可接受，並盼台灣參與APEC不要與兩岸關係掛鉤。\\n據鏡週刊報導，習近平在18日晚宴前與施振榮及其妻子葉紫華握手，兩人在大合照的位置為第二排最左側。中央社報導，施振榮行前表示，將分享台灣在人工智慧產業及供應鏈累積的經驗與優勢，帶著「微笑曲線」與各會員交流。\",\"why_it_matters\":\"台灣參與APEC的接待安排與交流內容，涉及國際參與及科技產業優勢的呈現。\"},{\"id\":2,\"headline\":\"民主黨拿下阿拉斯加　參院確定56席多數\",\"deck\":\"阿拉斯加最後一場未定參議員選舉揭曉，民主黨取得參眾兩院控制權。\",\"body\":\"據日經亞洲報導，美國期中選舉最後一場尚未確定結果的參議員選舉，由民主黨拿下阿拉斯加席次，確立參議院56席對44席的多數優勢；民主黨也已取得眾議院控制權。\\n德國之聲報導，民主黨候選人以50.1%得票率，擊敗尋求連任的共和黨現任參議員。BBC指出，這場選舉在期中選舉開票開始兩週後確認結果。衛報報導，民主黨此次在參議院增加九席，阿拉斯加則是自2008年以來首度選出民主黨籍參議員。半島電視台分析，這一席也為民主黨迎向2028年選舉增加緩衝。\",\"why_it_matters\":\"對關注美國政局的台灣讀者而言，選舉結果確立了民主黨掌握國會兩院的席次格局。\"},{\"id\":3,\"headline\":\"民主黨提名傑佛瑞斯任眾院議長　待明年表決\",\"deck\":\"傑佛瑞斯獲黨內支持，有望成為美國首位非裔眾議院議長。\",\"body\":\"據美國公共廣播電台報導，美國眾議院民主黨團正式提名紐約州議員傑佛瑞斯出任議長，黨內表決以壓倒性支持通過，使他朝成為美國史上首位非裔眾議院議長再進一步。\\nCNBC指出，傑佛瑞斯仍須在明年1月贏得眾議院全院表決，才能正式就任。德國之聲報導，民主黨將於明年掌控眾議院。衛報則指出，儘管進步派仍有疑慮，傑佛瑞斯仍獲提名，預料將在川普總統任期最後兩年，成為其主要政治對手之一。金融時報報導，傑佛瑞斯現年56歲。\",\"why_it_matters\":\"這項提名讓關注美國政局的台灣讀者，得以掌握新一屆眾議院領導人選及後續表決進程。\"},{\"id\":4,\"headline\":\"GTA VI上市　預購銷售與首波評價受矚目\",\"deck\":\"遊戲於19日登上PS5與Xbox Series X／S，媒體關注其銷售規模及評論反應。\",\"body\":\"據The Verge報導，《Grand Theft Auto VI》（GTA VI）於11月19日在PS5與Xbox Series X／S推出，距離前作首次發行已超過十年。BBC報導，已有評論者將新作評為傑作。\\n據Yahoo Finance引述市場情報公司Sensor Tower資料，遊戲預購銷售額已超過15億美元。衛報則報導，這款作品歷經13年醞釀，據稱製作成本超過10億美元，部分預測估計總銷量可達4,000萬套。相關銷量仍屬預測；日經亞洲也關注玩家為搶先體驗而將所在地設為紐西蘭的現象。\",\"why_it_matters\":\"對台灣玩家而言，上市平台與首波評價提供選購參考，銷售預測則仍待實際表現驗證。\"},{\"id\":5,\"headline\":\"約800萬筆個資外洩　政院促業者通知當事人\",\"deck\":\"十餘家企業、機構發生重大資安事件，政府要求通知受影響民眾並提醒防詐。\",\"body\":\"據中央社報導，數位發展部統計近期已有十餘家企業、機構發生重大資安事件，約800萬筆個資外洩。行政院18日發函相關部會，要求督促業者依個人資料保護法規定，即時通知受影響當事人。\\n行政院並建議業者在官網首頁、APP或實體店面張貼醒目公告，說明可能的詐騙手法與風險。據公視報導，數發部要求業者知悉外洩後72小時內通知當事人，但有消費者反映執行程度有限。公視引述專家提醒，應先確認外洩範圍，並盤點系統漏洞、更新軟硬體；行政院也提醒民眾提防假冒客服、檢警及釣魚訊息。\",\"why_it_matters\":\"個資外洩涉及民眾接獲通知與辨識詐騙的需求，受影響者須留意業者公告及可疑聯繫。\"},{\"id\":6,\"headline\":\"輝達投資景碩逾10億美元　矽品擴先進封裝\",\"deck\":\"景碩將添購設備擴充載板產能，矽品則與輝達簽署數十億美元合作協議。\",\"body\":\"據中央社報導，景碩18日表示，獲輝達超過10億美元現金投資，將用於購置桃園幼獅廠擴產所需新增設備，規劃自2027年下半年後供應載板產能。景碩並指出，雙方持續協商其他廠區投資計畫，目標至少到2030年穩定掌握載板產能。\\n據中央廣播電台報導，日月光投控旗下矽品也與輝達簽訂數十億美元協議，將在台灣的先進封裝產能提升至原來三倍。中央社指出，輝達宣示持續與台積電、鴻海、京元電、欣興等供應鏈業者合作，擴大載板、先進封裝、晶圓及委託製造等產能。\",\"why_it_matters\":\"相關合作涉及台灣載板與先進封裝擴產，提供觀察AI供應鏈投資及產能時程的具體資訊。\"}]}"
+   }
+  },
+  {
+   "i": 16,
+   "at": "06:01:18",
+   "day": "11-19",
+   "iso": "2026-11-19T06:01:18+08:00",
+   "phase": "pipeline",
+   "kind": "llm",
+   "actor": "pipeline",
+   "mode": "think",
+   "title": "流水線撰稿｜台灣",
+   "say": "台灣：一次呼叫寫完整版 2 篇",
+   "secs": 19.4,
+   "detail": {
+    "llm_id": 660,
+    "secs": 19.4,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "板塊：台灣。替每個 id 各寫一則新聞，回傳 {\"stories\":[{\"id\":1,\"headline\":\"不超過 40 字\",\"deck\":\"一句話重點\",\"body\":\"150 到 400 字正文，可分段\",\"why_it_matters\":\"一句話說明對台灣讀者的意義\"}]}。\n\n譯名一律使用中央社譯名，括號內的寫法都改成括號前的譯名：賴清德（Lai Ching-te）。\n\n{\"stories\":[{\"id\":7,\"kind\":\"report\",\"evidence\":[{\"outlet\":\"自由時報 政治\",\"title\":\"這次拒投藍！ 王鴻薇堂妹2年前「覺醒」批蔣萬安影片曝\",\"summary\":\"國民黨立委兼蔣萬安競辦副主委王鴻薇的堂妹王鴻嬪昨日拋出震撼彈，在社群發文表態「拒投蔣萬安」。有網友發現，2年前和平新生天橋在沒有任何通知的情況下遭到突襲拆除時，一位居民上街批評市...…\",\"published_at\":\"2026-11-18T15:08+08:00\"},{\"outlet\":\"鏡週刊 政治\",\"title\":\"王鴻薇堂妹金融圈打滾30年被封「基金女王」 2年前曾批蔣萬安：共產黨市長\",\"summary\":\"王鴻嬪在金融圈打滾超過30年，在財經領域擁有相當深厚的資歷，過去就被封為「基金女王」「摩王」。（翻攝自王鴻嬪臉書） 國民黨立委王鴻薇的堂妹王鴻嬪在金融圈打滾超過30年，在財經領域擁有相當深厚的資歷，過去就被封為「基金女王」「摩王」。王鴻嬪昨（17）日po文倒戈，提到因和平新生天橋遭到市府強拆，自己這次拒投蔣萬安。其實早在2年前，王鴻嬪就曾在鏡頭前開嗆蔣萬安，「我沒有想到會選出一個共產黨市長」。 王鴻嬪在金融圈擁有超過30年的經歷，她畢業於清華大學經濟學系，1992年到2004年期間，她任職摩根大通（J.P. Morgan）台灣區總經理；2000年榮獲第5屆「金彝獎」；2004年參與組建「上投摩根基金」，並且擔任總經理至2010年；2015年創立「上海富匯財富投資管理」；2018年加入摩根士丹利（Morgan Stanley）體系；如今她已退休，不過仍經營YouTube頻道，持續分析相關財經\",\"published_at\":\"2026-11-18T15:02+08:00\"},{\"outlet\":\"ETtoday 即時\",\"title\":\"堂妹喊拒投蔣萬安　王鴻薇：家人不同選擇很正常、有信心拉回這票\",\"summary\":\"國民黨立委王鴻薇的堂妹、金融界資深經理人王鴻嬪昨在社群發文表態「拒投蔣萬安」，認為從2024年11月和平新生天橋拆除後，就對蔣市府的施政感到失望，「決定用這張選票算總帳」。對此，國民黨立委王鴻薇今（18日）表示，民主社會有多元意見是非常平常事情，很多家庭，在選舉時每個人有不同選擇，這很正常。但他有信心，可以把堂妹這一票拉回來。 《詳全文...》\",\"published_at\":\"2026-11-18T12:24+08:00\"},{\"outlet\":\"中央廣播電台\",\"title\":\"[政治] 台北市長選戰／蔣萬安盼以政績爭取認同 沈伯洋籲說明決策過程\",\"summary\":\"台北市長選戰倒數10天，爭取連任的台北市長蔣萬安、民進黨候選人沈伯洋今天(18日)上午分赴市場拜票。蔣萬安受訪時被問及國民黨立委王鴻薇的堂妹王鴻嬪因不滿市府拆除和平新生天橋，表態拒投蔣萬安。對此，蔣萬安表示自己會以施政成績爭取市民認同；沈伯洋則認為蔣萬安應該具體說明拆橋決策。 國民黨立委王鴻薇的堂妹、金融界知名的資深經理人王鴻嬪17日在臉書上發文，談及北市府2024年11月拆除和平新生天橋的決策。她表示市府當時承諾改善行人通行環境，但拆橋後行人空間卻縮減，因此她決定在這次市長選舉中拒投爭取連任的台北市長蔣萬安，以表達不滿。由於王鴻薇在蔣萬安競選團隊擔任副主委，此舉受到關注。 蔣萬安18日上午與國民黨台南市長候選人謝龍介到台北市第一果菜市場及魚類批發市場拜票，在被問及此事時，表示王鴻薇已主動向他提起此事，距離投票只剩10天，他會加倍努力，用政績爭取支持。他說：『(原音)昨天我就有碰到王鴻薇委\",\"published_at\":\"2026-11-18T10:57+08:00\"},{\"outlet\":\"三立新聞\",\"title\":\"王鴻薇堂妹「拒投蔣萬安」！昔出門買菜發現天橋被拆嘆：選出共產黨市長\",\"summary\":\"王鴻嬪在2024年11月出門買菜卻發現天橋要被拆了，不滿直呼，「這是共產黨嗎？」（圖／翻攝畫面） 選戰倒數10天，國民黨立委王鴻薇堂妹、資深基金經理人王鴻嬪17日公開發文表態，拒投台北市長蔣萬安，表達對和平新生天橋拆除的不滿。而2年前北市府突然宣布要拆和平新生天橋，當時王鴻嬪就曾到現場表達不滿，直指，「這是共產黨嗎？蠻失望的，我覺得我沒有想到選出一個共產黨市長」，但又覺得自己好像污衊共產黨了，因為在上海、北京大概都不會這麼粗暴，「我們是不是在對岸的二三線城市啊？」 王鴻嬪昨天發文表態，「拒投蔣萬安」，既不和平也不新生，和平新生天橋強拆，她決定用這張選票算總帳，這次選舉，她只代表自己，把過去四年的信任與這兩年受到的背叛，一次結算清楚。 北市府在兩年前突然宣布要拆和平新生天橋，當時的王鴻嬪只是出門買菜卻發現天橋要拆了，讓她相當不滿。她當時說，自己平常沒有關注公共事務，只是今天早上出來買菜，發現\",\"published_at\":\"2026-11-18T03:54+08:00\"},{\"outlet\":\"風傳媒\",\"title\":\"堂妹震撼表態「拒投蔣萬安、4藍營議員」！王鴻薇：有信心拉回她的票\",\"summary\":\"國民黨立委王鴻薇（見圖）今（17）日受訪回應，她有把握可以把王鴻嬪的票拉回來。（資…（共 5213 字，已截短）",
+    "response": "{\"stories\":[{\"id\":7,\"headline\":\"王鴻嬪不滿拆橋拒投蔣萬安　蔣稱以政績爭取支持\",\"deck\":\"和平新生天橋拆除爭議延燒，王鴻薇堂妹王鴻嬪表態拒投蔣萬安，沈伯洋籲說明決策過程。\",\"body\":\"據中央廣播電台報導，國民黨立委王鴻薇的堂妹、金融界資深經理人王鴻嬪，17日在臉書發文，因不滿台北市府2024年11月拆除和平新生天橋，表態拒投爭取連任的台北市長蔣萬安。她表示，市府承諾改善行人通行環境，但拆橋後行人空間反而縮減。\\n\\n中央廣播電台指出，蔣萬安18日受訪時表示，王鴻薇已主動向他提起此事，他會加倍努力，以施政成績爭取市民認同；民進黨台北市長候選人沈伯洋則認為，蔣萬安應具體說明拆橋決策。\\n\\n據ETtoday報導，王鴻薇回應，民主社會有多元意見，家人在選舉中有不同選擇很正常，她有信心爭取堂妹這一票。\",\"why_it_matters\":\"這起爭議讓行人空間改善與市府決策溝通，成為台北市長選戰受到關注的議題。\"},{\"id\":8,\"headline\":\"國民黨團拚普發2萬元三讀　賴清德籲審慎\",\"deck\":\"國民黨團力拚20日通過普發現金草案，賴清德與卓榮泰提出憲政權限及財政紀律疑慮。\",\"body\":\"據中央社報導，國民黨立法院黨團提出「全民共享經濟成果及穩定民生特別條例」草案，主張普發現金新台幣2萬元，力拚11月20日院會三讀。總統賴清德先前於8月17日宣布明年普發1萬元，國民黨團隨後提案加碼。\\n\\n據ETtoday報導，朝野17日協商未達共識，交由立法院長韓國瑜召集黨團幹部協商。賴清德18日在民進黨中常會表示，提案涉及立法權與行政權的憲政權責分際，有違憲法預算權限原則之虞，呼籲在野黨團審慎處理，並認為草案將增加財政負擔、影響其他政策推動。\\n\\n中央社報導，行政院長卓榮泰17日表示，盼立法院透過充分討論、折衷定案，不要強行表決，置憲政秩序與國家財政紀律於不顧。\",\"why_it_matters\":\"普發金額與草案審議結果涉及民眾可領取的現金，也牽動政府預算安排及行政、立法權限的討論。\"}]}"
+   }
+  },
+  {
+   "i": 17,
+   "at": "06:01:37",
+   "day": "11-19",
+   "iso": "2026-11-19T06:01:37+08:00",
+   "phase": "pipeline",
+   "kind": "llm",
+   "actor": "pipeline",
+   "mode": "think",
+   "title": "流水線撰稿｜國際",
+   "say": "國際：一次呼叫寫完整版 2 篇",
+   "secs": 18.9,
+   "detail": {
+    "llm_id": 661,
+    "secs": 18.9,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "板塊：國際。替每個 id 各寫一則新聞，回傳 {\"stories\":[{\"id\":1,\"headline\":\"不超過 40 字\",\"deck\":\"一句話重點\",\"body\":\"150 到 400 字正文，可分段\",\"why_it_matters\":\"一句話說明對台灣讀者的意義\"}]}。\n\n譯名一律使用中央社譯名，括號內的寫法都改成括號前的譯名：黃仁勳（Jensen Huang）、輝達（Nvidia／英偉達）、阿里巴巴（Alibaba）。\n\n{\"stories\":[{\"id\":9,\"kind\":\"report\",\"evidence\":[{\"outlet\":\"Al Jazeera\",\"title\":\"Voyager 1 reaches one light-day from Earth after 49 years in space\",\"summary\":\"NASA’s Voyager 1 has reached a record distance of more than 16 billion miles from Earth, 49 years after its launch.\",\"published_at\":\"2026-11-19T03:30+08:00\"},{\"outlet\":\"The Verge\",\"title\":\"NASA’s Voyager 1 probe is now one light-day away\",\"summary\":\"After traveling through the void of space for 49 years, Voyager 1 has hit a momentous milestone: the spacecraft is now officially one light-day away from Earth, which is, as NASA put it, \\\"very, very far.\\\" The probe crossed the milepost on Wednesday at 5:16AM ET, and is now 16.094 billion miles away from our […]\",\"published_at\":\"2026-11-18T20:03+08:00\"},{\"outlet\":\"CBS News World\",\"title\":\"Voyager 1 sets distance record of 1 \\\"light day\\\" from Earth\",\"summary\":\"Voyager 1 and its sister ship Voyager 2 are still beaming back data from interstellar space as they near their 50th anniversary next year.\",\"published_at\":\"2026-11-18T15:06+08:00\"},{\"outlet\":\"Nature\",\"title\":\"Voyager 1 is about to achieve a cosmic first: one ‘light day’ from Earth\",\"summary\":\"Nature, Published online: 17 November 2026; doi:10.1038/d41586-026-03672-1 Its power supply is faltering and most of its instruments are off, but the probe is still gathering data.\",\"published_at\":\"2026-11-17T08:00+08:00\"},{\"outlet\":\"DW English\",\"title\":\"NASA's Voyager 1 reaches a light-day away from Earth\",\"summary\":\"When just saying 'hello' takes a two-day round trip, you're a light-day, or 26 billion kilometers, from Earth. Only one human-made object has ever traveled that far — and its journey into interstellar space continues.\",\"published_at\":\"2026-11-17T01:24+08:00\"}]},{\"id\":10,\"kind\":\"report\",\"evidence\":[{\"outlet\":\"Yahoo 股市新聞\",\"title\":\"美媒驚爆輝達4年前為黃樂開路！阿里巴巴成首批客戶 Megaspeed交易鏈遭起底\",\"summary\":\"輝達與大陸科技業者之間的晶片交易關係，再度引發美國出口管制爭議。美國科技媒體《The Information》17日披露，早在2022年美國限制先進AI晶片出口大陸前，輝達業務團隊就曾居中牽線，介紹大\",\"published_at\":\"2026-11-18T21:44+08:00\"},{\"outlet\":\"自由時報 財經\",\"title\":\"4年前就牽線！外媒爆輝達「引介黃樂」搭上阿里巴巴 繞過晶片禁令\",\"summary\":\"〔財經頻道／綜合報導〕外媒揭露，輝達（NVIDIA）在拜登政府執政期間，曾協助中國阿里巴巴集團與黃仁勳緋聞對象黃樂（Alice Huang）建立業務聯繫。相關安排發生於2022年…（共 3439 字，已截短）",
+    "response": "{\"stories\":[{\"id\":9,\"headline\":\"航海家1號飛行49年　距地球達一光日\",\"deck\":\"據多家媒體報導，航海家1號距離地球已達一光日，仍持續從星際空間傳回資料。\",\"body\":\"據半島電視台報導，美國國家航空暨太空總署（NASA）航海家1號升空49年後，距地球已超過160億英里，創下距離紀錄。The Verge指出，探測器於美東時間週三清晨5時16分跨越一光日里程碑。\\n\\n德國之聲報導，一光日約為260億公里，在這個距離，訊號往返地球需兩天，航海家1號是唯一抵達如此遠處的人造物體。\\n\\n據CBS News報導，航海家1號與姊妹探測器航海家2號，仍從星際空間傳回資料，兩者明年將迎來升空50週年。《自然》則指出，航海家1號電力供應逐漸衰退，多數儀器已關閉，但仍持續蒐集資料。\",\"why_it_matters\":\"這項紀錄讓台灣讀者具體理解深空探測的距離尺度，以及遠距通訊與電力供應的限制。\"},{\"id\":10,\"headline\":\"美媒：輝達牽線阿里巴巴與黃樂　涉規避晶片管制\",\"deck\":\"中央社引述美媒報導，輝達2022年介紹雙方接觸，促成後續晶片合作，涉及規避美國出口管制疑慮。\",\"body\":\"據中央社報導，科技媒體The Information引述匿名消息人士指出，2022年美國實施先進半導體出口管制前數月，輝達銷售團隊將阿里巴巴介紹給黃樂，促成雙方日後在輝達晶片相關業務上的合作。\\n\\n中央社引述消息人士說法，黃樂透過這次牽線，爭取阿里巴巴成為客戶，並據此取得銀行貸款，籌措購買輝達晶片所需資金；阿里巴巴則透過黃樂取得管道，在東南亞取得並租用輝達晶片，據報涉及繞過美國出口管制。\\n\\n報導指出，阿里巴巴當時是輝達A100晶片的主要買家，黃樂則準備創業，向雲端業者出租晶片，這項事業後來發展為新加坡資料中心公司Megaspeed。上述牽線與交易安排，均為媒體引述消息人士的說法。\",\"why_it_matters\":\"這項報導讓台灣讀者關注，美國晶片出口管制如何涉及跨國租用與資料中心業務。\"}]}"
+   }
+  },
+  {
+   "i": 18,
+   "at": "06:01:55",
+   "day": "11-19",
+   "iso": "2026-11-19T06:01:55+08:00",
+   "phase": "pipeline",
+   "kind": "llm",
+   "actor": "pipeline",
+   "mode": "think",
+   "title": "流水線撰稿｜科技",
+   "say": "科技：一次呼叫寫完整版 2 篇",
+   "secs": 18.5,
+   "detail": {
+    "llm_id": 662,
+    "secs": 18.5,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "板塊：科技。替每個 id 各寫一則新聞，回傳 {\"stories\":[{\"id\":1,\"headline\":\"不超過 40 字\",\"deck\":\"一句話重點\",\"body\":\"150 到 400 字正文，可分段\",\"why_it_matters\":\"一句話說明對台灣讀者的意義\"}]}。\n\n譯名一律使用中央社譯名，括號內的寫法都改成括號前的譯名：川普（Trump／特朗普）。\n\n{\"stories\":[{\"id\":11,\"kind\":\"report\",\"evidence\":[{\"outlet\":\"Al Jazeera\",\"title\":\"What do Deutsche Bank leaks reveal about Trump, Epstein and Russia?\",\"summary\":\"Deutsche Bank leaks expose ties to Trump, Epstein, and global elites amid scrutiny over past financial misconduct.\",\"published_at\":\"2026-11-18T17:42+08:00\"},{\"outlet\":\"CNBC Top News\",\"title\":\"Trump has arrived in Asia. Here’s what he said about Iran and Deutsche Bank\",\"summary\":\"Trump threatens Iran and responds to a tax leak report as his Asia trip begins.\",\"published_at\":\"2026-11-17T20:07+08:00\"},{\"outlet\":\"Financial Times\",\"title\":\"Leak of 15mn Deutsche Bank files exposes systemic failures\",\"summary\":\"Email, internal probes and other documents throw new light on the career and leadership of chief executive Christian Sewing\",\"published_at\":\"2026-11-17T14:00+08:00\"},{\"outlet\":\"Hacker News 首頁\",\"title\":\"Deutsche Bank\",\"summary\":\"Article URL: https://www.inside-db.com/ Comments URL: https://news.ycombinator.com/item?id=50547620 Points: 152 # Comments: 46\",\"published_at\":\"2026-11-18T23:38+08:00\"}]},{\"id\":12,\"kind\":\"report\",\"evidence\":[{\"outlet\":\"Ars Technica\",\"title\":\"Trump admin orders Kalshi to halt wagers on what words Trump will say\",\"summary\":\"CFTC: Kalshi bets may violate US ban on contracts that can be easily manipulated.\",\"published_at\":\"2026-11-19T02:46+08:00\"},{\"outlet\":\"Yahoo Finance\",\"title\":\"Kalshi pauses Trump \\\"mention markets\\\" in response to CFTC order\",\"summary\":\"Kalshi is pausing markets that allow users to bet on what President Trump will say in response to a federal agency's request, a spokesperson for the prediction market confirmed. The Commodity Futures Trading Commission requested that Kalshi halt the so-called \\\"mention markets\\\" tied to the president on Friday. Mention markets allow traders to bet on specific words or phrases a person will utter dur\",\"published_at\":\"2026-11-18T04:23+08:00\"},{\"outlet\":\"Al Jazeera\",\"title\":\"Kalshi halts Trump speech bets after CFTC order\",\"summary\":\"Kalshi halts Trump speech bets following CFTC mandate amid concerns of insider trading in US prediction markets.\",\"published_at\":\"2026-11-18T04:20+08:00\"},{\"outlet\":\"CNBC Top News\",\"title\":\"Kalshi takes down contro…（共 2646 字，已截短）",
+    "response": "{\"stories\":[{\"id\":11,\"headline\":\"德意志銀行文件外洩　媒體聚焦川普往來與內控\",\"deck\":\"多家媒體報導德意志銀行外洩文件，關注金融往來、內部調查與管理問題。\",\"body\":\"據英國金融時報報導，德意志銀行有1500萬份文件外洩，內容包括電子郵件、內部調查及其他文件，揭露系統性缺失，並為執行長的職涯與領導方式提供新的檢視資料。\\n\\n半島電視台報導，外洩資料揭露銀行與川普、艾普斯坦及全球菁英之間的關聯，過往金融不當行為也受到檢視。該媒體標題另將俄羅斯列為關注焦點，但提供的摘要未交代具體內容。\\n\\n據CNBC報導，川普展開亞洲行程時，回應了一篇稅務資料外洩報導，並對伊朗提出威脅。現有摘要未說明這篇稅務報導與上述銀行文件的具體關係，也未提供川普回應的詳細內容。\",\"why_it_matters\":\"這些報導為台灣讀者提供觀察國際銀行資料外洩、內部管理與政治人物金融往來的線索。\"},{\"id\":12,\"headline\":\"Kalshi依監管要求暫停川普發言用詞預測交易\",\"deck\":\"美國監管機關關切操縱風險，Kalshi暫停讓使用者押注川普將說哪些字詞的部分市場。\",\"body\":\"據Yahoo Finance報導，預測市場平台Kalshi發言人證實，平台因應美國商品期貨交易委員會（CFTC）要求，暫停與川普相關的「提及市場」。這類市場讓交易者押注特定人物發言時，是否會說出某些字詞或片語。\\n\\nArs Technica報導，CFTC認為，Kalshi相關押注可能違反美國對容易遭操縱合約的禁令。CNBC則指出，部分與川普相關的合約已下架，監管機關警告，這類合約具有較高的操縱風險。\\n\\n半島電視台將這次停止交易，置於美國預測市場內線交易疑慮的脈絡下報導。各家提供的摘要著重監管要求與風險，未交代是否已有違規認定，也未說明相關市場何時恢復。\",\"why_it_matters\":\"此案讓台灣讀者看見，預測市場以政治人物發言設計交易時，可能面臨的操縱風險與監管限制。\"}]}"
+   }
+  },
+  {
+   "i": 19,
+   "at": "06:02:06",
+   "day": "11-19",
+   "iso": "2026-11-19T06:02:06+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 9.2,
+   "detail": {
+    "llm_id": 663,
+    "secs": 9.2,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "{\"section\": \"taiwan\", \"candidates\": [{\"section\": \"taiwan\", \"story_id\": 86089, \"angle\": \"taiwan\", \"priority\": \"front\", \"sender\": \"section_editor\", \"title\": \"中國APEC資深官員接機　代表團：不是完全滿意尚可接受\"}, {\"section\": \"taiwan\", \"story_id\": 86094, \"angle\": \"taiwan\", \"priority\": \"front\", \"sender\": \"section_editor\", \"title\": \"數發部：近期8百萬筆個資外洩 要求企業72小時內通知當事人\"}, {\"section\": \"taiwan\", \"story_id\": 86096, \"angle\": \"taiwan\", \"priority\": \"section\", \"sender\": \"section_editor\", \"title\": \"這次拒投藍！ 王鴻薇堂妹2年前「覺醒」批蔣萬安影片曝\"}, {\"section\": \"taiwan\", \"story_id\": 86097, \"angle\": \"taiwan\", \"priority\": \"section\", \"sender\": \"section_editor\", \"title\": \"[政治] 藍拚普發2萬20日三讀 賴清德籲在野黨審慎、勿一意孤行\"}], \"global_top10\": [{\"story_id\": 86089, \"section\": \"taiwan\", \"score\": 48.0, \"title\": \"中國APEC資深官員接機　代表團：不是完全滿意尚可接受\"}, {\"story_id\": 86090, \"section\": \"world\", \"score\": 40.73, \"title\": \"英偉達稱已停止向中國供應Hopper高端晶片\"}, {\"story_id\": 86091, \"section\": \"world\", \"score\": 39.88, \"title\": \"Democrats nominate Hakeem Jeffries as first Black House speaker despite progressives’ concerns\"}, {\"story_id\": 86093, \"section\": \"tech\", \"score\": 37.14, \"title\": \"Tell us: are you playing Grand Theft Auto VI?\"}, {\"story_id\": 86094, \"section\": \"taiwan\", \"score\": 35.95, \"title\": \"數發部：近期8百萬筆個資外洩 要求企業72小時內通知當事人\"}, {\"story_id\": 86096, \"section\": \"taiwan\", \"score\": 35.11, \"title\": \"這次拒投藍！ 王鴻薇堂妹2年前「覺醒」批蔣萬安影片曝\"}, {\"story_id\": 86097, \"section\": \"taiwan\", \"score\": 33.48, \"title\": \"[政治] 藍拚普發2萬20日三讀 賴清德籲在野黨審慎、勿一意孤行\"}, {\"story_id\": 86098, \"section\": \"taiwan\", \"score\": 33.25, \"title\": \"[財經] 證交所宣布台股新制 優化零股交易、千金股升降調為1元\"}, {\"story_id\": 86099, \"section\": \"taiwan\", \"score\": 33.02, \"title\": \"中小學教師提案實踐創新教學 教育部最高補助12萬\"}, {\"story_id\": 86100, \"section\": \"world\", \"score\": 33.01, \"title\": \"Voyager 1 reaches one light-day from Earth after 49 years in space\"}]}",
+    "response": "{\"pitches\":[{\"story_id\":86089,\"angle\":\"全站排名第一，頭版首選：聚焦APEC接待層級與台灣代表團回應，解析兩岸外交禮遇爭議。\",\"priority\":\"front\"},{\"story_id\":86094,\"angle\":\"全站排名第五，頭版次選：聚焦800萬筆個資外洩影響、企業72小時通知要求與當事人如何因應。\",\"priority\":\"front\"},{\"story_id\":86097,\"angle\":\"聚焦普發2萬元三讀時程、財政影響與朝野分歧，優先於個人政治表態稿安排分版版位。\",\"priority\":\"section\"},{\"story_id\":86096,\"angle\":\"全站排名第六，保留分版：釐清兩年前影片與當前拒投表態的時間脈絡，避免以親屬立場推論整體選情。\",\"priority\":\"section\"}]}"
+   },
+   "story_id": null,
+   "phase": "pitch",
+   "actor": "section_taiwan",
+   "title": "台灣版主編想提案",
+   "say": "看本版 4 篇候選和全站前十名…想推 2 篇上頭版"
+  },
+  {
+   "i": 20,
+   "at": "06:02:17",
+   "day": "11-19",
+   "iso": "2026-11-19T06:02:17+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 11.3,
+   "detail": {
+    "llm_id": 664,
+    "secs": 11.3,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "{\"section\": \"world\", \"candidates\": [{\"section\": \"world\", \"story_id\": 86090, \"angle\": \"world\", \"priority\": \"front\", \"sender\": \"section_editor\", \"title\": \"英偉達稱已停止向中國供應Hopper高端晶片\"}, {\"section\": \"world\", \"story_id\": 86091, \"angle\": \"world\", \"priority\": \"front\", \"sender\": \"section_editor\", \"title\": \"Democrats nominate Hakeem Jeffries as first Black House speaker despite progressives’ concerns\"}, {\"section\": \"world\", \"story_id\": 86100, \"angle\": \"world\", \"priority\": \"section\", \"sender\": \"section_editor\", \"title\": \"Voyager 1 reaches one light-day from Earth after 49 years in space\"}, {\"section\": \"world\", \"story_id\": 86103, \"angle\": \"world\", \"priority\": \"section\", \"sender\": \"section_editor\", \"title\": \"美媒驚爆輝達4年前為黃樂開路！阿里巴巴成首批客戶 Megaspeed交易鏈遭起底\"}], \"global_top10\": [{\"story_id\": 86089, \"section\": \"taiwan\", \"score\": 48.0, \"title\": \"中國APEC資深官員接機　代表團：不是完全滿意尚可接受\"}, {\"story_id\": 86090, \"section\": \"world\", \"score\": 40.73, \"title\": \"英偉達稱已停止向中國供應Hopper高端晶片\"}, {\"story_id\": 86091, \"section\": \"world\", \"score\": 39.88, \"title\": \"Democrats nominate Hakeem Jeffries as first Black House speaker despite progressives’ concerns\"}, {\"story_id\": 86093, \"section\": \"tech\", \"score\": 37.14, \"title\": \"Tell us: are you playing Grand Theft Auto VI?\"}, {\"story_id\": 86094, \"section\": \"taiwan\", \"score\": 35.95, \"title\": \"數發部：近期8百萬筆個資外洩 要求企業72小時內通知當事人\"}, {\"story_id\": 86096, \"section\": \"taiwan\", \"score\": 35.11, \"title\": \"這次拒投藍！ 王鴻薇堂妹2年前「覺醒」批蔣萬安影片曝\"}, {\"story_id\": 86097, \"section\": \"taiwan\", \"score\": 33.48, \"title\": \"[政治] 藍拚普發2萬20日三讀 賴清德籲在野黨審慎、勿一意孤行\"}, {\"story_id\": 86098, \"section\": \"taiwan\", \"score\": 33.25, \"title\": \"[財經] 證交所宣布台股新制 優化零股交易、千金股升降調為1元\"}, {\"story_id\": 86099, \"section\": \"taiwan\", \"score\": 33.02, \"title\": \"中小學教師提案實踐創新教學 教育部最高補助12萬\"}, {\"story_id\": 86100, \"section\": \"world\", \"score\": 33.01, \"title\": \"Voyager 1 reaches one light-day from Earth after 49 years in space\"}]}",
+    "response": "{\"pitches\":[{\"story_id\":86090,\"angle\":\"頭版首選：輝達稱停止向中國供應 Hopper 高階晶片，聚焦美中科技競爭與中國 AI 算力供應；全站排名第二。\",\"priority\":\"front\"},{\"story_id\":86091,\"angle\":\"頭版次選：民主黨提名 Jeffries 角逐眾議院議長，聚焦黑人議長的歷史意義與黨內進步派疑慮，明確區分提名與當選；全站排名第三。\",\"priority\":\"front\"},{\"story_id\":86100,\"angle\":\"分版優先：Voyager 1 距地球達一光日，以訊號單程傳遞時間解釋深空探索尺度與49年任務里程碑；全站排名第十。\",\"priority\":\"section\"},{\"story_id\":86103,\"angle\":\"分版追蹤：聚焦報導所指輝達、阿里巴巴與 Megaspeed 交易鏈，釐清時間線與證據，作為中國晶片供應議題的延伸。\",\"priority\":\"section\"}]}"
+   },
+   "story_id": null,
+   "phase": "pitch",
+   "actor": "section_world",
+   "title": "國際版主編想提案",
+   "say": "看本版 4 篇候選和全站前十名…想推 2 篇上頭版"
+  },
+  {
+   "i": 21,
+   "at": "06:02:28",
+   "day": "11-19",
+   "iso": "2026-11-19T06:02:28+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 10.5,
+   "detail": {
+    "llm_id": 665,
+    "secs": 10.5,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "{\"section\": \"tech\", \"candidates\": [{\"section\": \"tech\", \"story_id\": 86093, \"angle\": \"tech\", \"priority\": \"front\", \"sender\": \"section_editor\", \"title\": \"Tell us: are you playing Grand Theft Auto VI?\"}, {\"section\": \"tech\", \"story_id\": 86118, \"angle\": \"tech\", \"priority\": \"front\", \"sender\": \"section_editor\", \"title\": \"輝達代理 CEO 喊話擴大與台廠合作 矽品、景碩全力擴增產能\"}, {\"section\": \"tech\", \"story_id\": 86123, \"angle\": \"tech\", \"priority\": \"section\", \"sender\": \"section_editor\", \"title\": \"What do Deutsche Bank leaks reveal about Trump, Epstein and Russia?\"}, {\"section\": \"tech\", \"story_id\": 86127, \"angle\": \"tech\", \"priority\": \"section\", \"sender\": \"section_editor\", \"title\": \"Trump admin orders Kalshi to halt wagers on what words Trump will say\"}], \"global_top10\": [{\"story_id\": 86089, \"section\": \"taiwan\", \"score\": 48.0, \"title\": \"中國APEC資深官員接機　代表團：不是完全滿意尚可接受\"}, {\"story_id\": 86090, \"section\": \"world\", \"score\": 40.73, \"title\": \"英偉達稱已停止向中國供應Hopper高端晶片\"}, {\"story_id\": 86091, \"section\": \"world\", \"score\": 39.88, \"title\": \"Democrats nominate Hakeem Jeffries as first Black House speaker despite progressives’ concerns\"}, {\"story_id\": 86093, \"section\": \"tech\", \"score\": 37.14, \"title\": \"Tell us: are you playing Grand Theft Auto VI?\"}, {\"story_id\": 86094, \"section\": \"taiwan\", \"score\": 35.95, \"title\": \"數發部：近期8百萬筆個資外洩 要求企業72小時內通知當事人\"}, {\"story_id\": 86096, \"section\": \"taiwan\", \"score\": 35.11, \"title\": \"這次拒投藍！ 王鴻薇堂妹2年前「覺醒」批蔣萬安影片曝\"}, {\"story_id\": 86097, \"section\": \"taiwan\", \"score\": 33.48, \"title\": \"[政治] 藍拚普發2萬20日三讀 賴清德籲在野黨審慎、勿一意孤行\"}, {\"story_id\": 86098, \"section\": \"taiwan\", \"score\": 33.25, \"title\": \"[財經] 證交所宣布台股新制 優化零股交易、千金股升降調為1元\"}, {\"story_id\": 86099, \"section\": \"taiwan\", \"score\": 33.02, \"title\": \"中小學教師提案實踐創新教學 教育部最高補助12萬\"}, {\"story_id\": 86100, \"section\": \"world\", \"score\": 33.01, \"title\": \"Voyager 1 reaches one light-day from Earth after 49 years in space\"}]}",
+    "response": "{\"pitches\":[{\"story_id\":86093,\"angle\":\"頭版首推：全站排名第四，以 GTA VI 玩家體驗與社群討論為角度；原稿為讀者徵集，避免當成遊戲評測或銷售報導。\",\"priority\":\"front\"},{\"story_id\":86118,\"angle\":\"頭版次推：聚焦輝達與台廠合作及矽品、景碩擴產，呼應全站第二名的輝達停止供應中國 Hopper 晶片消息，呈現供應鏈布局；不推定兩者具有因果關係。\",\"priority\":\"front\"},{\"story_id\":86127,\"angle\":\"分版優先：從預測市場平台的監管界線切入，說明政府要求 Kalshi 停止川普用詞下注的爭議。\",\"priority\":\"section\"},{\"story_id\":86123,\"angle\":\"分版次序居後：聚焦德意志銀行外洩資料的查證與揭露範圍，區分文件證據與政治推論；與科技主題關聯較弱。\",\"priority\":\"section\"}]}"
+   },
+   "story_id": null,
+   "phase": "pitch",
+   "actor": "section_tech",
+   "title": "科技版主編想提案",
+   "say": "看本版 4 篇候選和全站前十名…想推 2 篇上頭版"
+  },
+  {
+   "i": 22,
+   "at": "06:02:28",
+   "day": "11-19",
+   "iso": "2026-11-19T06:02:28+08:00",
+   "phase": "pitch",
+   "kind": "message",
+   "type": "PITCH",
+   "type_label": "提案",
+   "mode": "say",
+   "actor": "section_taiwan",
+   "to": "eic",
+   "status": "handled",
+   "title": "台灣版主編提案",
+   "detail": {
+    "pitches": [
+     {
+      "story_id": 86089,
+      "title": "施振榮抵深圳出席APEC　代表團：接機層級未如期待但可接受",
+      "angle": "全站排名第一，頭版首選：聚焦APEC接待層級與台灣代表團回應，解析兩岸外交禮遇爭議。",
+      "priority": "front",
+      "message_id": 592
+     },
+     {
+      "story_id": 86094,
+      "title": "近期約800萬筆個資外洩 政院要求督促業者通知當事人",
+      "angle": "全站排名第五，頭版次選：聚焦800萬筆個資外洩影響、企業72小時通知要求與當事人如何因應。",
+      "priority": "front",
+      "message_id": 596
+     },
+     {
+      "story_id": 86096,
+      "title": "王鴻薇堂妹王鴻嬪表態「拒投蔣萬安」",
+      "angle": "全站排名第六，保留分版：釐清兩年前影片與當前拒投表態的時間脈絡，避免以親屬立場推論整體選情。",
+      "priority": "section",
+      "message_id": 598
+     },
+     {
+      "story_id": 86097,
+      "title": "藍拚普發2萬元20日三讀　賴清德籲審慎",
+      "angle": "聚焦普發2萬元三讀時程、財政影響與朝野分歧，優先於個人政治表態稿安排分版版位。",
+      "priority": "section",
+      "message_id": 599
+     }
+    ]
+   },
+   "paper": {
+    "label": "提案",
+    "to": "eic"
+   },
+   "say": "我這版今天做 4 篇，2 篇想上頭版。首推《施振榮抵深圳出席APEC 代表團：接機層級未如期待…》：全站排名第一，頭版首選：聚焦APEC接待層級與台灣代表團回應，解析兩岸外交禮遇爭議。"
+  },
+  {
+   "i": 23,
+   "at": "06:02:28",
+   "day": "11-19",
+   "iso": "2026-11-19T06:02:28+08:00",
+   "phase": "pitch",
+   "kind": "message",
+   "type": "PITCH",
+   "type_label": "提案",
+   "mode": "say",
+   "actor": "section_world",
+   "to": "eic",
+   "status": "handled",
+   "title": "國際版主編提案",
+   "detail": {
+    "pitches": [
+     {
+      "story_id": 86090,
+      "title": "輝達停止向中國供應Hopper晶片　未說明原因與期限",
+      "angle": "頭版首選：輝達稱停止向中國供應 Hopper 高階晶片，聚焦美中科技競爭與中國 AI 算力供應；全站排名第二。",
+      "priority": "front",
+      "message_id": 593
+     },
+     {
+      "story_id": 86091,
+      "title": "美民主黨提名 Jeffries 出任眾院議長，有望成首位黑人議長",
+      "angle": "頭版次選：民主黨提名 Jeffries 角逐眾議院議長，聚焦黑人議長的歷史意義與黨內進步派疑慮，明確區分提名與當選；全站排名第三。",
+      "priority": "front",
+      "message_id": 594
+     },
+     {
+      "story_id": 86100,
+      "title": "Voyager 1距地球達一光日　航行49年創紀錄",
+      "angle": "分版優先：Voyager 1 距地球達一光日，以訊號單程傳遞時間解釋深空探索尺度與49年任務里程碑；全站排名第十。",
+      "priority": "section",
+      "message_id": 600
+     },
+     {
+      "story_id": 86103,
+      "title": "美媒指輝達2022年牽線阿里巴巴與黃樂　涉晶片出口管制爭議",
+      "angle": "分版追蹤：聚焦報導所指輝達、阿里巴巴與 Megaspeed 交易鏈，釐清時間線與證據，作為中國晶片供應議題的延伸。",
+      "priority": "section",
+      "message_id": 601
+     }
+    ]
+   },
+   "paper": {
+    "label": "提案",
+    "to": "eic"
+   },
+   "say": "我這版今天做 4 篇，2 篇想上頭版。首推《輝達停止向中國供應Hopper晶片 未說明原因與期限》：頭版首選：輝達稱停止向中國供應 Hopper 高階晶片，聚焦美中科技競爭與中國 AI 算力供應；全站排名第二。"
+  },
+  {
+   "i": 24,
+   "at": "06:02:28",
+   "day": "11-19",
+   "iso": "2026-11-19T06:02:28+08:00",
+   "phase": "pitch",
+   "kind": "message",
+   "type": "PITCH",
+   "type_label": "提案",
+   "mode": "say",
+   "actor": "section_tech",
+   "to": "eic",
+   "status": "handled",
+   "title": "科技版主編提案",
+   "detail": {
+    "pitches": [
+     {
+      "story_id": 86093,
+      "title": "《Grand Theft Auto VI》上市，預購銷售額已逾十五億美元",
+      "angle": "頭版首推：全站排名第四，以 GTA VI 玩家體驗與社群討論為角度；原稿為讀者徵集，避免當成遊戲評測或銷售報導。",
+      "priority": "front",
+      "message_id": 595
+     },
+     {
+      "story_id": 86118,
+      "title": "輝達投資景碩逾10億美元、與矽品簽約擴大先進封裝產能",
+      "angle": "頭版次推：聚焦輝達與台廠合作及矽品、景碩擴產，呼應全站第二名的輝達停止供應中國 Hopper 晶片消息，呈現供應鏈布局；不推定兩者具有因果關係。",
+      "priority": "front",
+      "message_id": 597
+     },
+     {
+      "story_id": 86123,
+      "title": "德意志銀行文件外洩，揭露人脈關係與系統性缺失",
+      "angle": "分版次序居後：聚焦德意志銀行外洩資料的查證與揭露範圍，區分文件證據與政治推論；與科技主題關聯較弱。",
+      "priority": "section",
+      "message_id": 602
+     },
+     {
+      "story_id": 86127,
+      "title": "CFTC要求停辦川普言論押注，Kalshi暫停相關市場",
+      "angle": "分版優先：從預測市場平台的監管界線切入，說明政府要求 Kalshi 停止川普用詞下注的爭議。",
+      "priority": "section",
+      "message_id": 603
+     }
+    ]
+   },
+   "paper": {
+    "label": "提案",
+    "to": "eic"
+   },
+   "say": "我這版今天做 4 篇，2 篇想上頭版。首推《《Grand Theft Auto VI》上市，預…》：頭版首推：全站排名第四，以 GTA VI 玩家體驗與社群討論為角度；原稿為讀者徵集，避免當成遊戲評測或銷售報導。"
+  },
+  {
+   "i": 25,
+   "at": "06:02:39",
+   "day": "11-19",
+   "iso": "2026-11-19T06:02:39+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 11.6,
+   "detail": {
+    "llm_id": 666,
+    "secs": 11.6,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "事件板塊：taiwan。請寫一則稿，action 填 DRAFT。\n\n<<<S1>>>\n媒體：自由時報 財經\n標題：中國APEC資深官員接機　代表團：不是完全滿意尚可接受\n摘要：亞太經濟合作會議（APEC）台灣領袖代表施振榮18日上午抵達中國深圳，中國接機代表為中央APEC籌委會高官程烈等人。我代表團成員認為，這代表中方尊重APEC體制，雖然不是完全滿意，但是可以...…\n<<</S1>>>\n\n<<<S2>>>\n媒體：中央廣播電台（Yahoo 股市新聞轉載）\n標題：[國際] 施振榮抵達深圳APEC首日 代表團：中方慎重處理相關安排\n摘要：APEC領袖代表、宏碁集團創辦人施振榮18日飛抵中國深圳，今天(19日)將出席深圳APEC領袖峰會。我方代表團成員表示，中方依照APEC慣例慎重處理施振榮18日參與的相關安排，其中，中方接機層級雖未如我方希望的部長層級，但經與其他經濟體核對，待遇一致，我方雖不滿意，但可接受。 此次中方安排由中國APEC資深官員程烈，率廣東省APEC籌委會一級巡視員方濤、深圳市APEC籌委會一級巡視員莫士龍為施振榮接機。 代表團成員說明，我方希望參與APEC不要與兩岸關係掛鉤，儘管國台辦多次做出錯誤說明，但我方不斷在國內透過新聞稿及其他方式、甚至當面多次向中方表達嚴正關切，最後中方沒有提出以國台辦人員接機，而是告知將由身為中國外交部官員的陳烈代表中國中央政府接機，尚符合我方期待以APEC慣例、模式處理台灣參與。 談到施振榮在18日深圳APEC經濟體領袖歡迎晚宴的座位以及大合照位置，代表團成員表示，雖然仍在與\n<<</S2>>>\n\n<<<S3>>>\n媒體：Yahoo 股市新聞（中央廣播電台轉載）\n標題：深圳APEC歡迎宴 習近平主動與施振榮握手、合影\n摘要：深圳APEC經濟體領袖峰會將於明天(19日)登場，今天(18日)晚間東道主中方宴請所有與會經濟體領袖及配偶。我方領袖代表、宏碁集團創辦人施振榮與夫人葉紫華也連袂出席，宴後兩人來到大廳受到中國國家主席習\n<<</S3>>>\n\n<<<S4>>>\n媒體：公視 即時\n標題：APEC領袖代表施振榮抵深圳 稱此行「暢通無阻」不太習慣\n摘要：2026年APEC經濟領袖峰會，將在明（19）日舉行全體領袖正式會議，而代表台灣出席的、宏碁創辦人施振榮，今（18）日中午抵達中國深圳，笑稱此行「暢通無阻」，讓他有點不習慣，但施振榮也強調，將向APEC各會員國傳遞台灣的重要訴求，善用台灣半導體與AI技術優勢，輔以價值外交，強化台灣供應鏈不可或缺角色。 搭乘華航專機、走下紅毯，APEC領袖代表施振榮18日抵達深圳寶安國際機場，中方派出APEC資深官員程烈親自接機，還包含廣東省APEC籌委會代表方濤、深圳市APEC籌委會代表莫士龍等人，稍微寒暄之後，就馬上驅車趕往下塌的四季酒店。 公視記者呂玠鋆報導，「施振榮抵達下塌飯店後，隨即與ABAC代表們以及國科會主委進行午宴，現場席開9桌，包含了代表團顧問以及隨行成員。」 APEC領袖代表及宏碁創辦人施振榮說，「先脫稿講一下可以嗎？從我家出發到機場，從機場到這裡來，真的暢通無阻，這個感受是從來沒有經歷\n<<</S4>>>\n\n<<<S5>>>\n媒體：中央社（Yahoo 股市新聞轉載）\n標題：APEC幕後：施振榮談新王道　多方共贏契合台灣戰略\n摘要：（中央社記者李雅雯深圳2026年11月18日電）APEC深圳峰會領袖代表施振榮行前談話時提到「台灣將帶著微笑曲線而來」。知情人士表示，施振榮從提出「微笑曲線」到「新王道」哲學，談的是多方共贏概念，這與\n<<</S5>>>\n\n<<<S6>>>\n媒體：經濟日報\n標題：施振榮 APEC 午宴脫稿分享 自創「一人公司」聘兩名 AI 員工\n摘要：2026年度「亞太經濟合作經濟領袖會議」（APEC）將於18日至19日在深圳舉行，我方領袖代表、宏碁（2353）集團創辦人施振榮時隔19年再度出任領袖代表，18日出席領袖代表團午宴時，一開場便以輕鬆語氣分享這趟行程的特殊感受。他笑說，從家裡出發到機場，再從機場抵達會場，一路上都暢通無阻，「真的非常非常不習慣」，也讓午宴一開始便多了幾分輕鬆氣氛。\n<<</S6>>>",
+    "response": "{\"action\":\"DRAFT\",\"headline\":\"施振榮抵深圳出席APEC　代表團：接機層級未如期待但可接受\",\"deck\":\"代表團表示，經與其他經濟體核對，接機待遇一致；施振榮將傳遞台灣半導體與AI技術優勢等訴求。\",\"body\":\"台灣APEC領袖代表、宏碁集團創辦人施振榮18日抵達中國深圳，將於19日出席APEC領袖峰會。我方代表團成員表示，中方接機層級未達我方希望的部長層級，但經與其他經濟體核對，待遇一致，雖不滿意，仍可接受。[S2]\\n\\n中方安排APEC資深官員程烈，率廣東省APEC籌委會代表方濤、深圳市APEC籌委會代表莫士龍接機。代表團成員表示，希望台灣參與APEC不要與兩岸關係掛鉤，中方依照APEC慣例慎重處理相關安排。[S2][S4]\\n\\n施振榮抵達後表示，此行一路「暢通無阻」，讓他有點不習慣。他也強調，將向APEC各會員國傳遞台灣的重要訴求，善用台灣半導體與AI技術優勢，輔以價值外交，強化台灣在供應鏈中不可或缺的角色。[S4]\",\"why_it_matters\":\"此次接機安排涉及台灣參與APEC的待遇與模式；代表團表示，希望相關參與依APEC慣例處理，避免與兩岸關係掛鉤。[S2]\",\"reason\":\"\"}",
+    "version": 1,
+    "headline": "施振榮抵深圳出席APEC　代表團：接機層級未如期待但可接受",
+    "body": "台灣APEC領袖代表、宏碁集團創辦人施振榮18日抵達中國深圳，將於19日出席APEC領袖峰會。我方代表團成員表示，中方接機層級未達我方希望的部長層級，但經與其他經濟體核對，待遇一致，雖不滿意，仍可接受。[S2]\n\n中方安排APEC資深官員程烈，率廣東省APEC籌委會代表方濤、深圳市APEC籌委會代表莫士龍接機。代表團成員表示，希望台灣參與APEC不要與兩岸關係掛鉤，中方依照APEC慣例慎重處理相關安排。[S2][S4]\n\n施振榮抵達後表示，此行一路「暢通無阻」，讓他有點不習慣。他也強調，將向APEC各會員國傳遞台灣的重要訴求，善用台灣半導體與AI技術優勢，輔以價值外交，強化台灣在供應鏈中不可或缺的角色。[S4]",
+    "diff": ""
+   },
+   "story_id": 86089,
+   "phase": "write",
+   "actor": "reporter",
+   "title": "記者寫稿",
+   "say": "寫好 v1：《施振榮抵深圳出席APEC　代表團：接機層級未如期待但可接受》",
+   "state": {
+    "stories": {
+     "86089": {
+      "version": 1,
+      "status": "draft",
+      "headline": "施振榮抵深圳出席APEC　代表團：接機層級未如期待但可接受"
+     }
+    }
+   },
+   "paper": {
+    "label": "v1",
+    "to": "fact_checker"
+   }
+  },
+  {
+   "i": 26,
+   "at": "06:02:39",
+   "day": "11-19",
+   "iso": "2026-11-19T06:02:39+08:00",
+   "phase": "write",
+   "kind": "message",
+   "type": "RELEASE",
+   "type_label": "放行",
+   "mode": "stamp",
+   "actor": "checktool",
+   "to": "eic",
+   "status": "handled",
+   "story_id": 86089,
+   "title": "查核工具（程式） → 總編輯｜放行",
+   "say": "重驗：來源都有共同實體、數字都找得到",
+   "detail": {
+    "message_id": 604,
+    "llm_id": null,
+    "correlation_id": "T2-20261119-86089",
+    "target_version": 1,
+    "payload": "{\n \"detail\": \"重驗：來源都有共同實體、數字都找得到\"\n}"
+   },
+   "state": {
+    "stories": {
+     "86089": {
+      "status": "checked"
+     }
+    }
+   },
+   "paper": {
+    "label": "✓",
+    "to": "eic"
+   }
+  },
+  {
+   "i": 27,
+   "at": "06:05:09",
+   "day": "11-19",
+   "iso": "2026-11-19T06:05:09+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 150.0,
+   "detail": {
+    "llm_id": 667,
+    "secs": 150.0,
+    "ok": false,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "codex exec 超過 150 秒",
+    "prompt": "事件板塊：world。請寫一則稿，action 填 DRAFT。\n\n<<<S1>>>\n媒體：RFI 中文\n標題：英偉達稱已停止向中國供應Hopper高端晶片\n摘要：在黃仁勳上周辭職後接任代理執行長的科萊特·克雷斯（Colette Kress）周二在財報電話會議上表示，第三季度，英偉達向中國銷售了價值24億美元的、獲得出口許可的Hopper架構數據中心產品。不過，她同時指出，目前公司不再計劃進行新的相關交付。她沒有解釋英偉達為何停止出口這些處理器，也沒有說明這項決定是否具有永久性。\n<<</S1>>>\n\n<<<S2>>>\n媒體：NPR News\n標題：Mary Peltola flips Alaska's Senate seat. And, Nvidia won't reinstate Jensen Huang\n摘要：Former Democratic Rep. Mary Peltola has won one of the U.S.' most watched Senate races. And, Nvidia's board says it doesn't plan to reinstate former CEO Jensen Huang despite pressure from his allies.\n<<</S2>>>\n\n<<<S3>>>\n媒體：科技新報\n標題：輝達：已停止向中國出貨 Hopper 晶片\n摘要：綜合港媒引述外媒報導，輝達（Nvidia）代理執行長克雷斯（Colette Kress）於財報電話會議上表示， […]\n<<</S3>>>\n\n<<<S4>>>\n媒體：Yahoo 股市新聞\n標題：黃仁勳才卸任！輝達：停止對中出貨H200晶片\n摘要：[NOWNEWS今日新聞]全球AI晶片龍頭輝達（NVIDIA）對中國市場的布局出現重大轉變！輝達代理執行長兼財務長克瑞斯（ColetteKress）週二（17日）證實，公司已停止向中國出貨獲得美國政府\n<<</S4>>>\n\n<<<S5>>>\n媒體：中央廣播電台\n標題：[國際] 輝達立場轉變　代理執行長證實Hopper晶片停止銷中\n摘要：美國人工智慧(AI)晶片巨擘輝達代理執行長克瑞斯在公司第3季財報電話會議中告訴分析師，輝達不再向中國出貨Hopper資料中心晶片。美國政府去年才批准銷售同款晶片的一種版本。 印度電視頻道CNBC TV18網站報導，輝達(NVIDIA)第3季期間向中國出貨價值24億美元、取得出口許可的Hopper資料中心晶片。然而公司未來財測並未納入任何取得出口許可的Hopper資料中心產品。克瑞斯(Colette Kress)證實輝達不再向中國銷售這些晶片。 克瑞斯並未進一步說明停止出貨的原因，不過這確實顯示輝達立場轉變。前執行長黃仁勳先前是最積極主張恢復對中國出口晶片的人士。 黃仁勳是輝達共同創辦人，上週連爆婚外情後辭去執行長職務，美國媒體披露外遇對象包括一名疑似是中國間諜的中國籍女商人。北京否認相關指控。 黃仁勳醜聞爆發後，川普政府已著手加強審查輸往多個國家的處理器出口，不僅限於中國；若購買晶片的資料\n<<</S5>>>\n\n<<<S6>>>\n媒體：自由時報 財經\n標題：震撼！黃仁勳才剛下台 輝達宣布H200晶片不賣中國了\n摘要：〔財經頻道／綜合報導〕輝達代理執行長柯蕾絲（Colette Kress）表示，輝達不再向中國銷售H200人工智慧（AI）晶片，正式退出美國對中晶片出口管制政策中的一項爭議性例外安排。 黃仁勳...…\n<<</S6>>>",
+    "response": ""
+   },
+   "story_id": 86090,
+   "phase": "write",
+   "actor": "reporter",
+   "title": "記者｜呼叫失敗",
+   "say": "這次呼叫失敗，重試：codex exec 超過 150 秒"
+  },
+  {
+   "i": 28,
+   "at": "06:05:19",
+   "day": "11-19",
+   "iso": "2026-11-19T06:05:19+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 9.4,
+   "detail": {
+    "llm_id": 668,
+    "secs": 9.4,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "事件板塊：world。請寫一則稿，action 填 DRAFT。\n\n<<<S1>>>\n媒體：RFI 中文\n標題：英偉達稱已停止向中國供應Hopper高端晶片\n摘要：在黃仁勳上周辭職後接任代理執行長的科萊特·克雷斯（Colette Kress）周二在財報電話會議上表示，第三季度，英偉達向中國銷售了價值24億美元的、獲得出口許可的Hopper架構數據中心產品。不過，她同時指出，目前公司不再計劃進行新的相關交付。她沒有解釋英偉達為何停止出口這些處理器，也沒有說明這項決定是否具有永久性。\n<<</S1>>>\n\n<<<S2>>>\n媒體：NPR News\n標題：Mary Peltola flips Alaska's Senate seat. And, Nvidia won't reinstate Jensen Huang\n摘要：Former Democratic Rep. Mary Peltola has won one of the U.S.' most watched Senate races. And, Nvidia's board says it doesn't plan to reinstate former CEO Jensen Huang despite pressure from his allies.\n<<</S2>>>\n\n<<<S3>>>\n媒體：科技新報\n標題：輝達：已停止向中國出貨 Hopper 晶片\n摘要：綜合港媒引述外媒報導，輝達（Nvidia）代理執行長克雷斯（Colette Kress）於財報電話會議上表示， […]\n<<</S3>>>\n\n<<<S4>>>\n媒體：Yahoo 股市新聞\n標題：黃仁勳才卸任！輝達：停止對中出貨H200晶片\n摘要：[NOWNEWS今日新聞]全球AI晶片龍頭輝達（NVIDIA）對中國市場的布局出現重大轉變！輝達代理執行長兼財務長克瑞斯（ColetteKress）週二（17日）證實，公司已停止向中國出貨獲得美國政府\n<<</S4>>>\n\n<<<S5>>>\n媒體：中央廣播電台\n標題：[國際] 輝達立場轉變　代理執行長證實Hopper晶片停止銷中\n摘要：美國人工智慧(AI)晶片巨擘輝達代理執行長克瑞斯在公司第3季財報電話會議中告訴分析師，輝達不再向中國出貨Hopper資料中心晶片。美國政府去年才批准銷售同款晶片的一種版本。 印度電視頻道CNBC TV18網站報導，輝達(NVIDIA)第3季期間向中國出貨價值24億美元、取得出口許可的Hopper資料中心晶片。然而公司未來財測並未納入任何取得出口許可的Hopper資料中心產品。克瑞斯(Colette Kress)證實輝達不再向中國銷售這些晶片。 克瑞斯並未進一步說明停止出貨的原因，不過這確實顯示輝達立場轉變。前執行長黃仁勳先前是最積極主張恢復對中國出口晶片的人士。 黃仁勳是輝達共同創辦人，上週連爆婚外情後辭去執行長職務，美國媒體披露外遇對象包括一名疑似是中國間諜的中國籍女商人。北京否認相關指控。 黃仁勳醜聞爆發後，川普政府已著手加強審查輸往多個國家的處理器出口，不僅限於中國；若購買晶片的資料\n<<</S5>>>\n\n<<<S6>>>\n媒體：自由時報 財經\n標題：震撼！黃仁勳才剛下台 輝達宣布H200晶片不賣中國了\n摘要：〔財經頻道／綜合報導〕輝達代理執行長柯蕾絲（Colette Kress）表示，輝達不再向中國銷售H200人工智慧（AI）晶片，正式退出美國對中晶片出口管制政策中的一項爭議性例外安排。 黃仁勳...…\n<<</S6>>>",
+    "response": "{\"action\":\"DRAFT\",\"headline\":\"輝達停止向中國供應Hopper晶片　未說明原因與期限\",\"deck\":\"代理執行長克雷斯表示，第三季對中銷售24億美元獲出口許可的Hopper資料中心產品，目前不再計劃新的交付。\",\"body\":\"輝達代理執行長克雷斯（Colette Kress）週二在財報電話會議上表示，公司目前不再計劃向中國進行新的Hopper架構資料中心產品交付。她未說明停止供應的原因，也未交代這項決定是否永久實施。[S1]\\n\\n輝達第三季向中國銷售了價值24億美元、取得出口許可的Hopper資料中心產品。中央廣播電台報導，公司未來財測並未納入任何取得出口許可的Hopper資料中心產品，克雷斯並證實不再向中國銷售這些晶片。[S1][S5]\",\"why_it_matters\":\"輝達第三季仍有24億美元的相關對中銷售，但目前已不再計劃新的交付；停止供應的原因與持續時間仍未獲說明。[S1]\",\"reason\":\"\"}",
+    "version": 1,
+    "headline": "輝達停止向中國供應Hopper晶片　未說明原因與期限",
+    "body": "輝達代理執行長克雷斯（Colette Kress）週二在財報電話會議上表示，公司目前不再計劃向中國進行新的Hopper架構資料中心產品交付。她未說明停止供應的原因，也未交代這項決定是否永久實施。[S1]\n\n輝達第三季向中國銷售了價值24億美元、取得出口許可的Hopper資料中心產品。中央廣播電台報導，公司未來財測並未納入任何取得出口許可的Hopper資料中心產品，克雷斯並證實不再向中國銷售這些晶片。[S1][S5]",
+    "diff": ""
+   },
+   "story_id": 86090,
+   "phase": "write",
+   "actor": "reporter",
+   "title": "記者寫稿",
+   "say": "寫好 v1：《輝達停止向中國供應Hopper晶片　未說明原因與期限》",
+   "state": {
+    "stories": {
+     "86090": {
+      "version": 1,
+      "status": "draft",
+      "headline": "輝達停止向中國供應Hopper晶片　未說明原因與期限"
+     }
+    }
+   },
+   "paper": {
+    "label": "v1",
+    "to": "fact_checker"
+   }
+  },
+  {
+   "i": 29,
+   "at": "06:05:19",
+   "day": "11-19",
+   "iso": "2026-11-19T06:05:19+08:00",
+   "phase": "write",
+   "kind": "message",
+   "type": "RELEASE",
+   "type_label": "放行",
+   "mode": "stamp",
+   "actor": "checktool",
+   "to": "eic",
+   "status": "handled",
+   "story_id": 86090,
+   "title": "查核工具（程式） → 總編輯｜放行",
+   "say": "重驗：來源都有共同實體、數字都找得到",
+   "detail": {
+    "message_id": 605,
+    "llm_id": null,
+    "correlation_id": "T2-20261119-86090",
+    "target_version": 1,
+    "payload": "{\n \"detail\": \"重驗：來源都有共同實體、數字都找得到\"\n}"
+   },
+   "state": {
+    "stories": {
+     "86090": {
+      "status": "checked"
+     }
+    }
+   },
+   "paper": {
+    "label": "✓",
+    "to": "eic"
+   }
+  },
+  {
+   "i": 30,
+   "at": "06:05:30",
+   "day": "11-19",
+   "iso": "2026-11-19T06:05:30+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 10.9,
+   "detail": {
+    "llm_id": 669,
+    "secs": 10.9,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "事件板塊：world。請寫一則稿，action 填 DRAFT。\n\n<<<S1>>>\n媒體：The Guardian World\n標題：Democrats nominate Hakeem Jeffries as first Black House speaker despite progressives’ concerns\n摘要：Jeffries is set to become one of Trump’s most prominent opponents for final two years of his presidency US politics live – latest updates Democrats on Wednesday resoundingly nominated Hakeem Jeffries to serve as speaker of the House when the new Congress begins next year, teeing him up to become the first Black lawmaker to lead the chamber. A New York congressman who has served as the Democratic m\n<<</S1>>>\n\n<<<S2>>>\n媒體：Financial Times\n標題：Democrats nominate Hakeem Jeffries as US House Speaker\n摘要：56-year-old on track to become first Black lawmaker to lead lower chamber of Congress\n<<</S2>>>\n\n<<<S3>>>\n媒體：CNBC Top News\n標題：Jeffries wins Democratic House speaker race, on track to make history in January\n摘要：Jeffries will still need to win a floor vote in January to officially become House speaker.\n<<</S3>>>\n\n<<<S4>>>\n媒體：NPR News\n標題：Democrats formally nominate Hakeem Jeffries for speaker of the House\n摘要：The New York Democrat moved a step closer to becoming the first Black lawmaker in U.S. history to serve in the job, after House Democrats voted overwhelmingly to support him.\n<<</S4>>>\n\n<<<S5>>>\n媒體：DW English\n標題：US House Democrats nominate Hakeem Jeffries for speaker\n摘要：Jeffries is set to be the first Black speaker of the US House of Representatives when Democrats take control of the chamber next year.\n<<</S5>>>\n\n<<<S6>>>\n媒體：Al Jazeera\n標題：Hakeem Jeffries becomes first Black nominee for US House speaker\n摘要：The New York congressman was nominated after Democrats gained control of Congress in the midterm elections.\n<<</S6>>>",
+    "response": "{\"action\":\"DRAFT\",\"headline\":\"美民主黨提名 Jeffries 出任眾院議長，有望成首位黑人議長\",\"deck\":\"眾院民主黨以壓倒性支持通過提名；Jeffries 仍須在明年一月贏得全院表決，才能正式就任。\",\"body\":\"美國眾議院民主黨週三以壓倒性支持，提名紐約州眾議員 Hakeem Jeffries 出任新一屆國會的眾議院議長。他有望成為美國史上首位領導眾議院的黑人議員。[S1][S4]\\n\\nJeffries 現年56歲。民主黨將於明年掌控眾議院，但他仍須在一月贏得全院表決，才能正式出任議長。[S2][S3][S5]\",\"why_it_matters\":\"這項提名讓 Jeffries 朝成為美國史上首位黑人眾議院議長邁進一步，正式就任仍取決於一月的全院表決。[S3][S4]道路\",\"reason\":\"\"}",
+    "version": 1,
+    "headline": "美民主黨提名 Jeffries 出任眾院議長，有望成首位黑人議長",
+    "body": "美國眾議院民主黨週三以壓倒性支持，提名紐約州眾議員 Hakeem Jeffries 出任新一屆國會的眾議院議長。他有望成為美國史上首位領導眾議院的黑人議員。[S1][S4]\n\nJeffries 現年56歲。民主黨將於明年掌控眾議院，但他仍須在一月贏得全院表決，才能正式出任議長。[S2][S3][S5]",
+    "diff": ""
+   },
+   "story_id": 86091,
+   "phase": "write",
+   "actor": "reporter",
+   "title": "記者寫稿",
+   "say": "寫好 v1：《美民主黨提名 Jeffries 出任眾院議長，有望成首位黑人議長》",
+   "state": {
+    "stories": {
+     "86091": {
+      "version": 1,
+      "status": "draft",
+      "headline": "美民主黨提名 Jeffries 出任眾院議長，有望成首位黑人議長"
+     }
+    }
+   },
+   "paper": {
+    "label": "v1",
+    "to": "fact_checker"
+   }
+  },
+  {
+   "i": 31,
+   "at": "06:05:30",
+   "day": "11-19",
+   "iso": "2026-11-19T06:05:30+08:00",
+   "phase": "write",
+   "kind": "message",
+   "type": "RELEASE",
+   "type_label": "放行",
+   "mode": "stamp",
+   "actor": "checktool",
+   "to": "eic",
+   "status": "handled",
+   "story_id": 86091,
+   "title": "查核工具（程式） → 總編輯｜放行",
+   "say": "重驗：來源都有共同實體、數字都找得到",
+   "detail": {
+    "message_id": 606,
+    "llm_id": null,
+    "correlation_id": "T2-20261119-86091",
+    "target_version": 1,
+    "payload": "{\n \"detail\": \"重驗：來源都有共同實體、數字都找得到\"\n}"
+   },
+   "state": {
+    "stories": {
+     "86091": {
+      "status": "checked"
+     }
+    }
+   },
+   "paper": {
+    "label": "✓",
+    "to": "eic"
+   }
+  },
+  {
+   "i": 32,
+   "at": "06:05:41",
+   "day": "11-19",
+   "iso": "2026-11-19T06:05:41+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 11.2,
+   "detail": {
+    "llm_id": 670,
+    "secs": 11.2,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "事件板塊：tech。請寫一則稿，action 填 DRAFT。\n\n<<<S1>>>\n媒體：The Guardian Technology\n標題：Tell us: are you playing Grand Theft Auto VI?\n摘要：Grand Theft Auto VI has finally arrived. We’d like to hear your initial thoughts It’s been 13 years in the making, and may be the most highly anticipated video game of all time . Grand Theft Auto VI has finally arrived. The new instalment of the epic crime saga is said to have cost more than $1bn to make and is widely expected to break sales records : some predictions put total sales at 40m copies\n<<</S1>>>\n\n<<<S2>>>\n媒體：Yahoo Finance\n標題：'Grand Theft Auto VI' could be the biggest entertainment launch in history\n摘要：If your office is surprisingly empty or fewer people are messaging you than normal on Thursday, there's a decent chance it's because your colleagues are some of the millions diving into Take-Two Interactive's ( TTWO ) \"Grand Theft Auto VI.\" According to market intelligence firm Sensor Tower, \"GTA VI\" has already generated more than $1.5 billion in preorder sales, an unprecedented amount for a game\n<<</S2>>>\n\n<<<S3>>>\n媒體：The Verge\n標題：Grand Theft Auto VI has arrived\n摘要：More than a decade after Grand Theft Auto V was first released, its sequel is finally launching. On November 19th, GTA VI will be available on both the PS5 and Xbox Series X / S, and it’s quite possibly the most anticipated video game launch of all time. Part of this has to do with […]\n<<</S3>>>\n\n<<<S4>>>\n媒體：DW English\n標題：What makes 'Grand Theft Auto VI' more than just a game?\n摘要：When \"GTA VI\" is released on November 19, millions of people worldwide will rush to their consoles to play it. How has this video game created such a cross-generational buzz?\n<<</S4>>>",
+    "response": "{\n  \"action\": \"DRAFT\",\n  \"headline\": \"《Grand Theft Auto VI》登場，預購銷售額據報突破15億美元\",\n  \"deck\": \"11月19日登上PS5與Xbox Series X／S，市場關注銷售表現。\",\n  \"body\": \"《Grand Theft Auto VI》（GTA VI）於11月19日推出，登上PS5與Xbox Series X／S，距離前作《Grand Theft Auto V》首次發行已超過十年。[S3]\\n\\nYahoo Finance引述市場情報公司Sensor Tower資料指出，《GTA VI》預購銷售額已超過15億美元，並稱這是遊戲前所未見的預購金額。[S2]\\n\\n《衛報》報導，這款作品歷經13年製作，據稱製作成本超過10億美元。外界普遍預期其將打破銷售紀錄，部分預測估計總銷量可達4,000萬套；這些數字屬於預測，並非已實現的銷售成績。[S1]\",\n  \"why_it_matters\": \"據Sensor Tower統計的預購金額已超過15億美元，使這款遊戲的上市銷售表現受到關注。[S2]\"\n  ,\n  \"reason\": \"\"\n}",
+    "version": 1,
+    "headline": "《Grand Theft Auto VI》登場，預購銷售額據報突破15億美元",
+    "body": "《Grand Theft Auto VI》（GTA VI）於11月19日推出，登上PS5與Xbox Series X／S，距離前作《Grand Theft Auto V》首次發行已超過十年。[S3]\n\nYahoo Finance引述市場情報公司Sensor Tower資料指出，《GTA VI》預購銷售額已超過15億美元，並稱這是遊戲前所未見的預購金額。[S2]\n\n《衛報》報導，這款作品歷經13年製作，據稱製作成本超過10億美元。外界普遍預期其將打破銷售紀錄，部分預測估計總銷量可達4,000萬套；這些數字屬於預測，並非已實現的銷售成績。[S1]",
+    "diff": ""
+   },
+   "story_id": 86093,
+   "phase": "write",
+   "actor": "reporter",
+   "title": "記者寫稿",
+   "say": "寫好 v1：《《Grand Theft Auto VI》登場，預購銷售額據報突破15億美元》",
+   "state": {
+    "stories": {
+     "86093": {
+      "version": 1,
+      "status": "draft",
+      "headline": "《Grand Theft Auto VI》登場，預購銷售額據報突破15億美元"
+     }
+    }
+   },
+   "paper": {
+    "label": "v1",
+    "to": "fact_checker"
+   }
+  },
+  {
+   "i": 33,
+   "at": "06:05:46",
+   "day": "11-19",
+   "iso": "2026-11-19T06:05:46+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 5.5,
+   "detail": {
+    "llm_id": 671,
+    "secs": 5.5,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "稿件：《Grand Theft Auto VI》（GTA VI）於11月19日推出，登上PS5與Xbox Series X／S，距離前作《Grand Theft Auto V》首次發行已超過十年。[S3]\n\nYahoo Finance引述市場情報公司Sensor Tower資料指出，《GTA VI》預購銷售額已超過15億美元，並稱這是遊戲前所未見的預購金額。[S2]\n\n《衛報》報導，這款作品歷經13年製作，據稱製作成本超過10億美元。外界普遍預期其將打破銷售紀錄，部分預測估計總銷量可達4,000萬套；這些數字屬於預測，並非已實現的銷售成績。[S1]\n\n<<<S1>>>\n媒體：The Guardian Technology\n標題：Tell us: are you playing Grand Theft Auto VI?\n摘要：Grand Theft Auto VI has finally arrived. We’d like to hear your initial thoughts It’s been 13 years in the making, and may be the most highly anticipated video game of all time . Grand Theft Auto VI has finally arrived. The new instalment of the epic crime saga is said to have cost more than $1bn to make and is widely expected to break sales records : some predictions put total sales at 40m copies\n<<</S1>>>\n\n<<<S2>>>\n媒體：Yahoo Finance\n標題：'Grand Theft Auto VI' could be the biggest entertainment launch in history\n摘要：If your office is surprisingly empty or fewer people are messaging you than normal on Thursday, there's a decent chance it's because your colleagues are some of the millions diving into Take-Two Interactive's ( TTWO ) \"Grand Theft Auto VI.\" According to market intelligence firm Sensor Tower, \"GTA VI\" has already generated more than $1.5 billion in preorder sales, an unprecedented amount for a game\n<<</S2>>>\n\n<<<S3>>>\n媒體：The Verge\n標題：Grand Theft Auto VI has arrived\n摘要：More than a decade after Grand Theft Auto V was first released, its sequel is finally launching. On November 19th, GTA VI will be available on both the PS5 and Xbox Series X / S, and it’s quite possibly the most anticipated video game launch of all time. Part of this has to do with […]\n<<</S3>>>\n\n<<<S4>>>\n媒體：DW English\n標題：What makes 'Grand Theft Auto VI' more than just a game?\n摘要：When \"GTA VI\" is released on November 19, millions of people worldwide will rush to their consoles to play it. How has this video game created such a cross-generational buzz?\n<<</S4>>>",
+    "response": "{\"action\":\"OK\",\"problem\":\"NONE\",\"detail\":\"各來源均與S1屬同一遊戲上市事件，稿件已區分預購銷售額、製作成本與預測總銷量，沒有混用數字。\",\"required_action\":\"無須修改。\"}"
+   },
+   "story_id": 86093,
+   "phase": "write",
+   "actor": "fact_checker",
+   "title": "查核員判斷（程式工具覺得可疑才問）",
+   "say": "判斷：同一事件、數字沒混用。各來源均與S1屬同一遊戲上市事件，稿件已區分預購銷售額、製作成本與預測總銷量，沒有混用數字。"
+  },
+  {
+   "i": 34,
+   "at": "06:05:46",
+   "day": "11-19",
+   "iso": "2026-11-19T06:05:46+08:00",
+   "phase": "write",
+   "kind": "message",
+   "type": "CHALLENGE",
+   "type_label": "異議",
+   "mode": "say",
+   "actor": "fact_checker",
+   "to": "reporter",
+   "status": "handled",
+   "story_id": 86093,
+   "title": "查核員 → 記者｜異議",
+   "say": "異議（程式比對數字，模型說 OK 也蓋不掉）：證據中找不到的數字：11, 4000",
+   "detail": {
+    "message_id": 607,
+    "llm_id": 671,
+    "correlation_id": "T2-20261119-86093",
+    "target_version": 1,
+    "payload": "{\n \"problem\": \"UNSUPPORTED_NUMBER\",\n \"detail\": \"證據中找不到的數字：11, 4000\",\n \"required_action\": \"刪掉沒有出處的數字\",\n \"drop_sids\": [],\n \"llm_assessment\": \"{\\\"action\\\":\\\"OK\\\",\\\"problem\\\":\\\"NONE\\\",\\\"detail\\\":\\\"各來源均與S1屬同一遊戲上市事件，稿件已區分預購銷售額、製作成本與預測總銷量，沒有混用數字。\\\",\\\"required_action\\\":\\\"無須修改。\\\"}\"\n}"
+   },
+   "walk": true,
+   "state": {
+    "stories": {
+     "86093": {
+      "status": "challenged"
+     }
+    }
+   }
+  },
+  {
+   "i": 35,
+   "at": "06:05:56",
+   "day": "11-19",
+   "iso": "2026-11-19T06:05:56+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 9.8,
+   "detail": {
+    "llm_id": 672,
+    "secs": 9.8,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "查核員 CHALLENGE：{\"problem\": \"UNSUPPORTED_NUMBER\", \"detail\": \"證據中找不到的數字：11, 4000\", \"required_action\": \"刪掉沒有出處的數字\", \"drop_sids\": [], \"llm_assessment\": \"{\\\"action\\\":\\\"OK\\\",\\\"problem\\\":\\\"NONE\\\",\\\"detail\\\":\\\"各來源均與S1屬同一遊戲上市事件，稿件已區分預購銷售額、製作成本與預測總銷量，沒有混用數字。\\\",\\\"required_action\\\":\\\"無須修改。\\\"}\"}\n請刪除被點名的來源後重寫，action 填 REVISE。\n\n<<<S1>>>\n媒體：The Guardian Technology\n標題：Tell us: are you playing Grand Theft Auto VI?\n摘要：Grand Theft Auto VI has finally arrived. We’d like to hear your initial thoughts It’s been 13 years in the making, and may be the most highly anticipated video game of all time . Grand Theft Auto VI has finally arrived. The new instalment of the epic crime saga is said to have cost more than $1bn to make and is widely expected to break sales records : some predictions put total sales at 40m copies\n<<</S1>>>\n\n<<<S2>>>\n媒體：Yahoo Finance\n標題：'Grand Theft Auto VI' could be the biggest entertainment launch in history\n摘要：If your office is surprisingly empty or fewer people are messaging you than normal on Thursday, there's a decent chance it's because your colleagues are some of the millions diving into Take-Two Interactive's ( TTWO ) \"Grand Theft Auto VI.\" According to market intelligence firm Sensor Tower, \"GTA VI\" has already generated more than $1.5 billion in preorder sales, an unprecedented amount for a game\n<<</S2>>>\n\n<<<S3>>>\n媒體：The Verge\n標題：Grand Theft Auto VI has arrived\n摘要：More than a decade after Grand Theft Auto V was first released, its sequel is finally launching. On November 19th, GTA VI will be available on both the PS5 and Xbox Series X / S, and it’s quite possibly the most anticipated video game launch of all time. Part of this has to do with […]\n<<</S3>>>\n\n<<<S4>>>\n媒體：DW English\n標題：What makes 'Grand Theft Auto VI' more than just a game?\n摘要：When \"GTA VI\" is released on November 19, millions of people worldwide will rush to their consoles to play it. How has this video game created such a cross-generational buzz?\n<<</S4>>>",
+    "response": "{\"action\":\"REVISE\",\"headline\":\"《Grand Theft Auto VI》上市，預購銷售額已逾十五億美元\",\"deck\":\"製作成本據報超過十億美元，市場預期有望打破銷售紀錄。\",\"body\":\"《Grand Theft Auto VI》正式上市，登上 PS5 與 Xbox Series X / S 平台。[S1][S3]\\n\\nYahoo Finance 引述市場情報公司 Sensor Tower 指出，遊戲預購銷售額已超過十五億美元，並稱這是遊戲前所未見的預購金額。[S2]\\n\\n《衛報》報導，這款犯罪題材系列新作據稱製作成本超過十億美元，外界普遍預期將打破銷售紀錄。[S1]\",\"why_it_matters\":\"預購銷售表現與市場對銷售紀錄的期待，使這次上市備受關注。[S1][S2]\",\"reason\":\"已刪除查核員點名的數字；drop_sids 為空，未移除來源。\"}",
+    "version": 2,
+    "headline": "《Grand Theft Auto VI》上市，預購銷售額已逾十五億美元",
+    "body": "《Grand Theft Auto VI》正式上市，登上 PS5 與 Xbox Series X / S 平台。[S1][S3]\n\nYahoo Finance 引述市場情報公司 Sensor Tower 指出，遊戲預購銷售額已超過十五億美元，並稱這是遊戲前所未見的預購金額。[S2]\n\n《衛報》報導，這款犯罪題材系列新作據稱製作成本超過十億美元，外界普遍預期將打破銷售紀錄。[S1]",
+    "diff": "--- v1\n+++ v2\n@@ -1,5 +1,5 @@\n-《Grand Theft Auto VI》（GTA VI）於11月19日推出，登上PS5與Xbox Series X／S，距離前作《Grand Theft Auto V》首次發行已超過十年。[S3]\n+《Grand Theft Auto VI》正式上市，登上 PS5 與 Xbox Series X / S 平台。[S1][S3]\n \n-Yahoo Finance引述市場情報公司Sensor Tower資料指出，《GTA VI》預購銷售額已超過15億美元，並稱這是遊戲前所未見的預購金額。[S2]\n+Yahoo Finance 引述市場情報公司 Sensor Tower 指出，遊戲預購銷售額已超過十五億美元，並稱這是遊戲前所未見的預購金額。[S2]\n \n-《衛報》報導，這款作品歷經13年製作，據稱製作成本超過10億美元。外界普遍預期其將打破銷售紀錄，部分預測估計總銷量可達4,000萬套；這些數字屬於預測，並非已實現的銷售成績。[S1]\n+《衛報》報導，這款犯罪題材系列新作據稱製作成本超過十億美元，外界普遍預期將打破銷售紀錄。[S1]"
+   },
+   "story_id": 86093,
+   "phase": "write",
+   "actor": "reporter",
+   "title": "記者修稿",
+   "say": "改寫成 v2：《《Grand Theft Auto VI》上市，預購銷售額已逾十五億美元》",
+   "state": {
+    "stories": {
+     "86093": {
+      "version": 2,
+      "status": "draft",
+      "headline": "《Grand Theft Auto VI》上市，預購銷售額已逾十五億美元"
+     }
+    }
+   },
+   "paper": {
+    "label": "v2",
+    "to": "fact_checker"
+   }
+  },
+  {
+   "i": 36,
+   "at": "06:05:56",
+   "day": "11-19",
+   "iso": "2026-11-19T06:05:56+08:00",
+   "phase": "write",
+   "kind": "message",
+   "type": "REVISION_DONE",
+   "type_label": "修稿完成",
+   "mode": "say",
+   "actor": "reporter",
+   "to": "fact_checker",
+   "status": "handled",
+   "story_id": 86093,
+   "title": "記者 → 查核員｜修稿完成",
+   "say": "改好了，v2：來源改為 4 家",
+   "detail": {
+    "message_id": 608,
+    "llm_id": 672,
+    "correlation_id": "T2-20261119-86093",
+    "target_version": null,
+    "payload": "{\n \"new_version\": 2,\n \"change\": \"來源改為 4 家\"\n}",
+    "diff": "--- v1\n+++ v2\n@@ -1,5 +1,5 @@\n-《Grand Theft Auto VI》（GTA VI）於11月19日推出，登上PS5與Xbox Series X／S，距離前作《Grand Theft Auto V》首次發行已超過十年。[S3]\n+《Grand Theft Auto VI》正式上市，登上 PS5 與 Xbox Series X / S 平台。[S1][S3]\n \n-Yahoo Finance引述市場情報公司Sensor Tower資料指出，《GTA VI》預購銷售額已超過15億美元，並稱這是遊戲前所未見的預購金額。[S2]\n+Yahoo Finance 引述市場情報公司 Sensor Tower 指出，遊戲預購銷售額已超過十五億美元，並稱這是遊戲前所未見的預購金額。[S2]\n \n-《衛報》報導，這款作品歷經13年製作，據稱製作成本超過10億美元。外界普遍預期其將打破銷售紀錄，部分預測估計總銷量可達4,000萬套；這些數字屬於預測，並非已實現的銷售成績。[S1]\n+《衛報》報導，這款犯罪題材系列新作據稱製作成本超過十億美元，外界普遍預期將打破銷售紀錄。[S1]"
+   },
+   "state": {
+    "stories": {
+     "86093": {
+      "version": 2,
+      "status": "draft",
+      "headline": "《Grand Theft Auto VI》上市，預購銷售額已逾十五億美元"
+     }
+    }
+   },
+   "paper": {
+    "label": "v2",
+    "to": "fact_checker"
+   }
+  },
+  {
+   "i": 37,
+   "at": "06:05:56",
+   "day": "11-19",
+   "iso": "2026-11-19T06:05:56+08:00",
+   "phase": "write",
+   "kind": "message",
+   "type": "RELEASE",
+   "type_label": "放行",
+   "mode": "stamp",
+   "actor": "checktool",
+   "to": "reporter",
+   "status": "handled",
+   "story_id": 86093,
+   "title": "查核工具（程式） → 記者｜放行",
+   "say": "重驗：4 個來源都有共同實體、數字都找得到",
+   "detail": {
+    "message_id": 609,
+    "llm_id": null,
+    "correlation_id": "T2-20261119-86093",
+    "target_version": 2,
+    "payload": "{\n \"detail\": \"重驗：4 個來源都有共同實體、數字都找得到\"\n}"
+   },
+   "state": {
+    "stories": {
+     "86093": {
+      "status": "checked"
+     }
+    }
+   },
+   "paper": {
+    "label": "✓",
+    "to": "eic"
+   }
+  },
+  {
+   "i": 38,
+   "at": "06:06:10",
+   "day": "11-19",
+   "iso": "2026-11-19T06:06:10+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 13.6,
+   "detail": {
+    "llm_id": 673,
+    "secs": 13.6,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "事件板塊：taiwan。請寫一則稿，action 填 DRAFT。\n\n<<<S1>>>\n媒體：公視 即時\n標題：數發部：近期8百萬筆個資外洩 要求企業72小時內通知當事人\n摘要：個資外洩事件頻傳，從民間企業的雲端服務商到公部門都有。數發部統計，近期外洩個資約800萬筆，數發部也要求業者在知悉外洩後72小時內通知當事人，但有消費者反映，企業執行程度有限。專家則提醒，應先確認外洩範圍，避免引發恐慌，也呼籲企業全面盤點系統漏洞，做好軟硬體更新。 購物、申請會員或辦證件，生活大小事常需要填寫個人資料。但日前第三方雲端服務商91App遭網攻，影響超過1000個品牌、約480萬名消費者，部分個資外洩。有的受影響消費者甚至希望能集體求償。連公部門如領務局，也因為委外廠商系統更新時設定錯誤、產生漏洞，讓大頭照等近10萬筆資料被駭客非法讀取。 數發部資安署署長蔡福隆表示，「就是說廠商做完變更之後，第一個是領務局本身要去確認說，廠商的變更有沒有符合安全的規範，這是第一個。那如果領務局本身沒有這個技術能力的話，他可以尋求第三方的專業顧問等等來幫他做確認。」 根據數位發展部自10月以來統\n<<</S1>>>\n\n<<<S2>>>\n媒體：中央廣播電台\n標題：[政治] 資安事件頻傳 政院要求部會促業者通知個資外洩當事人\n摘要：近期國內發生多起重大資安事件，行政院今天(18日)要求各部會督促所轄發生個資外洩的企業及機構，立即依《個人資料保護法》規定，主動通知受影響當事人。行政院也呼籲民眾提高警覺，留意詐騙集團假冒客服或檢警，或透過釣魚電子郵件、簡訊行騙。 根據數位發展部統計，近期已有10餘家企業及機構發生重大資安事件，約800萬筆個資外洩。行政院已函請相關部會督促涉事企業及機構，依《個人資料保護法》第12條及其施行細則第22條規定，即時以言詞、書面、電話、簡訊、電子郵件、傳真、電子文件或其他方式通知當事人。行政院也建議業者同步在官網首頁、APP或實體店面張貼醒目公告，提醒民眾留意可能的詐騙手法及風險。 行政院打擊詐欺指揮中心提醒，即使來電者能說出身分證字號、出生年月日或住址等個資，民眾也應保持冷靜。接到可疑來電，應立即掛斷電話，撥打165反詐騙專線求證，並隨時留意企業及機構在官網、APP或實體店面發布的公告，保護\n<<</S2>>>",
+    "response": "{\"action\":\"DRAFT\",\"headline\":\"近期約800萬筆個資外洩 政院要求督促業者通知當事人\",\"deck\":\"10餘家企業及機構發生重大資安事件，數發部要求業者知悉外洩後72小時內通知受影響者。\",\"body\":\"近期國內多起重大資安事件造成約800萬筆個資外洩，涉及10餘家企業及機構。行政院18日要求各部會督促所轄涉事企業及機構，依《個人資料保護法》規定，主動通知受影響當事人。[S2]\\n\\n數發部要求業者在知悉外洩後72小時內通知當事人，但有消費者反映，企業執行程度有限。第三方雲端服務商91App日前遭網攻，影響超過1000個品牌、約480萬名消費者，部分個資外洩；領務局則因委外廠商更新系統時設定錯誤、產生漏洞，導致大頭照等近10萬筆資料被駭客非法讀取。[S1]\\n\\n行政院已函請相關部會，督促涉事企業及機構依《個人資料保護法》第12條及其施行細則第22條，即時透過電話、簡訊、電子郵件等方式通知當事人，並建議同步在官網首頁、APP或實體店面張貼醒目公告，提醒可能的詐騙手法與風險。[S2]\\n\\n行政院打擊詐欺指揮中心提醒，即使來電者能說出身分證字號、出生年月日或住址，民眾仍應保持冷靜。接到可疑來電，應立即掛斷並撥打165反詐騙專線求證，也應留意企業及機構發布的公告。[S2]\",\"why_it_matters\":\"外洩個資可能被用於假冒客服、檢警或釣魚郵件、簡訊詐騙；即時通知能提醒受影響民眾留意相關風險。[S2]\",\"reason\":\"\"}",
+    "version": 1,
+    "headline": "近期約800萬筆個資外洩 政院要求督促業者通知當事人",
+    "body": "近期國內多起重大資安事件造成約800萬筆個資外洩，涉及10餘家企業及機構。行政院18日要求各部會督促所轄涉事企業及機構，依《個人資料保護法》規定，主動通知受影響當事人。[S2]\n\n數發部要求業者在知悉外洩後72小時內通知當事人，但有消費者反映，企業執行程度有限。第三方雲端服務商91App日前遭網攻，影響超過1000個品牌、約480萬名消費者，部分個資外洩；領務局則因委外廠商更新系統時設定錯誤、產生漏洞，導致大頭照等近10萬筆資料被駭客非法讀取。[S1]\n\n行政院已函請相關部會，督促涉事企業及機構依《個人資料保護法》第12條及其施行細則第22條，即時透過電話、簡訊、電子郵件等方式通知當事人，並建議同步在官網首頁、APP或實體店面張貼醒目公告，提醒可能的詐騙手法與風險。[S2]\n\n行政院打擊詐欺指揮中心提醒，即使來電者能說出身分證字號、出生年月日或住址，民眾仍應保持冷靜。接到可疑來電，應立即掛斷並撥打165反詐騙專線求證，也應留意企業及機構發布的公告。[S2]",
+    "diff": ""
+   },
+   "story_id": 86094,
+   "phase": "write",
+   "actor": "reporter",
+   "title": "記者寫稿",
+   "say": "寫好 v1：《近期約800萬筆個資外洩 政院要求督促業者通知當事人》",
+   "state": {
+    "stories": {
+     "86094": {
+      "version": 1,
+      "status": "draft",
+      "headline": "近期約800萬筆個資外洩 政院要求督促業者通知當事人"
+     }
+    }
+   },
+   "paper": {
+    "label": "v1",
+    "to": "fact_checker"
+   }
+  },
+  {
+   "i": 39,
+   "at": "06:06:16",
+   "day": "11-19",
+   "iso": "2026-11-19T06:06:16+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 5.7,
+   "detail": {
+    "llm_id": 674,
+    "secs": 5.7,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "稿件：近期國內多起重大資安事件造成約800萬筆個資外洩，涉及10餘家企業及機構。行政院18日要求各部會督促所轄涉事企業及機構，依《個人資料保護法》規定，主動通知受影響當事人。[S2]\n\n數發部要求業者在知悉外洩後72小時內通知當事人，但有消費者反映，企業執行程度有限。第三方雲端服務商91App日前遭網攻，影響超過1000個品牌、約480萬名消費者，部分個資外洩；領務局則因委外廠商更新系統時設定錯誤、產生漏洞，導致大頭照等近10萬筆資料被駭客非法讀取。[S1]\n\n行政院已函請相關部會，督促涉事企業及機構依《個人資料保護法》第12條及其施行細則第22條，即時透過電話、簡訊、電子郵件等方式通知當事人，並建議同步在官網首頁、APP或實體店面張貼醒目公告，提醒可能的詐騙手法與風險。[S2]\n\n行政院打擊詐欺指揮中心提醒，即使來電者能說出身分證字號、出生年月日或住址，民眾仍應保持冷靜。接到可疑來電，應立即掛斷並撥打165反詐騙專線求證，也應留意企業及機構發布的公告。[S2]\n\n<<<S1>>>\n媒體：公視 即時\n標題：數發部：近期8百萬筆個資外洩 要求企業72小時內通知當事人\n摘要：個資外洩事件頻傳，從民間企業的雲端服務商到公部門都有。數發部統計，近期外洩個資約800萬筆，數發部也要求業者在知悉外洩後72小時內通知當事人，但有消費者反映，企業執行程度有限。專家則提醒，應先確認外洩範圍，避免引發恐慌，也呼籲企業全面盤點系統漏洞，做好軟硬體更新。 購物、申請會員或辦證件，生活大小事常需要填寫個人資料。但日前第三方雲端服務商91App遭網攻，影響超過1000個品牌、約480萬名消費者，部分個資外洩。有的受影響消費者甚至希望能集體求償。連公部門如領務局，也因為委外廠商系統更新時設定錯誤、產生漏洞，讓大頭照等近10萬筆資料被駭客非法讀取。 數發部資安署署長蔡福隆表示，「就是說廠商做完變更之後，第一個是領務局本身要去確認說，廠商的變更有沒有符合安全的規範，這是第一個。那如果領務局本身沒有這個技術能力的話，他可以尋求第三方的專業顧問等等來幫他做確認。」 根據數位發展部自10月以來統\n<<</S1>>>\n\n<<<S2>>>\n媒體：中央廣播電台\n標題：[政治] 資安事件頻傳 政院要求部會促業者通知個資外洩當事人\n摘要：近期國內發生多起重大資安事件，行政院今天(18日)要求各部會督促所轄發生個資外洩的企業及機構，立即依《個人資料保護法》規定，主動通知受影響當事人。行政院也呼籲民眾提高警覺，留意詐騙集團假冒客服或檢警，或透過釣魚電子郵件、簡訊行騙。 根據數位發展部統計，近期已有10餘家企業及機構發生重大資安事件，約800萬筆個資外洩。行政院已函請相關部會督促涉事企業及機構，依《個人資料保護法》第12條及其施行細則第22條規定，即時以言詞、書面、電話、簡訊、電子郵件、傳真、電子文件或其他方式通知當事人。行政院也建議業者同步在官網首頁、APP或實體店面張貼醒目公告，提醒民眾留意可能的詐騙手法及風險。 行政院打擊詐欺指揮中心提醒，即使來電者能說出身分證字號、出生年月日或住址等個資，民眾也應保持冷靜。接到可疑來電，應立即掛斷電話，撥打165反詐騙專線求證，並隨時留意企業及機構在官網、APP或實體店面發布的公告，保護\n<<</S2>>>",
+    "response": "{\"action\":\"OK\",\"problem\":\"NONE\",\"detail\":\"S1與S2涉及同一波個資外洩事件，稿件已區分外洩筆數、受影響人數及企業品牌數，未混為同一數字。\",\"required_action\":\"無須修改。\"}"
+   },
+   "story_id": 86094,
+   "phase": "write",
+   "actor": "fact_checker",
+   "title": "查核員判斷（程式工具覺得可疑才問）",
+   "say": "判斷：同一事件、數字沒混用。S1與S2涉及同一波個資外洩事件，稿件已區分外洩筆數、受影響人數及企業品牌數，未混為同一數字。"
+  },
+  {
+   "i": 40,
+   "at": "06:06:16",
+   "day": "11-19",
+   "iso": "2026-11-19T06:06:16+08:00",
+   "phase": "write",
+   "kind": "message",
+   "type": "RELEASE",
+   "type_label": "放行",
+   "mode": "stamp",
+   "actor": "checktool",
+   "to": "eic",
+   "status": "handled",
+   "story_id": 86094,
+   "title": "查核工具（程式） → 總編輯｜放行",
+   "say": "重驗：S2 與 S1 沒有共同名字，查核員判定同一事件，保留；數字都找得到",
+   "detail": {
+    "message_id": 610,
+    "llm_id": 674,
+    "correlation_id": "T2-20261119-86094",
+    "target_version": 1,
+    "payload": "{\n \"detail\": \"重驗：S2 與 S1 沒有共同名字，查核員判定同一事件，保留；數字都找得到\",\n \"llm_assessment\": \"{\\\"action\\\":\\\"OK\\\",\\\"problem\\\":\\\"NONE\\\",\\\"detail\\\":\\\"S1與S2涉及同一波個資外洩事件，稿件已區分外洩筆數、受影響人數及企業品牌數，未混為同一數字。\\\",\\\"required_action\\\":\\\"無須修改。\\\"}\",\n \"cleared_sids\": [\n  2\n ],\n \"cleared_item_ids\": [\n  128773\n ]\n}"
+   },
+   "state": {
+    "stories": {
+     "86094": {
+      "status": "checked"
+     }
+    }
+   },
+   "paper": {
+    "label": "✓",
+    "to": "eic"
+   }
+  },
+  {
+   "i": 41,
+   "at": "06:06:27",
+   "day": "11-19",
+   "iso": "2026-11-19T06:06:27+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 11.4,
+   "detail": {
+    "llm_id": 675,
+    "secs": 11.4,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "事件板塊：tech。請寫一則稿，action 填 DRAFT。\n\n<<<S1>>>\n媒體：經濟日報\n標題：輝達代理 CEO 喊話擴大與台廠合作 矽品、景碩全力擴增產能\n摘要：輝達昨（18）日宣布，與日月光投控旗下矽品簽署數十億美元的多年期合作協議，將大舉擴充在台先進封裝產能，並注資載板廠景碩逾10億美元，景碩將擴大專供輝達的先進ABF封裝載板製造產能。\n<<</S1>>>\n\n<<<S2>>>\n媒體：中央廣播電台\n標題：[財經] 輝達宣示擴大與供應鏈合作 景碩、矽品等入列\n摘要：人工智慧AI晶片大廠輝達(NVIDIA)宣示擴大與供應鏈合作，IC載板大廠景碩入列。景碩今天(18日)表示，獲得輝達現金投資超過10億美元，用以購置景碩擴充桃園幼獅廠產能新增設備，規劃2027年下半年後載板產能供應；日月光投控旗下矽品精密(SPIL)也表示，與輝達簽訂一項數十億美元的協議，將擴大在台灣的先進封裝產能提升至原來的3倍。 輝達宣示與艾克爾(Amkor)、鴻海、景碩、三星電機(Samsung Electro-Mechanics)、日月光投控旗下矽品精密、台積電(TSMC)、京元電(KYEC)、欣興(Unimicron)、揖斐電(IBIDEN)等持續合作，擴大載板、先進封裝、晶圓及委託製造等領域的製造產能，提升目前及下一代加速運算平台的生產規模。 景碩指出，輝達持續與公司協商後續多個廠區投資計畫，目標至少到2030年穩定掌握載板產能，支援後續更多AI模型算力與實體應用平台，確保未來\n<<</S2>>>\n\n<<<S3>>>\n媒體：自由時報 財經\n標題：焦點股》景碩：獲輝達10億美元投資  股海明燈\n摘要：IC載板廠景碩（3189）與輝達（NVIDIA）今日同步宣布，將由輝達對景碩投資逾10億美元之現金，用以購置景碩擴充幼獅廠產能新增設備，並持續與景碩協商後續更多個廠區的投...…\n<<</S3>>>\n\n<<<S4>>>\n媒體：Yahoo 股市新聞\n標題：景碩獲得輝達逾10億美元現金投資，擴充AI所需高階載板\n摘要：【財訊快報／記者李純君報導】台灣三大載板廠之一的景碩科技(3189)，今日證實獲得輝達(Nvidia)超過十億美元的現金投資，用以購置景碩科技擴充幼獅廠產能新增設備，且輝達並將持續與景碩科技協商商議更\n<<</S4>>>",
+    "response": "{\"action\":\"DRAFT\",\"headline\":\"輝達投資景碩逾10億美元、與矽品簽約擴大先進封裝產能\",\"deck\":\"景碩規劃2027年下半年後供應新增載板產能；矽品在台先進封裝產能將提升至原來3倍。\",\"body\":\"輝達擴大與台灣供應鏈合作，景碩18日表示，獲輝達超過10億美元現金投資，將用於購置桃園幼獅廠擴產所需新增設備；日月光投控旗下矽品精密也與輝達簽訂數十億美元協議，將在台灣的先進封裝產能提升至原來的3倍。[S2]\\n\\n景碩規劃於2027年下半年後供應新增載板產能，並表示輝達持續與公司協商後續多個廠區投資計畫，目標至少到2030年穩定掌握載板產能。[S2]\\n\\n輝達宣示，將持續與景碩、矽品、台積電、鴻海、京元電、欣興等供應鏈業者合作，擴大載板、先進封裝、晶圓及委託製造等領域產能，提升目前及下一代加速運算平台的生產規模。[S2]\",\"why_it_matters\":\"這些合作涵蓋載板與先進封裝產能擴充，支援輝達目前及下一代加速運算平台的生產需求。[S2]\",\"reason\":\"\"}",
+    "version": 1,
+    "headline": "輝達投資景碩逾10億美元、與矽品簽約擴大先進封裝產能",
+    "body": "輝達擴大與台灣供應鏈合作，景碩18日表示，獲輝達超過10億美元現金投資，將用於購置桃園幼獅廠擴產所需新增設備；日月光投控旗下矽品精密也與輝達簽訂數十億美元協議，將在台灣的先進封裝產能提升至原來的3倍。[S2]\n\n景碩規劃於2027年下半年後供應新增載板產能，並表示輝達持續與公司協商後續多個廠區投資計畫，目標至少到2030年穩定掌握載板產能。[S2]\n\n輝達宣示，將持續與景碩、矽品、台積電、鴻海、京元電、欣興等供應鏈業者合作，擴大載板、先進封裝、晶圓及委託製造等領域產能，提升目前及下一代加速運算平台的生產規模。[S2]",
+    "diff": ""
+   },
+   "story_id": 86118,
+   "phase": "write",
+   "actor": "reporter",
+   "title": "記者寫稿",
+   "say": "寫好 v1：《輝達投資景碩逾10億美元、與矽品簽約擴大先進封裝產能》",
+   "state": {
+    "stories": {
+     "86118": {
+      "version": 1,
+      "status": "draft",
+      "headline": "輝達投資景碩逾10億美元、與矽品簽約擴大先進封裝產能"
+     }
+    }
+   },
+   "paper": {
+    "label": "v1",
+    "to": "fact_checker"
+   }
+  },
+  {
+   "i": 42,
+   "at": "06:06:27",
+   "day": "11-19",
+   "iso": "2026-11-19T06:06:27+08:00",
+   "phase": "write",
+   "kind": "message",
+   "type": "RELEASE",
+   "type_label": "放行",
+   "mode": "stamp",
+   "actor": "checktool",
+   "to": "eic",
+   "status": "handled",
+   "story_id": 86118,
+   "title": "查核工具（程式） → 總編輯｜放行",
+   "say": "重驗：來源都有共同實體、數字都找得到",
+   "detail": {
+    "message_id": 611,
+    "llm_id": null,
+    "correlation_id": "T2-20261119-86118",
+    "target_version": 1,
+    "payload": "{\n \"detail\": \"重驗：來源都有共同實體、數字都找得到\"\n}"
+   },
+   "state": {
+    "stories": {
+     "86118": {
+      "status": "checked"
+     }
+    }
+   },
+   "paper": {
+    "label": "✓",
+    "to": "eic"
+   }
+  },
+  {
+   "i": 43,
+   "at": "06:06:37",
+   "day": "11-19",
+   "iso": "2026-11-19T06:06:37+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 9.9,
+   "detail": {
+    "llm_id": 676,
+    "secs": 9.9,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "事件板塊：taiwan。請寫一則稿，action 填 DRAFT。\n\n<<<S1>>>\n媒體：自由時報 政治\n標題：這次拒投藍！ 王鴻薇堂妹2年前「覺醒」批蔣萬安影片曝\n摘要：國民黨立委兼蔣萬安競辦副主委王鴻薇的堂妹王鴻嬪昨日拋出震撼彈，在社群發文表態「拒投蔣萬安」。有網友發現，2年前和平新生天橋在沒有任何通知的情況下遭到突襲拆除時，一位居民上街批評市...…\n<<</S1>>>",
+    "response": "{\"action\":\"DRAFT\",\"headline\":\"王鴻薇堂妹王鴻嬪表態「拒投蔣萬安」\",\"deck\":\"自由時報報導，網友另發現她兩年前批評和平新生天橋拆除的影片。\",\"body\":\"據自由時報報導，國民黨立委兼蔣萬安競辦副主委王鴻薇的堂妹王鴻嬪，昨日在社群發文表態「拒投蔣萬安」。[S1]\\n\\n報導指出，有網友發現王鴻嬪兩年前批評蔣萬安的影片，涉及和平新生天橋在沒有任何通知的情況下遭拆除一事。[S1]\",\"why_it_matters\":\"王鴻嬪的表態受到關注，因其堂姊王鴻薇兼任蔣萬安競辦副主委。[S1]\",\"reason\":\"\"}",
+    "version": 1,
+    "headline": "王鴻薇堂妹王鴻嬪表態「拒投蔣萬安」",
+    "body": "據自由時報報導，國民黨立委兼蔣萬安競辦副主委王鴻薇的堂妹王鴻嬪，昨日在社群發文表態「拒投蔣萬安」。[S1]\n\n報導指出，有網友發現王鴻嬪兩年前批評蔣萬安的影片，涉及和平新生天橋在沒有任何通知的情況下遭拆除一事。[S1]",
+    "diff": ""
+   },
+   "story_id": 86096,
+   "phase": "write",
+   "actor": "reporter",
+   "title": "記者寫稿",
+   "say": "寫好 v1：《王鴻薇堂妹王鴻嬪表態「拒投蔣萬安」》",
+   "state": {
+    "stories": {
+     "86096": {
+      "version": 1,
+      "status": "draft",
+      "headline": "王鴻薇堂妹王鴻嬪表態「拒投蔣萬安」"
+     }
+    }
+   },
+   "paper": {
+    "label": "v1",
+    "to": "fact_checker"
+   }
+  },
+  {
+   "i": 44,
+   "at": "06:06:37",
+   "day": "11-19",
+   "iso": "2026-11-19T06:06:37+08:00",
+   "phase": "write",
+   "kind": "message",
+   "type": "RELEASE",
+   "type_label": "放行",
+   "mode": "stamp",
+   "actor": "checktool",
+   "to": "eic",
+   "status": "handled",
+   "story_id": 86096,
+   "title": "查核工具（程式） → 總編輯｜放行",
+   "say": "重驗：來源都有共同實體、數字都找得到",
+   "detail": {
+    "message_id": 612,
+    "llm_id": null,
+    "correlation_id": "T2-20261119-86096",
+    "target_version": 1,
+    "payload": "{\n \"detail\": \"重驗：來源都有共同實體、數字都找得到\"\n}"
+   },
+   "state": {
+    "stories": {
+     "86096": {
+      "status": "checked"
+     }
+    }
+   },
+   "paper": {
+    "label": "✓",
+    "to": "eic"
+   }
+  },
+  {
+   "i": 45,
+   "at": "06:06:49",
+   "day": "11-19",
+   "iso": "2026-11-19T06:06:49+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 12.2,
+   "detail": {
+    "llm_id": 677,
+    "secs": 12.2,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "事件板塊：taiwan。請寫一則稿，action 填 DRAFT。\n\n<<<S1>>>\n媒體：中央廣播電台（Yahoo 股市新聞轉載）\n標題：[政治] 藍拚普發2萬20日三讀 賴清德籲在野黨審慎、勿一意孤行\n摘要：針對國民黨團提出普發現金新台幣2萬元的特別條例，並力拚20日立法院會闖關三讀，兼任民進黨主席的賴清德總統今天(18日)表示，在野黨要求政府增加預算發放現金，不僅涉及立法權與行政權的憲政權責分際，也有違憲之虞，呼籲在野黨審慎再三、不要一意孤行，更不應強行通過這項增加國家財政負擔、影響其他政策推動的特別條例。 賴清德總統8月間宣布明年普發現金新台幣1萬元，國民黨團隨即提出《全民共享經濟成果及穩定民生特別條例》草案，主張加碼至2萬元，並力拚20日在立法院會闖關三讀。 民進黨18日召開中常會，兼任黨主席的賴清德總統在會中表示，行政院將「AI紅利全民共享」、普發現金1萬元的政策編列在明年度中央政府總預算案中，是在歲入歲出平衡、實質零舉債的前提下，讓全民共享台灣經濟成長的果實。反觀，在野黨要求普發2萬元，必須透過增加舉債支應，不僅可能債留子孫，也可能排擠其他重要政策支出。 賴清德指出，在野黨透過提出特\n<<</S1>>>",
+    "response": "{\"action\":\"DRAFT\",\"headline\":\"藍拚普發2萬元20日三讀　賴清德籲審慎\",\"deck\":\"國民黨團主張現金加碼至2萬元，賴清德指涉及憲政權責分際，並恐增加財政負擔。\",\"body\":\"國民黨團提出《全民共享經濟成果及穩定民生特別條例》草案，主張普發現金新台幣2萬元，力拚20日在立法院會三讀。兼任民進黨主席的賴清德總統18日表示，在野黨要求政府增加預算發放現金，涉及立法權與行政權的憲政權責分際，也有違憲之虞，呼籲審慎、不要一意孤行。[S1]\\n\\n賴清德8月間宣布明年普發現金1萬元，國民黨團隨即提出草案，主張加碼至2萬元。賴清德在民進黨18日中常會表示，行政院已將普發1萬元政策編入明年度中央政府總預算案，前提是歲入歲出平衡、實質零舉債。[S1]\\n\\n賴清德表示，在野黨要求普發2萬元，必須增加舉債支應，可能債留子孫、排擠其他重要政策支出。他呼籲在野黨不應強行通過增加國家財政負擔、影響其他政策推動的特別條例。[S1]\",\"why_it_matters\":\"普發現金金額與財源安排成為爭點，賴清德並提出憲政權責及政策支出遭排擠的疑慮。[S1]\",\"reason\":\"\"}",
+    "version": 1,
+    "headline": "藍拚普發2萬元20日三讀　賴清德籲審慎",
+    "body": "國民黨團提出《全民共享經濟成果及穩定民生特別條例》草案，主張普發現金新台幣2萬元，力拚20日在立法院會三讀。兼任民進黨主席的賴清德總統18日表示，在野黨要求政府增加預算發放現金，涉及立法權與行政權的憲政權責分際，也有違憲之虞，呼籲審慎、不要一意孤行。[S1]\n\n賴清德8月間宣布明年普發現金1萬元，國民黨團隨即提出草案，主張加碼至2萬元。賴清德在民進黨18日中常會表示，行政院已將普發1萬元政策編入明年度中央政府總預算案，前提是歲入歲出平衡、實質零舉債。[S1]\n\n賴清德表示，在野黨要求普發2萬元，必須增加舉債支應，可能債留子孫、排擠其他重要政策支出。他呼籲在野黨不應強行通過增加國家財政負擔、影響其他政策推動的特別條例。[S1]",
+    "diff": ""
+   },
+   "story_id": 86097,
+   "phase": "write",
+   "actor": "reporter",
+   "title": "記者寫稿",
+   "say": "寫好 v1：《藍拚普發2萬元20日三讀　賴清德籲審慎》",
+   "state": {
+    "stories": {
+     "86097": {
+      "version": 1,
+      "status": "draft",
+      "headline": "藍拚普發2萬元20日三讀　賴清德籲審慎"
+     }
+    }
+   },
+   "paper": {
+    "label": "v1",
+    "to": "fact_checker"
+   }
+  },
+  {
+   "i": 46,
+   "at": "06:06:49",
+   "day": "11-19",
+   "iso": "2026-11-19T06:06:49+08:00",
+   "phase": "write",
+   "kind": "message",
+   "type": "RELEASE",
+   "type_label": "放行",
+   "mode": "stamp",
+   "actor": "checktool",
+   "to": "eic",
+   "status": "handled",
+   "story_id": 86097,
+   "title": "查核工具（程式） → 總編輯｜放行",
+   "say": "重驗：來源都有共同實體、數字都找得到",
+   "detail": {
+    "message_id": 613,
+    "llm_id": null,
+    "correlation_id": "T2-20261119-86097",
+    "target_version": 1,
+    "payload": "{\n \"detail\": \"重驗：來源都有共同實體、數字都找得到\"\n}"
+   },
+   "state": {
+    "stories": {
+     "86097": {
+      "status": "checked"
+     }
+    }
+   },
+   "paper": {
+    "label": "✓",
+    "to": "eic"
+   }
+  },
+  {
+   "i": 47,
+   "at": "06:07:00",
+   "day": "11-19",
+   "iso": "2026-11-19T06:07:00+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 11.2,
+   "detail": {
+    "llm_id": 678,
+    "secs": 11.2,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "事件板塊：world。請寫一則稿，action 填 DRAFT。\n\n<<<S1>>>\n媒體：Al Jazeera\n標題：Voyager 1 reaches one light-day from Earth after 49 years in space\n摘要：NASA’s Voyager 1 has reached a record distance of more than 16 billion miles from Earth, 49 years after its launch.\n<<</S1>>>\n\n<<<S2>>>\n媒體：The Verge\n標題：NASA’s Voyager 1 probe is now one light-day away\n摘要：After traveling through the void of space for 49 years, Voyager 1 has hit a momentous milestone: the spacecraft is now officially one light-day away from Earth, which is, as NASA put it, \"very, very far.\" The probe crossed the milepost on Wednesday at 5:16AM ET, and is now 16.094 billion miles away from our […]\n<<</S2>>>\n\n<<<S3>>>\n媒體：CBS News World\n標題：Voyager 1 sets distance record of 1 \"light day\" from Earth\n摘要：Voyager 1 and its sister ship Voyager 2 are still beaming back data from interstellar space as they near their 50th anniversary next year.\n<<</S3>>>\n\n<<<S4>>>\n媒體：Nature\n標題：Voyager 1 is about to achieve a cosmic first: one ‘light day’ from Earth\n摘要：Nature, Published online: 17 November 2026; doi:10.1038/d41586-026-03672-1 Its power supply is faltering and most of its instruments are off, but the probe is still gathering data.\n<<</S4>>>\n\n<<<S5>>>\n媒體：DW English\n標題：NASA's Voyager 1 reaches a light-day away from Earth\n摘要：When just saying 'hello' takes a two-day round trip, you're a light-day, or 26 billion kilometers, from Earth. Only one human-made object has ever traveled that far — and its journey into interstellar space continues.\n<<</S5>>>",
+    "response": "{\"action\":\"DRAFT\",\"headline\":\"Voyager 1距地球達一光日　航行49年創紀錄\",\"deck\":\"NASA探測器Voyager 1距地球已超過160億英里，仍持續從星際空間傳回資料。\",\"body\":\"NASA探測器Voyager 1在發射49年後，距離地球達到一光日，創下人造物體的距離紀錄。據The Verge報導，探測器於美東時間週三上午5時16分跨越這個里程碑，距地球約160.94億英里。[S1][S2][S5]\\n\\n一光日約為260億公里；在這個距離，訊號往返地球與探測器需時兩天。Voyager 1是唯一曾抵達如此遠處的人造物體，其星際航程仍在持續。[S5]\\n\\nVoyager 1的電力供應逐漸衰弱，多數儀器已關閉，但仍在蒐集資料。它與姊妹探測器Voyager 2目前都持續從星際空間傳回資料，兩者將於明年迎接50週年。[S3][S4]\",\"why_it_matters\":\"這項紀錄將人造物體抵達的距離推進至一光日；Voyager 1在電力衰退、多數儀器關閉的情況下，仍持續蒐集星際空間資料。[S4][S5]\",\"reason\":\"\"}",
+    "version": 1,
+    "headline": "Voyager 1距地球達一光日　航行49年創紀錄",
+    "body": "NASA探測器Voyager 1在發射49年後，距離地球達到一光日，創下人造物體的距離紀錄。據The Verge報導，探測器於美東時間週三上午5時16分跨越這個里程碑，距地球約160.94億英里。[S1][S2][S5]\n\n一光日約為260億公里；在這個距離，訊號往返地球與探測器需時兩天。Voyager 1是唯一曾抵達如此遠處的人造物體，其星際航程仍在持續。[S5]\n\nVoyager 1的電力供應逐漸衰弱，多數儀器已關閉，但仍在蒐集資料。它與姊妹探測器Voyager 2目前都持續從星際空間傳回資料，兩者將於明年迎接50週年。[S3][S4]",
+    "diff": ""
+   },
+   "story_id": 86100,
+   "phase": "write",
+   "actor": "reporter",
+   "title": "記者寫稿",
+   "say": "寫好 v1：《Voyager 1距地球達一光日　航行49年創紀錄》",
+   "state": {
+    "stories": {
+     "86100": {
+      "version": 1,
+      "status": "draft",
+      "headline": "Voyager 1距地球達一光日　航行49年創紀錄"
+     }
+    }
+   },
+   "paper": {
+    "label": "v1",
+    "to": "fact_checker"
+   }
+  },
+  {
+   "i": 48,
+   "at": "06:07:00",
+   "day": "11-19",
+   "iso": "2026-11-19T06:07:00+08:00",
+   "phase": "write",
+   "kind": "message",
+   "type": "RELEASE",
+   "type_label": "放行",
+   "mode": "stamp",
+   "actor": "checktool",
+   "to": "eic",
+   "status": "handled",
+   "story_id": 86100,
+   "title": "查核工具（程式） → 總編輯｜放行",
+   "say": "重驗：來源都有共同實體、數字都找得到",
+   "detail": {
+    "message_id": 614,
+    "llm_id": null,
+    "correlation_id": "T2-20261119-86100",
+    "target_version": 1,
+    "payload": "{\n \"detail\": \"重驗：來源都有共同實體、數字都找得到\"\n}"
+   },
+   "state": {
+    "stories": {
+     "86100": {
+      "status": "checked"
+     }
+    }
+   },
+   "paper": {
+    "label": "✓",
+    "to": "eic"
+   }
+  },
+  {
+   "i": 49,
+   "at": "06:07:09",
+   "day": "11-19",
+   "iso": "2026-11-19T06:07:09+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 8.8,
+   "detail": {
+    "llm_id": 679,
+    "secs": 8.8,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "事件板塊：world。請寫一則稿，action 填 DRAFT。\n\n<<<S1>>>\n媒體：Yahoo 股市新聞\n標題：美媒驚爆輝達4年前為黃樂開路！阿里巴巴成首批客戶 Megaspeed交易鏈遭起底\n摘要：輝達與大陸科技業者之間的晶片交易關係，再度引發美國出口管制爭議。美國科技媒體《The Information》17日披露，早在2022年美國限制先進AI晶片出口大陸前，輝達業務團隊就曾居中牽線，介紹大\n<<</S1>>>\n\n<<<S2>>>\n媒體：自由時報 財經\n標題：4年前就牽線！外媒爆輝達「引介黃樂」搭上阿里巴巴 繞過晶片禁令\n摘要：〔財經頻道／綜合報導〕外媒揭露，輝達（NVIDIA）在拜登政府執政期間，曾協助中國阿里巴巴集團與黃仁勳緋聞對象黃樂（Alice Huang）建立業務聯繫。相關安排發生於2022年時，美國當時正逐...…\n<<</S2>>>\n\n<<<S3>>>\n媒體：RFI 中文\n標題：信息報：英偉達曾在2022年為阿里巴巴和黃樂牽線搭橋，助阿里獲取被管制晶片\n摘要：據科技媒體《The Information》周二（11月17日）援引匿名消息人士報導，早在美國政府實施先進半導體出口管制措施的數月前，英偉達銷售團隊就在2022年將阿里巴巴（Alibaba）介紹給了被懷疑為中國間諜的黃樂。\n<<</S3>>>\n\n<<<S4>>>\n媒體：中央社（Yahoo 股市新聞轉載）\n標題：美媒：輝達2022年牽線阿里巴巴與黃樂　涉助規避美晶片管制\n摘要：（中央社舊金山2026年11月18日綜合外電報導）科技媒體The Information引述匿名消息人士報導，2022年，美國實施先進半導體出口管制前數月，輝達銷售團隊將阿里巴巴介紹給如今被懷疑是中國\n<<</S4>>>",
+    "response": "{\"action\":\"DRAFT\",\"headline\":\"美媒指輝達2022年牽線阿里巴巴與黃樂　涉晶片出口管制爭議\",\"deck\":\"The Information引述匿名消息人士報導，相關引介發生於美國實施先進半導體出口管制前數月。\",\"body\":\"科技媒體《The Information》11月17日引述匿名消息人士報導，輝達銷售團隊曾於2022年將阿里巴巴介紹給黃樂，時間在美國政府實施先進半導體出口管制措施的數月前。[S3][S4]\\n\\n中央社轉述這項報導，以「涉助規避美晶片管制」描述相關安排；RFI中文則報導，這項牽線涉及協助阿里巴巴取得受管制晶片。[S3][S4]\",\"why_it_matters\":\"相關報導使輝達與中國科技業者之間的晶片交易關係，再度引發美國出口管制爭議。[S1]\",\"reason\":\"\"}",
+    "version": 1,
+    "headline": "美媒指輝達2022年牽線阿里巴巴與黃樂　涉晶片出口管制爭議",
+    "body": "科技媒體《The Information》11月17日引述匿名消息人士報導，輝達銷售團隊曾於2022年將阿里巴巴介紹給黃樂，時間在美國政府實施先進半導體出口管制措施的數月前。[S3][S4]\n\n中央社轉述這項報導，以「涉助規避美晶片管制」描述相關安排；RFI中文則報導，這項牽線涉及協助阿里巴巴取得受管制晶片。[S3][S4]",
+    "diff": ""
+   },
+   "story_id": 86103,
+   "phase": "write",
+   "actor": "reporter",
+   "title": "記者寫稿",
+   "say": "寫好 v1：《美媒指輝達2022年牽線阿里巴巴與黃樂　涉晶片出口管制爭議》",
+   "state": {
+    "stories": {
+     "86103": {
+      "version": 1,
+      "status": "draft",
+      "headline": "美媒指輝達2022年牽線阿里巴巴與黃樂　涉晶片出口管制爭議"
+     }
+    }
+   },
+   "paper": {
+    "label": "v1",
+    "to": "fact_checker"
+   }
+  },
+  {
+   "i": 50,
+   "at": "06:07:09",
+   "day": "11-19",
+   "iso": "2026-11-19T06:07:09+08:00",
+   "phase": "write",
+   "kind": "message",
+   "type": "RELEASE",
+   "type_label": "放行",
+   "mode": "stamp",
+   "actor": "checktool",
+   "to": "eic",
+   "status": "handled",
+   "story_id": 86103,
+   "title": "查核工具（程式） → 總編輯｜放行",
+   "say": "重驗：來源都有共同實體、數字都找得到",
+   "detail": {
+    "message_id": 615,
+    "llm_id": null,
+    "correlation_id": "T2-20261119-86103",
+    "target_version": 1,
+    "payload": "{\n \"detail\": \"重驗：來源都有共同實體、數字都找得到\"\n}"
+   },
+   "state": {
+    "stories": {
+     "86103": {
+      "status": "checked"
+     }
+    }
+   },
+   "paper": {
+    "label": "✓",
+    "to": "eic"
+   }
+  },
+  {
+   "i": 51,
+   "at": "06:07:20",
+   "day": "11-19",
+   "iso": "2026-11-19T06:07:20+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 10.5,
+   "detail": {
+    "llm_id": 680,
+    "secs": 10.5,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "事件板塊：tech。請寫一則稿，action 填 DRAFT。\n\n<<<S1>>>\n媒體：Al Jazeera\n標題：What do Deutsche Bank leaks reveal about Trump, Epstein and Russia?\n摘要：Deutsche Bank leaks expose ties to Trump, Epstein, and global elites amid scrutiny over past financial misconduct.\n<<</S1>>>\n\n<<<S2>>>\n媒體：CNBC Top News\n標題：Trump has arrived in Asia. Here’s what he said about Iran and Deutsche Bank\n摘要：Trump threatens Iran and responds to a tax leak report as his Asia trip begins.\n<<</S2>>>\n\n<<<S3>>>\n媒體：Financial Times\n標題：Leak of 15mn Deutsche Bank files exposes systemic failures\n摘要：Email, internal probes and other documents throw new light on the career and leadership of chief executive Christian Sewing\n<<</S3>>>",
+    "response": "{\"action\":\"DRAFT\",\"headline\":\"德意志銀行文件外洩揭露系統性缺失\",\"deck\":\"外洩資料涉及川普、Epstein及全球菁英的關聯，也使執行長Christian Sewing的職涯與領導受到檢視。\",\"body\":\"《Financial Times》報導，1,500萬份德意志銀行文件外洩，揭露系統性缺失；電子郵件、內部調查及其他文件，為執行長Christian Sewing的職涯與領導提供新資訊。[S3]\\n\\nAl Jazeera報導，外洩資料揭露德意志銀行與川普、Epstein及全球菁英的關聯，銀行過往的金融不當行為也受到檢視。[S1]\\n\\nCNBC Top News另報導，川普開始亞洲行程時，回應了一則稅務資料外洩報導。[S2]\",\"why_it_matters\":\"外洩文件揭露銀行的系統性缺失，並使其執行長的職涯與領導受到進一步檢視。[S3]\",\"reason\":\"來源未提供科技層面的具體資訊，稿件僅依據所附報導摘要撰寫。\"}",
+    "version": 1,
+    "headline": "德意志銀行文件外洩揭露系統性缺失",
+    "body": "《Financial Times》報導，1,500萬份德意志銀行文件外洩，揭露系統性缺失；電子郵件、內部調查及其他文件，為執行長Christian Sewing的職涯與領導提供新資訊。[S3]\n\nAl Jazeera報導，外洩資料揭露德意志銀行與川普、Epstein及全球菁英的關聯，銀行過往的金融不當行為也受到檢視。[S1]\n\nCNBC Top News另報導，川普開始亞洲行程時，回應了一則稅務資料外洩報導。[S2]",
+    "diff": ""
+   },
+   "story_id": 86123,
+   "phase": "write",
+   "actor": "reporter",
+   "title": "記者寫稿",
+   "say": "寫好 v1：《德意志銀行文件外洩揭露系統性缺失》",
+   "state": {
+    "stories": {
+     "86123": {
+      "version": 1,
+      "status": "draft",
+      "headline": "德意志銀行文件外洩揭露系統性缺失"
+     }
+    }
+   },
+   "paper": {
+    "label": "v1",
+    "to": "fact_checker"
+   }
+  },
+  {
+   "i": 52,
+   "at": "06:07:25",
+   "day": "11-19",
+   "iso": "2026-11-19T06:07:25+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 5.8,
+   "detail": {
+    "llm_id": 681,
+    "secs": 5.8,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "稿件：《Financial Times》報導，1,500萬份德意志銀行文件外洩，揭露系統性缺失；電子郵件、內部調查及其他文件，為執行長Christian Sewing的職涯與領導提供新資訊。[S3]\n\nAl Jazeera報導，外洩資料揭露德意志銀行與川普、Epstein及全球菁英的關聯，銀行過往的金融不當行為也受到檢視。[S1]\n\nCNBC Top News另報導，川普開始亞洲行程時，回應了一則稅務資料外洩報導。[S2]\n\n<<<S1>>>\n媒體：Al Jazeera\n標題：What do Deutsche Bank leaks reveal about Trump, Epstein and Russia?\n摘要：Deutsche Bank leaks expose ties to Trump, Epstein, and global elites amid scrutiny over past financial misconduct.\n<<</S1>>>\n\n<<<S2>>>\n媒體：CNBC Top News\n標題：Trump has arrived in Asia. Here’s what he said about Iran and Deutsche Bank\n摘要：Trump threatens Iran and responds to a tax leak report as his Asia trip begins.\n<<</S2>>>\n\n<<<S3>>>\n媒體：Financial Times\n標題：Leak of 15mn Deutsche Bank files exposes systemic failures\n摘要：Email, internal probes and other documents throw new light on the career and leadership of chief executive Christian Sewing\n<<</S3>>>",
+    "response": "{\"action\":\"CHALLENGE\",\"problem\":\"NEEDS_CLARIFICATION\",\"detail\":\"S2聚焦川普亞洲行程及回應稅務資料外洩，現有摘要不足以確認與S1的德意志銀行外洩屬同一事件。\",\"required_action\":\"確認S2所指外洩是否與S1相同，若無關則移除或另文處理。\"}"
+   },
+   "story_id": 86123,
+   "phase": "write",
+   "actor": "fact_checker",
+   "title": "查核員判斷（程式工具覺得可疑才問）",
+   "say": "判斷：有問題。S2聚焦川普亞洲行程及回應稅務資料外洩，現有摘要不足以確認與S1的德意志銀行外洩屬同一事件。"
+  },
+  {
+   "i": 53,
+   "at": "06:07:25",
+   "day": "11-19",
+   "iso": "2026-11-19T06:07:25+08:00",
+   "phase": "write",
+   "kind": "message",
+   "type": "CHALLENGE",
+   "type_label": "異議",
+   "mode": "say",
+   "actor": "fact_checker",
+   "to": "reporter",
+   "status": "handled",
+   "story_id": 86123,
+   "title": "查核員 → 記者｜異議",
+   "say": "異議（程式比對數字，模型說 OK 也蓋不掉）：證據中找不到的數字：1500",
+   "detail": {
+    "message_id": 616,
+    "llm_id": 681,
+    "correlation_id": "T2-20261119-86123",
+    "target_version": 1,
+    "payload": "{\n \"problem\": \"UNSUPPORTED_NUMBER\",\n \"detail\": \"證據中找不到的數字：1500\",\n \"required_action\": \"刪掉沒有出處的數字\",\n \"drop_sids\": [],\n \"llm_assessment\": \"{\\\"action\\\":\\\"CHALLENGE\\\",\\\"problem\\\":\\\"NEEDS_CLARIFICATION\\\",\\\"detail\\\":\\\"S2聚焦川普亞洲行程及回應稅務資料外洩，現有摘要不足以確認與S1的德意志銀行外洩屬同一事件。\\\",\\\"required_action\\\":\\\"確認S2所指外洩是否與S1相同，若無關則移除或另文處理。\\\"}\"\n}"
+   },
+   "walk": true,
+   "state": {
+    "stories": {
+     "86123": {
+      "status": "challenged"
+     }
+    }
+   }
+  },
+  {
+   "i": 54,
+   "at": "06:07:34",
+   "day": "11-19",
+   "iso": "2026-11-19T06:07:34+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 9.0,
+   "detail": {
+    "llm_id": 682,
+    "secs": 9.0,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "查核員 CHALLENGE：{\"problem\": \"UNSUPPORTED_NUMBER\", \"detail\": \"證據中找不到的數字：1500\", \"required_action\": \"刪掉沒有出處的數字\", \"drop_sids\": [], \"llm_assessment\": \"{\\\"action\\\":\\\"CHALLENGE\\\",\\\"problem\\\":\\\"NEEDS_CLARIFICATION\\\",\\\"detail\\\":\\\"S2聚焦川普亞洲行程及回應稅務資料外洩，現有摘要不足以確認與S1的德意志銀行外洩屬同一事件。\\\",\\\"required_action\\\":\\\"確認S2所指外洩是否與S1相同，若無關則移除或另文處理。\\\"}\"}\n請刪除被點名的來源後重寫，action 填 REVISE。\n\n<<<S1>>>\n媒體：Al Jazeera\n標題：What do Deutsche Bank leaks reveal about Trump, Epstein and Russia?\n摘要：Deutsche Bank leaks expose ties to Trump, Epstein, and global elites amid scrutiny over past financial misconduct.\n<<</S1>>>\n\n<<<S2>>>\n媒體：CNBC Top News\n標題：Trump has arrived in Asia. Here’s what he said about Iran and Deutsche Bank\n摘要：Trump threatens Iran and responds to a tax leak report as his Asia trip begins.\n<<</S2>>>\n\n<<<S3>>>\n媒體：Financial Times\n標題：Leak of 15mn Deutsche Bank files exposes systemic failures\n摘要：Email, internal probes and other documents throw new light on the career and leadership of chief executive Christian Sewing\n<<</S3>>>",
+    "response": "{\"action\":\"REVISE\",\"headline\":\"德意志銀行文件外洩，揭露人脈關係與系統性缺失\",\"deck\":\"Al Jazeera 聚焦川普、Epstein 與全球菁英的關係；Financial Times 則關注銀行內部文件揭露的問題。[S1][S3]\",\"body\":\"Al Jazeera 報導，德意志銀行外洩資料揭露與川普、Epstein 及全球菁英的關係，過往金融不當行為也受到檢視。[S1]\\n\\nFinancial Times 報導，外洩的德意志銀行文件揭露系統性缺失；電子郵件、內部調查及其他文件，為執行長 Christian Sewing 的職涯與領導表現提供新資訊。[S3]\",\"why_it_matters\":\"外洩文件讓德意志銀行的人脈關係、內部缺失與領導表現受到檢視。[S1][S3]\",\"reason\":\"已刪除無出處的數字，並移除無法確認與同一外洩事件相關的 S2。\"}",
+    "version": 2,
+    "headline": "德意志銀行文件外洩，揭露人脈關係與系統性缺失",
+    "body": "Al Jazeera 報導，德意志銀行外洩資料揭露與川普、Epstein 及全球菁英的關係，過往金融不當行為也受到檢視。[S1]\n\nFinancial Times 報導，外洩的德意志銀行文件揭露系統性缺失；電子郵件、內部調查及其他文件，為執行長 Christian Sewing 的職涯與領導表現提供新資訊。[S3]",
+    "diff": "--- v1\n+++ v2\n@@ -1,5 +1,3 @@\n-《Financial Times》報導，1,500萬份德意志銀行文件外洩，揭露系統性缺失；電子郵件、內部調查及其他文件，為執行長Christian Sewing的職涯與領導提供新資訊。[S3]\n+Al Jazeera 報導，德意志銀行外洩資料揭露與川普、Epstein 及全球菁英的關係，過往金融不當行為也受到檢視。[S1]\n \n-Al Jazeera報導，外洩資料揭露德意志銀行與川普、Epstein及全球菁英的關聯，銀行過往的金融不當行為也受到檢視。[S1]\n-\n-CNBC Top News另報導，川普開始亞洲行程時，回應了一則稅務資料外洩報導。[S2]\n+Financial Times 報導，外洩的德意志銀行文件揭露系統性缺失；電子郵件、內部調查及其他文件，為執行長 Christian Sewing 的職涯與領導表現提供新資訊。[S3]"
+   },
+   "story_id": 86123,
+   "phase": "write",
+   "actor": "reporter",
+   "title": "記者修稿",
+   "say": "改寫成 v2：《德意志銀行文件外洩，揭露人脈關係與系統性缺失》",
+   "state": {
+    "stories": {
+     "86123": {
+      "version": 2,
+      "status": "draft",
+      "headline": "德意志銀行文件外洩，揭露人脈關係與系統性缺失"
+     }
+    }
+   },
+   "paper": {
+    "label": "v2",
+    "to": "fact_checker"
+   }
+  },
+  {
+   "i": 55,
+   "at": "06:07:34",
+   "day": "11-19",
+   "iso": "2026-11-19T06:07:34+08:00",
+   "phase": "write",
+   "kind": "message",
+   "type": "REVISION_DONE",
+   "type_label": "修稿完成",
+   "mode": "say",
+   "actor": "reporter",
+   "to": "fact_checker",
+   "status": "handled",
+   "story_id": 86123,
+   "title": "記者 → 查核員｜修稿完成",
+   "say": "改好了，v2：來源改為 3 家",
+   "detail": {
+    "message_id": 617,
+    "llm_id": 682,
+    "correlation_id": "T2-20261119-86123",
+    "target_version": null,
+    "payload": "{\n \"new_version\": 2,\n \"change\": \"來源改為 3 家\"\n}",
+    "diff": "--- v1\n+++ v2\n@@ -1,5 +1,3 @@\n-《Financial Times》報導，1,500萬份德意志銀行文件外洩，揭露系統性缺失；電子郵件、內部調查及其他文件，為執行長Christian Sewing的職涯與領導提供新資訊。[S3]\n+Al Jazeera 報導，德意志銀行外洩資料揭露與川普、Epstein 及全球菁英的關係，過往金融不當行為也受到檢視。[S1]\n \n-Al Jazeera報導，外洩資料揭露德意志銀行與川普、Epstein及全球菁英的關聯，銀行過往的金融不當行為也受到檢視。[S1]\n-\n-CNBC Top News另報導，川普開始亞洲行程時，回應了一則稅務資料外洩報導。[S2]\n+Financial Times 報導，外洩的德意志銀行文件揭露系統性缺失；電子郵件、內部調查及其他文件，為執行長 Christian Sewing 的職涯與領導表現提供新資訊。[S3]"
+   },
+   "state": {
+    "stories": {
+     "86123": {
+      "version": 2,
+      "status": "draft",
+      "headline": "德意志銀行文件外洩，揭露人脈關係與系統性缺失"
+     }
+    }
+   },
+   "paper": {
+    "label": "v2",
+    "to": "fact_checker"
+   }
+  },
+  {
+   "i": 56,
+   "at": "06:07:34",
+   "day": "11-19",
+   "iso": "2026-11-19T06:07:34+08:00",
+   "phase": "write",
+   "kind": "message",
+   "type": "RELEASE",
+   "type_label": "放行",
+   "mode": "stamp",
+   "actor": "checktool",
+   "to": "reporter",
+   "status": "handled",
+   "story_id": 86123,
+   "title": "查核工具（程式） → 記者｜放行",
+   "say": "重驗：3 個來源都有共同實體、數字都找得到",
+   "detail": {
+    "message_id": 618,
+    "llm_id": null,
+    "correlation_id": "T2-20261119-86123",
+    "target_version": 2,
+    "payload": "{\n \"detail\": \"重驗：3 個來源都有共同實體、數字都找得到\"\n}"
+   },
+   "state": {
+    "stories": {
+     "86123": {
+      "status": "checked"
+     }
+    }
+   },
+   "paper": {
+    "label": "✓",
+    "to": "eic"
+   }
+  },
+  {
+   "i": 57,
+   "at": "06:07:45",
+   "day": "11-19",
+   "iso": "2026-11-19T06:07:45+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 10.3,
+   "detail": {
+    "llm_id": 683,
+    "secs": 10.3,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "事件板塊：tech。請寫一則稿，action 填 DRAFT。\n\n<<<S1>>>\n媒體：Ars Technica\n標題：Trump admin orders Kalshi to halt wagers on what words Trump will say\n摘要：CFTC: Kalshi bets may violate US ban on contracts that can be easily manipulated.\n<<</S1>>>\n\n<<<S2>>>\n媒體：Yahoo Finance\n標題：Kalshi pauses Trump \"mention markets\" in response to CFTC order\n摘要：Kalshi is pausing markets that allow users to bet on what President Trump will say in response to a federal agency's request, a spokesperson for the prediction market confirmed. The Commodity Futures Trading Commission requested that Kalshi halt the so-called \"mention markets\" tied to the president on Friday. Mention markets allow traders to bet on specific words or phrases a person will utter dur\n<<</S2>>>\n\n<<<S3>>>\n媒體：Al Jazeera\n標題：Kalshi halts Trump speech bets after CFTC order\n摘要：Kalshi halts Trump speech bets following CFTC mandate amid concerns of insider trading in US prediction markets.\n<<</S3>>>\n\n<<<S4>>>\n媒體：CNBC Top News\n標題：Kalshi takes down controversial Trump 'mention' markets at CFTC's request\n摘要：Some Trump-related Kalshi mention contracts have been taken down as the CFTC warns the contract type carries heightened manipulation risk.\n<<</S4>>>",
+    "response": "{\"action\":\"DRAFT\",\"headline\":\"CFTC要求停辦川普言論押注，Kalshi暫停相關市場\",\"deck\":\"CFTC警告，押注特定用詞的合約具有較高操縱風險，可能違反美國相關禁令。\",\"body\":\"預測市場平台Kalshi暫停讓交易者押注美國總統川普會說出哪些字詞的「mention markets」。平台發言人證實，此舉是回應美國商品期貨交易委員會（CFTC）的要求。[S2]\\n\\n據Yahoo Finance報導，CFTC於週五要求Kalshi停止與川普相關的這類市場。這些市場讓交易者押注某人會說出特定字詞或片語；CNBC則報導，部分與川普相關的合約已下架。[S2][S4]\\n\\nCFTC警告，這類合約具有較高的操縱風險，並可能違反美國對容易遭操縱合約的禁令。[S1][S4]\",\"why_it_matters\":\"此次暫停交易凸顯，特定用詞押注合約的操縱風險已引起CFTC關切。[S1][S4]\",\"reason\":\"\"}",
+    "version": 1,
+    "headline": "CFTC要求停辦川普言論押注，Kalshi暫停相關市場",
+    "body": "預測市場平台Kalshi暫停讓交易者押注美國總統川普會說出哪些字詞的「mention markets」。平台發言人證實，此舉是回應美國商品期貨交易委員會（CFTC）的要求。[S2]\n\n據Yahoo Finance報導，CFTC於週五要求Kalshi停止與川普相關的這類市場。這些市場讓交易者押注某人會說出特定字詞或片語；CNBC則報導，部分與川普相關的合約已下架。[S2][S4]\n\nCFTC警告，這類合約具有較高的操縱風險，並可能違反美國對容易遭操縱合約的禁令。[S1][S4]",
+    "diff": ""
+   },
+   "story_id": 86127,
+   "phase": "write",
+   "actor": "reporter",
+   "title": "記者寫稿",
+   "say": "寫好 v1：《CFTC要求停辦川普言論押注，Kalshi暫停相關市場》",
+   "state": {
+    "stories": {
+     "86127": {
+      "version": 1,
+      "status": "draft",
+      "headline": "CFTC要求停辦川普言論押注，Kalshi暫停相關市場"
+     }
+    }
+   },
+   "paper": {
+    "label": "v1",
+    "to": "fact_checker"
+   }
+  },
+  {
+   "i": 58,
+   "at": "06:07:45",
+   "day": "11-19",
+   "iso": "2026-11-19T06:07:45+08:00",
+   "phase": "write",
+   "kind": "message",
+   "type": "RELEASE",
+   "type_label": "放行",
+   "mode": "stamp",
+   "actor": "checktool",
+   "to": "eic",
+   "status": "handled",
+   "story_id": 86127,
+   "title": "查核工具（程式） → 總編輯｜放行",
+   "say": "重驗：來源都有共同實體、數字都找得到",
+   "detail": {
+    "message_id": 619,
+    "llm_id": null,
+    "correlation_id": "T2-20261119-86127",
+    "target_version": 1,
+    "payload": "{\n \"detail\": \"重驗：來源都有共同實體、數字都找得到\"\n}"
+   },
+   "state": {
+    "stories": {
+     "86127": {
+      "status": "checked"
+     }
+    }
+   },
+   "paper": {
+    "label": "✓",
+    "to": "eic"
+   }
+  },
+  {
+   "i": 59,
+   "at": "06:07:45",
+   "day": "11-19",
+   "iso": "2026-11-19T06:07:45+08:00",
+   "phase": "layout",
+   "kind": "plan",
+   "actor": "system",
+   "mode": "board",
+   "title": "版面計畫 v1",
+   "say": "版面計畫 v1：依各版提案排出的版面。頭版主稿《施振榮抵深圳出席APEC 代表團：接機層級未如期待但可…》",
+   "detail": {
+    "plan_version": 1,
+    "decided_by_message_id": null
+   },
+   "state": {
+    "plan": 0
+   }
+  },
+  {
+   "i": 60,
+   "at": "06:07:57",
+   "day": "11-19",
+   "iso": "2026-11-19T06:07:57+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 12.6,
+   "detail": {
+    "llm_id": 684,
+    "secs": 12.6,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "[{\"section\": \"taiwan\", \"story_id\": 86089, \"angle\": \"全站排名第一，頭版首選：聚焦APEC接待層級與台灣代表團回應，解析兩岸外交禮遇爭議。\", \"priority\": \"front\", \"sender\": \"section_editor\"}, {\"section\": \"world\", \"story_id\": 86090, \"angle\": \"頭版首選：輝達稱停止向中國供應 Hopper 高階晶片，聚焦美中科技競爭與中國 AI 算力供應；全站排名第二。\", \"priority\": \"front\", \"sender\": \"section_editor\"}, {\"section\": \"world\", \"story_id\": 86091, \"angle\": \"頭版次選：民主黨提名 Jeffries 角逐眾議院議長，聚焦黑人議長的歷史意義與黨內進步派疑慮，明確區分提名與當選；全站排名第三。\", \"priority\": \"front\", \"sender\": \"section_editor\"}, {\"section\": \"tech\", \"story_id\": 86093, \"angle\": \"頭版首推：全站排名第四，以 GTA VI 玩家體驗與社群討論為角度；原稿為讀者徵集，避免當成遊戲評測或銷售報導。\", \"priority\": \"front\", \"sender\": \"section_editor\"}, {\"section\": \"taiwan\", \"story_id\": 86094, \"angle\": \"全站排名第五，頭版次選：聚焦800萬筆個資外洩影響、企業72小時通知要求與當事人如何因應。\", \"priority\": \"front\", \"sender\": \"section_editor\"}, {\"section\": \"tech\", \"story_id\": 86118, \"angle\": \"頭版次推：聚焦輝達與台廠合作及矽品、景碩擴產，呼應全站第二名的輝達停止供應中國 Hopper 晶片消息，呈現供應鏈布局；不推定兩者具有因果關係。\", \"priority\": \"front\", \"sender\": \"section_editor\"}, {\"section\": \"taiwan\", \"story_id\": 86096, \"angle\": \"全站排名第六，保留分版：釐清兩年前影片與當前拒投表態的時間脈絡，避免以親屬立場推論整體選情。\", \"priority\": \"section\", \"sender\": \"section_editor\"}, {\"section\": \"taiwan\", \"story_id\": 86097, \"angle\": \"聚焦普發2萬元三讀時程、財政影響與朝野分歧，優先於個人政治表態稿安排分版版位。\", \"priority\": \"section\", \"sender\": \"section_editor\"}, {\"section\": \"world\", \"story_id\": 86100, \"angle\": \"分版優先：Voyager 1 距地球達一光日，以訊號單程傳遞時間解釋深空探索尺度與49年任務里程碑；全站排名第十。\", \"priority\": \"section\", \"sender\": \"section_editor\"}, {\"section\": \"world\", \"story_id\": 86103, \"angle\": \"分版追蹤：聚焦報導所指輝達、阿里巴巴與 Megaspeed 交易鏈，釐清時間線與證據，作為中國晶片供應議題的延伸。\", \"priority\": \"section\", \"sender\": \"section_editor\"}, {\"section\": \"tech\", \"story_id\": 86123, \"angle\": \"分版次序居後：聚焦德意志銀行外洩資料的查證與揭露範圍，區分文件證據與政治推論；與科技主題關聯較弱。\", \"priority\": \"section\", \"sender\": \"section_editor\"}, {\"section\": \"tech\", \"story_id\": 86127, \"angle\": \"分版優先：從預測市場平台的監管界線切入，說明政府要求 Kalshi 停止川普用詞下注的爭議。\", \"priority\": \"section\", \"sender\": \"section_editor\"}]",
+    "response": "{\"action\":\"建議頭版採5則：86089、86090、86091、86093、86094；86118移至科技分版。\",\"problem\":\"共有6則頭版提案；86090與86118同涉輝達，存在題材集中。未提供頭版容量上限。\",\"detail\":\"以5則作為排版建議，版別分布為台灣2則、國際2則、科技1則。86118與86090角度不同，非重複稿，移至分版可降低頭版題材重疊。其餘維持分版安排。\",\"required_action\":\"依實際頭版容量確認5則是否可容納；保留各稿既有角度與事實界線。\"}"
+   },
+   "story_id": null,
+   "phase": "layout",
+   "actor": "layout_editor",
+   "title": "版面編輯檢查頭版",
+   "say": "以5則作為排版建議，版別分布為台灣2則、國際2則、科技1則。86118與86090角度不同，非重複稿，移至分版可降低頭版題材重疊。其餘維持分版安排。"
+  },
+  {
+   "i": 61,
+   "at": "06:07:57",
+   "day": "11-19",
+   "iso": "2026-11-19T06:07:57+08:00",
+   "phase": "layout",
+   "kind": "message",
+   "type": "PAGE_OBJECTION",
+   "type_label": "版面異議",
+   "mode": "say",
+   "actor": "layout_editor",
+   "to": "eic",
+   "status": "handled",
+   "story_id": null,
+   "title": "版面編輯 → 總編輯｜版面異議",
+   "say": "版面意見：以5則作為排版建議，版別分布為台灣2則、國際2則、科技1則。86118與86090角度不同，非重複稿，移至分版可降低頭版題材重疊。其餘維持分版安排。",
+   "detail": {
+    "message_id": 620,
+    "llm_id": 684,
+    "correlation_id": null,
+    "target_version": null,
+    "payload": "{\n \"detail\": \"{\\\"action\\\":\\\"建議頭版採5則：86089、86090、86091、86093、86094；86118移至科技分版。\\\",\\\"problem\\\":\\\"共有6則頭版提案；86090與86118同涉輝達，存在題材集中。未提供頭版容量上限。\\\",\\\"detail\\\":\\\"以5則作為排版建議，版別分布為台灣2則、國際2則、科技1則。86118與86090角度不同，非重複稿，移至分版可降低頭版題材重疊。其餘維持分版安排。\\\",\\\"required_action\\\":\\\"依實際頭版容量確認5則是否可容納；保留各稿既有角度與事實界線。\\\"}\",\n \"capacity\": 6\n}"
+   },
+   "walk": true
+  },
+  {
+   "i": 62,
+   "at": "06:07:57",
+   "day": "11-19",
+   "iso": "2026-11-19T06:07:57+08:00",
+   "phase": "layout",
+   "kind": "message",
+   "type": "PAGE_OBJECTION",
+   "type_label": "版面異議",
+   "mode": "say",
+   "actor": "layout_editor",
+   "to": "eic",
+   "status": "handled",
+   "story_id": null,
+   "title": "版面編輯 → 總編輯｜版面異議",
+   "say": "版面意見：頭版 6 個位置，目前有 6 則提案",
+   "detail": {
+    "message_id": 621,
+    "llm_id": null,
+    "correlation_id": null,
+    "target_version": null,
+    "payload": "{\n \"page\": \"front\",\n \"problem\": \"LAYOUT_REVIEW\",\n \"detail\": \"頭版 6 個位置，目前有 6 則提案\"\n}"
+   },
+   "walk": true
+  },
+  {
+   "i": 63,
+   "at": "06:08:08",
+   "day": "11-19",
+   "iso": "2026-11-19T06:08:08+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 10.4,
+   "detail": {
+    "llm_id": 685,
+    "secs": 10.4,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "{\"capacity\": 6, \"candidates\": [{\"story_id\": 86089, \"section\": \"taiwan\", \"kind\": \"report\", \"score\": 48.0, \"headline\": \"施振榮抵深圳出席APEC　代表團：接機層級未如期待但可接受\", \"hold\": false, \"pitched_by\": \"taiwan\", \"angle\": \"全站排名第一，頭版首選：聚焦APEC接待層級與台灣代表團回應，解析兩岸外交禮遇爭議。\"}, {\"story_id\": 86090, \"section\": \"world\", \"kind\": \"report\", \"score\": 40.73, \"headline\": \"輝達停止向中國供應Hopper晶片　未說明原因與期限\", \"hold\": false, \"pitched_by\": \"world\", \"angle\": \"頭版首選：輝達稱停止向中國供應 Hopper 高階晶片，聚焦美中科技競爭與中國 AI 算力供應；全站排名第二。\"}, {\"story_id\": 86091, \"section\": \"world\", \"kind\": \"report\", \"score\": 39.88, \"headline\": \"美民主黨提名 Jeffries 出任眾院議長，有望成首位黑人議長\", \"hold\": false, \"pitched_by\": \"world\", \"angle\": \"頭版次選：民主黨提名 Jeffries 角逐眾議院議長，聚焦黑人議長的歷史意義與黨內進步派疑慮，明確區分提名與當選；全站排名第三。\"}, {\"story_id\": 86093, \"section\": \"tech\", \"kind\": \"report\", \"score\": 37.14, \"headline\": \"《Grand Theft Auto VI》上市，預購銷售額已逾十五億美元\", \"hold\": false, \"pitched_by\": \"tech\", \"angle\": \"頭版首推：全站排名第四，以 GTA VI 玩家體驗與社群討論為角度；原稿為讀者徵集，避免當成遊戲評測或銷售報導。\"}, {\"story_id\": 86094, \"section\": \"taiwan\", \"kind\": \"report\", \"score\": 35.95, \"headline\": \"近期約800萬筆個資外洩 政院要求督促業者通知當事人\", \"hold\": false, \"pitched_by\": \"taiwan\", \"angle\": \"全站排名第五，頭版次選：聚焦800萬筆個資外洩影響、企業72小時通知要求與當事人如何因應。\"}, {\"story_id\": 86118, \"section\": \"tech\", \"kind\": \"report\", \"score\": 29.81, \"headline\": \"輝達投資景碩逾10億美元、與矽品簽約擴大先進封裝產能\", \"hold\": false, \"pitched_by\": \"tech\", \"angle\": \"頭版次推：聚焦輝達與台廠合作及矽品、景碩擴產，呼應全站第二名的輝達停止供應中國 Hopper 晶片消息，呈現供應鏈布局；不推定兩者具有因果關係。\"}]}",
+    "response": "{\"lead\":86089,\"second\":[86090,86094,86091],\"briefs\":[86118,86093],\"links\":[],\"dropped\":[],\"reasons\":[{\"story_id\":86089,\"why\":\"全站分數最高，APEC接待層級與台灣代表團回應具兩岸及外交公共性，列主稿。\"},{\"story_id\":86090,\"why\":\"停止供應中國Hopper晶片涉及美中科技競爭與AI算力供應，影響廣泛，列次要版位。\"},{\"story_id\":86094,\"why\":\"約800萬筆個資外洩涉及民眾權益與業者通知責任，具直接公共服務價值，列次要版位。\"},{\"story_id\":86091,\"why\":\"眾院議長提名具美國政治重要性與歷史意義，列次要版位；提名不等於當選。\"},{\"story_id\":86118,\"why\":\"台灣先進封裝投資具產業重要性，與晶片停供屬不同事件，列短訊且不推定因果。\"},{\"story_id\":86093,\"why\":\"遊戲上市具讀者關注度，但原稿為讀者徵集，列短訊以符合稿件性質，不作評測或銷售報導主打。\"}]}"
+   },
+   "story_id": null,
+   "phase": "layout",
+   "actor": "eic",
+   "title": "總編輯裁決",
+   "say": "比較各版提案，決定頭版放哪幾則…"
+  },
+  {
+   "i": 64,
+   "at": "06:08:08",
+   "day": "11-19",
+   "iso": "2026-11-19T06:08:08+08:00",
+   "phase": "layout",
+   "kind": "message",
+   "type": "DECISION",
+   "type_label": "總編決定",
+   "mode": "say",
+   "actor": "eic",
+   "to": "layout_editor",
+   "status": "handled",
+   "story_id": null,
+   "title": "總編輯 → 版面編輯｜總編決定",
+   "say": "頭版定案 6 則，主稿《施振榮抵深圳出席APEC 代表團：接機層級未如期待但可接受》。全站分數最高，APEC接待層級與台灣代表團回應具兩岸及外交公共性，列主稿。",
+   "detail": {
+    "message_id": 622,
+    "llm_id": 685,
+    "correlation_id": null,
+    "target_version": null,
+    "payload": "{\n \"lead\": 86089,\n \"second\": [\n  86090,\n  86094,\n  86091\n ],\n \"briefs\": [\n  86118,\n  86093\n ],\n \"links\": [],\n \"dropped\": [],\n \"reasons\": [\n  {\n   \"story_id\": 86089,\n   \"why\": \"全站分數最高，APEC接待層級與台灣代表團回應具兩岸及外交公共性，列主稿。\"\n  },\n  {\n   \"story_id\": 86090,\n   \"why\": \"停止供應中國Hopper晶片涉及美中科技競爭與AI算力供應，影響廣泛，列次要版位。\"\n  },\n  {\n   \"story_id\": 86094,\n   \"why\": \"約800萬筆個資外洩涉及民眾權益與業者通知責任，具直接公共服務價值，列次要版位。\"\n  },\n  {\n   \"story_id\": 86091,\n   \"why\": \"眾院議長提名具美國政治重要性與歷史意義，列次要版位；提名不等於當選。\"\n  },\n  {\n   \"story_id\": 86118,\n   \"why\": \"台灣先進封裝投資具產業重要性，與晶片停供屬不同事件，列短訊且不推定因果。\"\n  },\n  {\n   \"story_id\": 86093,\n   \"why\": \"遊戲上市具讀者關注度，但原稿為讀者徵集，列短訊以符合稿件性質，不作評測或銷售報導主打。\"\n  }\n ]\n}",
+    "reasons": [
+     {
+      "title": "施振榮抵深圳出席APEC　代表團：接機層級未如期待但可接受",
+      "why": "全站分數最高，APEC接待層級與台灣代表團回應具兩岸及外交公共性，列主稿。"
+     },
+     {
+      "title": "輝達停止向中國供應Hopper晶片　未說明原因與期限",
+      "why": "停止供應中國Hopper晶片涉及美中科技競爭與AI算力供應，影響廣泛，列次要版位。"
+     },
+     {
+      "title": "近期約800萬筆個資外洩 政院要求督促業者通知當事人",
+      "why": "約800萬筆個資外洩涉及民眾權益與業者通知責任，具直接公共服務價值，列次要版位。"
+     },
+     {
+      "title": "美民主黨提名 Jeffries 出任眾院議長，有望成首位黑人議長",
+      "why": "眾院議長提名具美國政治重要性與歷史意義，列次要版位；提名不等於當選。"
+     },
+     {
+      "title": "輝達投資景碩逾10億美元、與矽品簽約擴大先進封裝產能",
+      "why": "台灣先進封裝投資具產業重要性，與晶片停供屬不同事件，列短訊且不推定因果。"
+     },
+     {
+      "title": "《Grand Theft Auto VI》上市，預購銷售額已逾十五億美元",
+      "why": "遊戲上市具讀者關注度，但原稿為讀者徵集，列短訊以符合稿件性質，不作評測或銷售報導主打。"
+     }
+    ],
+    "dropped": []
+   }
+  },
+  {
+   "i": 65,
+   "at": "06:08:08",
+   "day": "11-19",
+   "iso": "2026-11-19T06:08:08+08:00",
+   "phase": "layout",
+   "kind": "plan",
+   "actor": "eic",
+   "mode": "board",
+   "title": "版面計畫 v2",
+   "say": "版面計畫 v2：總編輯的決定寫成新一版版面。頭版主稿《施振榮抵深圳出席APEC 代表團：接機層級未如期待但可…》",
+   "detail": {
+    "plan_version": 2,
+    "decided_by_message_id": 622
+   },
+   "state": {
+    "plan": 1
+   }
+  },
+  {
+   "i": 66,
+   "at": "06:08:08",
+   "day": "11-19",
+   "iso": "2026-11-19T06:08:08+08:00",
+   "phase": "layout",
+   "kind": "message",
+   "type": "REQUEST_REVISION",
+   "type_label": "要求修稿",
+   "mode": "say",
+   "actor": "layout_editor",
+   "to": "reporter",
+   "status": "handled",
+   "story_id": 86089,
+   "title": "版面編輯 → 記者｜要求修稿",
+   "say": "主稿 309 字，請縮到 300 字以內，不要刪關鍵事實",
+   "detail": {
+    "message_id": 623,
+    "llm_id": null,
+    "correlation_id": null,
+    "target_version": 1,
+    "payload": "{\n \"detail\": \"主稿 309 字，請縮到 300 字以內，不要刪關鍵事實\"\n}"
+   },
+   "walk": false
+  },
+  {
+   "i": 67,
+   "at": "06:08:19",
+   "day": "11-19",
+   "iso": "2026-11-19T06:08:19+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 11.4,
+   "detail": {
+    "llm_id": 686,
+    "secs": 11.4,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "請把主稿縮到 300 字以內，action 填 REVISE。保留人名與數字。\n\n台灣APEC領袖代表、宏碁集團創辦人施振榮18日抵達中國深圳，將於19日出席APEC領袖峰會。我方代表團成員表示，中方接機層級未達我方希望的部長層級，但經與其他經濟體核對，待遇一致，雖不滿意，仍可接受。[S2]\n\n中方安排APEC資深官員程烈，率廣東省APEC籌委會代表方濤、深圳市APEC籌委會代表莫士龍接機。代表團成員表示，希望台灣參與APEC不要與兩岸關係掛鉤，中方依照APEC慣例慎重處理相關安排。[S2][S4]\n\n施振榮抵達後表示，此行一路「暢通無阻」，讓他有點不習慣。他也強調，將向APEC各會員國傳遞台灣的重要訴求，善用台灣半導體與AI技術優勢，輔以價值外交，強化台灣在供應鏈中不可或缺的角色。[S4]",
+    "response": "{\"action\":\"REVISE\",\"headline\":\"施振榮抵深圳出席APEC峰會　代表團稱接機待遇可接受\",\"deck\":\"\",\"body\":\"台灣APEC領袖代表、宏碁集團創辦人施振榮18日抵達中國深圳，將於19日出席APEC領袖峰會。代表團成員表示，接機未達我方希望的部長層級，但與其他經濟體待遇一致，雖不滿意仍可接受。[S2]\\n\\n中方由APEC資深官員程烈率廣東省、深圳市APEC籌委會代表方濤、莫士龍接機。代表團盼台灣參與APEC不與兩岸關係掛鉤，中方依慣例慎重處理。[S2][S4]\\n\\n施振榮稱此行「暢通無阻」，有點不習慣；將向各會員國傳遞台灣訴求，善用半導體與AI優勢，輔以價值外交，強化台灣在供應鏈不可或缺的角色。[S4]\",\"why_it_matters\":\"\",\"reason\":\"\"}",
+    "version": 2,
+    "headline": "施振榮抵深圳出席APEC　代表團：接機層級未如期待但可接受",
+    "body": "台灣APEC領袖代表、宏碁集團創辦人施振榮18日抵達中國深圳，將於19日出席APEC領袖峰會。代表團成員表示，接機未達我方希望的部長層級，但與其他經濟體待遇一致，雖不滿意仍可接受。[S2]\n\n中方由APEC資深官員程烈率廣東省、深圳市APEC籌委會代表方濤、莫士龍接機。代表團盼台灣參與APEC不與兩岸關係掛鉤，中方依慣例慎重處理。[S2][S4]\n\n施振榮稱此行「暢通無阻」，有點不習慣；將向各會員國傳遞台灣訴求，善用半導體與AI優勢，輔以價值外交，強化台灣在供應鏈不可或缺的角色。[S4]",
+    "diff": "--- v1\n+++ v2\n@@ -1,5 +1,5 @@\n-台灣APEC領袖代表、宏碁集團創辦人施振榮18日抵達中國深圳，將於19日出席APEC領袖峰會。我方代表團成員表示，中方接機層級未達我方希望的部長層級，但經與其他經濟體核對，待遇一致，雖不滿意，仍可接受。[S2]\n+台灣APEC領袖代表、宏碁集團創辦人施振榮18日抵達中國深圳，將於19日出席APEC領袖峰會。代表團成員表示，接機未達我方希望的部長層級，但與其他經濟體待遇一致，雖不滿意仍可接受。[S2]\n \n-中方安排APEC資深官員程烈，率廣東省APEC籌委會代表方濤、深圳市APEC籌委會代表莫士龍接機。代表團成員表示，希望台灣參與APEC不要與兩岸關係掛鉤，中方依照APEC慣例慎重處理相關安排。[S2][S4]\n+中方由APEC資深官員程烈率廣東省、深圳市APEC籌委會代表方濤、莫士龍接機。代表團盼台灣參與APEC不與兩岸關係掛鉤，中方依慣例慎重處理。[S2][S4]\n \n-施振榮抵達後表示，此行一路「暢通無阻」，讓他有點不習慣。他也強調，將向APEC各會員國傳遞台灣的重要訴求，善用台灣半導體與AI技術優勢，輔以價值外交，強化台灣在供應鏈中不可或缺的角色。[S4]\n+施振榮稱此行「暢通無阻」，有點不習慣；將向各會員國傳遞台灣訴求，善用半導體與AI優勢，輔以價值外交，強化台灣在供應鏈不可或缺的角色。[S4]"
+   },
+   "story_id": 86089,
+   "phase": "write",
+   "actor": "reporter",
+   "title": "記者修稿",
+   "say": "改寫成 v2：《施振榮抵深圳出席APEC　代表團：接機層級未如期待但可接受》",
+   "state": {
+    "stories": {
+     "86089": {
+      "version": 2,
+      "status": "draft",
+      "headline": "施振榮抵深圳出席APEC　代表團：接機層級未如期待但可接受"
+     }
+    }
+   },
+   "paper": {
+    "label": "v2",
+    "to": "fact_checker"
+   }
+  },
+  {
+   "i": 68,
+   "at": "06:08:19",
+   "day": "11-19",
+   "iso": "2026-11-19T06:08:19+08:00",
+   "phase": "write",
+   "kind": "message",
+   "type": "REVISION_DONE",
+   "type_label": "修稿完成",
+   "mode": "say",
+   "actor": "reporter",
+   "to": "layout_editor",
+   "status": "handled",
+   "story_id": 86089,
+   "title": "記者 → 版面編輯｜修稿完成",
+   "say": "改好了，v2：縮短主稿",
+   "detail": {
+    "message_id": 624,
+    "llm_id": 686,
+    "correlation_id": null,
+    "target_version": null,
+    "payload": "{\n \"new_version\": 2,\n \"change\": \"縮短主稿\"\n}",
+    "diff": "--- v1\n+++ v2\n@@ -1,5 +1,5 @@\n-台灣APEC領袖代表、宏碁集團創辦人施振榮18日抵達中國深圳，將於19日出席APEC領袖峰會。我方代表團成員表示，中方接機層級未達我方希望的部長層級，但經與其他經濟體核對，待遇一致，雖不滿意，仍可接受。[S2]\n+台灣APEC領袖代表、宏碁集團創辦人施振榮18日抵達中國深圳，將於19日出席APEC領袖峰會。代表團成員表示，接機未達我方希望的部長層級，但與其他經濟體待遇一致，雖不滿意仍可接受。[S2]\n \n-中方安排APEC資深官員程烈，率廣東省APEC籌委會代表方濤、深圳市APEC籌委會代表莫士龍接機。代表團成員表示，希望台灣參與APEC不要與兩岸關係掛鉤，中方依照APEC慣例慎重處理相關安排。[S2][S4]\n+中方由APEC資深官員程烈率廣東省、深圳市APEC籌委會代表方濤、莫士龍接機。代表團盼台灣參與APEC不與兩岸關係掛鉤，中方依慣例慎重處理。[S2][S4]\n \n-施振榮抵達後表示，此行一路「暢通無阻」，讓他有點不習慣。他也強調，將向APEC各會員國傳遞台灣的重要訴求，善用台灣半導體與AI技術優勢，輔以價值外交，強化台灣在供應鏈中不可或缺的角色。[S4]\n+施振榮稱此行「暢通無阻」，有點不習慣；將向各會員國傳遞台灣訴求，善用半導體與AI優勢，輔以價值外交，強化台灣在供應鏈不可或缺的角色。[S4]"
+   },
+   "state": {
+    "stories": {
+     "86089": {
+      "version": 2,
+      "status": "draft",
+      "headline": "施振榮抵深圳出席APEC　代表團：接機層級未如期待但可接受"
+     }
+    }
+   },
+   "paper": {
+    "label": "v2",
+    "to": "layout_editor"
+   }
+  },
+  {
+   "i": 69,
+   "at": "06:08:19",
+   "day": "11-19",
+   "iso": "2026-11-19T06:08:19+08:00",
+   "phase": "copy",
+   "kind": "message",
+   "type": "CHALLENGE",
+   "type_label": "異議",
+   "mode": "say",
+   "actor": "copy_editor",
+   "to": "eic",
+   "status": "handled",
+   "story_id": 86089,
+   "title": "文稿編輯 → 總編輯｜異議",
+   "say": "看過了，沒問題：縮稿沒有刪掉譯名",
+   "detail": {
+    "message_id": 625,
+    "llm_id": null,
+    "correlation_id": null,
+    "target_version": 2,
+    "payload": "{\n \"problem\": \"NONE\",\n \"detail\": \"縮稿沒有刪掉譯名\"\n}"
+   }
+  },
+  {
+   "i": 70,
+   "at": "06:08:24",
+   "day": "11-19",
+   "iso": "2026-11-19T06:08:24+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 4.6,
+   "detail": {
+    "llm_id": 687,
+    "secs": 4.6,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "標題：施振榮抵深圳出席APEC　代表團：接機層級未如期待但可接受\n正文：台灣APEC領袖代表、宏碁集團創辦人施振榮18日抵達中國深圳，將於19日出席APEC領袖峰會。代表團成員表示，接機未達我方希望的部長層級，但與其他經濟體待遇一致，雖不滿意仍可接受。[S2]\n\n中方由APEC資深官員程烈率廣東省、深圳市APEC籌委會代表方濤、莫士龍接機。代表團盼台灣參與APEC不與兩岸關係掛鉤，中方依慣例慎重處理。[S2][S4]\n\n施振榮稱此行「暢通無阻」，有點不習慣；將向各會員國傳遞台灣訴求，善用半導體與AI優勢，輔以價值外交，強化台灣在供應鏈不可或缺的角色。[S4]",
+    "response": "{\"action\":\"OK\",\"problem\":\"\",\"detail\":\"標題與正文一致，未見譯名不一致；未提供原稿，無法判定縮稿是否刪除關鍵事實。\",\"required_action\":\"\"}"
+   },
+   "story_id": 86089,
+   "phase": "copy",
+   "actor": "copy_editor",
+   "title": "文稿編輯看頭版稿",
+   "say": "《施振榮抵深圳出席APEC 代表團：接機層級未如…》標題與內文一致"
+  },
+  {
+   "i": 71,
+   "at": "06:08:31",
+   "day": "11-19",
+   "iso": "2026-11-19T06:08:31+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 6.9,
+   "detail": {
+    "llm_id": 688,
+    "secs": 6.9,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "標題：輝達停止向中國供應Hopper晶片　未說明原因與期限\n正文：輝達代理執行長克雷斯（Colette Kress）週二在財報電話會議上表示，公司目前不再計劃向中國進行新的Hopper架構資料中心產品交付。她未說明停止供應的原因，也未交代這項決定是否永久實施。[S1]\n\n輝達第三季向中國銷售了價值24億美元、取得出口許可的Hopper資料中心產品。中央廣播電台報導，公司未來財測並未納入任何取得出口許可的Hopper資料中心產品，克雷斯並證實不再向中國銷售這些晶片。[S1][S5]",
+    "response": "{\"action\":\"OK\",\"problem\":\"\",\"detail\":\"標題與正文一致，譯名一致，未見可確認的關鍵事實遺漏。\",\"required_action\":\"\"}"
+   },
+   "story_id": 86090,
+   "phase": "copy",
+   "actor": "copy_editor",
+   "title": "文稿編輯看頭版稿",
+   "say": "《輝達停止向中國供應Hopper晶片 未說明原因…》標題與內文一致"
+  },
+  {
+   "i": 72,
+   "at": "06:08:37",
+   "day": "11-19",
+   "iso": "2026-11-19T06:08:37+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 6.1,
+   "detail": {
+    "llm_id": 689,
+    "secs": 6.1,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "標題：近期約800萬筆個資外洩 政院要求督促業者通知當事人\n正文：近期國內多起重大資安事件造成約800萬筆個資外洩，涉及10餘家企業及機構。行政院18日要求各部會督促所轄涉事企業及機構，依《個人資料保護法》規定，主動通知受影響當事人。[S2]\n\n數發部要求業者在知悉外洩後72小時內通知當事人，但有消費者反映，企業執行程度有限。第三方雲端服務商91App日前遭網攻，影響超過1000個品牌、約480萬名消費者，部分個資外洩；領務局則因委外廠商更新系統時設定錯誤、產生漏洞，導致大頭照等近10萬筆資料被駭客非法讀取。[S1]\n\n行政院已函請相關部會，督促涉事企業及機構依《個人資料保護法》第12條及其施行細則第22條，即時透過電話、簡訊、電子郵件等方式通知當事人，並建議同步在官網首頁、APP或實體店面張貼醒目公告，提醒可能的詐騙手法與風險。[S2]\n\n行政院打擊詐欺指揮中心提醒，即使來電者能說出身分證字號、出生年月日或住址，民眾仍應保持冷靜。接到可疑來電，應立即掛斷並撥打165反詐騙專線求證，也應留意企業及機構發布的公告。[S2]",
+    "response": "{\"action\":\"OK\",\"problem\":\"\",\"detail\":\"標題與正文一致，未見譯名不一致，亦無原稿可供確認是否刪除關鍵事實。\",\"required_action\":\"\"}"
+   },
+   "story_id": 86094,
+   "phase": "copy",
+   "actor": "copy_editor",
+   "title": "文稿編輯看頭版稿",
+   "say": "《近期約800萬筆個資外洩 政院要求督促業者通知…》標題與內文一致"
+  },
+  {
+   "i": 73,
+   "at": "06:08:42",
+   "day": "11-19",
+   "iso": "2026-11-19T06:08:42+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 5.2,
+   "detail": {
+    "llm_id": 690,
+    "secs": 5.2,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "標題：美民主黨提名 Jeffries 出任眾院議長，有望成首位黑人議長\n正文：美國眾議院民主黨週三以壓倒性支持，提名紐約州眾議員 Hakeem Jeffries 出任新一屆國會的眾議院議長。他有望成為美國史上首位領導眾議院的黑人議員。[S1][S4]\n\nJeffries 現年56歲。民主黨將於明年掌控眾議院，但他仍須在一月贏得全院表決，才能正式出任議長。[S2][S3][S5]",
+    "response": "{\"action\":\"OK\",\"problem\":\"\",\"detail\":\"標題與正文一致，譯名一致，未見可確認遭刪除的關鍵事實。\",\"required_action\":\"\"}"
+   },
+   "story_id": 86091,
+   "phase": "copy",
+   "actor": "copy_editor",
+   "title": "文稿編輯看頭版稿",
+   "say": "《美民主黨提名 Jeffries 出任眾院議長，…》標題與內文一致"
+  },
+  {
+   "i": 74,
+   "at": "06:08:47",
+   "day": "11-19",
+   "iso": "2026-11-19T06:08:47+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 5.2,
+   "detail": {
+    "llm_id": 691,
+    "secs": 5.2,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "標題：輝達投資景碩逾10億美元、與矽品簽約擴大先進封裝產能\n正文：輝達擴大與台灣供應鏈合作，景碩18日表示，獲輝達超過10億美元現金投資，將用於購置桃園幼獅廠擴產所需新增設備；日月光投控旗下矽品精密也與輝達簽訂數十億美元協議，將在台灣的先進封裝產能提升至原來的3倍。[S2]\n\n景碩規劃於2027年下半年後供應新增載板產能，並表示輝達持續與公司協商後續多個廠區投資計畫，目標至少到2030年穩定掌握載板產能。[S2]\n\n輝達宣示，將持續與景碩、矽品、台積電、鴻海、京元電、欣興等供應鏈業者合作，擴大載板、先進封裝、晶圓及委託製造等領域產能，提升目前及下一代加速運算平台的生產規模。[S2]",
+    "response": "{\"action\":\"OK\",\"problem\":\"\",\"detail\":\"標題與正文一致，譯名一致，未見可判定因縮稿刪除的關鍵事實。\",\"required_action\":\"\"}"
+   },
+   "story_id": 86118,
+   "phase": "copy",
+   "actor": "copy_editor",
+   "title": "文稿編輯看頭版稿",
+   "say": "《輝達投資景碩逾10億美元、與矽品簽約擴大先進封…》標題與內文一致"
+  },
+  {
+   "i": 75,
+   "at": "06:08:52",
+   "day": "11-19",
+   "iso": "2026-11-19T06:08:52+08:00",
+   "kind": "llm",
+   "mode": "think",
+   "secs": 5.0,
+   "detail": {
+    "llm_id": 692,
+    "secs": 5.0,
+    "ok": true,
+    "model": "gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low",
+    "error": "",
+    "prompt": "標題：《Grand Theft Auto VI》上市，預購銷售額已逾十五億美元\n正文：《Grand Theft Auto VI》正式上市，登上 PS5 與 Xbox Series X / S 平台。[S1][S3]\n\nYahoo Finance 引述市場情報公司 Sensor Tower 指出，遊戲預購銷售額已超過十五億美元，並稱這是遊戲前所未見的預購金額。[S2]\n\n《衛報》報導，這款犯罪題材系列新作據稱製作成本超過十億美元，外界普遍預期將打破銷售紀錄。[S1]",
+    "response": "{\"action\":\"OK\",\"problem\":\"\",\"detail\":\"標題與正文一致，未見譯名不一致，亦無資料可判定縮稿刪掉關鍵事實。\",\"required_action\":\"\"}"
+   },
+   "story_id": 86093,
+   "phase": "copy",
+   "actor": "copy_editor",
+   "title": "文稿編輯看頭版稿",
+   "say": "《《Grand Theft Auto VI》上市…》標題與內文一致"
+  },
+  {
+   "i": 76,
+   "at": "08:35:02",
+   "day": "11-19",
+   "iso": "2026-11-19T08:35:02+08:00",
+   "phase": "publish",
+   "kind": "publish",
+   "actor": "system",
+   "mode": "publish",
+   "title": "發行",
+   "say": "發行：網頁報紙＋Telegram。發行當下已核准 0／12 篇，沒核准的只發標題。",
+   "detail": {
+    "status": "published",
+    "approved_at_publish": 0,
+    "written": 12
+   }
+  }
+ ],
+ "summary": {
+  "collected": 6286,
+  "fetch_runs": 1862,
+  "fetch_failed": 8,
+  "sources": 101,
+  "candidates": 5403,
+  "written": 12,
+  "messages": 34,
+  "llm_calls": {
+   "section_editor": 3,
+   "reporter": 16,
+   "fact_checker": 3,
+   "layout_editor": 1,
+   "eic": 1,
+   "copy_editor": 6
+  },
+  "degraded": [],
+  "published_at": "11-19 08:35",
+  "edition_status": "published"
+ }
+}
