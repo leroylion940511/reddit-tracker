@@ -282,6 +282,7 @@ uv run python -m reddit_tracker.daily blind-export --dates YYYY-MM-DD --out DIR
 | `plans` | 每一版 `page_plans`：`version`、`decided_by`、`front{lead,second,briefs}`、`sections{版:[{story_id,display}]}` |
 | `beats` | 見下表 |
 | `summary` | 收集則數與抓取次數、候選事件數、稿數、訊息數、各角色呼叫次數、降級、發行時間 |
+| `threads` | 稿件協商串（2026-11-23，回放頁 R1）：story id（字串）→ 見下方「稿件協商串」 |
 
 每個 beat：`i`（順序）、`at`／`day`／`iso`（台北時間）、`phase`、`kind`、`actor`、`mode`、`title`、`say`（氣泡文字）、
 `detail`（右側面板：提示詞、回應、payload、diff…）、選用的 `to`、`type`／`type_label`／`status`（訊息）、`story_id`、
@@ -300,6 +301,29 @@ uv run python -m reddit_tracker.daily blind-export --dates YYYY-MM-DD --out DIR
 | `publish` | `daily_editions.published_at` | `publish` |
 
 資料直接嵌在頁面的 `<script type="application/json">`（`</` 會拆開），所以頁面另存下來就能離線重看那一期（3D 需要 three.js）。
+
+### 稿件協商串 `threads`（2026-11-23，回放頁 R1）
+
+`build_threads(beats) -> dict[str, dict]`：只從已排序的 `beats` 整理，不另查資料庫。每篇稿一串，
+收 `story_id` 是這篇的 beat、`PITCH` 合併步裡有這篇的提案、`approve` 步裡有這篇的核准；沒有 `story_id` 的
+版面異議（`PAGE_OBJECTION`）與總編決定不列（看「逐步紀錄」）。
+
+| 鍵 | 內容 |
+| --- | --- |
+| `steps` | 依時間的步驟，見下表 |
+| `challenges` | 真的提出問題的 CHALLENGE 次數（不算 `problem=NONE` 與被程式拒絕的） |
+| `requests`／`revisions` | REQUEST_REVISION／REVISION_DONE 次數（不算被拒絕的） |
+| `outcome` | 最後一個 `RELEASE` 或 `HOLD`；都沒有是 `null` |
+| `llm_secs` | 這篇所有模型呼叫耗時合計（秒） |
+
+每一步：`i`（指回 `beats[i]`）、`at`、`kind`、`type`（訊息種類，模型呼叫是 `null`）、`label`（提案、記者寫稿／記者修稿／記者反駁、
+查核員判斷、異議、看過沒問題、要求修稿、修稿完成、放行、暫緩 HOLD、文稿編輯、真人核准…；模型呼叫失敗加「（呼叫失敗）」）、
+`actor`、`to`（訊息的收件者；記者撰稿是傳給查核員）、`status`、`say`（提案那步只放這篇的優先度與角度）、
+選用的 `secs`（模型呼叫耗時；訊息則是它 `llm_call_id` 那次呼叫的耗時）、`version`、`diff`（`true` 表示 `beats[i].detail.diff` 有內容）、
+`objection`（只有 CHALLENGE：`true` 才是真的異議）。
+
+頁面：「稿件」分頁每篇顯示異議／要求修稿／改稿次數、放行或 HOLD、模型耗時；點標題展開整串，
+點任一步跳到那一步（`jump(i)`），播放時目前那步會標出；diff 只顯示在「修稿完成」那步。
 
 ### 訊息的時間、連結與狀態（2026-11-12 起）
 

@@ -71,6 +71,23 @@ ul.kv{list-style:none;margin:4px 0;padding:0;font-size:12.5px}ul.kv li{padding:2
 #stories li{padding:7px 12px;border-bottom:1px solid #eee7d8;cursor:pointer;font-size:13px}
 #stories li:hover{background:#faf5ea}
 #stories .sub{font-size:11.5px;color:var(--muted)}
+#stories li.open{background:#fbf7ee;cursor:default}
+#stories .head{cursor:pointer}
+#stories .caret{float:right;color:var(--muted);font-size:11px}
+ol.thread{list-style:none;margin:8px 0 2px;padding:0 0 0 10px;border-left:2px solid var(--rule)}
+ol.thread li{position:relative;padding:4px 6px 5px 10px;border:0;border-radius:6px;cursor:pointer;font-size:12px}
+ol.thread li::before{content:'';position:absolute;left:-16px;top:9px;width:9px;height:9px;border-radius:50%;background:#fff;border:2px solid var(--rule)}
+ol.thread li.done::before{background:var(--muted);border-color:var(--muted)}
+ol.thread li.cur{background:#fbeeda;box-shadow:inset 3px 0 0 var(--accent)}ol.thread li.cur::before{background:var(--accent);border-color:var(--accent)}
+ol.thread li:not(.done):not(.cur){opacity:.6}
+ol.thread li:hover{background:#f3ead8}
+ol.thread .row{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px}
+ol.thread time{font:11px/1.6 ui-monospace,Menlo,monospace;color:var(--muted)}
+ol.thread .who{color:var(--muted)}
+ol.thread .say{margin-top:2px;color:var(--ink)}
+.pill.t-PITCH{background:#e8edf5;color:#2d4263}.pill.t-CHALLENGE{background:#fde7c7;color:#8a4b00}.pill.t-REQUEST_REVISION,.pill.t-PAGE_OBJECTION{background:#f1e3f7;color:#5b2a72}
+.pill.t-REVISION_DONE{background:#dbe9f7;color:#1d4e80}.pill.t-RELEASE{background:#d9efdd;color:#17602d}.pill.t-HOLD{background:#fbd5d0;color:#8a1c1c}.pill.t-REBUT{background:#fde7c7;color:#8a4b00}
+.pill.t-llm{background:#fff;border:1px solid var(--rule);color:var(--ink)}.pill.t-approve{background:#1f7a3a;color:#fff}.pill.t-ok{background:#eee;color:var(--muted)}
 #transport{grid-column:1;display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--panel);border-top:1px solid var(--rule);min-width:0}
 #transport button{font:inherit;min-width:36px;height:32px;border-radius:8px;border:1px solid var(--rule);background:#fff;cursor:pointer}
 #transport button.primary{background:var(--accent);color:#fff;border-color:var(--accent);min-width:64px;font-weight:700}
@@ -130,7 +147,7 @@ const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
 const STATUS = {draft:'草稿', challenged:'有異議', hold:'HOLD', checked:'查核通過', approved:'已核准', published:'已發行'};
 const CANCEL = Symbol('cancel');
-const st = {i:-1, playing:false, speed:1, gen:0, follow:true, stories:{}, plan:-1, collected:0, busy:false};
+const st = {openStory:null, i:-1, playing:false, speed:1, gen:0, follow:true, stories:{}, plan:-1, collected:0, busy:false};
 
 let THREE = null;
 try { THREE = await import('three'); } catch (err) { console.warn('three.js 載入失敗', err); }
@@ -601,23 +618,50 @@ function buildLists() {
   $('seek').max = Math.max(0, BEATS.length - 1);
   $('timing').textContent = DATA.timing === 'reconstructed' ? '這一期的訊息時間是用模型呼叫紀錄還原的（當時訊息只記了順序）' : '';
 }
+const THREADS = DATA.threads || {};
+const OUTCOME = {RELEASE:'放行', HOLD:'HOLD'};
+function threadNode(id) {
+  const ol = el('ol', 'thread'), steps = THREADS[id]?.steps || [];
+  const diffAtDone = steps.some((x) => x.diff && x.type === 'REVISION_DONE');  // 同一份 diff 只顯示在「修稿完成」
+  for (const step of steps) {
+    const li = el('li', step.i < st.i ? 'done' : step.i === st.i ? 'cur' : ''); li.dataset.i = step.i; const row = el('div', 'row');
+    row.appendChild(el('time', null, step.at));
+    const kindCls = step.type ? (step.type === 'CHALLENGE' && !step.objection ? 't-ok' : 't-' + step.type) : step.kind === 'approve' ? 't-approve' : 't-llm';
+    row.appendChild(el('span', 'pill ' + kindCls, step.label + (step.version ? ` v${step.version}` : '')));
+    row.appendChild(el('span', 'who', `${ROLES[step.actor] || step.actor || ''}${step.to ? ' → ' + (ROLES[step.to] || step.to) : ''}`));
+    if (step.secs != null) row.appendChild(el('span', 'who', `⏱ ${step.secs} 秒`));
+    if (step.status === 'rejected') row.appendChild(el('span', 'pill rejected', '被程式拒絕'));
+    li.appendChild(row); if (step.say) li.appendChild(el('div', 'say', step.say));
+    const diff = step.diff && !(diffAtDone && step.kind === 'llm') && BEATS[step.i]?.detail?.diff;
+    if (diff) { const d = fold('v' + ((step.version || 2) - 1) + '→v' + (step.version || '?') + ' 改了什麼', diffNode(diff)); d.addEventListener('click', (e) => e.stopPropagation()); li.appendChild(d); }
+    li.title = '跳到這一步'; li.addEventListener('click', (e) => { e.stopPropagation(); jump(step.i); });
+    ol.appendChild(li);
+  }
+  if (!ol.children.length) ol.appendChild(el('li', null, '這篇沒有可列出的步驟。'));
+  return ol;
+}
 function renderStories() {
   const ul = $('stories'); ul.replaceChildren();
   const ids = Object.keys(STORIES).sort((a, b) => (STORIES[b].lead - STORIES[a].lead) || (STORIES[b].front - STORIES[a].front) || STORIES[a].section.localeCompare(STORIES[b].section));
   if (!ids.length) ul.appendChild(el('li', null, '這一期這一組沒有稿件。'));
   for (const id of ids) {
-    const s = STORIES[id], now = st.stories[id]; const li = el('li');
-    li.appendChild(el('span', 'pill', s.section_label)); li.appendChild(document.createTextNode(' '));
-    li.appendChild(el('span', 'pill ' + (now?.status || ''), now ? `${STATUS[now.status] || now.status} v${now.version || 1}` : '還沒寫'));
-    li.appendChild(el('div', null, now?.headline || s.source_title || s.headline));
-    li.appendChild(el('div', 'sub', `${s.lead ? '頭版主稿｜' : s.front ? '頭版｜' : ''}${s.kind === 'report' ? '多來源' : '單一來源'}｜分數 ${s.score}｜最後共 ${s.versions} 版`));
-    li.addEventListener('click', () => { const i = BEATS.findIndex((b) => String(b.story_id) === id); if (i >= 0) jump(i); });
+    const s = STORIES[id], now = st.stories[id], th = THREADS[id], open = st.openStory === id;
+    const li = el('li', open ? 'open' : ''); const head = el('div', 'head');
+    head.appendChild(el('span', 'caret', open ? '▾ 收起' : `▸ ${th?.steps.length || 0} 步`));
+    head.appendChild(el('span', 'pill', s.section_label)); head.appendChild(document.createTextNode(' '));
+    head.appendChild(el('span', 'pill ' + (now?.status || ''), now ? `${STATUS[now.status] || now.status} v${now.version || 1}` : '還沒寫'));
+    head.appendChild(el('div', null, now?.headline || s.source_title || s.headline));
+    head.appendChild(el('div', 'sub', `${s.lead ? '頭版主稿｜' : s.front ? '頭版｜' : ''}${s.kind === 'report' ? '多來源' : '單一來源'}｜分數 ${s.score}｜最後共 ${s.versions} 版`));
+    if (th) head.appendChild(el('div', 'sub', `異議 ${th.challenges}｜要求修稿 ${th.requests}｜改稿 ${th.revisions}｜${OUTCOME[th.outcome] || '沒有放行／暫緩紀錄'}｜模型共 ${th.llm_secs} 秒`));
+    head.addEventListener('click', () => { st.openStory = open ? null : id; renderStories(); });
+    li.appendChild(head); if (open) li.appendChild(threadNode(id));
     ul.appendChild(li);
   }
 }
 function renderProgress() {
   const i = st.i; $('seek').value = Math.max(0, i); $('count').textContent = `${i + 1} / ${BEATS.length}`;
   logItems.forEach((li, n) => { li.classList.toggle('cur', n === i); li.classList.toggle('future', n > i); });
+  for (const li of document.querySelectorAll('ol.thread li[data-i]')) { const n = Number(li.dataset.i); li.classList.toggle('cur', n === i); li.classList.toggle('done', n < i); }
   if (i >= 0) { const li = logItems[i], box = $('lists'); if (!$('log').hidden) box.scrollTop = Math.max(0, li.offsetTop - box.clientHeight / 2); }
   const b = BEATS[i]; $('clocktime').textContent = b ? b.at : '--:--:--'; $('clockday').textContent = b ? `${b.day}（台北）` : DATA.date;
   const order = DATA.phases.map((p) => p.id), at = b ? order.indexOf(b.phase) : -1;
@@ -728,7 +772,7 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'Space') { e.preventDefault(); toggle(); } else if (e.code === 'ArrowRight') jump(st.i + 1, false); else if (e.code === 'ArrowLeft') jump(st.i - 1, false);
 });
 if (matchMedia('(prefers-reduced-motion: reduce)').matches) { st.speed = 4; $('speed').value = '4'; }
-window.__office = {st, DATA, jump, toggle};
+window.__office = {st, DATA, jump, toggle, renderStories};
 </script>
 </body>
 </html>

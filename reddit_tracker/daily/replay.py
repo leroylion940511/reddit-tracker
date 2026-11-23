@@ -227,6 +227,84 @@ def _actor_of(role: str, section: str | None = None) -> str:
     return role if role in ROLE_LABELS else "system"
 
 
+THREAD_STEP = {  # (kind, type 或 actor) → 稿件協商串裡這一步叫什麼
+    ("message", "PITCH"): "提案", ("message", "CHALLENGE"): "異議", ("message", "REQUEST_REVISION"): "要求修稿",
+    ("message", "REVISION_DONE"): "修稿完成", ("message", "REBUT"): "反駁", ("message", "RELEASE"): "放行",
+    ("message", "HOLD"): "暫緩 HOLD", ("message", "APPEAL"): "申訴", ("message", "DECISION"): "總編決定",
+    ("message", "PAGE_OBJECTION"): "版面異議",
+    ("llm", "reporter"): "記者撰稿", ("llm", "fact_checker"): "查核員判斷", ("llm", "copy_editor"): "文稿編輯",
+    ("llm", "layout_editor"): "版面編輯", ("llm", "eic"): "總編輯", ("version", "pipeline"): "流水線稿件",
+    ("approve", "human"): "真人核准",
+}
+
+
+def _thread_step(beat: dict, story_id: str, secs_of_llm: dict[int, float]) -> dict:
+    detail = beat.get("detail") or {}
+    kind = beat["kind"]
+    key = (kind, beat.get("type") if kind == "message" else beat.get("actor"))
+    step = {"i": beat["i"], "at": beat["at"], "kind": kind, "type": beat.get("type"),
+            "label": THREAD_STEP.get(key, beat.get("type_label") or beat.get("title") or kind),
+            "actor": beat.get("actor"), "to": beat.get("to") or (beat.get("paper") or {}).get("to"),
+            "status": beat.get("status"), "say": beat.get("say") or ""}
+    if kind == "llm":
+        step["secs"] = beat.get("secs")
+        if detail.get("ok") is False:
+            step["label"] += "（呼叫失敗）"
+        elif beat.get("actor") == "reporter" and beat.get("title"):
+            step["label"] = beat["title"]  # 記者寫稿／記者修稿／記者反駁
+    elif detail.get("llm_id") in secs_of_llm:  # 訊息：這則訊息出自哪次模型呼叫、花多久
+        step["secs"] = secs_of_llm[detail["llm_id"]]
+    if kind == "message" and beat.get("type") == "PITCH":
+        pitch = next((p for p in detail.get("pitches") or [] if str(p.get("story_id")) == story_id), {})
+        step["say"] = f"{'想上頭版' if pitch.get('priority') == 'front' else '放本版'}：{pitch.get('angle', '')}"
+    elif kind == "approve":
+        version = next((s.get("version") for s in detail.get("stories") or [] if str(s.get("story_id")) == story_id), None)
+        step["say"] = f"{detail.get('by', '')} 核准 v{version}" if version else step["say"]
+    version = ((beat.get("state") or {}).get("stories") or {}).get(story_id, {}).get("version")
+    if version is not None:
+        step["version"] = version
+    if detail.get("diff"):
+        step["diff"] = True
+    if beat.get("type") == "CHALLENGE":
+        step["objection"] = bool(beat.get("walk"))  # False：看過沒問題（problem=NONE）或被程式拒絕
+        if not step["objection"] and beat.get("status") != "rejected":
+            step["label"] = "看過沒問題"
+    return step
+
+
+def build_threads(beats: list[dict]) -> dict[str, dict]:
+    """每篇稿的協商串：依時間列出提案 → 撰稿 → 異議 → 要求修稿 → 修稿完成（diff）→ 放行／暫緩 → 核准。
+
+    只從已排序的 `beats` 整理（不另查資料庫），`i` 指回那一步，頁面點了就跳過去。
+    """
+    secs_of_llm = {b["detail"]["llm_id"]: b.get("secs") for b in beats
+                   if b["kind"] == "llm" and (b.get("detail") or {}).get("llm_id") is not None}
+    steps: dict[str, list[dict]] = defaultdict(list)
+    for beat in beats:
+        detail = beat.get("detail") or {}
+        if beat["kind"] == "message" and beat.get("type") == "PITCH":
+            ids = [p.get("story_id") for p in detail.get("pitches") or []]
+        elif beat["kind"] == "approve":
+            ids = [s.get("story_id") for s in detail.get("stories") or []]
+        else:
+            ids = [beat.get("story_id")]
+        for sid in dict.fromkeys(i for i in ids if i is not None):
+            steps[str(sid)].append(_thread_step(beat, str(sid), secs_of_llm))
+    threads = {}
+    for sid, rows in steps.items():
+        live = [s for s in rows if s["status"] != "rejected"]
+        outcome = next((s["type"] for s in reversed(live) if s["type"] in ("RELEASE", "HOLD")), None)
+        threads[sid] = {
+            "steps": rows,
+            "challenges": sum(1 for s in live if s.get("objection")),
+            "revisions": sum(1 for s in live if s["type"] == "REVISION_DONE"),
+            "requests": sum(1 for s in live if s["type"] == "REQUEST_REVISION"),
+            "outcome": outcome,
+            "llm_secs": round(sum(s.get("secs") or 0 for s in rows if s["kind"] == "llm"), 1),
+        }
+    return threads
+
+
 def build_replay(session: Session, edition_date: date, run_variant: str = "mas") -> dict:
     """一期的回放資料（純 dict，可直接 json.dumps）。沒有這一期的資料時 beats 是空的。"""
     edition = session.scalar(select(DailyEdition).where(DailyEdition.edition_date == edition_date))
@@ -654,6 +732,7 @@ def build_replay(session: Session, edition_date: date, run_variant: str = "mas")
         "timing": "recorded" if recorded else "reconstructed",
         "phases": [{"id": key, "label": label} for key, label in PHASES if any(b["phase"] == key for b in beats)],
         "roles": ROLE_LABELS, "stories": stories_out, "plans": plan_out, "beats": beats,
+        "threads": build_threads(beats),
         "summary": {
             "collected": totals["new"], "fetch_runs": totals["runs"], "fetch_failed": totals["failed"],
             "sources": totals["sources"], "candidates": candidates, "written": len(versions),
