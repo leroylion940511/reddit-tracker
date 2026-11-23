@@ -58,6 +58,7 @@
 - 👤 **要不要修 M 的證據包，等志晨決定（沒有排進自動佇列）**：會改 M 記者看到的來源與 `request_hash`、也改凍結後的線上行為。建議做法：加開關（預設關閉），開啟時 M 的 `run_mas` 傳當天 `context`，白名單改成「登錄表來源 id 對應的實際文章網域」，不是 feed 網域。
 - 📝 唯讀複本的小坑：`python -m reddit_tracker.daily trace` 會用讀寫方式開 WAL 複本，關閉時清掉空的 `-wal`／`-shm`，之後 `mode=ro` 打不開；資料沒變，用 `?immutable=1` 讀（`open_ro` 已處理）。
 - 測試：worktree 全套 530 passed／7 skipped；ruff 通過。不需要重載 newsroom。
+- ✅ 併入 main（`554d0fb`，2026-11-24 07:07 fast-forward）：production 全套 533 passed／4 skipped；只動文件、`scripts/`、測試，沒有重載；scheduler Python process 1 個。
 - ➡️ 下一步：第 7 項 P0-3a 申請單草稿。
 
 ## 本次變更（2026-11-23 晚 — 回放頁 R4 本期互動摘要卡，`claude-auto`；R1–R4 全部完成）
