@@ -1,9 +1,9 @@
-"""回放頁 R1 稿件協商串（`build_threads`）、R2 角色泳道（`build_lanes`）、R3 播放控制。fixture 是 11/19 M 組真實的 build_replay 輸出。"""
+"""回放頁 R1 稿件協商串、R2 角色泳道、R3 播放控制、R4 互動摘要卡。fixture 是 11/19 M 組真實的 build_replay 輸出。"""
 import json
 from pathlib import Path
 
 from reddit_tracker.daily.office_page import render_office
-from reddit_tracker.daily.replay import build_lanes, build_replay, build_threads
+from reddit_tracker.daily.replay import build_card, build_lanes, build_replay, build_threads
 from tests.test_mas_steps import DAY
 from tests.test_replay_office import _run
 
@@ -102,3 +102,34 @@ def test_office_page_has_playback_controls(session):
     for needle in ('id="onlyact"', 'id="nextch"', "function skippable", "function nextObjection",
                    "'KeyC'", "'KeyI'", "'Digit4'", "params.get('only')"):
         assert needle in html, needle
+
+
+# ── 回放頁 R4：本期互動摘要卡（`build_card`） ──
+
+def test_card_counts_match_fixture_and_page_summary():
+    data = json.loads(FIXTURE.read_text(encoding="utf-8"))
+    beats = data["beats"]
+    lanes, threads = build_lanes(beats, "mas"), build_threads(beats)
+    card = build_card(beats, lanes, threads)
+    counts = card["counts"]
+    assert counts["messages"] == data["summary"]["messages"] == 34  # PITCH 照篇數算，才會和 agent_messages 對得上
+    assert counts["llm_calls"] == sum(data["summary"]["llm_calls"].values()) == 30
+    assert {k: counts[k] for k in ("pitches", "challenges", "checks_ok", "requests", "page_objections",
+                                   "revisions", "holds", "revised_stories", "revised_released", "llm_failed")} == {
+        "pitches": 12, "challenges": 2, "checks_ok": 1, "requests": 1, "page_objections": 2,
+        "revisions": 3, "holds": 0, "revised_stories": 3, "revised_released": 3, "llm_failed": 1}
+    assert card["matrix"]["fact_checker"] == {"reporter": 2}
+    assert sum(sum(row.values()) for row in card["matrix"].values()) == counts["messages"]
+    reporter = card["roles"]["reporter"]
+    assert (reporter["calls"], reporter["failed"], reporter["sent"]) == (16, 1, 3)
+    assert counts["span_secs"] == 406
+
+
+def test_build_replay_and_office_page_carry_card(session):
+    _run(session)
+    data = build_replay(session, DAY, "mas")
+    counts = data["card"]["counts"]
+    assert counts["messages"] == data["summary"]["messages"]
+    assert counts["llm_calls"] == sum(data["summary"]["llm_calls"].values())
+    html = render_office(session, DAY, "mas")
+    assert 'data-tab="card"' in html and "function cardMarkdown" in html

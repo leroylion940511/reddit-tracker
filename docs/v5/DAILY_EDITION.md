@@ -284,6 +284,7 @@ uv run python -m reddit_tracker.daily blind-export --dates YYYY-MM-DD --out DIR
 | `summary` | 收集則數與抓取次數、候選事件數、稿數、訊息數、各角色呼叫次數、降級、發行時間 |
 | `threads` | 稿件協商串（2026-11-23，回放頁 R1）：story id（字串）→ 見下方「稿件協商串」 |
 | `lanes` | 角色泳道時序圖（2026-11-23，回放頁 R2）：見下方「角色泳道 `lanes`」 |
+| `card` | 本期互動摘要卡（2026-11-23，回放頁 R4）：見下方「互動摘要卡 `card`」 |
 
 每個 beat：`i`（順序）、`at`／`day`／`iso`（台北時間）、`phase`、`kind`、`actor`、`mode`、`title`、`say`（氣泡文字）、
 `detail`（右側面板：提示詞、回應、payload、diff…）、選用的 `to`、`type`／`type_label`／`status`（訊息）、`story_id`、
@@ -339,6 +340,19 @@ M 組頁面不列 P 組流水線（`actor=pipeline`）的呼叫。
 顏色依種類（提案、異議、看過沒問題、要求修稿／版面異議、修稿完成、放行、HOLD、總編決定），被程式拒絕的畫虛線；
 模型呼叫是方塊，高度約與秒數成正比（90 秒封頂），失敗是紅框；真人核准是綠色菱形。滑過顯示完整說明，點擊跳到那一步；
 播放時目前那列會標出並捲到中間。
+
+### 互動摘要卡 `card`（2026-11-23，回放頁 R4）
+
+`build_card(beats, lanes, threads) -> dict`：只用 `build_lanes`、`build_threads` 的結果算（M 組頁面不含 P 組呼叫），和其他分頁的數字一致。
+PITCH 在 beats 裡同一版併成一步，這裡照提案篇數算，所以 `messages` 會等於 `summary.messages`（agent_messages 列數，含被拒絕的除外）。
+
+| 鍵 | 內容 |
+| --- | --- |
+| `counts` | `messages`（沒被拒絕的訊息則數）、`rejected`、`pitches`、`challenges`（真的異議）、`checks_ok`（看過沒問題）、`requests`、`page_objections`、`revisions`、`rebuts`、`releases`、`holds`、`decisions`；`stories`、`challenged_stories`、`revised_stories`、`revised_released`（改過稿且最後放行）、`held_stories`（最後是 HOLD）；`llm_calls`、`llm_failed`、`llm_secs`；`span_secs`（第一個到最後一個互動的秒數） |
+| `matrix` | 發送角色 → {接收角色 → 則數}；沒有收件者的鍵是 `""`；不含被拒絕的訊息 |
+| `roles` | 泳道上每個角色：`label`、`short`、`calls`、`failed`、`secs`、`avg_secs`、`sent`（發出訊息則數） |
+
+頁面：「摘要」分頁顯示六格數字、角色×角色矩陣（顏色深淺依則數）、各角色呼叫表；「複製成 Markdown」把同一份數字複製成報告可用的表格（剪貼簿不能用時直接顯示在下方）。
 
 ### 播放控制（2026-11-23，回放頁 R3；純前端）
 

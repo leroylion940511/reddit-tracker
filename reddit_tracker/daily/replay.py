@@ -344,6 +344,65 @@ def build_lanes(beats: list[dict], run_variant: str = "mas") -> dict:
     return {"lanes": lanes, "events": events}
 
 
+def build_card(beats: list[dict], lanes: dict, threads: dict[str, dict]) -> dict:
+    """本期互動摘要卡（回放頁 R4）：誰對誰發幾則、異議／改稿／HOLD 次數、各角色呼叫次數與耗時。
+
+    只從 `build_lanes`（已排除 M 組頁面上的 P 組呼叫）與 `build_threads` 的結果算，數字和頁面其他分頁一致。
+    PITCH 在 beats 裡同一版併成一步，這裡照提案篇數算則數。
+    """
+    by_i = {b["i"]: b for b in beats}
+    matrix: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    sent: dict[str, int] = defaultdict(int)
+    kinds: dict[str, int] = defaultdict(int)
+    rejected = 0
+    for event in lanes["events"]:
+        if event["kind"] != "message":
+            continue
+        if event["status"] == "rejected":
+            rejected += 1
+            continue
+        detail = by_i[event["i"]].get("detail") or {}
+        count = len(detail.get("pitches") or []) if event["type"] == "PITCH" else 1
+        matrix[event["actor"]][event["to"] or ""] += count
+        sent[event["actor"]] += count
+        key = event["type"]
+        if key == "CHALLENGE":
+            key = "CHALLENGE" if event.get("objection") else "CHALLENGE_NONE"
+        kinds[key] += count
+    roles: dict[str, dict] = {}
+    for lane in lanes["lanes"]:
+        calls = [e for e in lanes["events"] if e["kind"] == "llm" and e["actor"] == lane["id"]]
+        secs = round(sum(e.get("secs") or 0 for e in calls), 1)
+        roles[lane["id"]] = {"label": lane["label"], "short": lane["short"], "calls": len(calls),
+                             "failed": sum(1 for e in calls if e.get("ok") is False), "secs": secs,
+                             "avg_secs": round(secs / len(calls), 1) if calls else 0, "sent": sent.get(lane["id"], 0)}
+    revised = [t for t in threads.values() if t["revisions"]]
+    times = [by_i[e["i"]]["iso"] for e in lanes["events"] if "iso" in by_i[e["i"]]]
+    span = 0
+    if times:
+        span = int((datetime.fromisoformat(max(times)) - datetime.fromisoformat(min(times))).total_seconds())
+    return {
+        "counts": {
+            "messages": sum(sent.values()), "rejected": rejected,
+            "pitches": kinds.get("PITCH", 0), "challenges": kinds.get("CHALLENGE", 0),
+            "checks_ok": kinds.get("CHALLENGE_NONE", 0), "requests": kinds.get("REQUEST_REVISION", 0),
+            "page_objections": kinds.get("PAGE_OBJECTION", 0), "revisions": kinds.get("REVISION_DONE", 0),
+            "rebuts": kinds.get("REBUT", 0), "releases": kinds.get("RELEASE", 0), "holds": kinds.get("HOLD", 0),
+            "decisions": kinds.get("DECISION", 0),
+            "stories": len(threads), "challenged_stories": sum(1 for t in threads.values() if t["challenges"]),
+            "revised_stories": len(revised),
+            "revised_released": sum(1 for t in revised if t["outcome"] == "RELEASE"),
+            "held_stories": sum(1 for t in threads.values() if t["outcome"] == "HOLD"),
+            "llm_calls": sum(r["calls"] for r in roles.values()),
+            "llm_failed": sum(r["failed"] for r in roles.values()),
+            "llm_secs": round(sum(r["secs"] for r in roles.values()), 1),
+            "span_secs": span,
+        },
+        "matrix": {sender: dict(row) for sender, row in matrix.items()},
+        "roles": roles,
+    }
+
+
 def build_replay(session: Session, edition_date: date, run_variant: str = "mas") -> dict:
     """一期的回放資料（純 dict，可直接 json.dumps）。沒有這一期的資料時 beats 是空的。"""
     edition = session.scalar(select(DailyEdition).where(DailyEdition.edition_date == edition_date))
@@ -749,6 +808,7 @@ def build_replay(session: Session, edition_date: date, run_variant: str = "mas")
         })
 
     beats = timeline.beats()
+    threads, lanes = build_threads(beats), build_lanes(beats, run_variant)
     stories_out = {}
     final_plan = plan_out[-1] if plan_out else None
     front_ids = []
@@ -771,8 +831,7 @@ def build_replay(session: Session, edition_date: date, run_variant: str = "mas")
         "timing": "recorded" if recorded else "reconstructed",
         "phases": [{"id": key, "label": label} for key, label in PHASES if any(b["phase"] == key for b in beats)],
         "roles": ROLE_LABELS, "stories": stories_out, "plans": plan_out, "beats": beats,
-        "threads": build_threads(beats),
-        "lanes": build_lanes(beats, run_variant),
+        "threads": threads, "lanes": lanes, "card": build_card(beats, lanes, threads),
         "summary": {
             "collected": totals["new"], "fetch_runs": totals["runs"], "fetch_failed": totals["failed"],
             "sources": totals["sources"], "candidates": candidates, "written": len(versions),

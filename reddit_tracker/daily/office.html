@@ -84,6 +84,18 @@ ul.kv{list-style:none;margin:4px 0;padding:0;font-size:12.5px}ul.kv li{padding:2
 #lanes g.ev{cursor:pointer}#lanes g.ev .bg{fill:transparent}#lanes g.ev:hover .bg{fill:#f3ead8}
 #lanes g.ev.cur .bg{fill:#fbeeda}#lanes g.ev.future{opacity:.45}
 #lanes g.ev.cur .tm{fill:var(--accent);font-weight:700}
+#card{padding:10px 12px 16px;font-size:12.5px}
+#card h3{font-size:14px;margin:0 0 2px}#card h4{font-size:12.5px;margin:12px 0 4px;color:var(--muted)}
+#card .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+#card .kpi{background:#f6f1e6;border:1px solid var(--rule);border-radius:8px;padding:6px 8px}
+#card .kpi b{display:block;font:700 20px/1.1 ui-monospace,Menlo,monospace;color:var(--ink)}#card .kpi span{font-size:11px;color:var(--muted)}
+#card .kpi.warn b{color:var(--warn)}#card .kpi.bad b{color:var(--bad)}#card .kpi.ok b{color:var(--ok)}
+#card table{border-collapse:collapse;width:100%;font-size:11.5px}
+#card th,#card td{border:1px solid #e6dcc9;padding:3px 4px;text-align:center}
+#card th{background:#f6f1e6;font-weight:600}#card td.z{color:#cfc5b2}
+#card table.roles td:first-child,#card table.roles th:first-child{text-align:left}
+#card .note{font-size:11px;color:var(--muted);margin:6px 0 0}
+#card button{font:inherit;font-size:12px;margin-top:10px;padding:4px 10px;border-radius:6px;border:1px solid var(--rule);background:#fff;cursor:pointer}
 ol.thread{list-style:none;margin:8px 0 2px;padding:0 0 0 10px;border-left:2px solid var(--rule)}
 ol.thread li{position:relative;padding:4px 6px 5px 10px;border:0;border-radius:6px;cursor:pointer;font-size:12px}
 ol.thread li::before{content:'';position:absolute;left:-16px;top:9px;width:9px;height:9px;border-radius:50%;background:#fff;border:2px solid var(--rule)}
@@ -135,8 +147,8 @@ ol.thread .say{margin-top:2px;color:var(--ink)}
   </div>
   <aside id="panel">
     <section id="now" aria-live="polite"></section>
-    <div id="tabs"><button type="button" class="on" data-tab="log">逐步紀錄</button><button type="button" data-tab="stories">稿件</button><button type="button" data-tab="lanes">互動</button></div>
-    <div id="lists"><ol id="log"></ol><ul id="stories" hidden></ul><div id="lanes" hidden></div></div>
+    <div id="tabs"><button type="button" class="on" data-tab="log">逐步紀錄</button><button type="button" data-tab="stories">稿件</button><button type="button" data-tab="lanes">互動</button><button type="button" data-tab="card">摘要</button></div>
+    <div id="lists"><ol id="log"></ol><ul id="stories" hidden></ul><div id="lanes" hidden></div><div id="card" hidden></div></div>
   </aside>
   <footer id="transport">
     <button type="button" id="prev" title="上一步（←）">⏮</button>
@@ -711,6 +723,73 @@ function buildLanes() {
   }
   box.appendChild(svg);
 }
+const CARD = DATA.card;
+const VARIANT_NAME = DATA.variant === 'mas' ? 'M 組（MAS 編輯室）' : 'P 組（流水線）';
+function mmss(secs) { const m = Math.floor(secs / 60), s = secs % 60; return m ? `${m} 分 ${s} 秒` : `${s} 秒`; }
+function cardMarkdown() {
+  const c = CARD.counts, L = DATA.lanes.lanes, M = CARD.matrix, cols = L.filter((l) => Object.values(M).some((r) => r[l.id]));
+  const none = Object.values(M).some((r) => r['']);
+  const lines = [`### ${DATA.date} ${VARIANT_NAME} 互動摘要`, '',
+    `- 角色之間的訊息 ${c.messages} 則（被程式拒絕 ${c.rejected}）；協商歷時 ${mmss(c.span_secs)}`,
+    `- 異議 ${c.challenges} 次（${c.challenged_stories} 篇）；看過沒問題 ${c.checks_ok} 次；要求修稿 ${c.requests}、版面異議 ${c.page_objections}`,
+    `- 改稿 ${c.revisions} 次（${c.revised_stories} 篇，改完放行 ${c.revised_released} 篇）；HOLD ${c.holds} 次（最後暫扣 ${c.held_stories} 篇）`,
+    `- 模型呼叫 ${c.llm_calls} 次（失敗 ${c.llm_failed}），合計 ${c.llm_secs} 秒`, '',
+    `| 發送＼接收 | ${cols.map((l) => l.short).join(' | ')}${none ? ' | （無）' : ''} |`, `| --- |${' ---: |'.repeat(cols.length + (none ? 1 : 0))}`];
+  for (const l of L) if (M[l.id]) lines.push(`| ${l.label} | ${cols.map((t) => M[l.id][t.id] || 0).join(' | ')}${none ? ' | ' + (M[l.id][''] || 0) : ''} |`);
+  lines.push('', '| 角色 | 呼叫 | 失敗 | 合計秒 | 平均秒 | 發出訊息 |', '| --- | ---: | ---: | ---: | ---: | ---: |');
+  for (const r of Object.values(CARD.roles)) lines.push(`| ${r.label} | ${r.calls} | ${r.failed} | ${r.secs} | ${r.avg_secs} | ${r.sent} |`);
+  return lines.join('\n') + '\n';
+}
+function buildCard() {
+  const box = $('card'); if (!CARD) return;
+  const c = CARD.counts, L = DATA.lanes.lanes, M = CARD.matrix;
+  box.appendChild(el('h3', null, `${DATA.date}｜${VARIANT_NAME}｜本期互動摘要`));
+  box.appendChild(el('p', 'note', `${c.stories} 篇稿；從第一則提案到最後一個互動 ${mmss(c.span_secs)}`));
+  const kpis = el('div', 'kpis');
+  const kpi = (n, label, cls) => { const d = el('div', 'kpi' + (cls ? ' ' + cls : '')); d.appendChild(el('b', null, String(n))); d.appendChild(el('span', null, label)); kpis.appendChild(d); };
+  kpi(c.messages, `則訊息${c.rejected ? `（被拒 ${c.rejected}）` : ''}`);
+  kpi(c.challenges, `次異議（${c.challenged_stories} 篇）`, c.challenges ? 'warn' : '');
+  kpi(c.requests + c.page_objections, `要求修稿 ${c.requests}／版面異議 ${c.page_objections}`);
+  kpi(`${c.revised_released}/${c.revised_stories}`, `篇改稿後放行（改 ${c.revisions} 次）`, 'ok');
+  kpi(c.holds, `次 HOLD（暫扣 ${c.held_stories} 篇）`, c.holds ? 'bad' : '');
+  kpi(c.llm_calls, `次模型呼叫，${Math.round(c.llm_secs)} 秒${c.llm_failed ? `（失敗 ${c.llm_failed}）` : ''}`);
+  box.appendChild(kpis);
+  box.appendChild(el('h4', null, '誰對誰發幾則（列＝發送，欄＝接收）'));
+  const cols = L.filter((l) => Object.values(M).some((r) => r[l.id])), none = Object.values(M).some((r) => r['']);
+  const max = Math.max(1, ...Object.values(M).flatMap((r) => Object.values(r)));
+  const t = el('table'), hr = el('tr'); hr.appendChild(el('th', null, '發＼收'));
+  for (const l of cols) { const th = el('th', null, l.short); th.title = l.label; hr.appendChild(th); }
+  if (none) hr.appendChild(el('th', null, '無'));
+  t.appendChild(hr);
+  for (const l of L) {
+    if (!M[l.id]) continue; const tr = el('tr'), th = el('th', null, l.short); th.title = l.label; tr.appendChild(th);
+    for (const to of [...cols.map((x) => x.id), ...(none ? [''] : [])]) {
+      const n = M[l.id][to] || 0, td = el('td', n ? null : 'z', String(n));
+      if (n) td.style.background = `rgba(138,28,28,${(.08 + .5 * n / max).toFixed(2)})`;
+      td.title = `${l.label} → ${to ? (ROLES[to] || to) : '（沒有收件者）'}：${n} 則`; tr.appendChild(td);
+    }
+    t.appendChild(tr);
+  }
+  box.appendChild(t);
+  box.appendChild(el('p', 'note', '提案照篇數算；放行是查核工具（程式）發的；被程式拒絕的訊息不算進表格。'));
+  box.appendChild(el('h4', null, '各角色的模型呼叫'));
+  const rt = el('table', 'roles'), rh = el('tr');
+  for (const h of ['角色', '呼叫', '失敗', '合計秒', '平均秒', '發訊息']) rh.appendChild(el('th', null, h));
+  rt.appendChild(rh);
+  for (const r of Object.values(CARD.roles)) {
+    const tr = el('tr'); tr.appendChild(el('td', null, r.label));
+    for (const v of [r.calls, r.failed, r.secs, r.avg_secs, r.sent]) tr.appendChild(el('td', v ? null : 'z', String(v)));
+    rt.appendChild(tr);
+  }
+  box.appendChild(rt);
+  const btn = el('button', null, '複製成 Markdown（貼進報告）'); btn.type = 'button';
+  btn.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(cardMarkdown()); btn.textContent = '已複製 ✓'; }
+    catch { const pre = el('pre', null, cardMarkdown()); box.appendChild(pre); btn.textContent = '無法存取剪貼簿，已顯示在下方'; }
+    setTimeout(() => { btn.textContent = '複製成 Markdown（貼進報告）'; }, 1800);
+  });
+  box.appendChild(btn);
+}
 function renderProgress() {
   const i = st.i; $('seek').value = Math.max(0, i); $('count').textContent = `${i + 1} / ${BEATS.length}`;
   logItems.forEach((li, n) => { li.classList.toggle('cur', n === i); li.classList.toggle('future', n > i); });
@@ -837,7 +916,7 @@ function toggle() {
 }
 
 /* ───────────────────────── 啟動 ───────────────────────── */
-buildLists(); buildLanes(); rebuild(0); renderNow(null); renderProgress();
+buildLists(); buildLanes(); buildCard(); rebuild(0); renderNow(null); renderProgress();
 if (!BEATS.length) { $('start').firstElementChild.textContent = '這一期沒有可回放的紀錄'; $('start').firstElementChild.disabled = true; }
 $('startbtn').addEventListener('click', toggle); $('play').addEventListener('click', toggle);
 $('prev').addEventListener('click', () => jump(step(st.i, -1), false)); $('next').addEventListener('click', () => jump(step(st.i, 1), false));
@@ -848,7 +927,7 @@ if (!BEATS.some(isObjection)) { $('nextch').disabled = true; $('nextch').title =
 $('seek').addEventListener('change', (e) => jump(Number(e.target.value)));
 $('speed').addEventListener('change', (e) => setSpeed(Number(e.target.value) || 1));
 $('follow').addEventListener('change', (e) => { st.follow = e.target.checked; });
-for (const btn of $('tabs').children) btn.addEventListener('click', () => { for (const b of $('tabs').children) b.classList.toggle('on', b === btn); for (const id of ['log', 'stories', 'lanes']) $(id).hidden = btn.dataset.tab !== id; renderProgress(); });
+for (const btn of $('tabs').children) btn.addEventListener('click', () => { for (const b of $('tabs').children) b.classList.toggle('on', b === btn); for (const id of ['log', 'stories', 'lanes', 'card']) $(id).hidden = btn.dataset.tab !== id; renderProgress(); });
 window.addEventListener('keydown', (e) => {
   if (e.target.matches?.('input,select,button,summary')) return;
   if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -860,7 +939,7 @@ if (matchMedia('(prefers-reduced-motion: reduce)').matches) setSpeed(4);
 const params = new URLSearchParams(location.search);  // demo 用：?only=1&speed=2
 if (params.get('only') === '1') setOnlyAct(true);
 if (['1', '2', '4', '0.5'].includes(params.get('speed'))) setSpeed(Number(params.get('speed')));
-window.__office = {st, DATA, jump, toggle, renderStories, skippable, step, setOnlyAct};
+window.__office = {st, DATA, jump, toggle, renderStories, skippable, step, setOnlyAct, cardMarkdown};
 </script>
 </body>
 </html>
