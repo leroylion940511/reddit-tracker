@@ -66,6 +66,9 @@ ul.kv{list-style:none;margin:4px 0;padding:0;font-size:12.5px}ul.kv li{padding:2
 #log li:hover{background:#faf5ea}
 #log li.cur{background:#fbeeda;box-shadow:inset 3px 0 0 var(--accent)}
 #log li.future{opacity:.5}
+#log li.skip{opacity:.28}#log li.skip.cur{opacity:1}
+#transport button.on{background:#fbeeda;border-color:var(--accent);color:var(--accent);font-weight:700}
+#transport kbd{font:10px ui-monospace,Menlo,monospace;border:1px solid var(--rule);border-radius:3px;padding:0 3px;color:var(--muted)}
 #log time{font:11px/1.6 ui-monospace,Menlo,monospace;color:var(--muted)}
 #log b{font-weight:600}
 #stories li{padding:7px 12px;border-bottom:1px solid #eee7d8;cursor:pointer;font-size:13px}
@@ -96,7 +99,7 @@ ol.thread .say{margin-top:2px;color:var(--ink)}
 .pill.t-REVISION_DONE{background:#dbe9f7;color:#1d4e80}.pill.t-RELEASE{background:#d9efdd;color:#17602d}.pill.t-HOLD{background:#fbd5d0;color:#8a1c1c}.pill.t-REBUT{background:#fde7c7;color:#8a4b00}
 .pill.t-llm{background:#fff;border:1px solid var(--rule);color:var(--ink)}.pill.t-approve{background:#1f7a3a;color:#fff}.pill.t-ok{background:#eee;color:var(--muted)}
 #transport{grid-column:1;display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--panel);border-top:1px solid var(--rule);min-width:0}
-#transport button{font:inherit;min-width:36px;height:32px;border-radius:8px;border:1px solid var(--rule);background:#fff;cursor:pointer}
+#transport button{white-space:nowrap;padding:0 8px;font:inherit;min-width:36px;height:32px;border-radius:8px;border:1px solid var(--rule);background:#fff;cursor:pointer}
 #transport button.primary{background:var(--accent);color:#fff;border-color:var(--accent);min-width:64px;font-weight:700}
 #transport input[type=range]{flex:1;min-width:60px;accent-color:var(--accent)}
 #transport select{font:inherit;height:32px;border-radius:8px;border:1px solid var(--rule);background:#fff}
@@ -139,9 +142,11 @@ ol.thread .say{margin-top:2px;color:var(--ink)}
     <button type="button" id="prev" title="上一步（←）">⏮</button>
     <button type="button" id="play" class="primary" title="播放／暫停（空白鍵）">▶ 播放</button>
     <button type="button" id="next" title="下一步（→）">⏭</button>
+    <button type="button" id="onlyact" title="只看角色之間的互動：略過收集、聚合與單純的模型思考（I）">只看互動</button>
+    <button type="button" id="nextch" title="跳到下一個真的異議 CHALLENGE（C；Shift＋C 上一個）">⚑ 下個異議</button>
     <input type="range" id="seek" min="0" max="0" value="0" aria-label="進度">
     <span id="count">0 / 0</span>
-    <label>速度 <select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+    <label title="快捷鍵 1／2／4">速度 <select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
     <label class="follow"><input type="checkbox" id="follow" checked> 鏡頭跟隨</label>
   </footer>
 </div>
@@ -154,7 +159,7 @@ const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
 const STATUS = {draft:'草稿', challenged:'有異議', hold:'HOLD', checked:'查核通過', approved:'已核准', published:'已發行'};
 const CANCEL = Symbol('cancel');
-const st = {openStory:null, i:-1, playing:false, speed:1, gen:0, follow:true, stories:{}, plan:-1, collected:0, busy:false};
+const st = {onlyAct:false, openStory:null, i:-1, playing:false, speed:1, gen:0, follow:true, stories:{}, plan:-1, collected:0, busy:false};
 
 let THREE = null;
 try { THREE = await import('three'); } catch (err) { console.warn('three.js 載入失敗', err); }
@@ -777,6 +782,24 @@ async function act(beat, g) {
     await ok(Promise.all(flights)); await ok(wait(1200));
   } else await ok(wait(1500));
 }
+const SKIP_KINDS = new Set(['collect', 'cluster', 'snapshot']);
+function skippable(beat) {  // 「只看互動」略過：收集、聚合、快照，與沒有傳出東西的模型思考
+  return SKIP_KINDS.has(beat.kind) || (beat.kind === 'llm' && !beat.paper && !beat.state);
+}
+function step(i, dir) {  // 從 i 往 dir 方向找下一個要播的步；只看互動時跳過可略過的
+  let n = i + dir; while (st.onlyAct && n >= 0 && n < BEATS.length && skippable(BEATS[n])) n += dir;
+  return n;
+}
+const isObjection = (b) => b.type === 'CHALLENGE' && b.status !== 'rejected' && b.walk;
+function nextObjection(dir) {
+  for (let n = st.i + dir; n >= 0 && n < BEATS.length; n += dir) if (isObjection(BEATS[n])) return n;
+  return -1;
+}
+function setOnlyAct(on) {
+  st.onlyAct = on; $('onlyact').classList.toggle('on', on); $('onlyact').setAttribute('aria-pressed', on);
+  logItems.forEach((li, n) => li.classList.toggle('skip', on && skippable(BEATS[n])));
+}
+function setSpeed(v) { st.speed = v; $('speed').value = String(v); }
 async function playBeat(i) {
   const g = st.gen, beat = BEATS[i]; st.i = i; st.busy = true; ageBubbles(); renderProgress(); renderNow(beat);
   try { if (beat.mode === 'board' || beat.mode === 'stamp') applyState(beat); await act(beat, g); if (!(beat.mode === 'board' || beat.mode === 'stamp')) applyState(beat); }
@@ -786,7 +809,12 @@ async function playBeat(i) {
 }
 async function loop() {
   const g = st.gen;
-  while (st.playing && g === st.gen && st.i < BEATS.length - 1) { if (!(await playBeat(st.i + 1))) return; }
+  while (st.playing && g === st.gen && st.i < BEATS.length - 1) {
+    const n = step(st.i, 1);
+    if (n >= BEATS.length) { for (let k = st.i + 1; k < BEATS.length; k++) applyState(BEATS[k], true); st.i = BEATS.length - 1; refreshState(); break; }
+    for (let k = st.i + 1; k < n; k++) applyState(BEATS[k], true);  // 略過的步：結果照樣套上，不播動畫
+    if (!(await playBeat(n))) return;
+  }
   if (g === st.gen) { st.playing = false; renderProgress(); }
 }
 function rebuild(upto) {  // 把第 0..upto-1 步的結果直接套上，不播動畫
@@ -798,12 +826,12 @@ function rebuild(upto) {  // 把第 0..upto-1 步的結果直接套上，不播�
 function jump(i, keepPlaying) {
   if (!BEATS.length) return; i = Math.min(BEATS.length - 1, Math.max(0, i));
   const playing = keepPlaying ?? st.playing; rebuild(i); st.i = i - 1; st.playing = playing; $('start').style.display = 'none';
-  if (playing) loop(); else playBeat(i);
+  if (playing) playBeat(i).then((done) => { if (done) loop(); }); else playBeat(i);  // 點到的這一步一定播，之後才照「只看互動」略過
 }
 function toggle() {
   $('start').style.display = 'none';
   if (st.playing) { st.playing = false; renderProgress(); return; }
-  if (st.i >= BEATS.length - 1) { jump(0, true); return; }
+  if (step(st.i, 1) >= BEATS.length) { jump(Math.max(0, step(-1, 1)), true); return; }
   st.playing = true; renderProgress();
   if (!st.busy) loop(); else { const g = st.gen; const t = setInterval(() => { if (g !== st.gen || !st.playing) clearInterval(t); else if (!st.busy) { clearInterval(t); loop(); } }, 120); }
 }
@@ -812,17 +840,27 @@ function toggle() {
 buildLists(); buildLanes(); rebuild(0); renderNow(null); renderProgress();
 if (!BEATS.length) { $('start').firstElementChild.textContent = '這一期沒有可回放的紀錄'; $('start').firstElementChild.disabled = true; }
 $('startbtn').addEventListener('click', toggle); $('play').addEventListener('click', toggle);
-$('prev').addEventListener('click', () => jump(st.i - 1, false)); $('next').addEventListener('click', () => jump(st.i + 1, false));
+$('prev').addEventListener('click', () => jump(step(st.i, -1), false)); $('next').addEventListener('click', () => jump(step(st.i, 1), false));
+$('onlyact').addEventListener('click', () => setOnlyAct(!st.onlyAct));
+const goObjection = (dir) => { const n = nextObjection(dir); if (n >= 0) jump(n, false); else { const b = $('nextch'); b.textContent = dir > 0 ? '後面沒有了' : '前面沒有了'; setTimeout(() => { b.textContent = '⚑ 下個異議'; }, 1400); } };
+$('nextch').addEventListener('click', () => goObjection(1));
+if (!BEATS.some(isObjection)) { $('nextch').disabled = true; $('nextch').title = '這一期沒有異議'; }
 $('seek').addEventListener('change', (e) => jump(Number(e.target.value)));
-$('speed').addEventListener('change', (e) => { st.speed = Number(e.target.value) || 1; });
+$('speed').addEventListener('change', (e) => setSpeed(Number(e.target.value) || 1));
 $('follow').addEventListener('change', (e) => { st.follow = e.target.checked; });
 for (const btn of $('tabs').children) btn.addEventListener('click', () => { for (const b of $('tabs').children) b.classList.toggle('on', b === btn); for (const id of ['log', 'stories', 'lanes']) $(id).hidden = btn.dataset.tab !== id; renderProgress(); });
 window.addEventListener('keydown', (e) => {
-  if (e.target.matches('input,select,button,summary')) return;
-  if (e.code === 'Space') { e.preventDefault(); toggle(); } else if (e.code === 'ArrowRight') jump(st.i + 1, false); else if (e.code === 'ArrowLeft') jump(st.i - 1, false);
+  if (e.target.matches?.('input,select,button,summary')) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.code === 'Space') { e.preventDefault(); toggle(); } else if (e.code === 'ArrowRight') jump(step(st.i, 1), false); else if (e.code === 'ArrowLeft') jump(step(st.i, -1), false);
+  else if (e.code === 'KeyC') goObjection(e.shiftKey ? -1 : 1); else if (e.code === 'KeyI') setOnlyAct(!st.onlyAct);
+  else if (e.code === 'Digit1') setSpeed(1); else if (e.code === 'Digit2') setSpeed(2); else if (e.code === 'Digit4') setSpeed(4);
 });
-if (matchMedia('(prefers-reduced-motion: reduce)').matches) { st.speed = 4; $('speed').value = '4'; }
-window.__office = {st, DATA, jump, toggle, renderStories};
+if (matchMedia('(prefers-reduced-motion: reduce)').matches) setSpeed(4);
+const params = new URLSearchParams(location.search);  // demo 用：?only=1&speed=2
+if (params.get('only') === '1') setOnlyAct(true);
+if (['1', '2', '4', '0.5'].includes(params.get('speed'))) setSpeed(Number(params.get('speed')));
+window.__office = {st, DATA, jump, toggle, renderStories, skippable, step, setOnlyAct};
 </script>
 </body>
 </html>

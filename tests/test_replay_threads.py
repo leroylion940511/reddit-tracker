@@ -1,4 +1,4 @@
-"""回放頁 R1 稿件協商串（`build_threads`）、R2 角色泳道（`build_lanes`）。fixture 是 11/19 M 組真實的 build_replay 輸出。"""
+"""回放頁 R1 稿件協商串（`build_threads`）、R2 角色泳道（`build_lanes`）、R3 播放控制。fixture 是 11/19 M 組真實的 build_replay 輸出。"""
 import json
 from pathlib import Path
 
@@ -92,3 +92,13 @@ def test_build_replay_and_office_page_carry_lanes(session):
     assert data["lanes"]["events"] and {e["i"] for e in data["lanes"]["events"]} <= {b["i"] for b in data["beats"]}
     html = render_office(session, DAY, "mas")
     assert 'data-tab="lanes"' in html and "buildLanes" in html
+
+
+# ── 回放頁 R3：播放控制（只看互動、下一個異議、快捷鍵；純前端） ──
+
+def test_office_page_has_playback_controls(session):
+    _run(session)
+    html = render_office(session, DAY, "mas")
+    for needle in ('id="onlyact"', 'id="nextch"', "function skippable", "function nextObjection",
+                   "'KeyC'", "'KeyI'", "'Digit4'", "params.get('only')"):
+        assert needle in html, needle

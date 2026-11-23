@@ -5,7 +5,7 @@
 > 2026-10-29 以前的段落已搬到 `docs/archive/`（見文末「更早的紀錄」）。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-23 晚（回放頁 R2 角色泳道時序圖，`claude-auto`）。前次：2026-11-23 晚（回放頁 R1 稿件協商串）。前次：2026-11-23 晚（實驗三補成本列與 AIHOT 對照；新增「時程與下一步」：發表 2027-01-08、申請單 12/16 截止、回放頁 R1–R4）。前次：2026-11-23（`claude-auto`：實驗三 B（agy）盲計 7 期完成、`docs/eval/exp3_results.md` 已寫入）。前次：2026-11-22（`claude-auto`：M 組出刊前模型雜訊檢查 `MAS_NOISE_CHECK`，預設關閉；志晨同意後 fast-forward 併入 main，開關沒開、不需重載）。前次：2026-11-21（`claude-auto`：merge main 解 PROGRESS.md／exp2_results.md 衝突；`report --write` 改成保留手寫分析；志晨同意後 fast-forward 併入 main `c335f2c`→`claude-auto`，不需重載）。前次：2026-11-19（`claude-auto`：實驗二報告補「被刪的來源」一節）。前次：2026-11-19（實驗二報告補上錯誤分析／結論／限制草稿，待志晨改寫）。前次：2026-11-19 06:20（實驗二三組完成，`docs/eval/exp2_results.md` 已寫入；(c) 雜訊掃描乾淨；main 已 push `4d7c61f`）。前次：2026-11-18 07:40（實驗二 `run` 第一天：(a)(b) 完成、(c) 停在 H-T807，11/19 接著跑；`claude-auto` 離線模型雜訊掃描，還沒併入 main）。前次：2026-11-17 14:30（實驗二：A＝grok 選完 15 篇、`build`、`draft --live` 25/25 完成；明天 `run`）。前次：2026-11-17（實驗二 `build` 檢查正常稿來自候選清單，已 fast-forward 併入 main，不需重載；main 還沒 push）。前次：2026-11-16（實驗二正常稿抽樣修正已 fast-forward 併入 main，不需重載；main 已 push）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
+**Last updated:** 2026-11-23 晚（回放頁 R3 播放控制，`claude-auto`）。前次：2026-11-23 晚（回放頁 R2 角色泳道時序圖）。前次：2026-11-23 晚（回放頁 R1 稿件協商串）。前次：2026-11-23 晚（實驗三補成本列與 AIHOT 對照；新增「時程與下一步」：發表 2027-01-08、申請單 12/16 截止、回放頁 R1–R4）。前次：2026-11-23（`claude-auto`：實驗三 B（agy）盲計 7 期完成、`docs/eval/exp3_results.md` 已寫入）。前次：2026-11-22（`claude-auto`：M 組出刊前模型雜訊檢查 `MAS_NOISE_CHECK`，預設關閉；志晨同意後 fast-forward 併入 main，開關沒開、不需重載）。前次：2026-11-21（`claude-auto`：merge main 解 PROGRESS.md／exp2_results.md 衝突；`report --write` 改成保留手寫分析；志晨同意後 fast-forward 併入 main `c335f2c`→`claude-auto`，不需重載）。前次：2026-11-19（`claude-auto`：實驗二報告補「被刪的來源」一節）。前次：2026-11-19（實驗二報告補上錯誤分析／結論／限制草稿，待志晨改寫）。前次：2026-11-19 06:20（實驗二三組完成，`docs/eval/exp2_results.md` 已寫入；(c) 雜訊掃描乾淨；main 已 push `4d7c61f`）。前次：2026-11-18 07:40（實驗二 `run` 第一天：(a)(b) 完成、(c) 停在 H-T807，11/19 接著跑；`claude-auto` 離線模型雜訊掃描，還沒併入 main）。前次：2026-11-17 14:30（實驗二：A＝grok 選完 15 篇、`build`、`draft --live` 25/25 完成；明天 `run`）。前次：2026-11-17（實驗二 `build` 檢查正常稿來自候選清單，已 fast-forward 併入 main，不需重載；main 還沒 push）。前次：2026-11-16（實驗二正常稿抽樣修正已 fast-forward 併入 main，不需重載；main 已 push）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
 
 ## 線上現況（2026-11-13 查證）
 
@@ -23,7 +23,7 @@
 1. ✅ 實驗三盲計與結果、試刊成本列、AIHOT 對照（2026-11-23）。
 2. ✅（2026-11-23，已併入 main）**回放頁 R1：稿件協商串**。`daily/replay.py::build_replay` 加 `threads`：每篇稿依時間列出 PITCH → 記者撰稿 → CHALLENGE（查核員理由）→ REQUEST_REVISION → REVISION_DONE（v1→v2 diff）→ RELEASE／HOLD，含發送者→接收者、對應的 `llm_records` 耗時；`office.html` 的「稿件」分頁點開一篇就顯示整串，點任一步跳到那一步。介面寫進 `docs/v5/DAILY_EDITION.md`「回放時間線與 3D 編輯室」。
 3. ✅（2026-11-23，已併入 main）**回放頁 R2：角色泳道時序圖**。新分頁「互動」：每個角色一條泳道、訊息畫成箭頭（顏色依訊息種類）、模型呼叫畫成區塊，點擊跳到該步；純 SVG，不加套件。
-4. **回放頁 R3：播放控制**。速度 1×／2×／4×、「只看互動」（略過收集與單純的模型思考）、「下一個 CHALLENGE」快捷鍵；發表 demo 用。
+4. ✅（2026-11-23，已併入 main）**回放頁 R3：播放控制**。速度 1×／2×／4×、「只看互動」（略過收集與單純的模型思考）、「下一個 CHALLENGE」快捷鍵；發表 demo 用。
 5. **回放頁 R4：本期互動摘要卡**。誰對誰發幾則（角色×角色矩陣）、CHALLENGE 幾次／改稿成功幾次／HOLD 幾次、各角色呼叫次數與耗時；同一份數字可直接截圖進報告。
 6. **12/10 前：發表申請單內容草稿**（題目、摘要、成員分工、需要的設備），放 `docs/presentation/application.md`，👤 志晨照抄繳交。
 7. **報告 v2.0**：`docs/report.md` 還是 v4 Reddit 版，要整份改寫成 v2.0 綜合日報（緒論、系統架構、MAS 角色與協商、資料表、實驗一／二／三、七日試刊、限制、AI 使用聲明）；12/20 前初稿。
@@ -32,6 +32,15 @@
 - 開發回放頁用 `tests/fixtures/replay/2026-11-19_mas.json`（11/19 M 組真實 `build_replay` 輸出，2026-11-23 從 production DB 唯讀匯出；有 recorded 時間、3 次 CHALLENGE、改稿請求、版面異議），不必碰 DB。
 - 回放頁只讀、不能改稿；不改 `request_hash`、提示詞、線上撰稿流程，所以不影響實驗數字。動到 `reddit_tracker/daily/replay.py`／`office.html` 會被 web 載入，但 newsroom 排程不載入 web，**不需要重載 newsroom**（web 是手動起的 FastAPI）。
 - 視覺檢查：自動開發 session 沒有瀏覽器可用（production checkout 不能放 `launch.json`），改用 fixture 寫測試；畫面由互動 session 截圖確認。
+
+## 本次變更（2026-11-23 晚 — 回放頁 R3 播放控制，`claude-auto`）
+
+互動 session，worktree `~/Documents/Developer/Lab/rt-wt-auto`。只改 `office.html`（純前端），沒碰 DB、沒呼叫模型。
+
+- ✅ 「只看互動」（`I`）：略過收集、聚合、快照與沒有傳出東西的模型思考，略過的步狀態照樣套上；11/19 fixture 77 步裡略過 34 步。
+- ✅ 「⚑ 下個異議」（`C`／`Shift+C`）：只跳真的異議（11/19 是第 34、53 步）；速度快捷鍵 `1`／`2`／`4`；網址 `?only=1&speed=2` 給 demo 用。介面見 `docs/v5/DAILY_EDITION.md`「播放控制」。
+- 視覺：fixture 靜態頁在 desktop app 瀏覽器實測快捷鍵、略過播放與控制列排版，console 沒有頁面本身的錯誤。
+- 測試：`tests/test_replay_threads.py` 加 1 個（頁面帶有控制與快捷鍵）；**不需要重載 newsroom**。
 
 ## 本次變更（2026-11-23 晚 — 回放頁 R2 角色泳道時序圖，`claude-auto`）
 
