@@ -21,7 +21,7 @@
 依序做（每項約一次自動開發 session；做完打 ✅ 並寫日期）：
 
 1. ✅ 實驗三盲計與結果、試刊成本列、AIHOT 對照（2026-11-23）。
-2. ✅（2026-11-23，`claude-auto` 待併入 main）**回放頁 R1：稿件協商串**。`daily/replay.py::build_replay` 加 `threads`：每篇稿依時間列出 PITCH → 記者撰稿 → CHALLENGE（查核員理由）→ REQUEST_REVISION → REVISION_DONE（v1→v2 diff）→ RELEASE／HOLD，含發送者→接收者、對應的 `llm_records` 耗時；`office.html` 的「稿件」分頁點開一篇就顯示整串，點任一步跳到那一步。介面寫進 `docs/v5/DAILY_EDITION.md`「回放時間線與 3D 編輯室」。
+2. ✅（2026-11-23，已併入 main）**回放頁 R1：稿件協商串**。`daily/replay.py::build_replay` 加 `threads`：每篇稿依時間列出 PITCH → 記者撰稿 → CHALLENGE（查核員理由）→ REQUEST_REVISION → REVISION_DONE（v1→v2 diff）→ RELEASE／HOLD，含發送者→接收者、對應的 `llm_records` 耗時；`office.html` 的「稿件」分頁點開一篇就顯示整串，點任一步跳到那一步。介面寫進 `docs/v5/DAILY_EDITION.md`「回放時間線與 3D 編輯室」。
 3. **回放頁 R2：角色泳道時序圖**。新分頁「互動」：每個角色一條泳道、訊息畫成箭頭（顏色依訊息種類）、模型呼叫畫成區塊，點擊跳到該步；純 SVG，不加套件。
 4. **回放頁 R3：播放控制**。速度 1×／2×／4×、「只看互動」（略過收集與單純的模型思考）、「下一個 CHALLENGE」快捷鍵；發表 demo 用。
 5. **回放頁 R4：本期互動摘要卡**。誰對誰發幾則（角色×角色矩陣）、CHALLENGE 幾次／改稿成功幾次／HOLD 幾次、各角色呼叫次數與耗時；同一份數字可直接截圖進報告。
@@ -42,6 +42,7 @@
 - 📌 11/19 M 組 fixture：12 篇都有串；兩篇有真的查核異議（數字比對）→ 修稿 v2 → 重驗放行；頭版主稿是版面要求修稿；文稿編輯那次 CHALLENGE 是「看過沒問題」，不計入異議。
 - 視覺：用 fixture 產生靜態頁，在 desktop app 瀏覽器確認展開、跳步、目前步驟標示、diff 只出現一次，console 沒錯誤。
 - 測試：新增 `tests/test_replay_threads.py` 4 個；全套 518 passed／7 skipped（worktree 沒有母本）；ruff 通過。只讀不寫、不動提示詞與 `request_hash`，**不需要重載 newsroom**（web 是手動起的）。
+- ✅ 2026-11-23 晚已 fast-forward 併入 main（`9632b4c`→`ba2121c`）；production 全套 521 passed／4 skipped。newsroom **沒有重載、不需要**。main **還沒 push**（領先 origin 7＋本筆）。
 
 ## 本次變更（2026-11-23 — 實驗三盲計與結果，`claude-auto`）
 
