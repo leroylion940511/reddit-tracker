@@ -68,6 +68,7 @@
 - ⚠️ 限制：6 篇 (c) 靠查核員救回的正常稿沒重跑，(c+) 的誤擋率沒有評估到；每個請求只跑一次，H-T767 的翻轉可能是模型抽樣差異。
 - ⚠️ 附帶發現（沒修，開關關閉時不會發生）：全部 KEEP 又因百分比另起異議時，逐來源判斷不會寫進 `agent_messages`。日後要開這個開關時先補。
 - 測試：`tests/test_exp2.py` 加 4 個；worktree 全套 539 passed／7 skipped、ruff 通過；(c+) 用帳本離線重播結果相同。不需要重載 newsroom（只動 `reddit_tracker/eval/`、`scripts/`、`tests/`、文件）。
+- ✅ 併入 main（`e7096ae`，2026-11-24 19:07 fast-forward）：production 全套 542 passed／4 skipped；只動 `reddit_tracker/eval/`、`scripts/`、測試、文件，沒有重載；scheduler Python process 1 個。
 - ➡️ 下一步：第 9 項 P0-3b 報告 v2.0（可分次，12/20 前初稿）。
 
 ## 本次變更（2026-11-24 午 — 發表申請單草稿，`claude-auto`，自動開發）
