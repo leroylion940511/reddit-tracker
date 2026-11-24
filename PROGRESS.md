@@ -69,6 +69,7 @@
 - 👤 **需要問老師**（報告 6.1／6.3 已照實寫「沒有確認紀錄」）：實驗二、三由 AI 標註（手冊 8.1／11.5 禁止；只有實驗一有「老師同意」的轉述紀錄）、用本機 Codex CLI 代替正式 API（手冊 6.9／10.1）、試刊與凍結提前的方案 B 時程。有結果後改這幾句即可。
 - 剩：報紙與回放頁截圖（手冊要求附圖，自動開發 session 沒有瀏覽器，互動 session 補）、封面個資由作者在印製版填。
 - 測試：worktree 全套 539 passed／7 skipped；ruff 通過。不需要重載 newsroom。
+- ✅ 併入 main（`11f4e1a`，2026-11-25 07:07 fast-forward）：production 全套 542 passed／4 skipped；只動文件，沒有重載；scheduler Python process 1 個。
 - ➡️ 下一步：第 10 項 P0-4 簡報＋Demo 腳本。
 
 ## 本次變更（2026-11-24 夜 — 磁碟清理：舊 DB 備份已清，互動 session）
