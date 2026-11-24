@@ -8,7 +8,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from reddit_tracker.daily.mas.orchestrator import CHECKER_SCHEMA, DRAFT_SCHEMA
+from reddit_tracker.daily.mas.orchestrator import CHECKER_PER_SOURCE_SCHEMA, CHECKER_SCHEMA, DRAFT_SCHEMA
 from reddit_tracker.eval import exp2
 from reddit_tracker.eval.exp1_results import Pair
 from reddit_tracker.llm.replay import ReplayResult
@@ -218,3 +218,67 @@ def test_normal_pick_must_come_from_sample_list():
     exp2.check_normal_pick([], [1, 3])
     with pytest.raises(exp2.Exp2Error, match=r"\[8\] 不在 sample_exp2 的 4 篇候選裡"):
         exp2.check_normal_pick([3, 8], [1, 3, 5, 7])
+
+
+class PerSource(Scripted):
+    """逐來源查核：`verdicts`＝{sid: KEEP／REMOVE}；沒列的不回答。"""
+
+    def __init__(self, action, verdicts):
+        super().__init__()
+        self.action, self.verdicts = action, verdicts
+
+    def complete(self, **kwargs):
+        if kwargs.get("json_schema") != CHECKER_PER_SOURCE_SCHEMA:
+            return super().complete(**kwargs)
+        self.seen.append("per_source")
+        sources = [{"sid": sid, "verdict": verdict, "reason": f"理由{sid}"} for sid, verdict in self.verdicts.items()]
+        return ReplayResult(json.dumps({"action": self.action, "problem": "NONE", "detail": "x",
+                                        "required_action": "y", "sources": sources}, ensure_ascii=False))
+
+
+def test_select_cases_keeps_file_order_and_rejects_typos(dev):
+    assert [c.case_id for c in exp2.select_cases(dev, ["E03", "E01"])] == ["E01", "E03"]
+    with pytest.raises(exp2.Exp2Error, match="E99"):
+        exp2.select_cases(dev, ["E01", "E99"])
+    with pytest.raises(exp2.Exp2Error, match="沒有指定"):
+        exp2.select_cases(dev, [])
+
+
+def test_ablation_removes_only_the_sources_the_checker_names(dev, tmp_path):
+    """E02：(c) 整篇 CHALLENGE 把 5 個點名來源全刪；(c+) 只刪答 REMOVE 的 3 個。"""
+    case = next(c for c in dev if c.case_id == "E02")
+    drafts = {"E02": {**V1, "body": "蘇清泉二度道歉 [S1][S2]。"}}
+    base = exp2.run_arm("c", [case], drafts, Scripted("CHALLENGE"), tmp_path / "c.db")
+    client = PerSource("CHALLENGE", {2: "KEEP", 3: "KEEP", 4: "REMOVE", 5: "REMOVE", 6: "REMOVE"})
+    plus, verdicts = exp2.run_ablation([case], drafts, client, tmp_path / "plus.db")
+    assert exp2.removal_counts(base, [case]) == {"total": 5, "wrong": 3, "collateral": 2}
+    assert exp2.removal_counts(plus, [case]) == {"total": 3, "wrong": 3, "collateral": 0}
+    assert plus[0].arm == "c+" and plus[0].blocked and client.seen[0] == "per_source"
+    assert [(v["sid"], v["verdict"], v["wrong"]) for v in verdicts] == [
+        (2, "KEEP", False), (3, "KEEP", False), (4, "REMOVE", True), (5, "REMOVE", True), (6, "REMOVE", True)]
+    text = exp2.render_ablation(base, plus, [case], verdicts)
+    assert "| (c) 正式結果 | 1/1 | 0/0 | 5 | 3 | 2 |" in text and "| (c+) 逐來源判斷 | 1/1 | 0/0 | 3 | 3 | 0 |" in text
+    assert "| E02 | S4（76） |" in text and "理由4" in text
+    with pytest.raises(exp2.Exp2Error, match="E02"):
+        exp2.render_ablation([], plus, [case], verdicts)
+
+
+def test_ablation_records_a_wrong_keep_and_unanswered_sources(dev, tmp_path):
+    case = _e01(dev)
+    kept, verdicts = exp2.run_ablation([case], {"E01": V1}, PerSource("OK", {3: "KEEP"}), tmp_path / "k.db")
+    assert kept[0].blocked is False and [(v["verdict"], v["explicit"], v["wrong"]) for v in verdicts] == [("KEEP", True, True)]
+    # 沒逐一回答就照整篇 action：CHALLENGE＝刪
+    gone, verdicts = exp2.run_ablation([case], {"E01": V1}, PerSource("CHALLENGE", {}), tmp_path / "g.db")
+    assert gone[0].blocked and [(v["verdict"], v["explicit"]) for v in verdicts] == [("REMOVE", False)]
+    assert "模型沒逐一回答" in exp2.render_ablation(kept, gone, [case], verdicts)
+
+
+def test_ablation_command_needs_its_own_work_dir(tmp_path, monkeypatch):
+    from scripts import run_exp2
+
+    with pytest.raises(SystemExit):
+        run_exp2.main(["ablation", "--cases", "E01"])
+    for name in ("WORK", "CASES", "V1", "LEDGER", "QUOTA"):
+        monkeypatch.setattr(run_exp2, name, getattr(run_exp2, name))
+    run_exp2._set_work(tmp_path)
+    assert run_exp2.CASES == tmp_path.resolve() / "cases.json" and run_exp2.LEDGER.parent == tmp_path.resolve()

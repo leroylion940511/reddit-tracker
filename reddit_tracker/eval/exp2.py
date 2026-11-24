@@ -21,7 +21,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -30,7 +30,8 @@ from sqlalchemy.orm import Session
 
 from ..daily.evidence import EvidenceItem, build_evidence_from_ids, raw_evidence_item
 from ..daily.mas.orchestrator import (
-    CHECKER_PER_SOURCE_SCHEMA, CHECKER_SCHEMA, _draft_from_template, registry_domains, reporter_draft, review_one,
+    CHECKER_PER_SOURCE_SCHEMA, CHECKER_SCHEMA, _draft_from_template, _sid, checker_source_verdicts,
+    irrelevant_sources, registry_domains, reporter_draft, review_one,
 )
 from ..daily.store import add_story, latest_version
 from ..models import Base, DailySnapshot, SourceItem, Story
@@ -203,6 +204,7 @@ class CountingClient:
         self.inner = inner
         self.calls = 0
         self.checker_calls = 0
+        self.per_source_replies: list[str] = []
         if hasattr(inner, "logs_attempts"):
             self.logs_attempts = inner.logs_attempts
 
@@ -213,7 +215,10 @@ class CountingClient:
         self.calls += 1
         if kwargs.get("json_schema") in (CHECKER_SCHEMA, CHECKER_PER_SOURCE_SCHEMA):
             self.checker_calls += 1
-        return self.inner.complete(**kwargs)
+        result = self.inner.complete(**kwargs)
+        if kwargs.get("json_schema") == CHECKER_PER_SOURCE_SCHEMA:
+            self.per_source_replies.append(result.content)
+        return result
 
 
 def _failed(client) -> bool:
@@ -260,8 +265,12 @@ def draft_all(cases: list[Case], client, db_path: Path, out_path: Path) -> dict[
     return drafts
 
 
-def run_arm(arm: str, cases: list[Case], drafts: dict[str, dict], client, db_path: Path, *, per_source: bool = False) -> list[Outcome]:
-    """跑一組。每次都從空的 DB 開始；模型回應由 client 的帳本重播，不會重複花額度。"""
+def run_arm(arm: str, cases: list[Case], drafts: dict[str, dict], client, db_path: Path, *, per_source: bool = False,
+            replies: dict[str, list[str]] | None = None) -> list[Outcome]:
+    """跑一組。每次都從空的 DB 開始；模型回應由 client 的帳本重播，不會重複花額度。
+
+    `replies` 有給就記下每個案例的逐來源查核回應（只有 `per_source=True` 會有）。
+    """
     missing = [case.case_id for case in cases if case.case_id not in drafts]
     if missing:
         raise Exp2Error(f"這些案例還沒有 v1，先跑 draft：{missing}")
@@ -290,6 +299,8 @@ def run_arm(arm: str, cases: list[Case], drafts: dict[str, dict], client, db_pat
                     f"{ARM_NAMES[arm]} 跑到 {case.case_id} 時有模型呼叫沒成功（額度用完、失敗或沒有錄音；degraded={degraded}），"
                     "這一組不算；處理後重跑（已成功的呼叫會從帳本重播，不重複花額度）"
                 )
+            if replies is not None:
+                replies[case.case_id] = counter.per_source_replies
             removed = [item_id for item_id in original if item_id not in kept]
             hold = status == "hold"
             is_error = case.group != "normal"
@@ -303,6 +314,83 @@ def run_arm(arm: str, cases: list[Case], drafts: dict[str, dict], client, db_pat
     finally:
         engine.dispose()
     return outcomes
+
+
+# ── 課後補充消融 (c+)：逐來源判斷 ──────────────────────────────────────────
+
+ABLATION_ARM = "c+"
+
+
+def select_cases(cases: list[Case], ids: list[str]) -> list[Case]:
+    """只留指定案例，順序照 `cases`（不照輸入），編號打錯就停。"""
+    unknown = sorted(set(ids) - {case.case_id for case in cases})
+    if unknown or not ids:
+        raise Exp2Error(f"案例編號不在 cases.json 裡：{unknown}" if unknown else "沒有指定案例")
+    return [case for case in cases if case.case_id in set(ids)]
+
+
+def run_ablation(cases: list[Case], drafts: dict[str, dict], client, db_path: Path) -> tuple[list[Outcome], list[dict]]:
+    """(c+)＝(c) 打開 `FACT_CHECKER_PER_SOURCE`，其餘（案例、v1、判定）都和 (c) 相同。回傳（結果, 逐來源判斷）。"""
+    replies: dict[str, list[str]] = {}
+    outcomes = run_arm("c", cases, drafts, client, db_path, per_source=True, replies=replies)
+    return [replace(o, arm=ABLATION_ARM) for o in outcomes], source_verdicts(cases, replies)
+
+
+def source_verdicts(cases: list[Case], replies: dict[str, list[str]]) -> list[dict]:
+    """查核員對每個程式點名來源的判斷，一列一個來源（直接看模型回應：全部 KEEP 又另起異議時，`agent_messages` 不留這份）。"""
+    out = []
+    for case in cases:
+        flagged = irrelevant_sources(case.items())
+        if not flagged or not replies.get(case.case_id):
+            continue
+        reply = replies[case.case_id][0]
+        keep = checker_source_verdicts(reply, [sid for sid, _ in flagged])
+        try:
+            rows = json.loads(reply).get("sources") or []
+        except (json.JSONDecodeError, AttributeError):
+            rows = []  # 格式錯＝程式照刪；`keep` 已是全 False
+        said = {_sid(row.get("sid")): str(row.get("reason", "")) for row in rows if isinstance(row, dict)}
+        out += [{
+            "case_id": case.case_id, "sid": sid, "item_id": item.item_id, "title": item.title,
+            "verdict": "KEEP" if keep[sid] else "REMOVE", "explicit": sid in said, "reason": said.get(sid, ""),
+            "wrong": item.item_id in case.wrong_item_ids,
+        } for sid, item in flagged]
+    return out
+
+
+def render_ablation(base: list[Outcome], plus: list[Outcome], cases: list[Case], verdicts: list[dict]) -> str:
+    """(c) 對 (c+) 的 Markdown 表；只比 (c+) 有跑的案例，(c) 的數字從正式結果取，不重跑。"""
+    by_case = {o.case_id: o for o in base}
+    picked = {case.case_id: case for case in cases}
+    missing = [o.case_id for o in plus if o.case_id not in by_case or o.case_id not in picked]
+    if missing:
+        raise Exp2Error(f"(c) 的正式結果或案例檔缺這些案例：{missing}")
+    old = [by_case[o.case_id] for o in plus]
+
+    def row(name, outcomes):
+        n, s = removal_counts(outcomes, cases), summarize(outcomes)
+        errors = [o for o in outcomes if o.group != "normal"]
+        blocked = f"{sum(bool(o.blocked) for o in errors)}/{len(errors)}"
+        return (f"| {name} | {blocked} | {s['normal'][0]}/{s['normal'][1]} | {n['total']} | {n['wrong']} | {n['collateral']} "
+                f"| {s['llm_calls']}（{s['checker_calls']}） |")
+
+    def cell(o):
+        n = removal_counts([o], cases)
+        mark = ("✅" if o.blocked else "❌") if o.group != "normal" else ("⚠️" if o.false_block else "—")
+        return f"{mark} {o.status}／v{o.versions}／刪對 {n['wrong']}／誤刪 {n['collateral']}"
+
+    out = ["| 設定 | 擋下（開發集＋保留集） | 正常稿誤擋 | 刪除數 | 刪對（無關來源） | 連帶誤刪 | LLM 呼叫數（其中查核員） |",
+           "| --- | --- | --- | --- | --- | --- | --- |",
+           row("(c) 正式結果", old), row("(c+) 逐來源判斷", plus), "",
+           "| 案例 | 無關來源數 | (c) 正式結果 | (c+) 逐來源判斷 |", "| --- | --- | --- | --- |"]
+    out += [f"| {n.case_id} | {len(picked[n.case_id].wrong_item_ids)} | {cell(o)} | {cell(n)} |" for o, n in zip(old, plus)]
+    out += ["", "| 案例 | 點名來源 | 標題 | 案例答案 | (c+) 判斷 | 查核員理由 |", "| --- | --- | --- | --- | --- | --- |"]
+    for v in verdicts:
+        text = [str(v[key]).replace("|", "／").replace("\n", " ") for key in ("title", "reason")]
+        said = v["verdict"] + ("" if v["explicit"] else "（模型沒逐一回答，照整篇 action）")
+        answer = "無關" if v["wrong"] else "不是點名的無關來源"
+        out.append(f"| {v['case_id']} | S{v['sid']}（{v['item_id']}） | {text[0][:40]} | {answer} | {said} | {text[1]} |")
+    return "\n".join(out) + "\n"
 
 
 # ── 報告 ──────────────────────────────────────────────────────────────────

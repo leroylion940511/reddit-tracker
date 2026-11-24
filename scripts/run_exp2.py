@@ -12,6 +12,12 @@
     uv run python scripts/run_exp2.py report --write    # 寫 docs/eval/exp2_results.md
     #    （舊檔 exp2.MANUAL_MARKER 那行以下的手寫分析原樣保留；有手寫小節卻沒標記就停）
 
+    # 5. 課後補充消融 (c+)：逐來源判斷，只重跑指定案例；正式 (a)(b)(c) 的檔案不會被改
+    uv run python scripts/run_exp2.py ablation --work-dir <複本目錄> --cases E02,H-T767 --live
+    uv run python scripts/run_exp2.py ablation-report --work-dir <複本目錄>   # 印 Markdown，自己貼進報告的手寫段落
+
+- `--work-dir`（每個子命令都有）：改用別的工作目錄（要先放 `cases.json`、`v1.json`，
+  `ablation-report` 另要正式的 `results_c.json`）。`ablation` 一定要給，避免寫進正式結果的目錄。
 - 所有產出都在 `data/work/exp2/`（不進版控）：`cases.json`、`v1.json`、`results_<組>.json`、
   帳本 `ledger.db`（每次真 Codex 嘗試一筆 `llm_records`）、額度檔 `llm-quota.json`。
 - 不讀 `.env`、不寫 production DB：`build` 用 `mode=ro` 開快照與 production DB，其餘步驟只碰 `data/work/exp2/`。
@@ -41,8 +47,15 @@ LEDGER, QUOTA = WORK / "ledger.db", WORK / "llm-quota.json"
 EXP1 = ROOT / "annotation" / "exp1"
 
 
+def _set_work(path: Path) -> None:
+    global WORK, CASES, V1, LEDGER, QUOTA
+    WORK = path.expanduser().resolve()
+    CASES, V1 = WORK / "cases.json", WORK / "v1.json"
+    LEDGER, QUOTA = WORK / "ledger.db", WORK / "llm-quota.json"
+
+
 def _configure(max_calls: int) -> None:
-    """要在讀 settings／建立 CodexClient 之前。不載入 .env，DATABASE_URL 指到 data/work，碰不到 production。"""
+    """要在讀 settings／建立 CodexClient 之前。不載入 .env，DATABASE_URL 指到工作目錄，碰不到 production。"""
     WORK.mkdir(parents=True, exist_ok=True)
     os.environ["REDDIT_TRACKER_NO_DOTENV"] = "1"
     os.environ["DATABASE_URL"] = f"sqlite:///{WORK / 'scratch.db'}"
@@ -52,8 +65,8 @@ def _configure(max_calls: int) -> None:
 
     get_settings.cache_clear()
     settings = get_settings()
-    if "data/work/exp2" not in settings.database_url or Path(settings.llm_quota_state_path) != QUOTA:
-        raise SystemExit("設定沒有指到 data/work/exp2，停止")
+    if settings.database_url != f"sqlite:///{WORK / 'scratch.db'}" or Path(settings.llm_quota_state_path) != QUOTA:
+        raise SystemExit(f"設定沒有指到 {WORK}，停止")
 
 
 def _readonly_session(path: Path):
@@ -207,6 +220,36 @@ def cmd_run(args) -> int:
     return 0
 
 
+def cmd_ablation(args) -> int:
+    from reddit_tracker.eval import exp2
+
+    cases = exp2.select_cases(exp2.load_cases(CASES), [part.strip() for part in args.cases.split(",") if part.strip()])
+    drafts = json.loads(V1.read_text(encoding="utf-8"))
+    outcomes, verdicts = exp2.run_ablation(cases, drafts, _client(args.live, args.max_calls), WORK / "arm_c_plus.db")
+    payload = {
+        "arm": exp2.ABLATION_ARM, "per_source": True, "case_ids": [case.case_id for case in cases],
+        "outcomes": [asdict(o) for o in outcomes],
+        "verdicts": verdicts,
+    }
+    (WORK / "results_c_plus.json").write_text(json.dumps(payload, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    print(f"(c+)：{exp2.summarize(outcomes)}；刪除 {exp2.removal_counts(outcomes, cases)}")
+    return 0
+
+
+def cmd_ablation_report(args) -> int:
+    from reddit_tracker.eval import exp2
+
+    base = json.loads((WORK / "results_c.json").read_text(encoding="utf-8"))
+    plus = json.loads((WORK / "results_c_plus.json").read_text(encoding="utf-8"))
+    if base["per_source"]:
+        raise SystemExit("results_c.json 已經開了逐來源判斷，不能當 (c) 的對照")
+    print(exp2.render_ablation(
+        [exp2.Outcome(**row) for row in base["outcomes"]], [exp2.Outcome(**row) for row in plus["outcomes"]],
+        exp2.load_cases(CASES), plus["verdicts"],
+    ))
+    return 0
+
+
 def cmd_report(args) -> int:
     from reddit_tracker.config import get_settings
     from reddit_tracker.eval import exp2
@@ -266,7 +309,19 @@ def main(argv: list[str] | None = None) -> int:
     report.add_argument("--labels-note", default="保留集用實驗一的最終標註產生。")
     report.set_defaults(func=cmd_report)
 
+    ablation = sub.add_parser("ablation")
+    ablation.add_argument("--cases", required=True, help="案例編號，逗號分隔")
+    ablation.add_argument("--live", action="store_true", help="呼叫真 Codex；不加只重播帳本")
+    ablation.add_argument("--max-calls", type=int, default=25)
+    ablation.set_defaults(func=cmd_ablation)
+    sub.add_parser("ablation-report").set_defaults(func=cmd_ablation_report)
+    for name, step in sub.choices.items():
+        step.add_argument("--work-dir", type=Path, required=name.startswith("ablation"),
+                          help="工作目錄（預設 data/work/exp2）")
+
     args = parser.parse_args(argv)
+    if args.work_dir:
+        _set_work(args.work_dir)
     _configure(getattr(args, "max_calls", 25))
     from reddit_tracker.eval.exp2 import Exp2Error
 

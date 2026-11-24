@@ -52,6 +52,8 @@
 
 預設關（與試刊七期相同），`run --per-source` 才開，只影響 (c)。建議主結果用關的設定；想比較可以另外再跑一次 (c)（多花約 10 次呼叫），兩個結果分開存、分開報。
 
+2026-11-24 起用 `run_exp2.py ablation`（`--work-dir` 必填）做這件事：只重跑指定案例的 (c+)，寫 `<work-dir>/results_c_plus.json`（`outcomes`＋逐來源 `verdicts`）與 `arm_c_plus.db`，不碰正式的 `results_{a,b,c}.json`；`ablation-report` 另讀同目錄的 `results_c.json`，印 (c) 對 (c+) 的 Markdown 表。程式介面：`exp2.select_cases(cases, ids)`、`run_ablation(cases, drafts, client, db_path) -> (outcomes, verdicts)`、`render_ablation(base, plus, cases, verdicts)`；`run_arm(..., replies=dict)` 會記下每個案例的逐來源查核回應。結果在 `exp2_results.md`「課後補充消融」。
+
 ## 還缺的輸入
 
 - A 選的 15 篇正常稿 story id（11/17 中午前）。沒有它 `build` 只會產生開發集＋保留集，只能試跑。
