@@ -56,6 +56,8 @@
 3. **P3-2 DB 瘦身：2027-01-08 發表前不做**（不可逆、動正式 DB，發表前沒有好處）；發表後仍要志晨當下同意才做。佇列第 16 項維持 👤。
 - 測試：`tests/test_full_evidence.py` 5 個；worktree 全套 535 passed／7 skipped、ruff 通過；關閉時請求不變（錄音重播與回歸集都過）。
 
+- ✅ 併入 main 並重載 newsroom（2026-11-24 17:01）：production 全套 538 passed／4 skipped；log 有 `codex version guard ok`、三個 job 註冊、scheduler Python process 1 個。`MAS_FULL_EVIDENCE` 沒開，線上行為不變。main 隨後 push 到 origin。
+
 ## 本次變更（2026-11-24 午 — 發表申請單草稿，`claude-auto`，自動開發）
 
 只改文件；沒呼叫模型、沒碰 production DB（出刊期數從 `rt-data-1123` 複本唯讀查）。
