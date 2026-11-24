@@ -288,6 +288,7 @@ docs/                    規格、手冊、週報、歷史文件
 | [`docs/HANDBOOK_ADAPTATION.md`](docs/HANDBOOK_ADAPTATION.md) | 手冊步驟 0–11 的實作、改編與留給人工的事 |
 | [`docs/HANDBOOK_2026-10-28.md`](docs/HANDBOOK_2026-10-28.md) | 老師的執行手冊（原文，正式要求） |
 | [`docs/AI_NEWS_COMPANY_PROPOSAL.md`](docs/AI_NEWS_COMPANY_PROPOSAL.md) | v2.0 企劃書 |
+| [`docs/report.md`](docs/report.md) | 專題報告 v2.0（初稿） |
 | [`docs/v5/README.md`](docs/v5/README.md) | 規格入口 |
 | [`docs/v5/SOURCE_REGISTRY.md`](docs/v5/SOURCE_REGISTRY.md) | 來源登錄表規格 |
 | [`docs/v5/COLLECTION.md`](docs/v5/COLLECTION.md) | 收集層規格 |
@@ -302,7 +303,7 @@ docs/                    規格、手冊、週報、歷史文件
 **歷史（對應程式已移除，內容不再更新）**
 
 - v5 Reddit 早報：[`docs/v5/PRODUCT_BRIEF.md`](docs/v5/PRODUCT_BRIEF.md)、[`AGENT_CONTRACTS.md`](docs/v5/AGENT_CONTRACTS.md)、[`ARCHITECTURE.md`](docs/v5/ARCHITECTURE.md)、[`ROADMAP.md`](docs/v5/ROADMAP.md)、[`DEMO.md`](docs/v5/DEMO.md)
-- v4 Reddit 追蹤器：[`SCHEDULE.md`](SCHEDULE.md)、[`reddit_tracker_proposal.md`](reddit_tracker_proposal.md)／[`_en.md`](reddit_tracker_proposal_en.md)、[`docs/report.md`](docs/report.md)、[`docs/v4_schema.md`](docs/v4_schema.md)、[`docs/demo_script.md`](docs/demo_script.md)、[`docs/demo_slides.md`](docs/demo_slides.md)、[`docs/reddit_tracker_eer_script.md`](docs/reddit_tracker_eer_script.md)、[`docs/reddit_tracker_relational_explain.md`](docs/reddit_tracker_relational_explain.md)
+- v4 Reddit 追蹤器：[`SCHEDULE.md`](SCHEDULE.md)、[`reddit_tracker_proposal.md`](reddit_tracker_proposal.md)／[`_en.md`](reddit_tracker_proposal_en.md)、[`docs/archive/report_v4.md`](docs/archive/report_v4.md)、[`docs/v4_schema.md`](docs/v4_schema.md)、[`docs/demo_script.md`](docs/demo_script.md)、[`docs/demo_slides.md`](docs/demo_slides.md)、[`docs/reddit_tracker_eer_script.md`](docs/reddit_tracker_eer_script.md)、[`docs/reddit_tracker_relational_explain.md`](docs/reddit_tracker_relational_explain.md)
 - v4 評估紀錄：[`docs/m1_public_endpoints_probe.md`](docs/m1_public_endpoints_probe.md)、[`docs/m3_haiku_baseline.md`](docs/m3_haiku_baseline.md)、[`docs/m7_baseline_2026-06-02.md`](docs/m7_baseline_2026-06-02.md)、[`docs/m7_haiku_fail_analysis.md`](docs/m7_haiku_fail_analysis.md)、[`docs/m7_haiku_fail_samples.md`](docs/m7_haiku_fail_samples.md)
 
 ## 狀態與路線圖
