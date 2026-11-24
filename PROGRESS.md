@@ -57,6 +57,7 @@
 - ℹ️ 刻意保留兩處「AI 工具（Claude）」：exp2 分析文字的撰寫者、exp3 重複主稿的認定者。這是方法與 AI 使用揭露，不是交接字眼；拿掉會讓讀者以為是人工寫的或人工認定的。
 - ℹ️ 順帶發現：README「兩種編採模式」寫兩組「差別只在撰稿與審稿方式」，和 11/24 查出的證據包差異不符，留給第 11 項一起改。
 - 測試：worktree 全套 530 passed／7 skipped；ruff 通過。不需要重載 newsroom。
+- ✅ 併入 main（`3cda270`，2026-11-24 13:03 fast-forward）：production 全套 533 passed／4 skipped；只動文件，沒有重載；scheduler Python process 1 個。
 - ➡️ 下一步：第 8 項 P0-2 實驗二課後消融 (c+)（要呼叫 Codex，只在複本上跑）。
 
 ## 本次變更（2026-11-24 早 — 實驗三補重複主稿數與 M 組 trace，`claude-auto`，自動開發）
