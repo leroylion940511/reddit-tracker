@@ -81,7 +81,7 @@ uv run python scripts/exp3_results.py --start 2026-11-09 --end 2026-11-15 --writ
 
 ## 執行紀錄
 
-- 2026-11-23 07:05–07:27 由自動開發 session 執行。B＝agy CLI（2026-11-17 志晨確認沒有人類標註員，見 PROGRESS「實驗二執行」）；每期把 `docs/eval/exp3/prompt_B_count.md`（手冊 9.4 的七類定義、9.3 的同一事件定義、分版表原文）接上當天 `annotation/YYYY-MM-DD/blind.txt` 整份交給 agy，`--json-schema docs/eval/exp3/schema_count.json`。工作目錄是空資料夾、`--mode plan --sandbox`，agy 看不到 repo、對照表或回放頁。**每期只跑一次，沒有重抽或挑結果。** 原始輸出存在 worktree 的 `annotation/exp3/B_raw_YYYY-MM-DD.json`（gitignored），解析後的標註（含理由）commit 在 `docs/eval/exp3/B_labels.json`。
+- 2026-11-23 07:05–07:27 由自動開發 session 執行。B＝agy CLI（2026-11-17 確認本專題沒有人類標註員，標註改由 AI 工具執行）；每期把 `docs/eval/exp3/prompt_B_count.md`（手冊 9.4 的七類定義、9.3 的同一事件定義、分版表原文）接上當天 `annotation/YYYY-MM-DD/blind.txt` 整份交給 agy，`--json-schema docs/eval/exp3/schema_count.json`。工作目錄是空資料夾、`--mode plan --sandbox`，agy 看不到 repo、對照表或回放頁。**每期只跑一次，沒有重抽或挑結果。** 原始輸出存在 worktree 的 `annotation/exp3/B_raw_YYYY-MM-DD.json`（gitignored），解析後的標註（含理由）commit 在 `docs/eval/exp3/B_labels.json`。
 - 盲計對照表雜湊：11/09–11/13 已在試刊期間 commit；11/14、11/15 於 2026-11-23 交給 B **之前** commit（`3e11801`）。試刊當週 B 沒有拿到這兩天的稿，所以「事先 commit」仍成立，但比手冊要求的「每天交給 B 之前」晚了 8 天，照實記。
 - 降級：7 期的 `newsroom.log` 都是 `mas edition … drafted: articles=12 degraded=[]`，**沒有降級日**，「排除降級日」版本與主分析相同。
 - HOLD：抽樣的 28 篇 M 稿沒有 HOLD 稿，HOLD 敏感度版本與主分析相同。
@@ -199,7 +199,7 @@ P 被標第 1 類的 8 篇，逐案查同一事件的 M 版（`python -m reddit_
 
 - **標註員 B 是 AI 工具（agy），不是獨立的人類標註員**；B 與撰稿模型（Codex `gpt-6.1-sol`）不同家，但 B 的判斷本身也可能有錯，沒有第二位標註員複核。每期只跑一次，B 的隨機性沒有估計。
 - 盲化：B 猜組別 38 篇猜對 16 篇（0.42），沒有高於 50%，看不出盲化失效。
-- 審核者（志晨）與標註員都不是獨立第三方；試刊期間 11/14 起已關閉人工核可，但主指標計錯點本來就在人工核准之前，不受影響。
+- 審核者（專題作者）與標註員都不是獨立第三方；試刊期間 11/14 起已關閉人工核可，但主指標計錯點本來就在人工核准之前，不受影響。
 - **兩組的證據包不同**（見「兩組證據包不同」），違反「兩組只差撰稿與協商」的前提；試刊已結束，不重跑，主指標只能當描述，不能做架構比較。
 - 每期只抽 8 篇（全期 56 篇），單篇的多個錯誤（如 11/13 M #1）就能左右當天結果。
 - 盲計稿只有標題與摘要，B 只能依摘要判斷；摘要被截斷造成的「找不到」依提示詞不算錯，但判斷界線由 B 自己拿捏。
