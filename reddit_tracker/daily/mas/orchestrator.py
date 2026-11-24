@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import json
 import logging
+from collections import Counter
 from dataclasses import dataclass, field, replace
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy import select
@@ -17,8 +18,8 @@ from ...collection.entities import EntityContext, load_lexicon
 from ...llm.deadline import deadline_reached
 from ...llm.quota import QuotaExhausted
 from ...llm.records import bind_log_session, complete_logged, last_record_id, llm_log_meta, reset_last_record
-from ...models import AgentMessage, PagePlan, Story, StoryVersion
-from ..evidence import EvidenceItem, EvidencePack, build_evidence_from_ids, with_fulltext
+from ...models import AgentMessage, PagePlan, SourceItem, Story, StoryVersion
+from ..evidence import EvidenceItem, EvidencePack, build_evidence_from_ids, title_context, with_fulltext
 from ..noise import story_noise
 from ..scoring import DESK_POOL_PER_SECTION, SECTION_KINDS, SECTION_QUOTAS, ScoredCluster, select_articles
 from ..store import MAS, add_page_plan, add_story, hold_story, latest_version, write_story_version
@@ -42,6 +43,10 @@ LEAD_MAX_CHARS = 300
 # desk-v3 A1（MAS_RICH_CONTEXT）：主編／總編看到的 S1 摘要長度上限
 RICH_SUMMARY_CHARS = 200
 SECTIONS = tuple(SECTION_QUOTAS)
+# MAS_FULL_EVIDENCE：來源的實際文章網域怎麼算（article_domains）
+ARTICLE_DOMAIN_WINDOW = timedelta(days=7)
+ARTICLE_DOMAIN_MIN_ITEMS = 5
+ARTICLE_DOMAIN_MIN_SHARE = 0.2
 
 INJECTION_MARKERS = (
     "忽略以上規則", "忽略以上指示", "ignore previous", "ignore the above", "把這篇放頭版",
@@ -279,6 +284,31 @@ def registry_domains(registry) -> frozenset[str]:
         if source.url.startswith("http"):
             domains.add(domain_of(source.url))
     return frozenset(domains)
+
+
+def article_domains(session: Session, registry, now: datetime) -> frozenset[str]:
+    """MAS_FULL_EVIDENCE：登錄表來源近 7 天實際文章的網域（feed 掛 feedburner、RSSHub 的來源才認得出來）。
+
+    單一來源至少 `ARTICLE_DOMAIN_MIN_ITEMS` 篇，且該網域占這個來源 `ARTICLE_DOMAIN_MIN_SHARE` 以上才算；
+    Hacker News 這類會連到任意網域的聚合站，長尾網域因此進不來（假來源防護不放鬆）。只算當時已收到的素材。
+    """
+    ids = {s.id for s in registry.sources} - registry.disabled_source_ids()
+    counts: dict[str, Counter] = {}
+    rows = session.execute(
+        select(SourceItem.source_id, SourceItem.canonical_url).where(
+            SourceItem.source_id.in_(sorted(ids)),
+            SourceItem.first_seen_at >= now - ARTICLE_DOMAIN_WINDOW,
+            SourceItem.first_seen_at <= now,
+        )
+    )
+    for source_id, url in rows:
+        counts.setdefault(source_id, Counter())[domain_of(url)] += 1
+    found = set()
+    for counter in counts.values():
+        total = sum(counter.values())
+        if total >= ARTICLE_DOMAIN_MIN_ITEMS:
+            found |= {d for d, n in counter.items() if n / total >= ARTICLE_DOMAIN_MIN_SHARE}
+    return frozenset(found)
 
 
 def _has_marker(text: str) -> bool:
@@ -890,6 +920,10 @@ def run_mas(
     recover_claimed(session, edition_date, MAS)
     names = {source.id: source.name for source in registry.sources}
     domains = registry_domains(registry)
+    context = None
+    if get_settings().mas_full_evidence:
+        domains |= article_domains(session, registry, now)
+        context = title_context(session, now, load_lexicon(), registry.disabled_source_ids())
     clock = Clock(now)
     with bind_log_session(session):
         existing = {
@@ -906,7 +940,7 @@ def run_mas(
                 stories[keeper] = story
             pack: EvidencePack = build_evidence_from_ids(
                 session, list(raw.get("evidence_item_ids") or []), names,
-                anchor_item_id=raw.get("anchor_item_id"), allowed_domains=domains,
+                anchor_item_id=raw.get("anchor_item_id"), allowed_domains=domains, context=context,
             )
             evidence_of[story.id] = _attach_fulltext(session, pack.items)
         automatic = pitches is None
@@ -981,7 +1015,8 @@ def run_mas(
             _degrade(result.degraded, "reporter")
         _maybe_shorten_lead(session, edition_date=edition_date, client=client, clock=clock, degraded=result.degraded)
         if "copy_editor" not in result.degraded and _quota_left(client) != 0:
-            _copy_edit_front(session, edition_date=edition_date, client=client, clock=clock, degraded=result.degraded)
+            _copy_edit_front(session, edition_date=edition_date, client=client, clock=clock, degraded=result.degraded,
+                             context=context)
         elif _quota_left(client) == 0 and "copy_editor" not in result.degraded:
             result.degraded.append("copy_editor")
         if get_settings().mas_noise_check:
@@ -1861,7 +1896,7 @@ def _copy_confirm(session, *, edition_date, story, before, clock) -> None:
     )
 
 
-def _copy_edit_front(session, *, edition_date, client, clock, degraded=None) -> None:
+def _copy_edit_front(session, *, edition_date, client, clock, degraded=None, context=None) -> None:
     """頭版稿各請文稿編輯看一次。模型沒有給判斷就不改稿。"""
     from ...models import PagePlan
 
@@ -1900,7 +1935,8 @@ def _copy_edit_front(session, *, edition_date, client, clock, degraded=None) -> 
             continue  # 別的 worker 已經在處理（手冊 6.4 第 4 條）
         from ...seeds.news_sources import load_registry
         names = {s.id: s.name for s in load_registry().sources}
-        evidence = _attach_fulltext(session, build_evidence_from_ids(session, list(version.source_ids or []), names).items)
+        evidence = _attach_fulltext(
+            session, build_evidence_from_ids(session, list(version.source_ids or []), names, context=context).items)
         if evidence:
             story = session.get(Story, story_id)
             _revise(session, edition_date=edition_date, story=story, evidence=evidence, removed=[],

@@ -5,7 +5,7 @@
 > 2026-10-29 以前的段落已搬到 `docs/archive/`（見文末「更早的紀錄」）。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-24 午（`claude-auto`：發表申請單草稿、實驗報告清掉交接字眼）。前次：2026-11-24 早（`claude-auto`：實驗三補重複主稿數與 M 組 trace；查出 P／M 證據包參數不同、M 的網域白名單誤剔正規媒體）。前次：2026-11-23 深夜（外部稽核 12 項併入時程佇列、清舊 worktree、補打並 push `final-1120`、上線 `MAS_NOISE_CHECK=true`）。前次：2026-11-23 晚（回放頁 R4 互動摘要卡，R1–R4 完成，`claude-auto`）。前次：2026-11-23 晚（回放頁 R3 播放控制）。前次：2026-11-23 晚（回放頁 R2 角色泳道時序圖）。前次：2026-11-23 晚（回放頁 R1 稿件協商串）。前次：2026-11-23 晚（實驗三補成本列與 AIHOT 對照；新增「時程與下一步」：發表 2027-01-08、申請單 12/16 截止、回放頁 R1–R4）。前次：2026-11-23（`claude-auto`：實驗三 B（agy）盲計 7 期完成、`docs/eval/exp3_results.md` 已寫入）。前次：2026-11-22（`claude-auto`：M 組出刊前模型雜訊檢查 `MAS_NOISE_CHECK`，預設關閉；志晨同意後 fast-forward 併入 main，開關沒開、不需重載）。前次：2026-11-21（`claude-auto`：merge main 解 PROGRESS.md／exp2_results.md 衝突；`report --write` 改成保留手寫分析；志晨同意後 fast-forward 併入 main `c335f2c`→`claude-auto`，不需重載）。前次：2026-11-19（`claude-auto`：實驗二報告補「被刪的來源」一節）。前次：2026-11-19（實驗二報告補上錯誤分析／結論／限制草稿，待志晨改寫）。前次：2026-11-19 06:20（實驗二三組完成，`docs/eval/exp2_results.md` 已寫入；(c) 雜訊掃描乾淨；main 已 push `4d7c61f`）。前次：2026-11-18 07:40（實驗二 `run` 第一天：(a)(b) 完成、(c) 停在 H-T807，11/19 接著跑；`claude-auto` 離線模型雜訊掃描，還沒併入 main）。前次：2026-11-17 14:30（實驗二：A＝grok 選完 15 篇、`build`、`draft --live` 25/25 完成；明天 `run`）。前次：2026-11-17（實驗二 `build` 檢查正常稿來自候選清單，已 fast-forward 併入 main，不需重載；main 還沒 push）。前次：2026-11-16（實驗二正常稿抽樣修正已 fast-forward 併入 main，不需重載；main 已 push）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
+**Last updated:** 2026-11-24 傍晚（志晨把三項決定交給 Claude：修 M 證據包（`MAS_FULL_EVIDENCE`，預設關）、push main、DB 瘦身延到發表後）。前次：2026-11-24 午（`claude-auto`：發表申請單草稿、實驗報告清掉交接字眼）。前次：2026-11-24 早（`claude-auto`：實驗三補重複主稿數與 M 組 trace；查出 P／M 證據包參數不同、M 的網域白名單誤剔正規媒體）。前次：2026-11-23 深夜（外部稽核 12 項併入時程佇列、清舊 worktree、補打並 push `final-1120`、上線 `MAS_NOISE_CHECK=true`）。前次：2026-11-23 晚（回放頁 R4 互動摘要卡，R1–R4 完成，`claude-auto`）。前次：2026-11-23 晚（回放頁 R3 播放控制）。前次：2026-11-23 晚（回放頁 R2 角色泳道時序圖）。前次：2026-11-23 晚（回放頁 R1 稿件協商串）。前次：2026-11-23 晚（實驗三補成本列與 AIHOT 對照；新增「時程與下一步」：發表 2027-01-08、申請單 12/16 截止、回放頁 R1–R4）。前次：2026-11-23（`claude-auto`：實驗三 B（agy）盲計 7 期完成、`docs/eval/exp3_results.md` 已寫入）。前次：2026-11-22（`claude-auto`：M 組出刊前模型雜訊檢查 `MAS_NOISE_CHECK`，預設關閉；志晨同意後 fast-forward 併入 main，開關沒開、不需重載）。前次：2026-11-21（`claude-auto`：merge main 解 PROGRESS.md／exp2_results.md 衝突；`report --write` 改成保留手寫分析；志晨同意後 fast-forward 併入 main `c335f2c`→`claude-auto`，不需重載）。前次：2026-11-19（`claude-auto`：實驗二報告補「被刪的來源」一節）。前次：2026-11-19（實驗二報告補上錯誤分析／結論／限制草稿，待志晨改寫）。前次：2026-11-19 06:20（實驗二三組完成，`docs/eval/exp2_results.md` 已寫入；(c) 雜訊掃描乾淨；main 已 push `4d7c61f`）。前次：2026-11-18 07:40（實驗二 `run` 第一天：(a)(b) 完成、(c) 停在 H-T807，11/19 接著跑；`claude-auto` 離線模型雜訊掃描，還沒併入 main）。前次：2026-11-17 14:30（實驗二：A＝grok 選完 15 篇、`build`、`draft --live` 25/25 完成；明天 `run`）。前次：2026-11-17（實驗二 `build` 檢查正常稿來自候選清單，已 fast-forward 併入 main，不需重載；main 還沒 push）。前次：2026-11-16（實驗二正常稿抽樣修正已 fast-forward 併入 main，不需重載；main 已 push）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
 
 ## 線上現況（2026-11-13 查證）
 
@@ -47,6 +47,15 @@
 - 回放頁只讀、不能改稿；不改 `request_hash`、提示詞、線上撰稿流程，所以不影響實驗數字。動到 `reddit_tracker/daily/replay.py`／`office.html` 會被 web 載入，但 newsroom 排程不載入 web，**不需要重載 newsroom**（web 是手動起的 FastAPI）。
 - 視覺檢查：自動開發 session 沒有瀏覽器可用（production checkout 不能放 `launch.json`），改用 fixture 寫測試；畫面由互動 session 截圖確認。
 
+## 三項決定（2026-11-24 傍晚 — 志晨 16:5x 回「你來決定」，互動 session）
+
+1. **M 組證據包：修，但不開**。新增 `MAS_FULL_EVIDENCE`（預設關閉，`.env` 沒動）：帶當天 context、白名單改認各來源實際文章網域。複本重建 84／84 篇和 P 一致（255 → 416 個來源）；介面與限制見 `docs/v5/DAILY_EDITION.md`「證據包對齊」。
+   - 不開的理由：試刊與實驗三是關閉狀態跑的，開了會讓線上行為和已寫好的實驗數字不同；而且查核員的中文點名（佇列第 12 項 (2)）還沒修，多給來源會多誤刪。
+   - ➡️ **開啟條件**：第 12 項 (2) 做完、用複本跑一期 M 組比對過，再問志晨改 `.env`（自動開發不改 `.env`）。
+2. **push：做**。push 前掃過 `origin/main..main` 的新增行，沒有金鑰、token、電話、學號。
+3. **P3-2 DB 瘦身：2027-01-08 發表前不做**（不可逆、動正式 DB，發表前沒有好處）；發表後仍要志晨當下同意才做。佇列第 16 項維持 👤。
+- 測試：`tests/test_full_evidence.py` 5 個；worktree 全套 535 passed／7 skipped、ruff 通過；關閉時請求不變（錄音重播與回歸集都過）。
+
 ## 本次變更（2026-11-24 午 — 發表申請單草稿，`claude-auto`，自動開發）
 
 只改文件；沒呼叫模型、沒碰 production DB（出刊期數從 `rt-data-1123` 複本唯讀查）。
@@ -68,7 +77,7 @@
 - ✅ 結果：7 期候選 7 對、認定重複 2 對，**P＝M**（兩組刊同一批 84 個事件，指標分不出兩組）。
 - ⚠️ **原前提不成立**：11/12 P #3（54413）、11/15 P #8（69836）的 M 版都沒有 CHALLENGE；前者 M 的證據包本來就沒有那些來源，後者無關來源照刊。7 期裡 IRRELEVANT_SOURCE 只有 2 次（54480、64568），都不是有效擋錯。`exp3_results.md` 的「M 少錯來自查核員」已改寫，誠實列為混淆因素。
 - ⚠️ **根因（線上仍在）**：P 用 `build_evidence`（帶當天 EntityContext、不限網域），M 用 `build_evidence_from_ids`（沒帶 context、套 `registry_domains` 白名單）。`scripts/exp3_evidence_gap.py` 重建：M 84／84、P 80／84 和資料庫 v1 一致；7 期證據來源 P 416、M 255，只有 1 個來源的稿 P 2、M 19。白名單用 feed 網址的網域，中央社（feedburner）、ETtoday、風傳媒、三立、BBC、聯合早報等正規媒體被當成「假來源」剔除（P 的證據裡有 172 個素材）。
-- 👤 **要不要修 M 的證據包，等志晨決定（沒有排進自動佇列）**：會改 M 記者看到的來源與 `request_hash`、也改凍結後的線上行為。建議做法：加開關（預設關閉），開啟時 M 的 `run_mas` 傳當天 `context`，白名單改成「登錄表來源 id 對應的實際文章網域」，不是 feed 網域。
+- ✅（2026-11-24 傍晚已做，見下一段「三項決定」）~~要不要修 M 的證據包，等志晨決定~~：會改 M 記者看到的來源與 `request_hash`、也改凍結後的線上行為。建議做法：加開關（預設關閉），開啟時 M 的 `run_mas` 傳當天 `context`，白名單改成「登錄表來源 id 對應的實際文章網域」，不是 feed 網域。
 - 📝 唯讀複本的小坑：`python -m reddit_tracker.daily trace` 會用讀寫方式開 WAL 複本，關閉時清掉空的 `-wal`／`-shm`，之後 `mode=ro` 打不開；資料沒變，用 `?immutable=1` 讀（`open_ro` 已處理）。
 - 測試：worktree 全套 530 passed／7 skipped；ruff 通過。不需要重載 newsroom。
 - ✅ 併入 main（`554d0fb`，2026-11-24 07:07 fast-forward）：production 全套 533 passed／4 skipped；只動文件、`scripts/`、測試，沒有重載；scheduler Python process 1 個。

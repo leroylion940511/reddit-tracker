@@ -137,6 +137,9 @@ class Settings(BaseSettings):
     # 出刊前掃 M 組每篇最新版的標題／導言／正文／重要性（daily/noise.py），混進模型推理文字或 JSON 殘渣就 system HOLD。
     # 不多呼叫模型、不改請求；預設關閉＝行為不變（11/15 69855 的問題，凍結後才接）。
     mas_noise_check: bool = False
+    # M 組證據包對齊 P 組：帶當天 EntityContext，網域白名單加上各來源實際文章網域（不只 feed 網址的網域）。
+    # 會改 M 記者看到的來源與 request_hash；預設關閉＝請求逐字不變（11/24 查出，試刊與實驗三是關閉狀態跑的）。
+    mas_full_evidence: bool = False
     gemini_daily_model: str = "gemini-3.5-flash-lite"
 
     # --- 舊排程（候選探索、舊版日報編採與發送）已在 commit 2d95c07 移除；設 true 也不會復活 ---

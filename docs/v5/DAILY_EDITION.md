@@ -430,6 +430,7 @@ def reporter_draft(session, client, *, edition_date, story, evidence, degraded) 
 | `MAS_MORE_INTERACTION` | false | 刪稿申訴（C1）、頭版異議由總編裁決（C2）、總編退稿（C3） | C1 需 `MAS_OPEN_LAYOUT` 且真的刪稿；C2／C3 不需要 | C1–C3 |
 | `FULLTEXT_ENABLED` | false | 允許 `fetch_pending` 抓全文寫 `item_fulltext`；**未接排程** | `FULLTEXT_*` 速率與長度設定；migration `c5e1a9d3f207` | D2 |
 | `MAS_REPORTER_FULLTEXT` | false | 記者、查核員證據塊與數字檢查用全文 | `item_fulltext` 有 `status=ok` 的列（D2 抓過）；`MAS_REPORTER_FULLTEXT_CHARS`(2000) | D3 |
+| `MAS_FULL_EVIDENCE` | false | M 組證據包對齊 P 組：帶當天 EntityContext、白名單加上各來源實際文章網域 | 無（不多呼叫模型，但會改記者看到的來源與 `request_hash`） | 證據包對齊 |
 | `MAS_NOISE_CHECK` | false | 出刊前掃每篇最新版，混進模型雜訊就 system HOLD | 無（不呼叫模型） | 模型雜訊檢查 |
 
 - 只影響 M 組（`DAILY_MODE=mas`）；P 組（pipeline）與實驗二（`eval/exp2.py`）不讀這些開關。
@@ -620,6 +621,16 @@ _eic_revisions(session, *, edition_date, client, clock, hold_ids, evidence_of, r
   - `_evidence_text`：查核數字檢查用的證據文字，有可用全文時接在 `標題 摘要` 後面。
   - `evidence_has_injection` 也掃 `fulltext`；全文含注入標記時，整包照現有規則視為有注入（不上頭版、主編／總編摘要給空），且該篇提示退回摘要（`_usable_fulltext` 回 None）。
 - P 組（`writer.py`）與實驗二（`eval/exp2.py`）不受影響。
+
+### 證據包對齊（`MAS_FULL_EVIDENCE`，預設關閉，2026-11-24 `claude-auto`）
+
+起因：P 組用 `build_evidence`（帶當天 `EntityContext`、不限網域），M 組用 `build_evidence_from_ids`（不帶 context、白名單只認 feed 網址的網域），7 期 P 416、M 255 個來源（`docs/eval/exp3_results.md`「兩組證據包不同」）。
+
+- `daily/mas/orchestrator.py::article_domains(session, registry, now) -> frozenset[str]`：登錄表來源近 7 天實際文章的可註冊網域；該來源至少 5 篇、該網域占這個來源 20% 以上才算。Hacker News 這類連到任意網域的聚合站，長尾網域進不來；已停用來源不算；只看 `first_seen_at <= now`。
+- `run_mas`：開啟時 `domains = registry_domains ∪ article_domains`，並把當天 `title_context` 傳給證據包與文稿編輯修稿時重組的證據包；關閉時參數與原本相同，請求逐字不變。P 組與實驗二不讀這個開關。
+- 用 11/23 唯讀複本重建試刊 7 期 84 篇：開啟時 416 個來源，**84／84 篇和以 P 參數重建的證據包完全相同**（關閉是 255；只有 1 個來源的稿 19 → 2）；Hacker News 外連仍被擋 6 次；計算 `article_domains` 約 0.2 秒。
+- 限制：只涵蓋證據包，不含查核員；開啟後來源變多，查核員的 `irrelevant_sources` 會點名更多來源（它的 context 還是只看證據包），可能多刪正確來源，所以**先做完佇列第 12 項 (2) 再考慮開**。`domain_of` 沒有 `edu.tw` 的二級規則，教育部網域會變成整個 `edu.tw`，風險低、照留。
+- 測試：`tests/test_full_evidence.py`。
 
 ### 模型雜訊檢查（`MAS_NOISE_CHECK`，預設關閉，2026-11-22 `claude-auto`）
 
