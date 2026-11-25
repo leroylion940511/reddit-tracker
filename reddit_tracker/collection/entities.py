@@ -78,6 +78,41 @@ class TitleEntities:
     lower: frozenset[str] = frozenset()  # 小寫出現的英文字（反證：是一般字）
 
 
+# 彙整稿：一篇講好幾件不相干的新聞（早報、晚報、一週大事、每日 briefing）。只認固定欄目的寫法，
+# 樣式來自 2026-10-26～11-23 的素材標題；寧可漏認，不要把單一事件的稿當成彙整稿：
+# 「懶人包」「一次看」幾乎都是單一事件的整理（產假延長、核電公投）、「南華早報：…」是引述媒體名，都不算。
+_ROUNDUP_TOPIC = "(?:國際|全球|世界|兩岸|財經|科技|資安|新聞|每日|今日)"
+_ROUNDUP_TITLE = re.compile(
+    "|".join(
+        (
+            rf"^\d{{1,2}}/\d{{1,2}}\s*{_ROUNDUP_TOPIC}?[早午晚]報\s*\|",  # 10/30國際早報｜…
+            rf"^{_ROUNDUP_TOPIC}[早午晚]報\s*\|",
+            rf"^【{_ROUNDUP_TOPIC}[早午晚日週周]報】",  # 【資安日報】10月28日，…
+            r"^早安世界》",  # 中央社：標題只寫頭條，內文列當天多則
+            r"^[晨午晚]間影音新聞/",
+            r"^(?:今晨|今日)?國際頭條/",
+            r"^\d{1,2}/\d{1,2}\s*各報重點新聞一覽$",
+            r"^[台美]股重點新聞摘要",
+            r"^一[週周]大事/|一[週周]大事(?:彙整|一次看)$",
+            r"^財經一[週周]:",
+            r"^AI趨勢[週周]報第\d+期",
+            r"^The Download:",
+            r"^\d{1,2}/\d{1,2}: CBS Evening News$",
+            r"^(?:Daily|(?:Mon|Tues|Wednes|Thurs|Fri)day) [Bb]riefing:",
+            r"^AP Top .{0,20}Headlines\b",
+            r"^[A-Z][\w ]{1,30} roundup:",  # NFL roundup:（Roundup 除草劑不會是小寫加冒號）
+            r"\((?:TV|Gaming|Film) News Roundup\)$",
+            r"[–-] review roundup$",
+        )
+    )
+)
+
+
+def is_roundup_title(title: str | None) -> bool:
+    """標題是不是彙整稿的固定欄目（全形、簡體先正規化）。只看標題。"""
+    return bool(_ROUNDUP_TITLE.search(fold(title or "").strip()))
+
+
 @dataclass(frozen=True)
 class MergeRules:
     """事件合併門檻（手冊步驟 3 第 2 點）；數值來自設定（`config.Settings.cluster_*`）。"""
@@ -90,6 +125,8 @@ class MergeRules:
     cross_lang_min_entities: int = 2
     # 編輯會議：find_same_events（LLM 第二意見）說要合併時，程式要確認幾個共同實體
     llm_merge_min_entities: int = 1
+    # 彙整稿（`is_roundup_title`）不併入任何事件：聚合自成一個事件，編輯會議不拿它的標題、別名當合併依據
+    isolate_roundups: bool = False
 
     @classmethod
     def from_settings(cls, settings=None) -> MergeRules:
@@ -104,6 +141,7 @@ class MergeRules:
             mid_min_entities=settings.cluster_mid_min_entities,
             cross_lang_min_entities=settings.cluster_cross_lang_min_entities,
             llm_merge_min_entities=settings.cluster_llm_merge_min_entities,
+            isolate_roundups=settings.cluster_isolate_roundups,
         )
 
     def required_entities(self, score: float) -> int | None:

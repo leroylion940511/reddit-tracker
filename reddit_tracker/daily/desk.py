@@ -18,7 +18,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..collection.clustering import lang_group
-from ..collection.entities import EntityContext, EntityLexicon, MergeRules, TitleEntities
+from ..collection.entities import EntityContext, EntityLexicon, MergeRules, TitleEntities, is_roundup_title
 from ..models import SourceItem
 from .scoring import ScoredCluster
 
@@ -48,7 +48,10 @@ def load_cluster_titles(
     cluster_ids: list[int],
     lexicon: EntityLexicon,
     disabled_sources: frozenset[str] = frozenset(),
+    *,
+    skip_roundups: bool = False,
 ) -> dict[int, ClusterTitles]:
+    """`skip_roundups`：不讀彙整稿的標題與別名；成員全是彙整稿的事件不在結果裡。"""
     rows = session.execute(
         select(SourceItem.cluster_id, SourceItem.title, SourceItem.lang, SourceItem.summary).where(
             SourceItem.cluster_id.in_(cluster_ids),
@@ -59,6 +62,8 @@ def load_cluster_titles(
     grouped: dict[int, list[tuple[str, str]]] = {}
     aliases: dict[int, set[str]] = {}
     for cluster_id, title, lang, summary in rows:
+        if skip_roundups and is_roundup_title(title):
+            continue
         grouped.setdefault(cluster_id, []).append((title or "", lang_group(lang)))
         aliases.setdefault(cluster_id, set()).update(lexicon.summary_names(summary or "", lang_group(lang) == "zh"))
     result = {}
@@ -182,14 +187,21 @@ def desk_merges(
     pool_ids = [s.cluster_id for s in pool]
     llm_ids = [i for g in llm_groups or [] for i in g]
     wanted = list(dict.fromkeys([*pool_ids, *llm_ids, *(context_cluster_ids or [])]))
-    titles = load_cluster_titles(session, wanted, lexicon, disabled_sources)
+    titles = load_cluster_titles(session, wanted, lexicon, disabled_sources, skip_roundups=rules.isolate_roundups)
     context = EntityContext(e for t in titles.values() for e in t.entities)
     result = DeskMerges(llm_groups=[list(g) for g in llm_groups or []])
+    to_confirm, roundup_rejected = result.llm_groups, []
+    if rules.isolate_roundups:
+        # LLM 提的組裡，整個事件都是彙整稿（沒有可比對的標題）的先剔除並留紀錄
+        roundup_rejected = [
+            {"group": group, "cluster_id": i, "title": "", "reason": "彙整稿（或沒有可比對的標題）不合併"}
+            for group in result.llm_groups for i in dict.fromkeys(group) if i not in titles
+        ]
+        to_confirm = [g for g in ([i for i in group if i in titles] for group in result.llm_groups) if len(set(g)) >= 2]
     result.entity_groups = cross_language_groups(
         pool, titles, lexicon, context, rules.cross_lang_min_entities
     )
-    confirmed, result.rejected = confirm_groups(
-        result.llm_groups, titles, lexicon, context, rules.llm_merge_min_entities
-    )
+    confirmed, rejected = confirm_groups(to_confirm, titles, lexicon, context, rules.llm_merge_min_entities)
+    result.rejected = roundup_rejected + rejected
     result.groups = result.entity_groups + confirmed
     return result

@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 
 from ..models import SourceItem, StoryCluster
 from .collector import as_utc
-from .entities import EntityContext, EntityLexicon, MergeRules, load_lexicon
+from .entities import EntityContext, EntityLexicon, MergeRules, is_roundup_title, load_lexicon
 from .normalize import title_key
 
 # 除了與某一篇夠像，也要與事件整體（成員向量和）夠像，避免單一連結一路串錯。
@@ -76,6 +76,8 @@ class ClusterRunStats:
     touched_clusters: int = 0
     # 相似度夠、但共同實體不足而沒合併的次數（不確定就不要合併）
     rejected_no_entity: int = 0
+    # `MergeRules.isolate_roundups` 開啟時，這次自成事件的彙整稿篇數
+    isolated_roundups: int = 0
 
 
 def lang_group(lang: str | None) -> str:
@@ -284,11 +286,14 @@ def cluster_recent_items(
     # 「當天素材」＝這次時間窗內的素材標題：中文片段要在 5% 以下的素材出現才算少見，
     # 英文句首字要有別篇在句中大寫佐證。
     context = EntityContext(entities)
+    roundup = [rules.isolate_roundups and is_roundup_title(item.title) for item in items]
     index: dict[str, list[int]] = defaultdict(list)
     centroids: dict[int, Counter] = defaultdict(Counter)
     touched: dict[int, StoryCluster] = {}
 
     def place(position: int, cluster_id: int) -> None:
+        if roundup[position]:
+            return  # 不進索引也不進事件中心：別篇找不到它，以前併進去的也不再當橋
         centroids[cluster_id].update(vectors[position])
         for token in vectors[position]:
             if df[token] <= max_df:
@@ -303,7 +308,9 @@ def cluster_recent_items(
             continue
         vector = vectors[position]
         overlap: Counter = Counter()
-        for token, weight in vector.items():
+        if roundup[position]:
+            stats.isolated_roundups += 1
+        for token, weight in ({} if roundup[position] else vector).items():
             for other in index.get(token, ()):
                 overlap[other] += weight * vectors[other][token]
         published = as_utc(item.published_at)

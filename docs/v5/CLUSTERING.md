@@ -63,6 +63,26 @@
 
 撰稿與合併共用。每筆 `{en: [英文寫法], zh: 中央社標準譯名, also: [其他中文譯名]}`；比對不分大小寫、忽略重音（Vučić＝Vucic），簡體先轉繁體，最長的寫法優先（「小波索納洛」→ 佛拉維歐）。30–50 筆，只收 2026-10-30 以前在素材出現過的名字（實驗一防偷看，`tests/test_entities.py` 用母本驗證），刻意不收美國、中國這類每篇國際新聞都有的國名。
 
+## 彙整稿不併入事件（2026-11-26，`CLUSTER_ISOLATE_ROUNDUPS`，預設關閉）
+
+實驗一的 T457、T523：風傳媒〈10/30國際早報｜…〉一篇講三件事，標題有「黃仁勳」，被併進間諜案事件；共同實體檢查擋不住。打開後：
+
+- **聚合**：`is_roundup_title(title)` 為真的素材自成一個事件，不找既有事件，也不進候選索引與事件中心（別篇不會併到它身上；打開以前已經併進去的留在原事件，但不再當橋）。重複稿照舊沿用根素材的事件。`ClusterRunStats.isolated_roundups` 記篇數。
+- **編輯會議**（`desk_merges`）：彙整稿的標題與摘要別名不當合併依據；整個事件都是彙整稿的，LLM 提議的組也剔除，`rejected` 記「彙整稿（或沒有可比對的標題）不合併」。
+- **不改**：關閉時逐步與原本相同；`exp1-frozen`、實驗數字、`request_hash` 都不動。既有事件的 `outlet_count`／證據包不會回頭剔除已併入的彙整稿；彙整稿自己仍可能被選成一篇稿（只是只有一家出處，分數低）。
+
+**樣式**只認固定欄目（`entities._ROUNDUP_TITLE`）：「MM/DD國際早報｜」「早安世界》」「晚間影音新聞／」「今晨國際頭條／」「各報重點新聞一覽」「【資安日報】」「一週大事／」「財經一週：」、The Download、CBS Evening News、Guardian／Nature 的 briefing、`… roundup:` 等。
+「懶人包」「一次看」**不算**：2026-10-26～11-23 的素材裡它們幾乎都是單一事件的整理（產假延長、核電公投），併進該事件是對的。「南華早報：…」「華爾街日報：…」是引述媒體名，也不算。標題只寫一則頭條、內文列多則的（中央社「早安世界》」）算，因為內文會把別的事件的數字帶進證據包。
+
+| 離線驗證（`rt-data-1123` 複本，實驗一的 40,618 篇素材、3 小時一輪、含編輯會議程式合併，沒有呼叫模型） | 關 | 開 |
+| --- | --- | --- |
+| 和凍結的 `c_merged` 一致（100 組標註配對） | 100／100 | 98／100（只差 T457、T523，標註都是「不是」） |
+| 併在別的事件裡的彙整稿（共 77 篇） | 24 | 0 |
+| 編輯會議合併組 | 9 | 9 |
+| 非彙整稿的事件變化 | — | 1 個拆成 2 個：〈Seahawks' 20-3 win〉不再靠〈NFL roundup〉和維京人那批稿連在一起 |
+
+這是看過 test 配對的錯誤以後才寫的規則，上表**不能**當成方法 C 的成績（`exp1_results.md` 不改）。
+
 ## 出處（outlet）與獨立來源數
 
 「獨立來源數」以**出處**計算，不以登錄表的 feed 計算（自由時報政治版與地方版是同一家媒體）：
@@ -127,7 +147,8 @@ SourceRegistry.disabled_source_ids() -> frozenset[str]
 
 # reddit_tracker/collection/entities.py
 MergeRules(high_threshold=0.45, low_threshold=0.28, high_min_entities=1, mid_min_entities=2,
-           cross_lang_min_entities=2, llm_merge_min_entities=1)
+           cross_lang_min_entities=2, llm_merge_min_entities=1, isolate_roundups=False)
+is_roundup_title(title: str | None) -> bool            # 彙整稿固定欄目；只看標題
 MergeRules.from_settings(settings=None) -> MergeRules
 MergeRules.required_entities(score) -> int | None      # None：不合併
 load_lexicon(glossary_path=None, common_words_path=None) -> EntityLexicon   # 預設路徑來自設定

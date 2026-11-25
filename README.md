@@ -176,6 +176,7 @@ uv run python -m reddit_tracker.web
 | `CLUSTER_HIGH_MIN_ENTITIES`／`CLUSTER_MID_MIN_ENTITIES` | `1`／`2` | 各段需要的共同實體數 |
 | `CLUSTER_CROSS_LANG_MIN_ENTITIES` | `2` | 編輯會議跨語言合併 |
 | `CLUSTER_LLM_MERGE_MIN_ENTITIES` | `1` | LLM 說合併時程式要確認的共同實體數 |
+| `CLUSTER_ISOLATE_ROUNDUPS` | `false` | 彙整稿（早報、晚報、一週大事…）不併入任何事件，編輯會議也不拿它合併 |
 | `NAME_GLOSSARY_PATH` | `reddit_tracker/seeds/name_glossary.yaml` | 譯名表 |
 | `ENTITY_COMMON_WORDS_PATH` | `reddit_tracker/seeds/entity_common_words.yaml` | 共同實體排除的常見字 |
 | `LEGACY_JOBS_ENABLED` | `false` | 舊 job 已刪除，設 true 也只記 warning |
@@ -244,7 +245,7 @@ deploy/install_launchd.sh rsshub-install    # 本機 RSSHub（只綁 127.0.0.1:1
 REDDIT_TRACKER_NO_DOTENV=1 uv run python -m pytest -q
 ```
 
-目前基準（2026-11-25，production checkout）：544 passed／4 skipped，沒有 xfail。4 個 skip 是重編版不適用的案例（E03、E05、E11 的事件沒見報，E12 沒有只來自 arXiv 的刊出稿）；沒有唯讀母本 `data/snapshots/2026-10-27.db` 的 worktree 是 541 passed／7 skipped。
+目前基準（2026-11-26，production checkout）：579 passed／4 skipped，沒有 xfail。4 個 skip 是重編版不適用的案例（E03、E05、E11 的事件沒見報，E12 沒有只來自 arXiv 的刊出稿）；沒有唯讀母本 `data/snapshots/2026-10-27.db` 的 worktree 是 576 passed／7 skipped。
 
 - **測試不呼叫真 LLM**：`tests/llm_guard.py` 全域擋 codex subprocess 與 Gemini HTTP；額度 state 檔改到 `tmp_path`。
 - **回歸集 E01–E16**（`tests/regression/cases/`，10/27 首期的 15 個錯誤案例＋E09 非錯誤案例）：runner 用離線 fixture 在 tmp SQLite 照線上時間表重編 10/27，撰稿走 `llm/replay.py` 錄音重播，案例到期還掛 xfail 會失敗。只跑回歸集：

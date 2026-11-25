@@ -76,6 +76,8 @@ class Settings(BaseSettings):
     cluster_high_min_entities: int = 1
     cluster_mid_min_entities: int = 2
     cluster_cross_lang_min_entities: int = 2   # 編輯會議程式跨語言合併
+    # 彙整稿（早報、晚報、一週大事…）不併入任何事件（實驗一 T457、T523）。預設關閉＝exp1-frozen 的規則。
+    cluster_isolate_roundups: bool = False
     cluster_llm_merge_min_entities: int = 1    # find_same_events 說合併時程式要確認的共同實體數
     name_glossary_path: str = "reddit_tracker/seeds/name_glossary.yaml"
     entity_common_words_path: str = "reddit_tracker/seeds/entity_common_words.yaml"
