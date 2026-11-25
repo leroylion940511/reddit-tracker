@@ -75,6 +75,7 @@
 - ✅ 本檔「線上現況」改成 11/25；查證時發現兩個線上問題（收集撞鎖、Guardian 403），寫在該節，**沒有動手修**。
 - ℹ️ `CLAUDE.md`／`AGENTS.md` 的「Do not `brew upgrade codex` before the 11/20 freeze」字面已過期，規則檔由志晨決定要不要改。
 - 測試：worktree 全套 541 passed／7 skipped；ruff 通過。
+- ✅ 併入 main（`7b66760`，2026-11-25 19:05 fast-forward）：production 全套 544 passed／4 skipped；只動文件、`.env.example`、測試，沒有重載；scheduler Python process 1 個。
 - ➡️ 下一步：第 12 項 P2-1 三個演算法盲區（新開關、預設關閉；可分次做）。
 
 ## 本次變更（2026-11-25 午 — 發表簡報與 Demo 腳本，`claude-auto`，自動開發）
