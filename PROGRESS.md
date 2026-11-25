@@ -72,6 +72,7 @@
 - ℹ️ 11/01 的摘要卡不要拿來展示：最後一篇 11/06 才核可，`span_secs` 算成約 130 小時。
 - 👤 剩：真人排練計時、錄備援影片、封面填姓名學號與指導老師、決定要不要把 three.js 0.160.0 放到本機（沒網路時 3D 出不來，右側分頁照常）。
 - 測試：worktree 全套 539 passed／7 skipped；ruff 通過。
+- ✅ 併入 main（`ea757fd`，2026-11-25 13:10 fast-forward）：production 全套 542 passed／4 skipped；沒有重載（`office.html` 只有手動起的 web 會載入，import 排程模組確認過）；scheduler Python process 1 個。
 - ➡️ 下一步：第 11 項 P1-3b README／PROGRESS 對齊。
 
 ## 本次變更（2026-11-25 — 報告 v2.0 初稿，`claude-auto`，自動開發）
