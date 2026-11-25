@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import importlib.util
+import re
+from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
@@ -61,3 +63,12 @@ def test_env_example_has_no_web_provider():
     assert "LLM_PROVIDER" not in text and "=web" not in text
     assert "LLM_DAILY_LIMIT=60" in text and "GEMINI_MAX_429_RETRIES=1" in text
     assert "LEGACY_JOBS_ENABLED=false" in text
+
+
+@pytest.mark.parametrize("doc", ["README.md", ".env.example"])
+def test_every_setting_is_documented(doc):
+    """README 的設定鍵表與 .env.example 要列出每個設定鍵（完整鍵名，不用縮寫）。"""
+    text = (Path(__file__).resolve().parents[1] / doc).read_text(encoding="utf-8")
+    keys = [name.upper() for name in Settings.model_fields]
+    missing = [key for key in keys if not re.search(rf"(?<![A-Z_]){key}(?![A-Z_])", text)]
+    assert not missing, f"{doc} 沒列出設定鍵：{missing}"

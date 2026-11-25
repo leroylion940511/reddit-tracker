@@ -5,14 +5,21 @@
 > 2026-10-29 以前的段落已搬到 `docs/archive/`（見文末「更早的紀錄」）。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-25 午（`claude-auto`：發表簡報與 Demo 腳本；回放頁快捷鍵修正；11/19 兩次異議查出是誤報，改用 11/01 當擋錯示範）。前次：2026-11-25（`claude-auto`：報告 v2.0 初稿；更正 11/14 那期仍需核可、讀者只收到標題）。前次：2026-11-24 夜（志晨授權磁碟清理：五份舊 DB 備份／複本已移到垃圾桶，`data/snapshots`、`rt-data-1123`、`deploy-20261115` 保留）。前次：2026-11-24 晚（`claude-auto`：實驗二課後補充消融 (c+)，誤刪 3→0 但 H-T767 變漏擋，開關維持關閉）。前次：2026-11-24 傍晚（志晨把三項決定交給 Claude：修 M 證據包（`MAS_FULL_EVIDENCE`，預設關）、push main、DB 瘦身延到發表後）。前次：2026-11-24 午（`claude-auto`：發表申請單草稿、實驗報告清掉交接字眼）。前次：2026-11-24 早（`claude-auto`：實驗三補重複主稿數與 M 組 trace；查出 P／M 證據包參數不同、M 的網域白名單誤剔正規媒體）。前次：2026-11-23 深夜（外部稽核 12 項併入時程佇列、清舊 worktree、補打並 push `final-1120`、上線 `MAS_NOISE_CHECK=true`）。前次：2026-11-23 晚（回放頁 R4 互動摘要卡，R1–R4 完成，`claude-auto`）。前次：2026-11-23 晚（回放頁 R3 播放控制）。前次：2026-11-23 晚（回放頁 R2 角色泳道時序圖）。前次：2026-11-23 晚（回放頁 R1 稿件協商串）。前次：2026-11-23 晚（實驗三補成本列與 AIHOT 對照；新增「時程與下一步」：發表 2027-01-08、申請單 12/16 截止、回放頁 R1–R4）。前次：2026-11-23（`claude-auto`：實驗三 B（agy）盲計 7 期完成、`docs/eval/exp3_results.md` 已寫入）。前次：2026-11-22（`claude-auto`：M 組出刊前模型雜訊檢查 `MAS_NOISE_CHECK`，預設關閉；志晨同意後 fast-forward 併入 main，開關沒開、不需重載）。前次：2026-11-21（`claude-auto`：merge main 解 PROGRESS.md／exp2_results.md 衝突；`report --write` 改成保留手寫分析；志晨同意後 fast-forward 併入 main `c335f2c`→`claude-auto`，不需重載）。前次：2026-11-19（`claude-auto`：實驗二報告補「被刪的來源」一節）。前次：2026-11-19（實驗二報告補上錯誤分析／結論／限制草稿，待志晨改寫）。前次：2026-11-19 06:20（實驗二三組完成，`docs/eval/exp2_results.md` 已寫入；(c) 雜訊掃描乾淨；main 已 push `4d7c61f`）。前次：2026-11-18 07:40（實驗二 `run` 第一天：(a)(b) 完成、(c) 停在 H-T807，11/19 接著跑；`claude-auto` 離線模型雜訊掃描，還沒併入 main）。前次：2026-11-17 14:30（實驗二：A＝grok 選完 15 篇、`build`、`draft --live` 25/25 完成；明天 `run`）。前次：2026-11-17（實驗二 `build` 檢查正常稿來自候選清單，已 fast-forward 併入 main，不需重載；main 還沒 push）。前次：2026-11-16（實驗二正常稿抽樣修正已 fast-forward 併入 main，不需重載；main 已 push）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
+**Last updated:** 2026-11-25 晚（`claude-auto`：README／PROGRESS 對齊；查出 11/24 起 06:00 準備期間收集會撞鎖、Guardian 五個來源全部 403）。前次：2026-11-25 午（`claude-auto`：發表簡報與 Demo 腳本；回放頁快捷鍵修正；11/19 兩次異議查出是誤報，改用 11/01 當擋錯示範）。前次：2026-11-25（`claude-auto`：報告 v2.0 初稿；更正 11/14 那期仍需核可、讀者只收到標題）。前次：2026-11-24 夜（志晨授權磁碟清理：五份舊 DB 備份／複本已移到垃圾桶，`data/snapshots`、`rt-data-1123`、`deploy-20261115` 保留）。前次：2026-11-24 晚（`claude-auto`：實驗二課後補充消融 (c+)，誤刪 3→0 但 H-T767 變漏擋，開關維持關閉）。前次：2026-11-24 傍晚（志晨把三項決定交給 Claude：修 M 證據包（`MAS_FULL_EVIDENCE`，預設關）、push main、DB 瘦身延到發表後）。前次：2026-11-24 午（`claude-auto`：發表申請單草稿、實驗報告清掉交接字眼）。前次：2026-11-24 早（`claude-auto`：實驗三補重複主稿數與 M 組 trace；查出 P／M 證據包參數不同、M 的網域白名單誤剔正規媒體）。前次：2026-11-23 深夜（外部稽核 12 項併入時程佇列、清舊 worktree、補打並 push `final-1120`、上線 `MAS_NOISE_CHECK=true`）。前次：2026-11-23 晚（回放頁 R4 互動摘要卡，R1–R4 完成，`claude-auto`）。前次：2026-11-23 晚（回放頁 R3 播放控制）。前次：2026-11-23 晚（回放頁 R2 角色泳道時序圖）。前次：2026-11-23 晚（回放頁 R1 稿件協商串）。前次：2026-11-23 晚（實驗三補成本列與 AIHOT 對照；新增「時程與下一步」：發表 2027-01-08、申請單 12/16 截止、回放頁 R1–R4）。前次：2026-11-23（`claude-auto`：實驗三 B（agy）盲計 7 期完成、`docs/eval/exp3_results.md` 已寫入）。前次：2026-11-22（`claude-auto`：M 組出刊前模型雜訊檢查 `MAS_NOISE_CHECK`，預設關閉；志晨同意後 fast-forward 併入 main，開關沒開、不需重載）。前次：2026-11-21（`claude-auto`：merge main 解 PROGRESS.md／exp2_results.md 衝突；`report --write` 改成保留手寫分析；志晨同意後 fast-forward 併入 main `c335f2c`→`claude-auto`，不需重載）。前次：2026-11-19（`claude-auto`：實驗二報告補「被刪的來源」一節）。前次：2026-11-19（實驗二報告補上錯誤分析／結論／限制草稿，待志晨改寫）。前次：2026-11-19 06:20（實驗二三組完成，`docs/eval/exp2_results.md` 已寫入；(c) 雜訊掃描乾淨；main 已 push `4d7c61f`）。前次：2026-11-18 07:40（實驗二 `run` 第一天：(a)(b) 完成、(c) 停在 H-T807，11/19 接著跑；`claude-auto` 離線模型雜訊掃描，還沒併入 main）。前次：2026-11-17 14:30（實驗二：A＝grok 選完 15 篇、`build`、`draft --live` 25/25 完成；明天 `run`）。前次：2026-11-17（實驗二 `build` 檢查正常稿來自候選清單，已 fast-forward 併入 main，不需重載；main 還沒 push）。前次：2026-11-16（實驗二正常稿抽樣修正已 fast-forward 併入 main，不需重載；main 已 push）。前次：2026-11-15 19:08（HOLD 稿改標「暫扣」已併入 main 並部署；main 還沒 push）；再前次：2026-11-15 07:10（`claude-auto` 開發）；前次：2026-11-14 19:42（關閉人工核可＋併入 desk-v3 並部署；main 已 push）；再前次：2026-11-13 晚（實驗一結果已存檔：`docs/eval/cluster_pairs_v1.csv`、`exp1_results.md`，已併入 main；服務沒有重載、不需要；main **還沒 push**）
 
-## 線上現況（2026-11-13 查證）
+## 線上現況（2026-11-25 19:00 查證）
 
-- newsroom、rsshub 兩個 LaunchAgent 都在跑。**Mac 在 11/12 18:56 重開機，newsroom 於 18:59 重新啟動，載入的已是 `feat/newsroom-3d` 併入後的程式**（下面 11/12 段落寫的「服務沒有重載」只到重開機前為止）。重開機那一輪 RSSHub 比 newsroom 晚起來，11 個 RSSHub 來源連線被拒，下一輪恢復。
-- 11/13 是新程式的第一期：06:00–06:05 準備（P 影子 5 次、M 28 次 Codex），12 篇、`degraded=[]`；12 篇於 07:06 核准；08:35 發行（Telegram 533、534）。
-- 查證當下 main 領先 origin/main 3 個 commit（`ff87ca0`、`7f72c69`、`4446959`）；部署後共 9 個，**還沒 push**。
-- production DB 523 MB、Alembic `b8d4f0a17c33`。全套（production checkout，有母本）413 passed／4 skipped。
+資料來源：`launchctl`、`newsroom.log`、git、`rt-data-1123` 複本；沒有讀 production DB 與 `.env`。「開關」一列取自本檔紀錄。11/13 的舊現況見 git 歷史。
+
+- **服務**：newsroom（11/24 17:01 重載後一直在跑，scheduler Python process 1 個）、rsshub 兩個 LaunchAgent。
+- **出刊**：11/25 06:00–06:08 準備（P 影子＋M 組），12 篇、`degraded=[]`；08:35 發行（Telegram 557、558，`daily_editions` id 30）。11/24 同樣正常（555、556）。11/25 有一次 Codex 呼叫 150 秒逾時，重試成功。
+- **開關**：`DAILY_MODE=mas`、P 影子開、人工核可關（`DAILY_REQUIRE_APPROVAL=false`，第一期是 11/15）、`MAS_NOISE_CHECK=true`（第一期 11/24；11/24、11/25 有沒有 HOLD 要看 DB，沒有查）。desk-v3 各開關、`MAS_FULL_EVIDENCE`、`FACT_CHECKER_PER_SOURCE` 都關。
+- **版本**：Codex CLI 0.166.0，11/25 06:00 `codex version guard ok`；tag `final-1120` 已 push。
+- **資料庫**：production 約 718 MB；Alembic 最新 `c5e1a9d3f207`（desk-v3 `item_fulltext`，11/14 部署；11/23 複本確認）。
+- **git**：查證當下 main `a934e8b`，領先 origin/main（`73fddf5`）8 個 commit，**還沒 push**（👤）。
+- ⚠️ **11/24 起，06:00 準備期間的收集會撞鎖**：重載讓 15 分鐘的 tick 改從重載時刻起算，從 06:09:47 變成 06:03:10（11/23 21:48 重載）、06:01:44（11/24 17:01 重載）。M 組從開始寫稿到出刊稿落地是同一個 write transaction（`daily/run.py` 的 `session_scope` 包住 `_finish_mas`，11/25 約 06:01:47–06:08:41），收集逐一來源等 30 秒後 `database is locked`：11/24 5 個來源、11/25 6 個來源寫入失敗（連同補寫健康紀錄共 13／16 次 `OperationalError`）。**不影響出刊**；失敗的來源沒有留下健康紀錄，依程式下一輪就到期重抓（06:16 那輪 29 個來源），但該時段的收集晚約 15 分鐘，健康報表看起來像沒抓。11/11 發生過同樣的事，當時只把等鎖 5→30 秒。
+  - 不用改程式的做法：**下次重載選在每刻鐘的第 10–13 分（例如 19:10、19:25）**，tick 就會落在 06:10 之後（README「每日營運」已寫）。程式修法（準備期間收集讓開，或 M 組分段 commit）會動線上流程，沒有排進佇列。
+- ⚠️ **Guardian 五個來源（world／tech／environment／culture／sport）11/24 01:03 起每次都 403**（11/24 93 次、11/25 到 18:46 76 次；11/20–11/23 是 0 次）。看起來是對方擋，還沒查是擋 UA 還是 IP；少了五個英文 T2 來源，會影響國際／科技版候選。登錄表沒動。
 
 ## 時程與下一步（2026-11-23 起，以此為準；Claude 自主安排，志晨 11/23 授權）
 
@@ -32,7 +39,7 @@
 8. ✅（2026-11-24，`claude-auto`）**P0-2 實驗二課後補充消融 (c+)**（12/08 前；⚠️ (c) 組的證據包也來自 `build_evidence_from_ids`，同一份證據三組共用，組間比較不受影響，報告照寫即可）：在複本以 `FACT_CHECKER_PER_SOURCE=true` 只重跑 (c) 有 CHALLENGE 的案例（H-T767、E02，必要時 H-T807），比較連帶誤刪 3 則 → ?；正式 (a)(b)(c) 檔案與結論不動，結果寫成 `docs/eval/exp2_results.md`「課後補充消融（Post-Freeze Ablation）」一節。要呼叫 Codex，先確認 `scripts/run_exp2.py` 能指定輸出目錄到 Lab 複本。
 9. ✅（2026-11-25，`claude-auto`，整份初稿；剩截圖與老師確認事項，見「本次變更（2026-11-25）」）**P0-3b 報告 v2.0** `docs/report.md` 整份改寫（12/20 前初稿；可分兩次）：一 緒論；二 系統架構（RSS/RSSHub 來源 → TF-IDF＋實體兩段聚合 → 評分選題 → P 流水線 vs M 六角色編輯室）；三 MAS 角色協議與程式護欄（`protocol.py` 權限、T1/T2/T3、`request_hash` 錄音重播、回歸集 E01–E16）；四 資料庫（只寫現行核心表）；五 實驗一／二／三與七日試刊（整合三份 results）；六 限制與混淆因素（grok/agy 代標、P 組一次寫整版被截斷的混淆、11/14 起關閉人工核可、11/13 只有一期是發行前真人核准）與 AI 工具使用聲明。口試七題的防禦寫進第六章。
 10. ✅（2026-11-25，`claude-auto`，初稿；👤 剩排練、錄備援影片、填封面個資）**P0-4 簡報＋Demo 腳本**（12/31 前；⚠️ 11/19 那兩次異議是誤報，腳本已改，見「本次變更（2026-11-25 午）」）：`docs/demo_slides.md`（問題 → 六角色編輯室與程式護欄 → 回放 R1–R4 → 三實驗誠實評估）、`docs/demo_script.md`（3–5 分鐘 live demo＋備援錄影逐字稿：`python -m reddit_tracker.web`，開 `/daily/2026-11-19/newsroom/office?only=1&speed=2`，R4 摘要卡 → R2 泳道 → 按 `C` 跳 CHALLENGE → R1 協商串 v1→v2 diff）。
-11. **P1-3b README／PROGRESS 對齊**：README 的測試數、Alembic revision、設定鍵表（補 `MAS_NOISE_CHECK` 與 desk-v3 四個開關）；本檔「線上現況」更新到最新日期。
+11. ✅（2026-11-25，`claude-auto`）**P1-3b README／PROGRESS 對齊**：README 的測試數、Alembic revision、設定鍵表（補 `MAS_NOISE_CHECK` 與 desk-v3 四個開關）；本檔「線上現況」更新到最新日期。
 12. **P2-1 三個演算法盲區**（放新開關，預設關閉，不動 `exp1-frozen` 與實驗二重播）：(1) 早報／晚報／懶人包等彙整稿 `is_roundup_title` 不併入單一事件 cluster；(2) 查核員 `irrelevant_sources` 接當天 EntityContext，承認 ≥3 字、DF<5% 的中文共同片段（N-44224 蘇巧慧、N-54434 統一不再誤點名）；(3) 查核員提示詞加事件四分類（同次事件／後續進展／無關／彙整稿）——(3) 會改 `request_hash`，只在開關打開時生效。離線測試：T457/T523 不再錯併。
 13. **P2-2 desk-v3 高互動 demo 期**（選做）：在 `rt-data-1123` 另一份複本開 `MAS_RICH_CONTEXT`／`MAS_OPEN_LAYOUT`／`MAS_MORE_INTERACTION` 跑一期 M 組 prepare（詳見 `docs/pr/desk-v3.md`），`build_replay` 輸出存成 `tests/fixtures/replay/` 下的 fixture，供簡報對比。
 14. **P3-1 `run_mas` 只為候選池建 `Story` 列**（每期 ~4,800 → ≤30）：先確認分版主編（含 `MAS_OPEN_LAYOUT`）只需要 desk pool＋全站 top 10；改完全套測試＋回放 fixture 都要過；會動線上流程，併入後要 `newsroom-reload` 並看隔天 06:00 準備。
@@ -57,6 +64,18 @@
 - 測試：`tests/test_full_evidence.py` 5 個；worktree 全套 535 passed／7 skipped、ruff 通過；關閉時請求不變（錄音重播與回歸集都過）。
 
 - ✅ 併入 main 並重載 newsroom（2026-11-24 17:01）：production 全套 538 passed／4 skipped；log 有 `codex version guard ok`、三個 job 註冊、scheduler Python process 1 個。`MAS_FULL_EVIDENCE` 沒開，線上行為不變。main 隨後 push 到 origin。
+
+## 本次變更（2026-11-25 晚 — README／PROGRESS 對齊，`claude-auto`，自動開發）
+
+沒有改線上程式；沒呼叫模型、沒碰 production DB、沒讀 `.env`。
+
+- ✅ README：測試數（11/25）、Alembic 最新 revision、設定鍵表補 16 個鍵（`MAS_NOISE_CHECK`、`MAS_FULL_EVIDENCE`、desk-v3 四個開關與護欄、`FULLTEXT_*`）、實驗工具補 6 支腳本與 exp2 的 `ablation`、文件索引補實驗結果／申請單／`docs/pr`、狀態與路線圖改成現況。
+- ✅ README 更正不實敘述：「兩組差別只在撰稿與審稿方式」補上證據包參數不同；關閉核可時 `challenged` 稿會照發全文；`brew upgrade codex` 的說明不再寫「11/20 凍結前」。
+- ✅ `.env.example` 同步補鍵（只有註解行，沒有改任何預設值）。`tests/test_config.py` 加檢查：`Settings` 的每個鍵都要出現在 README 與 `.env.example`，以後加開關漏寫會失敗。
+- ✅ 本檔「線上現況」改成 11/25；查證時發現兩個線上問題（收集撞鎖、Guardian 403），寫在該節，**沒有動手修**。
+- ℹ️ `CLAUDE.md`／`AGENTS.md` 的「Do not `brew upgrade codex` before the 11/20 freeze」字面已過期，規則檔由志晨決定要不要改。
+- 測試：worktree 全套 541 passed／7 skipped；ruff 通過。
+- ➡️ 下一步：第 12 項 P2-1 三個演算法盲區（新開關、預設關閉；可分次做）。
 
 ## 本次變更（2026-11-25 午 — 發表簡報與 Demo 腳本，`claude-auto`，自動開發）
 

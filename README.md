@@ -1,6 +1,6 @@
 # AI 綜合日報（reddit_tracker）
 
-多來源中英文新聞 → 事件聚合 → 程式評分選題 → 流水線（pipeline）或 Multi-Agent 編輯室（MAS）撰稿與查核 → 人工核可 → 每天 08:35（Asia/Taipei）以 Telegram 發行的繁體中文綜合日報。這是資工系畢業專題「AI 新聞公司：Multi-Agent 虛擬報社」的實作，預定 2027 年 1 月初發表。
+多來源中英文新聞 → 事件聚合 → 程式評分選題 → 流水線（pipeline）或 Multi-Agent 編輯室（MAS）撰稿與查核 → 人工核可（可關閉，線上 2026-11-14 起關閉）→ 每天 08:35（Asia/Taipei）以 Telegram 發行的繁體中文綜合日報。這是資工系畢業專題「AI 新聞公司：Multi-Agent 虛擬報社」的實作，預定 2027 年 1 月初發表。
 
 > **關於名稱：** 本專案早期是 Reddit／Threads 素人爆文追蹤器（v4），套件名 `reddit_tracker` 與 repo 名稱沿用，不改名。2026-10-27 起只保留 v2.0 綜合日報；v4（Reddit 探索、評分、問答 bot）與 v5 Reddit 早報的程式已移除，舊程式碼留在 git 歷史（commit `ff15181` 之前），舊資料表與 migration 保留不動。
 
@@ -42,7 +42,7 @@ flowchart TD
 
 ## 兩種編採模式（`DAILY_MODE`）
 
-兩組用同一套選題（`select_articles`）、同一個模型字串（`DAILY_MODEL_VERSION`），差別只在撰稿與審稿方式，作為實驗三的對照。
+兩組用同一套選題（`select_articles`）、同一份快照、同一個模型字串（`DAILY_MODEL_VERSION`），作為實驗三的對照。設計上差別只在撰稿與審稿方式，但**證據包的參數也不同**（2026-11-24 查出）：P 帶當天的 EntityContext、不限網域；M 不帶，另外套登錄表網域白名單，試刊 7 期 M 的來源是 255 個、P 是 416 個。這是實驗三的混淆因素，見 [`docs/eval/exp3_results.md`](docs/eval/exp3_results.md)；`MAS_FULL_EVIDENCE=true` 可對齊（預設關閉，試刊是關閉狀態跑的）。
 
 - **`pipeline`（P 組，預設）**：編輯會議一次、頭版一次、三個內版各一次撰稿，一期最多 5 次 LLM 請求（＋重試）。程式做數字核對，不過關或失敗就改用模板稿；arXiv 預印本與單一來源警語由程式加在文末。P 組沒有人工核可關卡。`prepare --shadow` 可產生 P 組影子版（寫 `site/daily/shadow`，不寫 `daily_editions`）；`DAILY_MODE=mas`＋`DAILY_SHADOW_ENABLED=true` 時 06:00 自動先跑 P 影子、M 再從同一份快照跑，P 額度另有上限 `DAILY_SHADOW_LLM_LIMIT`。
 - **`mas`（M 組）**：六個角色分開呼叫 LLM、經 `agent_messages` 互相傳訊，所有版本與版面變化都存在 DB，可在回放頁一步步重看。
@@ -60,7 +60,7 @@ flowchart TD
 | 版面編輯 `layout_editor` | 檢查頭版容量（6 個位置）、重複與版別平衡；主稿過長要求縮稿 | `PAGE_OBJECTION`、`REQUEST_REVISION` | `read_capacity`、`read_page_plan` |
 | 總編 `eic` | 只決定版位，不改稿、不能解除 HOLD | `DECISION`、`REQUEST_REVISION` | `read_pitches`、`write_page_plan` |
 
-另有 `system`（程式）與 `human`（真人）可發 `HOLD`／`RELEASE`。每則異議串有 `correlation_id`；同一串已來回 2 次 `CHALLENGE` 後，第 3 次會轉成 `system` 的 `HOLD`。每期每組超過 80 則訊息後，新訊息標 `expired`。
+另有 `system`（程式）與 `human`（真人）可發 `HOLD`／`RELEASE`；`MAS_MORE_INTERACTION` 開啟時分版主編還可發一次 `APPEAL`（預設關閉）。每則異議串有 `correlation_id`；同一串已來回 2 次 `CHALLENGE` 後，第 3 次會轉成 `system` 的 `HOLD`。每期每組超過 80 則訊息後，新訊息標 `expired`。
 
 **三個情境（老師手冊第 7 章）：**
 
@@ -77,7 +77,8 @@ flowchart TD
 ## 人工核可
 
 - `DAILY_MODE=mas` 發行時依最新 `page_plans` 與核可狀態重新渲染：**未核可的稿只出標題**，正文換成「未核准，本期不發行全文。」；HOLD 的稿標「暫扣」，正文換成「本稿暫扣，本期不發行全文。」
-- `DAILY_REQUIRE_APPROVAL=false` 關掉人工核可：不用 `approve`，稿件照發全文；HOLD（查核員或真人扣稿）的稿仍只出標題。
+- `DAILY_REQUIRE_APPROVAL=false` 關掉人工核可：不用 `approve`，稿件照發全文；HOLD（查核員、程式或真人扣稿）的稿仍只出標題。⚠️ 改稿後重驗仍不過的稿停在 `challenged`，不會自動轉 HOLD，關閉核可時會照發全文（過去 3 篇都在關閉核可之前）。
+- 線上現況：2026-11-14 19:42 起關閉人工核可，第一期不需核可的是 11/15；`MAS_NOISE_CHECK` 11/23 起開啟（11/24 第一期）。程式預設值是相反的，以設定鍵表為準。
 - 只有真人名字能核可，角色名（`eic`、`reporter`…）會被拒絕；寫入 `approved_by`／`approved_at`。
 - 核可或 HOLD 可用 CLI（`daily approve`／`daily hold`），或在回放頁操作（`/daily/<date>/newsroom/decision`）。回放頁不能改稿。
 - 3D 編輯室回放：`/daily/<date>/newsroom/office`（唯讀）。把當期的收集、各角色的模型呼叫、訊息、改稿、版面變化一步一步演出來；資料介面見 `docs/v5/DAILY_EDITION.md`「回放時間線與 3D 編輯室」。
@@ -95,7 +96,7 @@ flowchart TD
 | `llm/records.py` | 每一次 subprocess 嘗試寫一筆 `llm_records`：`request_hash`、`prompt_text`、`response_text`、`latency_ms`、`ok`、`error`、`role`、`run_variant`、`edition_date`、`story_id`、`model_version` |
 | `llm/replay.py` | 以 `request_hash`（sha256(system＋prompt＋model＋schema)）找回錄好的回應重播；**找不到就丟 `ReplayMissing`，不會默默呼叫真模型** |
 
-`DAILY_WRITER` 只允許 `codex`／`gemini`／`template`／`fake`（`config.LLM_PROVIDERS`；網頁備援已移除且禁止）。找不到 `CODEX_BIN` 時整期改用模板稿。目前定案的模型字串：`gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low`（2026-10-31 起 Homebrew codex；11/20 凍結前不要 `brew upgrade codex`，cask 不能 `brew pin`）。replay 的 `request_hash` 不含 CLI 版本。
+`DAILY_WRITER` 只允許 `codex`／`gemini`／`template`／`fake`（`config.LLM_PROVIDERS`；網頁備援已移除且禁止）。找不到 `CODEX_BIN` 時整期改用模板稿。目前定案的模型字串：`gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low`（2026-10-31 起 Homebrew codex，`final-1120` 凍結的就是這一版；不要 `brew upgrade codex`，升級後版本守門會每天警告，cask 也不能 `brew pin`）。replay 的 `request_hash` 不含 CLI 版本。
 
 ## 快速開始
 
@@ -130,8 +131,8 @@ uv run python -m reddit_tracker.web
 | `DAILY_MODE` | `pipeline` | `pipeline` 或 `mas`，其他值啟動即報錯 |
 | `DAILY_WRITER` | `codex` | `codex`／`gemini`／`template`／`fake` |
 | `DAILY_MODEL_VERSION` | `gpt-6.1-sol \| codex-cli 0.166.0 \| reasoning_effort=low` | P／M 共用的完整模型版本字串；`codex-cli` 段是版本守門的鎖定值 |
-| `DAILY_PREPARE_HOUR`／`_MINUTE` | `6`／`0` | 準備時間 |
-| `DAILY_DELIVERY_HOUR`／`_MINUTE` | `8`／`35` | 發行時間 |
+| `DAILY_PREPARE_HOUR`／`DAILY_PREPARE_MINUTE` | `6`／`0` | 準備時間 |
+| `DAILY_DELIVERY_HOUR`／`DAILY_DELIVERY_MINUTE` | `8`／`35` | 發行時間 |
 | `DAILY_PREPARE_DEADLINE` | `08:20` | 06:00 準備的 LLM 截止（出刊時區）：之後不再呼叫模型，角色照額度用完的順序降級成模板稿（`llm/deadline.py`） |
 | `DAILY_SHADOW_MAX_MINUTES` | `30` | P 影子最多呼叫模型幾分鐘（平常約 2 分鐘），卡住也留時間給 M |
 | `DAILY_SITE_DIR` | `site/daily` | HTML 輸出目錄（不進版控） |
@@ -140,6 +141,18 @@ uv run python -m reddit_tracker.web
 | `DAILY_ANNOTATION_DIR` | `annotation` | 影子＋M 都有稿時匯出盲計稿／抽查稿到 `YYYY-MM-DD/`（可整個交給 B；對照表在 `_private/YYYY-MM-DD/mapping.json`，不給 B、不進版控） |
 | `FACT_CHECKER_PER_SOURCE` | `false` | M 組查核員對程式點名的每個可疑來源回 KEEP／REMOVE（關閉＝舊的全域 OK／CHALLENGE）；開啟會改查核員請求的 `request_hash`，見 `docs/pr/checker-per-source.md` |
 | `DAILY_REQUIRE_APPROVAL` | `true` | mas 發行要不要真人核可；`false`＝未核可的稿也發全文，只有 HOLD 的稿只出標題 |
+| `MAS_NOISE_CHECK` | `false` | 出刊前掃 M 組每篇最新版，混進模型推理文字或 JSON 殘渣就 system HOLD；不多呼叫模型、不改請求（線上 2026-11-23 起 `true`） |
+| `MAS_FULL_EVIDENCE` | `false` | M 組證據包對齊 P 組；會改記者看到的來源與 `request_hash` |
+| `MAS_RICH_CONTEXT` | `false` | desk-v3：分版主編、總編多看 S1 摘要、媒體名、家數；會改 `request_hash` |
+| `MAS_OPEN_LAYOUT` | `false` | desk-v3：各版篇數由分版主編決定，護欄是下面三個數字 |
+| `MAS_SECTION_MIN`／`MAS_SECTION_MAX`／`MAS_EDITION_MAX` | `1`／`8`／`18` | 每版至少／至多幾篇、全期正式稿上限；只在 `MAS_OPEN_LAYOUT` 開啟時有作用 |
+| `MAS_MORE_INTERACTION` | `false` | desk-v3：刪稿申訴、版面異議由總編裁決、總編退稿 |
+| `MAS_REPORTER_FULLTEXT` | `false` | desk-v3：記者與查核員的證據用 `item_fulltext` 全文（有才用，只讀表） |
+| `MAS_REPORTER_FULLTEXT_CHARS` | `2000` | 每篇全文進提示的字數上限 |
+| `FULLTEXT_ENABLED` | `false` | 允許 `collection/fulltext.py` 抓全文寫 `item_fulltext`；**沒有接排程** |
+| `FULLTEXT_DOMAIN_INTERVAL_SECONDS`／`FULLTEXT_MAX_PER_RUN` | `5`／`60` | 同網域間隔秒數／每輪上限 |
+| `FULLTEXT_MIN_CHARS`／`FULLTEXT_STORE_MAX_CHARS` | `200`／`20000` | 短於下限標 `too_short`／儲存上限 |
+| `FULLTEXT_SKIP_DOMAINS` | （空） | 逗號分隔的網域，一律當付費牆、不抓 |
 | `NEWSROOM_DELIVERY_TIMEZONE` | `Asia/Taipei` | 排程時區 |
 | `LLM_DAILY_LIMIT` | `60` | 每個模型每日嘗試次數上限（所有用途共用） |
 | `LLM_QUOTA_STATE_PATH` | `~/.local/state/reddit-tracker/llm-quota.json` | 額度 state 檔（2026-11-13 前在 `/tmp`，重開機會被清掉） |
@@ -169,6 +182,8 @@ uv run python -m reddit_tracker.web
 | `REDDIT_USER_AGENT` | `reddit_tracker/0.1 by unknown` | 只給 probe 腳本探測 reddit 來源 |
 | `LOG_LEVEL` | `INFO` | |
 
+desk-v3 各開關的細節與建議開啟順序見 [`docs/pr/desk-v3.md`](docs/pr/desk-v3.md)、[`docs/v5/DAILY_EDITION.md`](docs/v5/DAILY_EDITION.md)。`tests/test_config.py` 檢查每個設定鍵都列在上表與 `.env.example`。
+
 聚合門檻、譯名表與常見字清單在實驗一凍結（tag `exp1-frozen`）時一起凍結。
 
 ## 每日營運
@@ -177,7 +192,7 @@ uv run python -m reddit_tracker.web
 | --- | --- |
 | 每 15 分鐘 | 收集到期來源 → 增量聚合（聚合獨立 commit，失敗不回滾已收素材） |
 | 06:00 | `prepare`：評分、選題、撰稿／編輯室、審稿，產生 draft 與 `site/daily/<date>.html`，不發送 |
-| 06:00–08:35 | 人工檢視；mas 模式逐則核可（未核可只出標題） |
+| 06:00–08:35 | 人工檢視；需要核可時（`DAILY_REQUIRE_APPROVAL=true`）逐則核可，未核可只出標題。線上目前關閉核可，這段只用來 HOLD |
 | 08:35 | `publish`：只發行既有 draft，同一天只送一次；失敗標 `delivery_failed` 不重送 |
 
 ```bash
@@ -196,6 +211,8 @@ deploy/install_launchd.sh newsroom-deploy   # SQLite online backup（integrity c
 deploy/install_launchd.sh newsroom-reload   # 只重載 newsroom
 deploy/install_launchd.sh rsshub-install    # 本機 RSSHub（只綁 127.0.0.1:1200）
 ```
+
+重載時 newsroom 的 15 分鐘 tick 會改從重載那一刻起算。06:00 準備約到 06:09 才 commit，期間持有寫入鎖；tick 落在這段時間，收集會等鎖逾時而寫入失敗（下一輪重抓）。請在每刻鐘的第 10–13 分重載（例如 19:10、19:25），tick 就會落在 06:10 之後。
 
 `newsroom-deploy` 先備份、再 migration，成功後才停舊服務；備份或 migration 失敗時舊服務照常運作。schema 變更一律走這條路徑。
 
@@ -227,7 +244,7 @@ deploy/install_launchd.sh rsshub-install    # 本機 RSSHub（只綁 127.0.0.1:1
 REDDIT_TRACKER_NO_DOTENV=1 uv run python -m pytest -q
 ```
 
-目前基準（2026-11-13）：413 passed／4 skipped，沒有 xfail。4 個 skip 是重編版沒見報而不適用的案例；沒有唯讀母本 `data/snapshots/2026-10-27.db` 的 worktree 會再多 3 個 skip。
+目前基準（2026-11-25，production checkout）：544 passed／4 skipped，沒有 xfail。4 個 skip 是重編版不適用的案例（E03、E05、E11 的事件沒見報，E12 沒有只來自 arXiv 的刊出稿）；沒有唯讀母本 `data/snapshots/2026-10-27.db` 的 worktree 是 541 passed／7 skipped。
 
 - **測試不呼叫真 LLM**：`tests/llm_guard.py` 全域擋 codex subprocess 與 Gemini HTTP；額度 state 檔改到 `tmp_path`。
 - **回歸集 E01–E16**（`tests/regression/cases/`，10/27 首期的 15 個錯誤案例＋E09 非錯誤案例）：runner 用離線 fixture 在 tmp SQLite 照線上時間表重編 10/27，撰稿走 `llm/replay.py` 錄音重播，案例到期還掛 xfail 會失敗。只跑回歸集：
@@ -250,12 +267,18 @@ REDDIT_TRACKER_NO_DOTENV=1 uv run python -m pytest -q
 | `scripts/analyze_blind_count.py` | 驗證對照表雜湊後算 P／M 的七類錯誤、每 10 篇主指標、HOLD 敏感度版本與猜組別正確率 |
 | `scripts/exp3_results.py` ＋ `reddit_tracker/eval/exp3.py` | 實驗三結果表：B（agy）原始輸出 `--from-raw DIR` 解析成 `docs/eval/exp3/B_labels.json`，逐期／合計主指標、M−P、exact 符號檢定、各類錯誤、猜組別、逐篇明細；`--write` 寫 `docs/eval/exp3_results.md`（保留手寫分析標記以下） |
 | `scripts/sample_exp2.py` | 實驗二：從 M 組稿固定種子抽 25 篇 |
-| `scripts/run_exp2.py` ＋ `reddit_tracker/eval/exp2.py` | 實驗二：查核員全關／只開程式工具／程式＋LLM 三組執行與結果表。`build` 凍結案例、`draft` 產生共用的 v1、`run` 跑三組、`report` 出表；不加 `--live` 只重播帳本。設計見 [`docs/eval/EXP2_DESIGN.md`](docs/eval/EXP2_DESIGN.md) |
+| `scripts/run_exp2.py` ＋ `reddit_tracker/eval/exp2.py` | 實驗二：查核員全關／只開程式工具／程式＋LLM 三組執行與結果表。`build` 凍結案例、`draft` 產生共用的 v1、`run` 跑三組、`report` 出表；`ablation`／`ablation-report` 是課後補充消融 (c+)；`--work-dir` 指定輸出目錄。不加 `--live` 只重播帳本。設計見 [`docs/eval/EXP2_DESIGN.md`](docs/eval/EXP2_DESIGN.md) |
+| `scripts/trial_metrics.py` | 試刊逐期指標表（呼叫數、耗時、訊息、重複主稿候選） |
+| `scripts/exp3_evidence_gap.py` | 重建 P、M 兩組證據包，比對差異來自哪個參數 |
+| `scripts/collect_blind_hashes.py` | 把每天的盲計對照表雜湊整理成 `docs/eval/blind_mapping.sha256` |
+| `scripts/scan_model_noise.py` ＋ `daily/noise.py` | 掃已存的稿有沒有混進模型推理文字、JSON 殘渣 |
+| `scripts/recheck_factcheck.py` | 不呼叫 LLM，重跑查核員的程式相關性檢查，對照當期實際刪掉的來源 |
 | `scripts/export_1027_fixtures.py` | 從 10/27 唯讀母本匯出回歸集 fixture |
 | `scripts/rebuild_1027.py`、`compare_1027.py` | 在複本重聚＋重編 10/27，產生前後對照週報 |
 | `scripts/validate_step4_1027.py` | 用 template writer 驗證版面配額（不呼叫 LLM） |
 | `scripts/verify_mas_merge.py`、`verify_t1_t3.py` | MAS 整期與 T1／T3 trace；不加 `--live` 只用錄音重播 |
-| `scripts/probe_news_sources.py` | 逐一實測登錄表來源（`PYTHONPATH=. uv run python scripts/probe_news_sources.py --only id1,id2`） |
+| `scripts/record_e11.py` | 替 E11 錄 M 組回應（`--live` 會呼叫真 Codex，只寫 `data/work`；`--check` 只重播） |
+| `scripts/probe_news_sources.py` | 逐一實測登錄表來源；不帶 RSSHub access key，RSSHub 路由回 403 不代表失效（`PYTHONPATH=. uv run python scripts/probe_news_sources.py --only id1,id2`） |
 
 ## 專案結構
 
@@ -263,19 +286,19 @@ REDDIT_TRACKER_NO_DOTENV=1 uv run python -m pytest -q
 reddit_tracker/
   config.py              設定（pydantic-settings）
   db.py, models.py       SQLAlchemy；含 v4/v5 遺留資料表（不使用、不刪）
-  collection/            收集、正規化、聚合、共同實體、驗收報表、CLI
-  daily/                 評分、分版、編輯會議、證據、撰稿、view／render、發行、核可、盲計、CLI
-  daily/mas/             編輯室 orchestrator 與訊息／工具白名單
-  llm/                   codex／gemini／fake client、額度、llm_records、replay
+  collection/            收集、正規化、聚合、共同實體、驗收報表、全文抓取（未接排程）、CLI
+  daily/                 評分、分版、編輯會議、證據、撰稿、view／render、發行、核可、盲計、雜訊檢查、回放、CLI
+  daily/mas/             編輯室 orchestrator、訊息／工具白名單、版面護欄
+  llm/                   codex／gemini／fake client、額度、截止時間、版本守門、llm_records、replay
   newsroom/              launchd scheduler、部署前備份
-  eval/                  實驗一抽樣
+  eval/                  實驗一、二、三的抽樣、執行與結果表
   seeds/                 來源登錄表、分版規則、譯名表、常見字
   web.py                 FastAPI 檢視器與回放頁
-alembic/versions/        migration（最新 b8d4f0a17c33：MAS 資料表）
+alembic/versions/        migration（最新 c5e1a9d3f207：desk-v3 item_fulltext）
 deploy/                  launchd plist 與 install_launchd.sh
 scripts/                 實驗、重編、錄音、探測腳本
 tests/                   單元／整合測試；tests/regression/ 回歸集 E01–E16
-docs/                    規格、手冊、週報、歷史文件
+docs/                    規格、手冊、報告、簡報、實驗結果、週報、歷史文件
 ```
 
 ## 文件索引
@@ -290,6 +313,7 @@ docs/                    規格、手冊、週報、歷史文件
 | [`docs/AI_NEWS_COMPANY_PROPOSAL.md`](docs/AI_NEWS_COMPANY_PROPOSAL.md) | v2.0 企劃書 |
 | [`docs/report.md`](docs/report.md) | 專題報告 v2.0（初稿） |
 | [`docs/demo_slides.md`](docs/demo_slides.md)、[`docs/demo_script.md`](docs/demo_script.md) | 發表簡報（Marp）、Demo 腳本與備援錄影逐字稿 |
+| [`docs/presentation/application.md`](docs/presentation/application.md) | 發表申請單草稿 |
 | [`docs/v5/README.md`](docs/v5/README.md) | 規格入口 |
 | [`docs/v5/SOURCE_REGISTRY.md`](docs/v5/SOURCE_REGISTRY.md) | 來源登錄表規格 |
 | [`docs/v5/COLLECTION.md`](docs/v5/COLLECTION.md) | 收集層規格 |
@@ -297,6 +321,9 @@ docs/                    規格、手冊、週報、歷史文件
 | [`docs/v5/DAILY_EDITION.md`](docs/v5/DAILY_EDITION.md) | 綜合日報編採、MAS 流程、介面與 CLI 規格 |
 | [`docs/v5/WORKING_AGREEMENT.md`](docs/v5/WORKING_AGREEMENT.md) | Codex／Claude Code 協作準則 |
 | [`docs/eval/EXP1_SAMPLING.md`](docs/eval/EXP1_SAMPLING.md) | 實驗一抽樣操作說明 |
+| [`docs/eval/exp1_results.md`](docs/eval/exp1_results.md)、[`exp2_results.md`](docs/eval/exp2_results.md)、[`exp3_results.md`](docs/eval/exp3_results.md) | 三個實驗的結果與限制 |
+| [`docs/eval/EXP2_DESIGN.md`](docs/eval/EXP2_DESIGN.md) | 實驗二設計與 CLI |
+| [`docs/pr/desk-v3.md`](docs/pr/desk-v3.md)、[`checker-per-source.md`](docs/pr/checker-per-source.md) | 預設關閉的功能：設計、開啟順序與風險 |
 | [`docs/weekly/`](docs/weekly/) | 週報與 10/27 前後對照 |
 | [`docs/sources_probe_2026-10-26.md`](docs/sources_probe_2026-10-26.md) | 來源實測結果 |
 | [`CLAUDE.md`](CLAUDE.md) ／ [`AGENTS.md`](AGENTS.md) | AI agent 協作規範 |
@@ -309,5 +336,6 @@ docs/                    規格、手冊、週報、歷史文件
 
 ## 狀態與路線圖
 
-- 目前狀態、已知問題與下一步：[`PROGRESS.md`](PROGRESS.md)「目前狀態」。
-- 手冊步驟與關卡（`gate-1108`、`gate-1115`、`exp1-frozen`；方案 B：11/04–11/06 連續 3 天 live、11/09–11/16 間七日試刊、11/20 `final-1120`，👤 老師尚未確認）：[`docs/HANDBOOK_ADAPTATION.md`](docs/HANDBOOK_ADAPTATION.md)。
+- 目前狀態、佇列與下一步：[`PROGRESS.md`](PROGRESS.md)「線上現況」與「時程與下一步」。
+- 專題發表 2027-01-08（申請單 2026-12-16 截止）。實驗一、二、三與七日試刊（11/09–11/15）已完成，結果見 `docs/eval/`；凍結 tag：`gate-1108`、`gate-1115`、`exp1-frozen`、`final-1120`。
+- 手冊步驟的實作、改編與尚待老師確認的事：[`docs/HANDBOOK_ADAPTATION.md`](docs/HANDBOOK_ADAPTATION.md)、[`docs/report.md`](docs/report.md) 第六章。
