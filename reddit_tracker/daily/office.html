@@ -929,7 +929,8 @@ $('speed').addEventListener('change', (e) => setSpeed(Number(e.target.value) || 
 $('follow').addEventListener('change', (e) => { st.follow = e.target.checked; });
 for (const btn of $('tabs').children) btn.addEventListener('click', () => { for (const b of $('tabs').children) b.classList.toggle('on', b === btn); for (const id of ['log', 'stories', 'lanes', 'card']) $(id).hidden = btn.dataset.tab !== id; renderProgress(); });
 window.addEventListener('keydown', (e) => {
-  if (e.target.matches?.('input,select,button,summary')) return;
+  if (e.target.matches?.('input,select,summary')) return;
+  if (e.code === 'Space' && e.target.matches?.('button')) return;  // 空白鍵留給按鈕本身；C、I、方向鍵點過分頁後照樣有效
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.code === 'Space') { e.preventDefault(); toggle(); } else if (e.code === 'ArrowRight') jump(step(st.i, 1), false); else if (e.code === 'ArrowLeft') jump(step(st.i, -1), false);
   else if (e.code === 'KeyC') goObjection(e.shiftKey ? -1 : 1); else if (e.code === 'KeyI') setOnlyAct(!st.onlyAct);

@@ -102,6 +102,9 @@ def test_office_page_has_playback_controls(session):
     for needle in ('id="onlyact"', 'id="nextch"', "function skippable", "function nextObjection",
                    "'KeyC'", "'KeyI'", "'Digit4'", "params.get('only')"):
         assert needle in html, needle
+    # 剛點過分頁按鈕（焦點在按鈕上）時 C／I／方向鍵要照樣有效，只有空白鍵留給按鈕
+    assert "matches?.('input,select,summary')" in html
+    assert "e.code === 'Space' && e.target.matches?.('button')" in html
 
 
 # ── 回放頁 R4：本期互動摘要卡（`build_card`） ──
