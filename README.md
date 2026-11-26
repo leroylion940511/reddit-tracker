@@ -241,7 +241,7 @@ deploy/install_launchd.sh rsshub-install    # 本機 RSSHub（只綁 127.0.0.1:1
 
 以上都以 `uv run` 執行。
 
-**Web 路由**：`/daily/`（最新一期）、`/daily/<date>`、回放頁 `/daily/<date>/newsroom?variant=mas|pipeline&story=<id>`（左邊稿件狀態，右邊訊息與 v1→v2 diff，上方 page plan 變化）、`/daily/<date>/newsroom/decision`（核可／HOLD）、3D 回放 `/daily/<date>/newsroom/office`（資料 `/daily/<date>/newsroom/replay.json`）。
+**Web 路由**：`/daily/`（最新一期）、`/daily/<date>`、回放頁 `/daily/<date>/newsroom?variant=mas|pipeline&story=<id>`（左邊稿件狀態，右邊訊息與 v1→v2 diff，上方 page plan 變化）、`POST /daily/<date>/newsroom/decision`（核可／HOLD，只收 POST）、3D 回放 `/daily/<date>/newsroom/office`（資料 `/daily/<date>/newsroom/replay.json`）。
 
 ## 測試
 

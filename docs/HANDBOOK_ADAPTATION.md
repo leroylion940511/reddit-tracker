@@ -266,7 +266,7 @@
   - 錄音 `tests/regression/fixtures/1027_t1t3_records.json`，離線測試 `test_recorded_live_t1_t3_decisions_follow_the_rules`。T3 第 4 點（主稿超過 300 字縮稿）這次沒觸發，由腳本測試 `test_lead_shorten_keeps_glossary_name` 覆蓋。
   - 衝突案例（T1 同一篇佔兩個位置、T3 把 HOLD 放頭版、T2 REBUT 兩輪）仍是腳本回應的測試 trace。🔁 真跑剛好提供一個真實衝突：修正前那次 T3，總編回了空頭版（lead=null），現在會被程式以「頭版沒有主稿」拒絕（`test_t3_empty_front_decision_is_rejected`）。
 - ✅ **`render_html` 只吃 `EditionView`**。改下一版 `page_plans` 再渲染，頭版標題跟著變。P 組的 page plan 來自 `select_articles`；準備當下的 HTML 仍用 `view_from_edition`，好讓既有回歸集的來源列格式不變。發行時改走 `build_edition_view`。
-- ✅ **回放頁** `GET /daily/{date}/newsroom?variant=mas&story=`：左邊狀態，右邊訊息（時間、角色、type）與 v1→v2 `difflib`，上方 page plan 各版 diff。核准走 `GET/POST /daily/{date}/newsroom/decision` 的 query 參數（這個環境沒有 `python-multipart`）。
+- ✅ **回放頁** `GET /daily/{date}/newsroom?variant=mas&story=`：左邊狀態，右邊訊息（時間、角色、type）與 v1→v2 `difflib`，上方 page plan 各版 diff。核准走 `POST /daily/{date}/newsroom/decision`（urlencoded 表單或 query 參數，表單由路由自行解析，不需要 `python-multipart`；2026-11-26 起不收 GET，避免預載或誤點就寫入）。
 - ✅ **回放頁指向 `1027_e01.db`**：已用 web view 驗證 HTTP 200，含角色、時間、type；點 E01 可看 v1→v2 diff。頁面讀 `DATABASE_URL` 指向的實驗庫。
 - ✅ **三內版各一次模型提案**。未傳 `pitches` 時，共用程式配額選 12 篇，再由三位主編各一次推薦角度／頭版；也提供全站前十名。總編改頭版時保留其餘正式稿，測試可注入 pitches。
 - ✅ **模型定案**：10/30 實測完整字串 `gpt-6.1-sol | codex-cli 0.164.0-alpha.11.1 | reasoning_effort=low`，已填入 `DAILY_MODEL_VERSION`，P／M 相同。

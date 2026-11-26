@@ -277,7 +277,7 @@ def _focus(session: Session, edition_date: date, run_variant: str, story_id: int
     form = ""
     if latest is not None and latest.status != "approved":
         form = (
-            f'<form method="get" action="/daily/{edition_date.isoformat()}/newsroom/decision">'
+            f'<form method="post" action="/daily/{edition_date.isoformat()}/newsroom/decision">'
             f'<input type="hidden" name="story_id" value="{story_id}">'
             f'<input type="hidden" name="variant" value="{escape(run_variant)}">'
             f'<label>審核者 <input name="by" required></label> '

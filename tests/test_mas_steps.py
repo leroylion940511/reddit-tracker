@@ -834,14 +834,14 @@ def test_newsroom_decision_route(session, monkeypatch):
     monkeypatch.setattr("reddit_tracker.web.session_scope", scope)
     from fastapi import HTTPException
 
-    from reddit_tracker.web import newsroom_decision, newsroom_page
+    from reddit_tracker.web import apply_decision, newsroom_page
 
     page = newsroom_page(DAY, story=story.id)
     assert page.status_code == 200 and "待審" in page.body.decode() and "checked" in page.body.decode()
     with pytest.raises(HTTPException) as denied:
-        newsroom_decision(DAY, story_id=story.id, action="approve", by="reporter")
+        apply_decision(DAY, story_id=story.id, action="approve", by="reporter")
     assert denied.value.status_code == 403
-    ok = newsroom_decision(DAY, story_id=story.id, action="approve", by="審核者")
+    ok = apply_decision(DAY, story_id=story.id, action="approve", by="審核者")
     assert ok.status_code == 303
     assert session.scalar(select(StoryVersion)).status == "approved"
     assert any(getattr(route, "path", "") == "/daily/{edition_date}/newsroom" for route in app.routes)

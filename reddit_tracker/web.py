@@ -7,11 +7,12 @@
 from __future__ import annotations
 
 import webbrowser
+from urllib.parse import parse_qs
 from datetime import date, datetime, timezone
 from pathlib import Path
 
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 
 from .config import get_settings
@@ -112,11 +113,28 @@ def newsroom_replay(edition_date: date, variant: str = "mas") -> JSONResponse:
         return JSONResponse(build_replay(session, edition_date, variant))
 
 
-@app.api_route("/daily/{edition_date}/newsroom/decision", methods=["GET", "POST"], include_in_schema=False)
-def newsroom_decision(
-    edition_date: date, story_id: int, action: str, by: str, variant: str = "mas",
-) -> RedirectResponse:
-    """真人核准或 HOLD。參數走 query string（這個環境沒有 python-multipart）。"""
+@app.post("/daily/{edition_date}/newsroom/decision", include_in_schema=False)
+async def newsroom_decision(edition_date: date, request: Request) -> RedirectResponse:
+    """真人核准或 HOLD。只收 POST：GET 會被瀏覽器預載或誤點觸發寫入（2026-11-26 起拿掉 GET）。
+
+    參數可放 urlencoded 表單或 query string；表單自己解析，不需要 python-multipart。
+    """
+    fields = {k: v[-1] for k, v in parse_qs((await request.body()).decode("utf-8")).items()}
+    fields = {**dict(request.query_params), **fields}
+    try:
+        story_id = int(fields["story_id"])
+        action, by = fields["action"], fields["by"].strip()
+    except (KeyError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="缺 story_id／action／by") from exc
+    variant = fields.get("variant", "mas")
+    if not by:
+        raise HTTPException(status_code=400, detail="缺審核者")
+    _check_variant(variant)
+    return apply_decision(edition_date, story_id=story_id, action=action, by=by, variant=variant)
+
+
+def apply_decision(edition_date: date, *, story_id: int, action: str, by: str, variant: str = "mas") -> RedirectResponse:
+    """核准或 HOLD 一篇稿，重畫網頁版（不重送 Telegram），303 回到該稿。"""
     if action not in ("approve", "hold"):
         raise HTTPException(status_code=400, detail="只能核准或 HOLD")
     now = datetime.now(timezone.utc)
