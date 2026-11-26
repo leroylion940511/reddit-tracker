@@ -5,7 +5,7 @@
 > 2026-11-23 以前的「本次變更」段落已搬到 `docs/archive/`（見文末「更早的紀錄」）；正文引用的舊段落請到那裡找。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-26 早（`claude-auto`：佇列第 12 項 (1) 彙整稿不併入事件 `CLUSTER_ISOLATE_ROUNDUPS`，預設關閉）。更早的更新紀錄見 git log 與 `docs/archive/`。
+**Last updated:** 2026-11-26 10:20（互動 session，四位 agent 檢查後的修正：分支 `fix/ops-1126`，**還沒併入 main、沒重載**，見「本次變更（2026-11-26 上午）」）。前次：2026-11-26 早（`claude-auto`：佇列第 12 項 (1) `CLUSTER_ISOLATE_ROUNDUPS`，預設關閉）。更早的更新紀錄見 git log 與 `docs/archive/`。
 
 ## 線上現況（2026-11-25 19:00 查證）
 
@@ -21,6 +21,7 @@
   - 不用改程式的做法：**下次重載選在每刻鐘的第 10–13 分（例如 19:10、19:25）**，tick 就會落在 06:10 之後（README「每日營運」已寫）。程式修法（準備期間收集讓開，或 M 組分段 commit）會動線上流程，沒有排進佇列。
   - **11/26 06:00 又撞，這次連聚合都失敗**：06:01:44 那輪 3 個來源（npr-news、nytimes-home、dw-en）寫入失敗，聚合在 06:05:33 `database is locked`、整個收集 job 拋例外（上一次是 11/11）；06:16 那輪正常。出刊沒受影響（06:08 備妥 12 篇、`degraded=[]`、id 31；有一次 Codex 150 秒逾時、重試成功）。同日 07:10:18 重載，tick 移到每刻鐘的 10:18，11/27 起應避開（要看 log 確認）。
 - ⚠️ **Guardian 五個來源（world／tech／environment／culture／sport）11/24 01:03 起每次都 403**（11/24 93 次、11/25 到 18:46 76 次；11/20–11/23 是 0 次）。看起來是對方擋，還沒查是擋 UA 還是 IP；少了五個英文 T2 來源，會影響國際／科技版候選。登錄表沒動。
+  - **2026-11-26 查出根因**：Guardian 擋開頭是 `Mozilla/5.0` 的 UA（同一個 IP，不帶 Mozilla 的 UA 五個 feed 都回 200）。`fix/ops-1126` 給五個來源設 `user_agent`，部署後生效。全文抓取（desk-v3，開關關著）仍用舊 UA，Guardian 文章頁同樣會 403。
 
 ## 時程與下一步（2026-11-23 起，以此為準；Claude 自主安排，志晨 11/23 授權）
 
@@ -54,6 +55,21 @@
 - 開發回放頁用 `tests/fixtures/replay/2026-11-19_mas.json`（11/19 M 組真實 `build_replay` 輸出，2026-11-23 從 production DB 唯讀匯出；有 recorded 時間、3 次 CHALLENGE、改稿請求、版面異議），不必碰 DB。
 - 回放頁只讀、不能改稿；不改 `request_hash`、提示詞、線上撰稿流程，所以不影響實驗數字。動到 `reddit_tracker/daily/replay.py`／`office.html` 會被 web 載入，但 newsroom 排程不載入 web，**不需要重載 newsroom**（web 是手動起的 FastAPI）。
 - 視覺檢查：自動開發 session 沒有瀏覽器可用（production checkout 不能放 `launch.json`），改用 fixture 寫測試；畫面由互動 session 截圖確認。
+
+## 本次變更（2026-11-26 上午 — 四位 agent 檢查後的修正，互動 session，分支 `fix/ops-1126`）
+
+志晨要求把四位 agent（claude／gpt／gemini／grok）檢查提出的改進做完。worktree `~/Documents/Developer/Lab/rt-wt-ops`（`fix/ops-1126`，含 grok 的 `fix/guards-1126` 合併）；605 passed、7 skipped，ruff 乾淨。**還沒併入 main、沒重載、沒 push、`.env` 沒動**（👤 要志晨同意）。
+
+- **06:00 撞鎖改程式修**（`newsroom/scheduler.py`）：準備期間到期的收集延後、準備結束（成功或失敗）立刻補一輪；準備開始前先等進行中的那輪寫完（最多 300 秒）；收集不會兩輪重疊。重載時間不用再挑。手動 CLI `daily prepare` 不在保護範圍。
+- **冷啟動補做** `DAILY_STARTUP_CATCHUP_MINUTES`（預設 0＝關）：啟動時在準備～發行時刻之間且當天沒有版次就補準備；發行時刻後 N 分鐘內仍是 `drafted` 就補發；`publishing`／`delivery_failed` 只記 ERROR。
+- **每日備份** `DB_BACKUP_DIR`（預設空＝關）、`DB_BACKUP_KEEP=3`、09:30：SQLite online backup＋`quick_check`；手動 `uv run python -m reddit_tracker.backup --dir …`。已手動備份一次：`~/Documents/Developer/Lab/rt-backup/reddit_tracker-2026-11-26.db`（728 MB，含 11/26 那期）。⚠️ Time Machine 目的地掛載失敗（`tmutil latestbackup`），異地備份要志晨處理。
+- **來源**：Guardian 五個來源加 `user_agent`（見「線上現況」）；`hn-api-top`（`method: json`，collector 沒實作）改成停用並註明，測試鎖住「啟用來源都抓得到」（數據版證交所 JSON 由 `daily/market.py` 讀，排除）。
+- **核可路由只收 POST**（`web.py`）：表單自己解析 urlencoded，不需要 `python-multipart`；回放頁表單改 `method="post"`。
+- **three.js 本機化**：`reddit_tracker/daily/vendor/three.module.js`（0.160.0，sha256 與 jsDelivr 套件清單一致，MIT 授權檔一起放），發表教室斷網也能開 3D 編輯室。
+- **grok（`fix/guards-1126`）**：`DAILY_WITHHOLD_CHALLENGED`（預設關；關核可時 `challenged` 只出標題、標「暫扣」）、`NUMBER_CHECK_V2`（預設關；數字核對排除日期時間片段、認 m／mn／k／trillion／千）、Telegram 摘要／HTML 各自入庫訊息 ID，HTML 明確失敗只補 HTML，逾時標 `stats.delivery.needs_review` 不重送（沒改 schema）。
+- **文件**：`PROGRESS.md` 10/30–11/23 的「本次變更」搬到 `docs/archive/PROGRESS_2026-10-30_to_11-23.md`（94→34 KB）；CLAUDE.md／AGENTS.md 的 codex 凍結字樣改成「2027-01-08 發表前」；README 設定鍵表、`.env.example`、`docs/v5/DAILY_EDITION.md` 已補。
+- **刻意沒做**（四位一致）：拆 `orchestrator.py`、Story 只建候選池、VACUUM、開 desk-v3 或 `CLUSTER_ISOLATE_ROUNDUPS`、`newsroom.log` 輪替（launchd 導 stdout，4 MB 不急）。佇列第 12 項 (2)(3) 留給自動開發照排。
+- ➡️ 部署建議：fast-forward 併入 main → `.env` 加 `DB_BACKUP_DIR=/Users/leroy/Documents/Developer/Lab/rt-backup`、`DAILY_STARTUP_CATCHUP_MINUTES=180`、`DAILY_WITHHOLD_CHALLENGED=true` → `deploy/install_launchd.sh newsroom-deploy`。`NUMBER_CHECK_V2` 會改哪些稿被點名，建議先在複本重跑一期再開。
 
 ## 三項決定（2026-11-24 傍晚 — 志晨 16:5x 回「你來決定」，互動 session）
 
