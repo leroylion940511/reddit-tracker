@@ -201,20 +201,34 @@ HELD_STATUSES = ("hold", "held")
 
 
 def _withheld_status(status: str) -> bool:
-    """發行時這個狀態要不要只出標題：要核可就看 approved；不要核可就只擋 HOLD。"""
+    """發行時這個狀態要不要只出標題：要核可就看 approved；不要核可就只擋 HOLD。
+
+    `DAILY_WITHHOLD_CHALLENGED=true` 且已關核可時，`challenged` 也只出標題（標示仍走 HOLD 的「暫扣」）。
+    """
     from ..config import get_settings
 
-    if get_settings().daily_require_approval:
+    settings = get_settings()
+    if settings.daily_require_approval:
         return status != "approved"
-    return status in HELD_STATUSES
+    if status in HELD_STATUSES:
+        return True
+    return bool(settings.daily_withhold_challenged and status == "challenged")
 
 
 def _withheld_reason(status: str) -> str:
-    """扣住全文的原因：`hold`（查核員或真人扣稿）或 `unapproved`（要核可但還沒核可）。
+    """扣住全文的原因：`hold`（查核員或真人扣稿，或關核可後被擋下的 challenged）或 `unapproved`。
 
-    `DAILY_REQUIRE_APPROVAL=false` 時只有 HOLD 會被扣；網頁不能再寫「未核准」（2026-11-15）。
+    `DAILY_REQUIRE_APPROVAL=false` 時只有 HOLD（以及開關打開時的 challenged）會被扣；
+    網頁不能再寫「未核准」（2026-11-15）。要核可時，challenged 仍算還沒核可。
     """
-    return "hold" if status in HELD_STATUSES else "unapproved"
+    from ..config import get_settings
+
+    settings = get_settings()
+    if status in HELD_STATUSES:
+        return "hold"
+    if status == "challenged" and settings.daily_withhold_challenged and not settings.daily_require_approval:
+        return "hold"
+    return "unapproved"
 
 
 def _view_story(

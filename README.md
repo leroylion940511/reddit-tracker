@@ -77,7 +77,7 @@ flowchart TD
 ## 人工核可
 
 - `DAILY_MODE=mas` 發行時依最新 `page_plans` 與核可狀態重新渲染：**未核可的稿只出標題**，正文換成「未核准，本期不發行全文。」；HOLD 的稿標「暫扣」，正文換成「本稿暫扣，本期不發行全文。」
-- `DAILY_REQUIRE_APPROVAL=false` 關掉人工核可：不用 `approve`，稿件照發全文；HOLD（查核員、程式或真人扣稿）的稿仍只出標題。⚠️ 改稿後重驗仍不過的稿停在 `challenged`，不會自動轉 HOLD，關閉核可時會照發全文（過去 3 篇都在關閉核可之前）。
+- `DAILY_REQUIRE_APPROVAL=false` 關掉人工核可：不用 `approve`，稿件照發全文；HOLD（查核員、程式或真人扣稿）的稿仍只出標題。改稿後重驗仍不過的稿停在 `challenged`，不會自動轉 HOLD。`DAILY_WITHHOLD_CHALLENGED=true` 時，這種稿也只出標題，標示沿用「暫扣」；預設 `false`，`challenged` 仍發全文（過去 3 篇都在關閉核可之前）。
 - 線上現況：2026-11-14 19:42 起關閉人工核可，第一期不需核可的是 11/15；`MAS_NOISE_CHECK` 11/23 起開啟（11/24 第一期）。程式預設值是相反的，以設定鍵表為準。
 - 只有真人名字能核可，角色名（`eic`、`reporter`…）會被拒絕；寫入 `approved_by`／`approved_at`。
 - 核可或 HOLD 可用 CLI（`daily approve`／`daily hold`），或在回放頁操作（`/daily/<date>/newsroom/decision`）。回放頁不能改稿。
@@ -145,6 +145,8 @@ uv run python -m reddit_tracker.web
 | `DAILY_ANNOTATION_DIR` | `annotation` | 影子＋M 都有稿時匯出盲計稿／抽查稿到 `YYYY-MM-DD/`（可整個交給 B；對照表在 `_private/YYYY-MM-DD/mapping.json`，不給 B、不進版控） |
 | `FACT_CHECKER_PER_SOURCE` | `false` | M 組查核員對程式點名的每個可疑來源回 KEEP／REMOVE（關閉＝舊的全域 OK／CHALLENGE）；開啟會改查核員請求的 `request_hash`，見 `docs/pr/checker-per-source.md` |
 | `DAILY_REQUIRE_APPROVAL` | `true` | mas 發行要不要真人核可；`false`＝未核可的稿也發全文，只有 HOLD 的稿只出標題 |
+| `DAILY_WITHHOLD_CHALLENGED` | `false` | 關核可（`DAILY_REQUIRE_APPROVAL=false`）時，`challenged` 也只出標題，標示沿用「暫扣」。不改提示詞、不改 `request_hash` |
+| `NUMBER_CHECK_V2` | `false` | 開啟時數字核對排除「10 月」「26 日」「1 時 04 分」「2026 年」，並認得 `m`／`mn`／`k`／`trillion`／`千`（40m、15mn、4,000 萬＝40 million）。關閉時規則與現在逐字相同 |
 | `MAS_NOISE_CHECK` | `false` | 出刊前掃 M 組每篇最新版，混進模型推理文字或 JSON 殘渣就 system HOLD；不多呼叫模型、不改請求（線上 2026-11-23 起 `true`） |
 | `MAS_FULL_EVIDENCE` | `false` | M 組證據包對齊 P 組；會改記者看到的來源與 `request_hash` |
 | `MAS_RICH_CONTEXT` | `false` | desk-v3：分版主編、總編多看 S1 摘要、媒體名、家數；會改 `request_hash` |
@@ -198,7 +200,7 @@ desk-v3 各開關的細節與建議開啟順序見 [`docs/pr/desk-v3.md`](docs/p
 | 每 15 分鐘 | 收集到期來源 → 增量聚合（聚合獨立 commit，失敗不回滾已收素材） |
 | 06:00 | `prepare`：評分、選題、撰稿／編輯室、審稿，產生 draft 與 `site/daily/<date>.html`，不發送 |
 | 06:00–08:35 | 人工檢視；需要核可時（`DAILY_REQUIRE_APPROVAL=true`）逐則核可，未核可只出標題。線上目前關閉核可，這段只用來 HOLD |
-| 08:35 | `publish`：只發行既有 draft，同一天只送一次；失敗標 `delivery_failed` 不重送 |
+| 08:35 | `publish`：只發行既有 draft，同一天成功只送一次。摘要與 HTML 各收到成功回覆就記下訊息 ID；HTML 明確失敗可再跑一次，只補 HTML。逾時等無法確定是否送達，標成需要人工核對，不自動重送 |
 
 ```bash
 # 核可／HOLD（mas）

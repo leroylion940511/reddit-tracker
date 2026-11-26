@@ -25,6 +25,7 @@ from reddit_tracker.daily.writer import (
     finalize_story,
     review_story,
     template_story,
+    unsupported_numbers,
 )
 from reddit_tracker.models import DailyArticle, DailyEdition, SourceItem, StoryCluster
 from reddit_tracker.seeds.news_sources import SourceRegistry
@@ -102,6 +103,40 @@ def test_review_flags_unsupported_numbers_but_allows_unit_conversions():
     assert any("1200" in problem for problem in review_story(bad, evidence))
     short = WrittenStory("短", "", "太短", "", "gemini")
     assert len(review_story(short, evidence)) == 2
+
+
+# 11/19 兩次誤報：86093 的「11, 4000」是 November 19 與 40m（4,000 萬）；86123 的「1500」是 15mn（1,500 萬）。
+_NOV19_EVIDENCE = "November 19. The bank set aside 40m. Exposure is 15mn."
+_NOV19_BODY = "11 月 19 日，該行提列 4,000 萬，曝險 1,500 萬。"
+
+
+def test_number_check_v2_off_keeps_legacy_false_positives(monkeypatch):
+    """關閉時與現在逐字相同：日期片段與 m／mn 仍會被點成沒出處。"""
+    from reddit_tracker.config import get_settings
+
+    monkeypatch.delenv("NUMBER_CHECK_V2", raising=False)
+    get_settings.cache_clear()
+    assert unsupported_numbers(_NOV19_BODY, _NOV19_EVIDENCE) == ["11", "4000", "1500"]
+    assert unsupported_numbers("於 10 月 26 日 1 時 04 分、2026 年宣布", "沒有數字") == ["10", "26", "04", "2026"]
+    assert unsupported_numbers("提列 40 million", "set aside 40m") == ["40"]
+    get_settings.cache_clear()
+
+
+def test_number_check_v2_accepts_date_and_short_units_but_flags_real_gaps(monkeypatch):
+    """開啟時略過日期時間，並把 40m／15mn／4,000 萬／40 million 看成同一個數。沒出處的仍點名。"""
+    from reddit_tracker.config import get_settings
+
+    monkeypatch.setenv("NUMBER_CHECK_V2", "true")
+    get_settings.cache_clear()
+    assert unsupported_numbers(_NOV19_BODY, _NOV19_EVIDENCE) == []
+    assert unsupported_numbers("於 10 月 26 日 1 時 04 分、2026 年宣布", "沒有數字") == []
+    assert unsupported_numbers("提列 4,000 萬，約 40 million", "set aside 40m") == []
+    assert unsupported_numbers("曝險 1,500 萬", "exposure 15mn") == []
+    assert unsupported_numbers("員工人數 5 千", "headcount 5k") == []
+    assert unsupported_numbers("規模 2 trillion", "worth 2 trillion") == []
+    assert unsupported_numbers("計畫募資 1200 億美元。" * 4, "raises 40 billion") == ["1200"]
+    assert unsupported_numbers("共 12 家媒體報導此事。" * 4, "多家媒體報導") == ["12"]
+    get_settings.cache_clear()
 
 
 def test_template_prefers_chinese_lead_and_labels_kind():
@@ -278,6 +313,71 @@ def test_publish_sends_once_and_marks_failures(daily_env, monkeypatch):
     with pytest.raises(run_module.DailyEditionError):
         run_module.publish_daily(EDITION, now=NOW)
     assert daily_env.session.scalar(select(DailyArticle).limit(1)) is not None
+
+
+class _FakeBot:
+    """不連 Telegram。html_error 放明確失敗或逾時。"""
+
+    def __init__(self, html_error=None):
+        self.calls: list[str] = []
+        self.html_error = html_error
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        return False
+
+    async def send_message(self, **kwargs):
+        self.calls.append("digest")
+        return SimpleNamespace(message_id=11)
+
+    async def send_document(self, **kwargs):
+        self.calls.append("html")
+        if self.html_error is not None:
+            raise self.html_error
+        return SimpleNamespace(message_id=22)
+
+
+def test_publish_retries_only_html_after_explicit_failure(daily_env, monkeypatch):
+    """摘要已成功、HTML 明確失敗：訊息 ID 先入庫；再跑只補 HTML，不重送摘要。"""
+    from telegram.error import BadRequest
+
+    bot = _FakeBot(html_error=BadRequest("document rejected"))
+    monkeypatch.setattr(run_module, "_open_bot", lambda token: bot)
+    with pytest.raises(BadRequest):
+        run_module.publish_daily(EDITION, now=NOW)
+    edition = daily_env.session.scalar(select(DailyEdition))
+    assert edition.status == "delivery_failed"
+    assert edition.telegram_message_ids == [11]
+    delivery = edition.stats["delivery"]
+    assert delivery["digest_id"] == 11 and delivery["html_id"] is None
+    assert delivery["needs_review"] is False
+
+    bot.html_error = None
+    run_module.publish_daily(EDITION, now=NOW)
+    assert bot.calls == ["digest", "html", "html"]
+    assert edition.status == "published"
+    assert edition.telegram_message_ids == [11, 22]
+    assert edition.stats["delivery"]["html_id"] == 22
+
+
+def test_publish_html_timeout_needs_human_review(daily_env, monkeypatch):
+    """HTML 逾時：無法確定是否送達，標成需要人工核對，不再自動重送摘要或 HTML。"""
+    from telegram.error import TimedOut
+
+    bot = _FakeBot(html_error=TimedOut())
+    monkeypatch.setattr(run_module, "_open_bot", lambda token: bot)
+    with pytest.raises(run_module.UncertainDelivery):
+        run_module.publish_daily(EDITION, now=NOW)
+    edition = daily_env.session.scalar(select(DailyEdition))
+    assert edition.status == "delivery_failed"
+    assert edition.telegram_message_ids == [11]
+    delivery = edition.stats["delivery"]
+    assert delivery["needs_review"] is True and delivery["uncertain_part"] == "html"
+    with pytest.raises(run_module.DailyEditionError, match="人工核對"):
+        run_module.publish_daily(EDITION, now=NOW)
+    assert bot.calls == ["digest", "html"]
 
 
 @pytest.mark.parametrize("enabled", [False, True])

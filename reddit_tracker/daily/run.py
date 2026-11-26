@@ -2,7 +2,8 @@
 
 準備分三段：先在一個 session 讀資料、評分、選題、組證據；接著在任何 DB
 交易之外呼叫 LLM（可能要幾分鐘，不能讓每 15 分鐘的收集等鎖）；最後
-在另一個 session 一次寫入整期。發行只送已準備好的版次，且不重送。
+在另一個 session 一次寫入整期。發行只送已準備好的版次。摘要與 HTML
+各收到成功回覆就寫下訊息 ID；明確失敗只補缺的那一件。逾時不自動重送。
 """
 
 from __future__ import annotations
@@ -832,14 +833,116 @@ def _prepare_with_shadow(edition_date: date, *, now: datetime | None = None) -> 
     return edition_id
 
 
-async def _send(token: str, chat_id: int, text: str, html_path: Path, filename: str) -> list[int]:
+class UncertainDelivery(Exception):
+    """送出後沒有明確成敗（逾時）。呼叫端標成需要人工核對，不自動重送。"""
+
+    def __init__(self, part: str):
+        self.part = part
+        super().__init__(f"Telegram {part} 逾時，無法確定是否送達，需要人工核對")
+
+
+# 測試可換成假的 Bot。正式路徑用 python-telegram-bot。
+def _open_bot(token: str):
     from telegram import Bot
 
-    async with Bot(token=token) as bot:
-        first = await bot.send_message(chat_id=chat_id, text=text, disable_web_page_preview=True)
-        with html_path.open("rb") as fh:
-            second = await bot.send_document(chat_id=chat_id, document=fh, filename=filename)
-    return [first.message_id, second.message_id]
+    return Bot(token=token)
+
+
+def _delivery_uncertain(exc: BaseException) -> bool:
+    """逾時代表請求可能已經送到，不能當成明確失敗再重送。BadRequest 這類有回應的不算。"""
+    if isinstance(exc, (TimeoutError, asyncio.TimeoutError)):
+        return True
+    try:
+        from telegram.error import TimedOut
+    except ImportError:
+        return False
+    return isinstance(exc, TimedOut)
+
+
+# publish_daily 在送出前設好。_send 每收到一個成功回覆就呼叫 saver，讓中途失敗也留得下訊息 ID。
+_delivery_saver: ContextVar = ContextVar("telegram_delivery_saver", default=None)
+_delivery_skip: ContextVar = ContextVar("telegram_delivery_skip", default=frozenset())
+
+
+def _delivery_record(edition) -> dict:
+    """已確認送達的兩段。舊資料只有 telegram_message_ids 兩個整數時也讀得出來。"""
+    delivery = dict((edition.stats or {}).get("delivery") or {})
+    ids = list(edition.telegram_message_ids or [])
+    if delivery.get("digest_id") is None and ids:
+        delivery["digest_id"] = ids[0]
+    if delivery.get("html_id") is None and len(ids) >= 2:
+        delivery["html_id"] = ids[1]
+    return delivery
+
+
+def _write_delivery(edition, delivery: dict, *, status: str | None = None, published: bool = False) -> None:
+    """寫進既有 JSON（stats.delivery 與 telegram_message_ids），不加欄位。"""
+    payload = {
+        "digest_id": delivery.get("digest_id"),
+        "html_id": delivery.get("html_id"),
+        "needs_review": False if published else bool(delivery.get("needs_review")),
+        "uncertain_part": None if published else delivery.get("uncertain_part"),
+    }
+    stats = dict(edition.stats or {})
+    stats["delivery"] = payload
+    edition.stats = stats
+    ids = [item for item in (payload["digest_id"], payload["html_id"]) if item is not None]
+    edition.telegram_message_ids = ids or None
+    if published:
+        edition.status = "published"
+        edition.published_at = datetime.now(timezone.utc)
+    elif status is not None:
+        edition.status = status
+
+
+def _save_delivery_part(edition_id: int, part: str, message_id: int) -> None:
+    """一收到成功回覆就 commit，後面那一件失敗也不會把這個 ID 一起丟掉。"""
+    with session_scope() as session:
+        edition = session.get(DailyEdition, edition_id)
+        delivery = _delivery_record(edition)
+        delivery[f"{part}_id"] = message_id
+        delivery["needs_review"] = False
+        delivery["uncertain_part"] = None
+        _write_delivery(edition, delivery)
+
+
+def _mark_delivery_failure(edition_id: int, *, needs_review: bool, uncertain_part: str | None) -> None:
+    with session_scope() as session:
+        edition = session.get(DailyEdition, edition_id)
+        delivery = _delivery_record(edition)
+        delivery["needs_review"] = needs_review
+        delivery["uncertain_part"] = uncertain_part
+        _write_delivery(edition, delivery, status="delivery_failed")
+
+
+async def _send(token: str, chat_id: int, text: str, html_path: Path, filename: str) -> list[int]:
+    """送摘要、再送 HTML。skip 裡已成功的那一件不重送。回傳這次新送到的訊息 ID。"""
+    saver = _delivery_saver.get()
+    skip = _delivery_skip.get()
+    sent: list[int] = []
+    async with _open_bot(token) as bot:
+        if "digest" not in skip:
+            try:
+                first = await bot.send_message(chat_id=chat_id, text=text, disable_web_page_preview=True)
+            except Exception as exc:
+                if _delivery_uncertain(exc):
+                    raise UncertainDelivery("digest") from exc
+                raise
+            sent.append(first.message_id)
+            if saver is not None:
+                saver("digest", first.message_id)
+        if "html" not in skip:
+            try:
+                with html_path.open("rb") as fh:
+                    second = await bot.send_document(chat_id=chat_id, document=fh, filename=filename)
+            except Exception as exc:
+                if _delivery_uncertain(exc):
+                    raise UncertainDelivery("html") from exc
+                raise
+            sent.append(second.message_id)
+            if saver is not None:
+                saver("html", second.message_id)
+    return sent
 
 
 def publish_daily(edition_date: date, *, now: datetime | None = None) -> int:
@@ -861,7 +964,16 @@ def publish_daily(edition_date: date, *, now: datetime | None = None) -> int:
         if edition.status == "published":
             logger.info("daily edition %s already published; skip", edition_date)
             return edition_id
-        if edition.status != "drafted":
+        delivery = _delivery_record(edition)
+        if delivery.get("needs_review"):
+            raise DailyEditionError("Telegram 送達無法確定，需要人工核對，不自動重送")
+        # 摘要已入庫、HTML 是明確失敗：只補 HTML。什麼都還沒確認送達的失敗維持不重送。
+        resume_html = (
+            edition.status == "delivery_failed"
+            and delivery.get("digest_id") is not None
+            and delivery.get("html_id") is None
+        )
+        if edition.status != "drafted" and not resume_html:
             raise DailyEditionError(f"版次狀態 {edition.status}，不可發行（避免重複投遞）")
         edition.status = "publishing"
         view = _publication_view(session, edition, registry.sections, mode)
@@ -871,21 +983,35 @@ def publish_daily(edition_date: date, *, now: datetime | None = None) -> int:
         )
         html_path.write_text(render_html(view), encoding="utf-8")
         edition.html_path = str(html_path)
+    saver_token = _delivery_saver.set(lambda part, message_id: _save_delivery_part(edition_id, part, message_id))
+    skip_token = _delivery_skip.set(frozenset({"digest"}) if resume_html else frozenset())
     try:
         message_ids = asyncio.run(
             _send(settings.telegram_bot_token, int(settings.telegram_chat_id), text, html_path,
                   f"AI綜合日報-{edition_date.isoformat()}.html")
         )
+    except UncertainDelivery as exc:
+        _mark_delivery_failure(edition_id, needs_review=True, uncertain_part=exc.part)
+        logger.exception("daily edition %s delivery uncertain (%s); needs human review", edition_date, exc.part)
+        raise
     except Exception:
-        with session_scope() as session:
-            session.get(DailyEdition, edition_id).status = "delivery_failed"
+        _mark_delivery_failure(edition_id, needs_review=False, uncertain_part=None)
         logger.exception("daily edition %s delivery failed; marked delivery_failed", edition_date)
         raise
+    finally:
+        _delivery_saver.reset(saver_token)
+        _delivery_skip.reset(skip_token)
     with session_scope() as session:
         edition = session.get(DailyEdition, edition_id)
-        edition.status = "published"
-        edition.telegram_message_ids = message_ids
-        edition.published_at = datetime.now(timezone.utc)
+        delivery = _delivery_record(edition)
+        if delivery.get("digest_id") is not None or delivery.get("html_id") is not None:
+            _write_delivery(edition, delivery, published=True)
+            message_ids = list(edition.telegram_message_ids or message_ids)
+        else:
+            # 測試把整個 _send 換掉時不會逐件入庫，沿用回傳的 ID 清單。
+            edition.status = "published"
+            edition.telegram_message_ids = list(message_ids)
+            edition.published_at = datetime.now(timezone.utc)
     logger.info("daily edition %s published: telegram=%s", edition_date, message_ids)
     return edition_id
 
