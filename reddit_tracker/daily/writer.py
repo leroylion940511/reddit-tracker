@@ -55,6 +55,23 @@ _NUMBER_TOKEN = re.compile(
     re.IGNORECASE,
 )
 _SCALE = {"萬": 10_000, "億": 100_000_000, "million": 1_000_000, "billion": 1_000_000_000, "bn": 1_000_000_000}
+# NUMBER_CHECK_V2 才用。關閉時走上面兩個，規則與現在逐字相同。
+_NUMBER_TOKEN_V2 = re.compile(
+    r"(?P<num>\d+(?:\.\d+)?)(?:\s*(?P<unit>萬|億|千|trillion|million|billion|"
+    r"(?<![A-Za-z])bn(?![A-Za-z])|(?<![A-Za-z])mn(?![A-Za-z])|(?<![A-Za-z])m(?![A-Za-z])|"
+    r"(?<![A-Za-z])k(?![A-Za-z])|%|％|百分點))?",
+    re.IGNORECASE,
+)
+_SCALE_V2 = {
+    **_SCALE,
+    "千": 1_000,
+    "k": 1_000,
+    "m": 1_000_000,
+    "mn": 1_000_000,
+    "trillion": 1_000_000_000_000,
+}
+# 「10 月」「26 日」「1 時 04 分」「2026 年」：數字後面緊接這些字就不是數量。
+_DATE_MARK = re.compile(r"\s*(?:年|月|日|時|分|秒)")
 
 
 class _Result(Protocol):
@@ -182,7 +199,7 @@ def template_story(evidence: list[EvidenceItem], kind: str) -> WrittenStory:
     )
 
 
-def _absolute_numbers(text: str) -> list[tuple[str, float, str]]:
+def _absolute_numbers_v1(text: str) -> list[tuple[str, float, str]]:
     """(原文數字, 換算後的值, 單位)。百分比不換算；萬／億／million／billion 換成絕對值。"""
     found = []
     for match in _NUMBER_TOKEN.finditer(text.replace(",", "")):
@@ -195,6 +212,30 @@ def _absolute_numbers(text: str) -> list[tuple[str, float, str]]:
         scale = _SCALE.get(unit.lower(), _SCALE.get(unit, 1))
         found.append((raw, value * scale, unit))
     return found
+
+
+def _absolute_numbers_v2(text: str) -> list[tuple[str, float, str]]:
+    """v1 再加 m／mn／k／trillion／千，並略過日期時間片段。"""
+    found = []
+    flat = text.replace(",", "")
+    for match in _NUMBER_TOKEN_V2.finditer(flat):
+        raw = match.group("num")
+        unit = match.group("unit") or ""
+        if not unit and _DATE_MARK.match(flat[match.end():]):
+            continue
+        try:
+            value = float(raw)
+        except ValueError:
+            continue
+        scale = _SCALE_V2.get(unit.lower(), _SCALE_V2.get(unit, 1))
+        found.append((raw, value * scale, unit))
+    return found
+
+
+def _absolute_numbers(text: str) -> list[tuple[str, float, str]]:
+    if getattr(get_settings(), "number_check_v2", False):
+        return _absolute_numbers_v2(text)
+    return _absolute_numbers_v1(text)
 
 
 def _close(value: float, known: float) -> bool:

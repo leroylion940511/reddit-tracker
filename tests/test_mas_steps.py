@@ -528,6 +528,40 @@ def test_approval_not_required_publishes_unapproved_but_keeps_hold(session, monk
     assert "未核准" not in html
 
 
+def test_withhold_challenged_title_only_when_enabled(session, monkeypatch):
+    """關核可後，DAILY_WITHHOLD_CHALLENGED 才把 challenged 當成 HOLD：只出標題，標「暫扣」。"""
+    from reddit_tracker.config import get_settings
+
+    story = _story(session, 1)
+    write_story_version(
+        session, story_id=story.id, run_variant=MAS, expected_latest=0,
+        headline="異議標題", body="不該發出的異議正文。", now=NOW, status="challenged",
+    )
+    add_page_plan(
+        session, edition_date=DAY, run_variant=MAS,
+        slots={"front": {"lead": story.id, "second": [], "briefs": []}, "sections": {}}, now=NOW,
+    )
+    monkeypatch.setenv("DAILY_REQUIRE_APPROVAL", "false")
+    monkeypatch.delenv("DAILY_WITHHOLD_CHALLENGED", raising=False)
+    get_settings.cache_clear()
+    open_html = render_html(build_edition_view(session, DAY, MAS, SECTIONS, for_publish=True))
+    assert "不該發出的異議正文" in open_html and "暫扣" not in open_html
+
+    monkeypatch.setenv("DAILY_WITHHOLD_CHALLENGED", "true")
+    get_settings.cache_clear()
+    view = build_edition_view(session, DAY, MAS, SECTIONS, for_publish=True)
+    assert view.articles[0].withheld and view.articles[0].withheld_reason == "hold"
+    held_html = render_html(view)
+    assert "異議標題" in held_html and "不該發出的異議正文" not in held_html
+    assert "本稿暫扣，本期不發行全文" in held_html and "未核准" not in held_html
+
+    monkeypatch.setenv("DAILY_REQUIRE_APPROVAL", "true")
+    get_settings.cache_clear()
+    still_unapproved = build_edition_view(session, DAY, MAS, SECTIONS, for_publish=True)
+    assert still_unapproved.articles[0].withheld_reason == "unapproved"
+    get_settings.cache_clear()
+
+
 def test_withheld_label_distinguishes_hold_from_unapproved(session, monkeypatch):
     """要核可時：沒核可的寫「未核准」，HOLD 的寫「暫扣」；Telegram 摘要兩種都不列入頭版。"""
     from reddit_tracker.config import get_settings

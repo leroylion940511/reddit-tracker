@@ -113,6 +113,12 @@ class Settings(BaseSettings):
     # mas 發行要不要真人核可（`daily approve`）。true＝未核可只出標題（手冊步驟 10 原設計）；
     # false＝不需核可，checked／draft／challenged 都發全文，只有 HOLD 的稿照樣只出標題。
     daily_require_approval: bool = True
+    # 關核可後，改稿重驗仍不過（challenged）的稿也只出標題，標示沿用「暫扣」。
+    # 預設關閉＝challenged 照發全文。不改提示詞、不改 request_hash。只在 DAILY_REQUIRE_APPROVAL=false 時有作用。
+    daily_withhold_challenged: bool = False
+    # 數字核對第二版：排除日期時間片段，並認得 m／mn／k／trillion／千。
+    # 預設關閉＝比對規則與現在逐字相同。不改提示詞、不改 request_hash。
+    number_check_v2: bool = False
     # desk-v3 A1：分版主編的候選與總編的稿件卡多帶 S1 摘要（限長）、媒體名清單、家數。
     # 預設關閉＝請求逐字不變（request_hash 不變）。
     mas_rich_context: bool = False

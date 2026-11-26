@@ -8,7 +8,7 @@
 | --- | --- |
 | 每 15 分鐘 | 收集＋事件聚合（[COLLECTION.md](COLLECTION.md)、[CLUSTERING.md](CLUSTERING.md)） |
 | `DAILY_PREPARE` 06:00 | 評分、選題、撰稿、審稿，產生 `site/daily/YYYY-MM-DD.html`，狀態 `drafted`；不發送 |
-| 06:00–08:35 | 人工可在 web 或 HTML 檢視；需要時 `--refresh` 重寫。`DAILY_MODE=mas` 需逐則 `approve`，未核准只出標題（`DAILY_REQUIRE_APPROVAL=false` 時不需核准，只有 HOLD 只出標題） |
+| 06:00–08:35 | 人工可在 web 或 HTML 檢視；需要時 `--refresh` 重寫。`DAILY_MODE=mas` 需逐則 `approve`，未核准只出標題（`DAILY_REQUIRE_APPROVAL=false` 時不需核准，只有 HOLD 只出標題；`DAILY_WITHHOLD_CHALLENGED=true` 時 `challenged` 也只出標題，標「暫扣」） |
 | `DAILY_DELIVERY` 08:35 | 只發行既有 draft：Telegram 頭版精選＋完整報紙 HTML 檔（當初為與已停刊的 v5 08:30 錯開而定） |
 
 兩個排程只有 `DAILY_EDITION_ENABLED=true` 時才註冊。
@@ -100,7 +100,7 @@ score = 10·log2(1 + outlet_count)
 逐則檢查，未通過就改用模板稿，並把原因記入 `review_notes`：
 
 1. 標題與正文長度在範圍內。
-2. **數字核對**：稿件中出現的阿拉伯數字（兩位數以上或含小數），必須能在證據文字中找到，或與證據中的某個數字只差 10 的整數次方（容許「400 億」對「40 billion」這類換算）。
+2. **數字核對**：稿件中出現的阿拉伯數字（兩位數以上或含小數），必須能在證據文字中找到，或與證據中的某個數字只差 10 的整數次方（容許「400 億」對「40 billion」這類換算）。`NUMBER_CHECK_V2=true` 時另外排除日期時間片段（「10 月」「26 日」「1 時 04 分」「2026 年」），並認得 `m`／`mn`／`k`／`trillion`／`千`（40m、15mn、4,000 萬與 40 million 視為同一個數）。預設 `false`，比對規則與關閉時逐字相同，不改提示詞、不改 `request_hash`。
 3. 至少附一個來源連結；`single_source`／`social` 必須帶標示。
 4. **不得自己寫警語**：標題、導言、正文、重要性任何地方出現「僅有／只有一家媒體／來源」這類句子就不通過（警語只能是程式加的最後一段，E16）。
 5. **預印本稿**：不得寫「獨家」「一家媒體」，正文要有「預印本」（E12）。
@@ -112,7 +112,7 @@ score = 10·log2(1 + outlet_count)
 - **網頁報紙**：單一自含 HTML（無外部資源），報頭、頭版、各版、每則來源清單、頁尾方法說明；寫入 `site/daily/`（不進版控），控制台 `/daily/{date}` 可直接開。
 - **Telegram**：一則文字精選（頭版 6 則標題＋一句重點＋各內版篇數（含頭版稿）＋短訊則數），再附上當期 HTML 檔，手機可直接開完整報紙。
 - 網頁頭版：6 則全文＋「短訊」清單（其他版的標題、版別、媒體、原文連結）；內版：頭版稿是連結、其餘全文。
-- 冪等：`daily_editions.status` 為 `drafting → drafted → publishing → published`；送出途中失敗標 `delivery_failed`，不自動重送。
+- 冪等：`daily_editions.status` 為 `drafting → drafted → publishing → published`。摘要與 HTML 分兩次送，**一收到成功回覆就把該訊息 ID 寫入** `telegram_message_ids`，並在 `stats.delivery` 記下 `digest_id`／`html_id`（不加資料庫欄位）。HTML 明確失敗（對方有回錯誤）標 `delivery_failed` 且 `needs_review=false`，再跑 `publish` 只補 HTML，不重送摘要。逾時等無法確定是否送達時 `needs_review=true`、`uncertain_part` 為 `digest` 或 `html`，不自動重送。什麼都還沒確認送達的失敗維持不重送。
 
 ## 7. 數據欄
 
@@ -131,9 +131,9 @@ score = 10·log2(1 + outlet_count)
 | `status` | str(24) | 見上 |
 | `window_start` / `prepared_at` | datetime(tz) | 事件範圍 |
 | `writer` | str(32) | `codex`／`gemini`／`template`／`mixed` |
-| `stats` | JSON | 各版篇數、`ai_articles`、`template_articles`、`llm_requests`、`front_articles`、`briefs`（頭版短訊）、`section_rewrites`（改寫分版統計）、數據欄（10/27 首期為舊鍵 `gemini_articles`／`gemini_requests`） |
+| `stats` | JSON | 各版篇數、`ai_articles`、`template_articles`、`llm_requests`、`front_articles`、`briefs`（頭版短訊）、`section_rewrites`（改寫分版統計）、數據欄（10/27 首期為舊鍵 `gemini_articles`／`gemini_requests`）。發行部分成功時另有 `delivery`：`digest_id`、`html_id`、`needs_review`、`uncertain_part` |
 | `html_path` | text | |
-| `telegram_message_ids` | JSON | |
+| `telegram_message_ids` | JSON | 已確認送達的訊息 ID。兩次都成功是 `[摘要, HTML]`；只成功摘要時是 `[摘要]` |
 | `published_at` | datetime(tz) | |
 | `created_at` / `updated_at` | datetime(tz) | |
 
