@@ -5,7 +5,7 @@
 > 2026-11-23 以前的「本次變更」段落已搬到 `docs/archive/`（見文末「更早的紀錄」）；正文引用的舊段落請到那裡找。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-26 19:20（`claude-auto`：佇列第 12 項 (3) `FACT_CHECKER_EVENT_CLASSES`，預設關閉，見「本次變更（2026-11-26 晚）」）。前次：2026-11-26 14:55（前端精修併入 main 並重載）。更早的更新紀錄見 git log 與 `docs/archive/`。
+**Last updated:** 2026-11-26 19:12（`claude-auto`：佇列第 12 項 (3) `FACT_CHECKER_EVENT_CLASSES`，預設關閉，見「本次變更（2026-11-26 晚）」）。前次：2026-11-26 14:55（前端精修併入 main 並重載）。更早的更新紀錄見 git log 與 `docs/archive/`。
 
 ## 線上現況（2026-11-25 19:00 查證）
 
@@ -67,6 +67,7 @@
 - ℹ️ 沒有出現 FOLLOW_UP／ROUNDUP。E01 停在 `challenged` 是記者 v2 多寫「25」（抽樣差異），與分類無關。
 - ⚠️ 開之前至少要：把 UNRELATED 說明改成不靠「做事的人」（評論、分析算同次事件），在複本跑一期 M 組看誤刪；和 `FACT_CHECKER_ZH_FRAGMENTS`、`MAS_FULL_EVIDENCE` 的開啟條件一起決定（三者都會改 `request_hash`）。
 - 測試：`tests/test_checker_event_classes.py`（11 個）；worktree 全套 627 passed／7 skipped、ruff 通過。
+- ✅ 併入 main（`b0909eb`，2026-11-26 19:09 fast-forward）並 `newsroom-reload`（19:10:20）：production 全套 630 passed／4 skipped；log 有 `codex version guard ok`、五個 job 註冊、scheduler Python process 1 個（另兩個是 uv 與 caffeinate 包裝層）；重載後第一輪收集正常。`FACT_CHECKER_EVENT_CLASSES` 沒開，線上行為不變。
 - ➡️ 下一步：第 13 項 P2-2 desk-v3 高互動 demo 期（選做；要在複本跑 M 組 prepare）。
 
 ## 本次變更（2026-11-26 下午 — 前端精修交給 grok，Claude 驗收）
