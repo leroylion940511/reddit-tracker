@@ -65,6 +65,7 @@
 - ⚠️ 不能用 CLI `--now` 做 demo 期：訊息走重編時鐘、模型呼叫走真實時間，回放時間序會錯亂。改用 `run._live_clock.set(True)` 後呼叫 `prepare_daily(now=…)`（腳本在 demo 目錄 `run_live.py`）。
 - ⚠️ 既有行為：查核員 LLM 回 OK 時不發 RELEASE，回放協商串那篇沒有結局（108605）。要補得動線上訊息流，沒做。
 - 測試：worktree 全套 632 passed／7 skipped、ruff 通過。
+- ✅ 併入 main（`d4a6323`，2026-11-27 07:22 fast-forward）：production 全套 635 passed／4 skipped；只動 docs／tests／scripts／md，**不重載**。
 - ➡️ 下一步：第 14 項 P3-1 `run_mas` 只為候選池建 `Story` 列。
 
 ## 本次變更（2026-11-26 晚 — 查核員事件四分類，佇列第 12 項 (3)，`claude-auto`，自動開發）
