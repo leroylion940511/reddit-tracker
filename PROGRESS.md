@@ -43,7 +43,7 @@
 10. ✅（2026-11-25，`claude-auto`，初稿；👤 剩排練、錄備援影片、填封面個資）**P0-4 簡報＋Demo 腳本**（12/31 前；⚠️ 11/19 那兩次異議是誤報，腳本已改，見「本次變更（2026-11-25 午）」）：`docs/demo_slides.md`（問題 → 六角色編輯室與程式護欄 → 回放 R1–R4 → 三實驗誠實評估）、`docs/demo_script.md`（3–5 分鐘 live demo＋備援錄影逐字稿：`python -m reddit_tracker.web`，開 `/daily/2026-11-19/newsroom/office?only=1&speed=2`，R4 摘要卡 → R2 泳道 → 按 `C` 跳 CHALLENGE → R1 協商串 v1→v2 diff）。
 11. ✅（2026-11-25，`claude-auto`）**P1-3b README／PROGRESS 對齊**：README 的測試數、Alembic revision、設定鍵表（補 `MAS_NOISE_CHECK` 與 desk-v3 四個開關）；本檔「線上現況」更新到最新日期。
 12. ✅（2026-11-26，`claude-auto`；(1) 早、(2) 午、(3) 晚 `FACT_CHECKER_EVENT_CLASSES`，見三段「本次變更（2026-11-26 …）」）**P2-1 三個演算法盲區**（放新開關，預設關閉，不動 `exp1-frozen` 與實驗二重播）：(1) 早報／晚報／懶人包等彙整稿 `is_roundup_title` 不併入單一事件 cluster；(2) 查核員 `irrelevant_sources` 接當天 EntityContext，承認 ≥3 字、DF<5% 的中文共同片段（N-44224 蘇巧慧、N-54434 統一不再誤點名）；(3) 查核員提示詞加事件四分類（同次事件／後續進展／無關／彙整稿）——(3) 會改 `request_hash`，只在開關打開時生效。離線測試：T457/T523 不再錯併。
-13. **P2-2 desk-v3 高互動 demo 期**（選做）：在 `rt-data-1123` 另一份複本開 `MAS_RICH_CONTEXT`／`MAS_OPEN_LAYOUT`／`MAS_MORE_INTERACTION` 跑一期 M 組 prepare（詳見 `docs/pr/desk-v3.md`），`build_replay` 輸出存成 `tests/fixtures/replay/` 下的 fixture，供簡報對比。
+13. ✅（2026-11-27，`claude-auto`；見「本次變更（2026-11-27 早）」）**P2-2 desk-v3 高互動 demo 期**（選做）：在 `rt-data-1123` 另一份複本開 `MAS_RICH_CONTEXT`／`MAS_OPEN_LAYOUT`／`MAS_MORE_INTERACTION` 跑一期 M 組 prepare（詳見 `docs/pr/desk-v3.md`），`build_replay` 輸出存成 `tests/fixtures/replay/` 下的 fixture，供簡報對比。
 14. **P3-1 `run_mas` 只為候選池建 `Story` 列**（每期 ~4,800 → ≤30）：先確認分版主編（含 `MAS_OPEN_LAYOUT`）只需要 desk pool＋全站 top 10；改完全套測試＋回放 fixture 都要過；會動線上流程，併入後要 `newsroom-reload` 並看隔天 06:00 準備。
 15. **P3-3 拆 `daily/mas/orchestrator.py`**（prompts.py／checks.py／desk_v3.py／orchestrator.py ≤600 行，對外名稱相容、測試不改）；`run.py` 視剩餘時間再拆。純重構，不能改任何 `request_hash`（錄音重播測試會抓）。
 16. 👤 **P3-2 DB 瘦身（需志晨同意才做，自動開發不做）**：先完整備份 → 342 列 11/12 以前的 `pending` 訊息改 `handled` → Alembic drop v4/v5 殭屍表＋刪 ORM → `VACUUM`。動正式 DB、不可逆，排在 2027-01-08 發表後。
@@ -55,6 +55,17 @@
 - 開發回放頁用 `tests/fixtures/replay/2026-11-19_mas.json`（11/19 M 組真實 `build_replay` 輸出，2026-11-23 從 production DB 唯讀匯出；有 recorded 時間、3 次 CHALLENGE、改稿請求、版面異議），不必碰 DB。
 - 回放頁只讀、不能改稿；不改 `request_hash`、提示詞、線上撰稿流程，所以不影響實驗數字。動到 `reddit_tracker/daily/replay.py`／`office.html` 會被 web 載入，但 newsroom 排程不載入 web，**不需要重載 newsroom**（web 是手動起的 FastAPI）。
 - 視覺檢查：自動開發 session 沒有瀏覽器可用（production checkout 不能放 `launch.json`），改用 fixture 寫測試；畫面由互動 session 截圖確認。
+
+## 本次變更（2026-11-27 早 — desk-v3 高互動 demo 期，佇列第 13 項，`claude-auto`，自動開發）
+
+在 Lab 另一份複本 `~/Documents/Developer/Lab/rt-data-1123/desk-v3-demo/demo.db` 開 `MAS_RICH_CONTEXT`／`MAS_OPEN_LAYOUT`／`MAS_MORE_INTERACTION` 跑 2026-11-24 一期 M 組 prepare（Codex 45 次，額度檔在該目錄）；沒碰 production DB／`.env`／`data/work/`，線上開關都沒動。細節與對照表見 `docs/pr/desk-v3.md`「高互動 demo 期」。
+
+- ✅ fixture `tests/fixtures/replay/2026-11-24_mas_desk_v3.json`＋匯出工具 `scripts/export_replay_fixture.py`（`--compare` 印 R4 數字對照 Markdown 表）＋測試 `tests/test_replay_desk_v3_fixture.py`（5 個）。
+- 📌 對 11/19（全關）：稿件 12 → 17（各版 4／7／6 由主編決定）、訊息 34 → 50、查核員異議 2 → 4、修稿完成 3 → 6、模型呼叫 30 → 45；總編退稿（C3）2 次。全期沒超過 18 篇，所以 TRIM／APPEAL 沒出現。簡報推薦 story 108592 的協商串（查核員異議 → 修稿 → 總編退稿 → 修稿 → 再異議 → 再修 → 放行）。
+- ⚠️ 不能用 CLI `--now` 做 demo 期：訊息走重編時鐘、模型呼叫走真實時間，回放時間序會錯亂。改用 `run._live_clock.set(True)` 後呼叫 `prepare_daily(now=…)`（腳本在 demo 目錄 `run_live.py`）。
+- ⚠️ 既有行為：查核員 LLM 回 OK 時不發 RELEASE，回放協商串那篇沒有結局（108605）。要補得動線上訊息流，沒做。
+- 測試：worktree 全套 632 passed／7 skipped、ruff 通過。
+- ➡️ 下一步：第 14 項 P3-1 `run_mas` 只為候選池建 `Story` 列。
 
 ## 本次變更（2026-11-26 晚 — 查核員事件四分類，佇列第 12 項 (3)，`claude-auto`，自動開發）
 

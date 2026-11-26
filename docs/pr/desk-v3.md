@@ -159,3 +159,27 @@
 - 2026-11-14 01:19：C2、C3、C4 完成；全套 471 passed／7 skipped；commit `899b21b`、`49f3992`、`b51fa6d`；結束用量 5h 19%／週 27%。下一步 D1（設計文件）。
 - 2026-11-14 02:19：D1、D2、D3 完成；全套 490 passed／7 skipped；commit `a20bd7d`、`3cc7fa6`、`b831534`（交接 `7cfc9a5`）；結束用量 5h 25%／週 27%。下一步 E1（收尾：文件整理、開啟順序與風險、停用定時任務）。
 - 2026-11-14 03:21：E1 完成（全部步驟 [x]）；全套 490 passed／7 skipped；commit `5c4dfc6`；結束用量 5h 27%／週 28%。**停用定時任務失敗**：`update_scheduled_task` 在無人值守的排程執行中需要人工核可——請志晨手動停用 `desk-v3-autorun`；在那之前後續觸發會讀到全部 [x] 並再嘗試停用（不會改程式）。
+
+## 高互動 demo 期（2026-11-27，PROGRESS 佇列第 13 項）
+
+在 Lab 複本（`~/Documents/Developer/Lab/rt-data-1123/desk-v3-demo/demo.db`，由 11/23 唯讀複本 `.backup` 而來）開 `MAS_RICH_CONTEXT`／`MAS_OPEN_LAYOUT`／`MAS_MORE_INTERACTION`（護欄用預設 1／8／18），另開與 production 相同的 `MAS_NOISE_CHECK`、`DAILY_WITHHOLD_CHALLENGED`，跑 2026-11-24 一期 M 組 prepare（資料窗固定在 11/24 06:00 台北，`run._live_clock=True` 讓訊息時間走真實時鐘，和正式 06:00 出刊相同）。額度檔、HTML 都寫在該目錄，沒碰 production DB／`.env`／`data/work/`。
+
+- fixture：`tests/fixtures/replay/2026-11-24_mas_desk_v3.json`（`scripts/export_replay_fixture.py` 匯出，可加 `--compare` 印對照表）；測試 `tests/test_replay_desk_v3_fixture.py`。
+- 對照（R4 摘要卡數字；11/19 是開關全關的正式期）：
+
+| 項目 | 11/19（全關） | 11/24（desk-v3 三開關） |
+|---|---:|---:|
+| 稿件數 | 12 | 17 |
+| 訊息數 | 34 | 50 |
+| 查核員異議 | 2 | 4 |
+| 改稿請求（總編退稿） | 1 | 2 |
+| 修稿完成 | 3 | 6 |
+| 版面異議 | 2 | 1 |
+| 模型呼叫 | 30 | 45（2 次逾時重試） |
+| 模型耗時（秒） | 415.2 | 676.8 |
+
+- 各版篇數由分版主編決定：台灣 4／國際 7／科技 6（固定配額時每版 4）。全期 17 ≤ 18，所以 **B3 刪稿與 C1 申訴沒有觸發**；C2 版面編輯審頭版回「沒有異議」（頭版 OVER_CAPACITY 異議是既有的程式檢查）。
+- **C3 觸發 2 次**。簡報推薦 story 108592（TSIA 侯永清）：查核員異議 S2 → 記者修稿 → 放行 → 總編退稿（標題「未見客戶調整訂單」摘要沒寫）→ 記者修稿 → 查核員重驗再異議 → 再修 → 放行，一條串看得到三個角色來回。
+- 訊息 50 則，離 `MAX_MESSAGES = 80` 還有餘裕；沒有 expired。
+- 第一次試跑用 CLI `--now`（訊息走重編時鐘、模型呼叫是真實時間，回放時間序錯亂，span 算成 3 天），已作廢；結果留在同目錄 `demo-fixedclock.db`／`prepare-fixedclock.log` 備查。
+- 已知（既有行為、非 desk-v3）：查核員 LLM 回 OK 時 `_checker_llm` 不發 RELEASE，回放協商串那篇沒有結局（本期 108605，11/19 沒遇到）。
