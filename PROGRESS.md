@@ -58,7 +58,9 @@
 
 ## 本次變更（2026-11-26 上午 — 四位 agent 檢查後的修正，互動 session，分支 `fix/ops-1126`）
 
-志晨要求把四位 agent（claude／gpt／gemini／grok）檢查提出的改進做完。worktree `~/Documents/Developer/Lab/rt-wt-ops`（`fix/ops-1126`，含 grok 的 `fix/guards-1126` 合併）；605 passed、7 skipped，ruff 乾淨。**還沒併入 main、沒重載、沒 push、`.env` 沒動**（👤 要志晨同意）。
+志晨要求把四位 agent（claude／gpt／gemini／grok）檢查提出的改進做完。worktree `~/Documents/Developer/Lab/rt-wt-ops`（`fix/ops-1126`，含 grok 的 `fix/guards-1126` 合併）；605 passed、7 skipped，ruff 乾淨。
+
+- ✅ **已部署**（志晨 11/26 同意）：10:25 fast-forward 併入 main（`9373a41`），production 全套 608 passed／4 skipped；`newsroom-deploy` 10:25:14（DB 備份 `reddit_tracker.backup-20261126-102514.db`）→ log 有 `codex version guard ok`、三個 job 註冊、scheduler Python process 1 個；重載後第一輪 `sources=42 ok=42`，Guardian 不再 403。已 push origin/main。**`.env` 沒動**：下面建議的三個開關仍是預設關閉，👤 等志晨同意再加。11/27 06:00 要看 log 有沒有 `source collection deferred`、不再 `database is locked`。
 
 - **06:00 撞鎖改程式修**（`newsroom/scheduler.py`）：準備期間到期的收集延後、準備結束（成功或失敗）立刻補一輪；準備開始前先等進行中的那輪寫完（最多 300 秒）；收集不會兩輪重疊。重載時間不用再挑。手動 CLI `daily prepare` 不在保護範圍。
 - **冷啟動補做** `DAILY_STARTUP_CATCHUP_MINUTES`（預設 0＝關）：啟動時在準備～發行時刻之間且當天沒有版次就補準備；發行時刻後 N 分鐘內仍是 `drafted` 就補發；`publishing`／`delivery_failed` 只記 ERROR。
