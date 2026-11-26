@@ -117,6 +117,34 @@ CHECKER_PER_SOURCE_SUFFIX = (
     '{"sid":2,"verdict":"KEEP|REMOVE","reason":"一句話"}；與 S1 同一事件填 KEEP，不同事件填 REMOVE。'
     "有任何 REMOVE 時 action 填 CHALLENGE。"
 )
+# 事件四分類（FACT_CHECKER_EVENT_CLASSES=true 才用；優先於逐來源版）：每個程式點名的來源回一個關係，
+# 程式依 EVENT_RELATION_KEEP 決定留或刪。佇列第 12 項 (3)，2026-11-26。
+EVENT_RELATIONS = ("SAME_EVENT", "FOLLOW_UP", "UNRELATED", "ROUNDUP")
+EVENT_RELATION_KEEP = {"SAME_EVENT": True, "FOLLOW_UP": True, "UNRELATED": False, "ROUNDUP": False}
+CHECKER_EVENT_CLASS_SCHEMA = {
+    "type": "object",
+    "properties": {
+        **CHECKER_SCHEMA["properties"],
+        "sources": {"type": "array", "items": {
+            "type": "object", "properties": {
+                "sid": {"type": "integer"},
+                "relation": {"type": "string", "enum": list(EVENT_RELATIONS)},
+                "reason": {"type": "string"}},
+            "required": ["sid", "relation", "reason"], "additionalProperties": False}},
+    },
+    "required": [*CHECKER_SCHEMA["required"], "sources"],
+    "additionalProperties": False,
+}
+CHECKER_EVENT_CLASS_SUFFIX = (
+    "\n另外在 sources 對每個被點名的來源各回一個判斷："
+    '{"sid":2,"relation":"SAME_EVENT|FOLLOW_UP|UNRELATED|ROUNDUP","reason":"一句話"}。'
+    "\nSAME_EVENT＝和 S1 報導的是同一次事件（同一個行動、同一個場合）。"
+    "\nFOLLOW_UP＝同一次事件的後續進展：同一批當事人對同一件事的下一步（例如道歉後再次道歉）。"
+    "\nUNRELATED＝不同事件。人名、公司或題材相同但是另一件事，也算 UNRELATED；"
+    "由 S1 的事件引起、但做事的人或做的事不同的另一則新聞（例如事後另做的民調、旁人在社群上的隔空喊話）也算 UNRELATED。"
+    "\nROUNDUP＝早報、晚報、新聞摘要這類一次列多則新聞的彙整稿。"
+    "\nSAME_EVENT、FOLLOW_UP 會保留；UNRELATED、ROUNDUP 會刪除，有任何一個時 action 填 CHALLENGE。"
+)
 EIC_SCHEMA = {
     "type": "object",
     "properties": {
@@ -483,7 +511,8 @@ def _sid(value) -> int | None:
 def checker_source_verdicts(assessment: str | None, flagged: list[int]) -> dict[int, bool]:
     """查核員對每個程式點名來源的判斷：{sid: True＝保留}。
 
-    有逐來源判斷（`sources`）的照它；沒提到的點名來源、或舊格式只有全域 action 的回應，
+    有逐來源判斷（`sources`）的照它：`verdict` KEEP／REMOVE，或事件四分類的 `relation`
+    （`EVENT_RELATION_KEEP`：同次事件、後續進展保留；無關、彙整稿刪）。沒提到的點名來源、或舊格式只有全域 action 的回應，
     照 `checker_says_same_event`（OK 保留、其他刪）。沒點名的來源 LLM 說 REMOVE 也不算：
     刪來源仍要程式先點名。沒有回應或格式錯＝全刪（照程式結果）。
     """
@@ -494,8 +523,11 @@ def checker_source_verdicts(assessment: str | None, flagged: list[int]) -> dict[
         if not isinstance(entry, dict):
             continue
         sid, verdict = _sid(entry.get("sid")), str(entry.get("verdict", "")).strip().upper()
+        relation = str(entry.get("relation", "")).strip().upper()
         if sid in flagged and verdict in ("KEEP", "REMOVE"):
             verdicts[sid] = verdict == "KEEP"
+        elif sid in flagged and relation in EVENT_RELATION_KEEP:
+            verdicts[sid] = EVENT_RELATION_KEEP[relation]
     return {sid: verdicts.get(sid, default) for sid in flagged}
 
 
@@ -540,6 +572,7 @@ def review_one(
     checker_mode: str = "full",
     draft: tuple[str, str, str, str] | None = None,
     day_context: EntityContext | None = None,
+    event_classes: bool | None = None,
 ) -> StoryVersion:
     """記者寫 v1，程式查核；有問題才 CHALLENGE，通過則 checked。
 
@@ -548,12 +581,16 @@ def review_one(
     - `checker_mode`：`full`＝程式工具＋查核員 LLM；`program`＝只開程式工具；`off`＝查核員全關（數字檢查照開）。
     - `draft`：已存檔的 v1（headline, deck, body, why_it_matters），有給就不呼叫記者。
     `day_context`：當天素材的 EntityContext，給了查核員程式點名才比中文片段（`FACT_CHECKER_ZH_FRAGMENTS`）。
+    `event_classes` 沒給就看 `FACT_CHECKER_EVENT_CLASSES`（預設 false）；true 時查核員對點名來源回事件四分類，
+    優先於 `per_source`。
     """
     if checker_mode not in CHECKER_MODES:
         raise ValueError(f"checker_mode 只能是 {CHECKER_MODES}：{checker_mode!r}")
     degraded = degraded if degraded is not None else []
     if per_source is None:
         per_source = get_settings().fact_checker_per_source
+    if event_classes is None:
+        event_classes = get_settings().fact_checker_event_classes
     clock = Clock(now)
     corr = correlation_id("T2", edition_date, story.id)
     source_ids = [item.item_id for item in evidence if item.item_id is not None]
@@ -567,7 +604,7 @@ def review_one(
     return _check_and_maybe_revise(
         session, edition_date=edition_date, story=story, evidence=evidence, version=version, client=client,
         clock=clock, corr=corr, degraded=degraded, per_source=per_source, checker_mode=checker_mode,
-        day_context=day_context,
+        day_context=day_context, event_classes=event_classes,
     )
 
 
@@ -586,20 +623,23 @@ def reporter_draft(session, client, *, edition_date, story, evidence, degraded) 
     return draft.headline, draft.deck, draft.body, draft.why_it_matters
 
 
-def _checker_relevance_prompt(version, evidence, bad, per_source: bool) -> tuple[str, str, dict]:
-    """可疑時那一次查核員請求（system, user, schema）。per_source=False 時與 2026-11-01 前逐字相同。"""
+def _checker_relevance_prompt(version, evidence, bad, per_source: bool,
+                              event_classes: bool = False) -> tuple[str, str, dict]:
+    """可疑時那一次查核員請求（system, user, schema）。兩個開關都關時與 2026-11-01 前逐字相同。"""
     system = CHECKER_SYSTEM + CHECKER_RELEVANCE_SUFFIX
     user = f"稿件：{version.body}\n\n{_evidence_block(evidence)}"
-    if not per_source:
+    if not per_source and not event_classes:
         return system, user, CHECKER_SCHEMA
     listed = "、".join(f"S{index}" for index, _ in bad) or "（沒有）"
-    return (system + CHECKER_PER_SOURCE_SUFFIX, f"程式點名的可疑來源：{listed}\n\n{user}",
-            CHECKER_PER_SOURCE_SCHEMA)
+    user = f"程式點名的可疑來源：{listed}\n\n{user}"
+    if event_classes:
+        return system + CHECKER_EVENT_CLASS_SUFFIX, user, CHECKER_EVENT_CLASS_SCHEMA
+    return system + CHECKER_PER_SOURCE_SUFFIX, user, CHECKER_PER_SOURCE_SCHEMA
 
 
 def _check_and_maybe_revise(session, *, edition_date, story, evidence, version, client, clock, corr, degraded,
                             per_source: bool = False, checker_mode: str = "full",
-                            day_context: EntityContext | None = None) -> StoryVersion:
+                            day_context: EntityContext | None = None, event_classes: bool = False) -> StoryVersion:
     evidence_text = _evidence_text(evidence)
     use_llm = checker_mode == "full"
     bad = [] if checker_mode == "off" else call_tool(
@@ -615,7 +655,7 @@ def _check_and_maybe_revise(session, *, edition_date, story, evidence, version, 
         # 所以查核員 LLM 判定同一事件時保留：逐來源判斷 KEEP 的，或舊格式回 OK（全部）；
         # REMOVE、CHALLENGE 或沒有判斷才照程式刪。
         if use_llm and "fact_checker" not in degraded and _quota_left(client) != 0:
-            system, user, schema = _checker_relevance_prompt(version, evidence, bad, per_source)
+            system, user, schema = _checker_relevance_prompt(version, evidence, bad, per_source, event_classes)
             assessment = _ask(
                 session, client, role="fact_checker", story_id=story.id, edition_date=edition_date,
                 system=system, user=user, schema=schema, temperature=0,
@@ -1607,6 +1647,7 @@ def _eic_revisions(session, *, edition_date, client, clock, hold_ids: set[int], 
         result.layout_log.append("總編審頭版稿：不退稿")
         return
     per_source = get_settings().fact_checker_per_source
+    event_classes = get_settings().fact_checker_event_classes
     for sid, detail in requests:
         story = session.get(Story, sid)
         version = versions[sid]
@@ -1649,6 +1690,7 @@ def _eic_revisions(session, *, edition_date, client, clock, hold_ids: set[int], 
         final = _check_and_maybe_revise(
             session, edition_date=edition_date, story=story, evidence=evidence, version=new, client=client,
             clock=clock, corr=corr, degraded=result.degraded, per_source=per_source, day_context=day_context,
+            event_classes=event_classes,
         )
         if final.status == "hold":
             hold_ids.add(sid)

@@ -25,6 +25,8 @@
 - `--max-calls`（預設 25）是這一次執行最多幾次新的 Codex 嘗試。線上每天約用 33 次、全部用途合計上限 60，
   所以一天大約只剩 27 次給實驗；不夠就隔天再跑同一個指令接著做。
 - `--per-source`：(c) 組用逐來源 KEEP／REMOVE（`FACT_CHECKER_PER_SOURCE`）。預設關，與試刊相同。
+- `ablation`／`ablation-report --event-classes`：改成 (c4)＝(c) 打開 `FACT_CHECKER_EVENT_CLASSES`（事件四分類），
+  結果寫 `results_c4.json`，不覆蓋 (c+)。
 """
 
 from __future__ import annotations
@@ -225,14 +227,18 @@ def cmd_ablation(args) -> int:
 
     cases = exp2.select_cases(exp2.load_cases(CASES), [part.strip() for part in args.cases.split(",") if part.strip()])
     drafts = json.loads(V1.read_text(encoding="utf-8"))
-    outcomes, verdicts = exp2.run_ablation(cases, drafts, _client(args.live, args.max_calls), WORK / "arm_c_plus.db")
+    tag = "c4" if args.event_classes else "c_plus"
+    outcomes, verdicts = exp2.run_ablation(cases, drafts, _client(args.live, args.max_calls), WORK / f"arm_{tag}.db",
+                                           event_classes=args.event_classes)
+    arm = exp2.EVENT_CLASS_ARM if args.event_classes else exp2.ABLATION_ARM
     payload = {
-        "arm": exp2.ABLATION_ARM, "per_source": True, "case_ids": [case.case_id for case in cases],
+        "arm": arm, "per_source": not args.event_classes, "event_classes": args.event_classes,
+        "case_ids": [case.case_id for case in cases],
         "outcomes": [asdict(o) for o in outcomes],
         "verdicts": verdicts,
     }
-    (WORK / "results_c_plus.json").write_text(json.dumps(payload, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    print(f"(c+)：{exp2.summarize(outcomes)}；刪除 {exp2.removal_counts(outcomes, cases)}")
+    (WORK / f"results_{tag}.json").write_text(json.dumps(payload, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    print(f"({arm})：{exp2.summarize(outcomes)}；刪除 {exp2.removal_counts(outcomes, cases)}")
     return 0
 
 
@@ -240,12 +246,14 @@ def cmd_ablation_report(args) -> int:
     from reddit_tracker.eval import exp2
 
     base = json.loads((WORK / "results_c.json").read_text(encoding="utf-8"))
-    plus = json.loads((WORK / "results_c_plus.json").read_text(encoding="utf-8"))
+    tag = "c4" if args.event_classes else "c_plus"
+    plus = json.loads((WORK / f"results_{tag}.json").read_text(encoding="utf-8"))
     if base["per_source"]:
         raise SystemExit("results_c.json 已經開了逐來源判斷，不能當 (c) 的對照")
     print(exp2.render_ablation(
         [exp2.Outcome(**row) for row in base["outcomes"]], [exp2.Outcome(**row) for row in plus["outcomes"]],
         exp2.load_cases(CASES), plus["verdicts"],
+        label="(c4) 事件四分類" if args.event_classes else "(c+) 逐來源判斷",
     ))
     return 0
 
@@ -314,7 +322,11 @@ def main(argv: list[str] | None = None) -> int:
     ablation.add_argument("--live", action="store_true", help="呼叫真 Codex；不加只重播帳本")
     ablation.add_argument("--max-calls", type=int, default=25)
     ablation.set_defaults(func=cmd_ablation)
-    sub.add_parser("ablation-report").set_defaults(func=cmd_ablation_report)
+    ablation_report = sub.add_parser("ablation-report")
+    ablation_report.set_defaults(func=cmd_ablation_report)
+    for step in (ablation, ablation_report):
+        step.add_argument("--event-classes", action="store_true",
+                          help="改跑／改印 (c4)：FACT_CHECKER_EVENT_CLASSES 事件四分類（results_c4.json）")
     for name, step in sub.choices.items():
         step.add_argument("--work-dir", type=Path, required=name.startswith("ablation"),
                           help="工作目錄（預設 data/work/exp2）")

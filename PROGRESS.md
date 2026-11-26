@@ -5,7 +5,7 @@
 > 2026-11-23 以前的「本次變更」段落已搬到 `docs/archive/`（見文末「更早的紀錄」）；正文引用的舊段落請到那裡找。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-26 13:30（`claude-auto`：佇列第 12 項 (2) `FACT_CHECKER_ZH_FRAGMENTS`，預設關閉，見「本次變更（2026-11-26 午）」）。前次：2026-11-26 10:20（互動 session，`fix/ops-1126` 已併入 main、部署並 push）。更早的更新紀錄見 git log 與 `docs/archive/`。
+**Last updated:** 2026-11-26 19:20（`claude-auto`：佇列第 12 項 (3) `FACT_CHECKER_EVENT_CLASSES`，預設關閉，見「本次變更（2026-11-26 晚）」）。前次：2026-11-26 14:55（前端精修併入 main 並重載）。更早的更新紀錄見 git log 與 `docs/archive/`。
 
 ## 線上現況（2026-11-25 19:00 查證）
 
@@ -42,7 +42,7 @@
 9. ✅（2026-11-25，`claude-auto`，整份初稿；剩截圖與老師確認事項，見「本次變更（2026-11-25）」）**P0-3b 報告 v2.0** `docs/report.md` 整份改寫（12/20 前初稿；可分兩次）：一 緒論；二 系統架構（RSS/RSSHub 來源 → TF-IDF＋實體兩段聚合 → 評分選題 → P 流水線 vs M 六角色編輯室）；三 MAS 角色協議與程式護欄（`protocol.py` 權限、T1/T2/T3、`request_hash` 錄音重播、回歸集 E01–E16）；四 資料庫（只寫現行核心表）；五 實驗一／二／三與七日試刊（整合三份 results）；六 限制與混淆因素（grok/agy 代標、P 組一次寫整版被截斷的混淆、11/14 起關閉人工核可、11/13 只有一期是發行前真人核准）與 AI 工具使用聲明。口試七題的防禦寫進第六章。
 10. ✅（2026-11-25，`claude-auto`，初稿；👤 剩排練、錄備援影片、填封面個資）**P0-4 簡報＋Demo 腳本**（12/31 前；⚠️ 11/19 那兩次異議是誤報，腳本已改，見「本次變更（2026-11-25 午）」）：`docs/demo_slides.md`（問題 → 六角色編輯室與程式護欄 → 回放 R1–R4 → 三實驗誠實評估）、`docs/demo_script.md`（3–5 分鐘 live demo＋備援錄影逐字稿：`python -m reddit_tracker.web`，開 `/daily/2026-11-19/newsroom/office?only=1&speed=2`，R4 摘要卡 → R2 泳道 → 按 `C` 跳 CHALLENGE → R1 協商串 v1→v2 diff）。
 11. ✅（2026-11-25，`claude-auto`）**P1-3b README／PROGRESS 對齊**：README 的測試數、Alembic revision、設定鍵表（補 `MAS_NOISE_CHECK` 與 desk-v3 四個開關）；本檔「線上現況」更新到最新日期。
-12. **P2-1 三個演算法盲區**（**做到哪：(1) ✅ 2026-11-26 早、(2) ✅ 2026-11-26 午（`FACT_CHECKER_ZH_FRAGMENTS`），見兩段「本次變更（2026-11-26 …）」；剩 (3)**；放新開關，預設關閉，不動 `exp1-frozen` 與實驗二重播）：(1) 早報／晚報／懶人包等彙整稿 `is_roundup_title` 不併入單一事件 cluster；(2) 查核員 `irrelevant_sources` 接當天 EntityContext，承認 ≥3 字、DF<5% 的中文共同片段（N-44224 蘇巧慧、N-54434 統一不再誤點名）；(3) 查核員提示詞加事件四分類（同次事件／後續進展／無關／彙整稿）——(3) 會改 `request_hash`，只在開關打開時生效。離線測試：T457/T523 不再錯併。
+12. ✅（2026-11-26，`claude-auto`；(1) 早、(2) 午、(3) 晚 `FACT_CHECKER_EVENT_CLASSES`，見三段「本次變更（2026-11-26 …）」）**P2-1 三個演算法盲區**（放新開關，預設關閉，不動 `exp1-frozen` 與實驗二重播）：(1) 早報／晚報／懶人包等彙整稿 `is_roundup_title` 不併入單一事件 cluster；(2) 查核員 `irrelevant_sources` 接當天 EntityContext，承認 ≥3 字、DF<5% 的中文共同片段（N-44224 蘇巧慧、N-54434 統一不再誤點名）；(3) 查核員提示詞加事件四分類（同次事件／後續進展／無關／彙整稿）——(3) 會改 `request_hash`，只在開關打開時生效。離線測試：T457/T523 不再錯併。
 13. **P2-2 desk-v3 高互動 demo 期**（選做）：在 `rt-data-1123` 另一份複本開 `MAS_RICH_CONTEXT`／`MAS_OPEN_LAYOUT`／`MAS_MORE_INTERACTION` 跑一期 M 組 prepare（詳見 `docs/pr/desk-v3.md`），`build_replay` 輸出存成 `tests/fixtures/replay/` 下的 fixture，供簡報對比。
 14. **P3-1 `run_mas` 只為候選池建 `Story` 列**（每期 ~4,800 → ≤30）：先確認分版主編（含 `MAS_OPEN_LAYOUT`）只需要 desk pool＋全站 top 10；改完全套測試＋回放 fixture 都要過；會動線上流程，併入後要 `newsroom-reload` 並看隔天 06:00 準備。
 15. **P3-3 拆 `daily/mas/orchestrator.py`**（prompts.py／checks.py／desk_v3.py／orchestrator.py ≤600 行，對外名稱相容、測試不改）；`run.py` 視剩餘時間再拆。純重構，不能改任何 `request_hash`（錄音重播測試會抓）。
@@ -55,6 +55,19 @@
 - 開發回放頁用 `tests/fixtures/replay/2026-11-19_mas.json`（11/19 M 組真實 `build_replay` 輸出，2026-11-23 從 production DB 唯讀匯出；有 recorded 時間、3 次 CHALLENGE、改稿請求、版面異議），不必碰 DB。
 - 回放頁只讀、不能改稿；不改 `request_hash`、提示詞、線上撰稿流程，所以不影響實驗數字。動到 `reddit_tracker/daily/replay.py`／`office.html` 會被 web 載入，但 newsroom 排程不載入 web，**不需要重載 newsroom**（web 是手動起的 FastAPI）。
 - 視覺檢查：自動開發 session 沒有瀏覽器可用（production checkout 不能放 `launch.json`），改用 fixture 寫測試；畫面由互動 session 截圖確認。
+
+## 本次變更（2026-11-26 晚 — 查核員事件四分類，佇列第 12 項 (3)，`claude-auto`，自動開發）
+
+新開關 `FACT_CHECKER_EVENT_CLASSES`（預設關閉，`.env` 沒動）；沒碰 production DB。驗證在 `~/Documents/Developer/Lab/rt-data-1123/exp2-c4/`（從 `exp2-cplus` 複製 `cases.json`、`v1.json`、`results_c.json`、`ledger.db`），新的 Codex 呼叫 16 次，額度檔在該目錄。介面見 `docs/v5/DAILY_EDITION.md`「事件四分類」。
+
+- ✅ `daily/mas/orchestrator.py`：`CHECKER_EVENT_CLASS_SUFFIX`／`CHECKER_EVENT_CLASS_SCHEMA`（`sources[].relation` ∈ `SAME_EVENT|FOLLOW_UP|UNRELATED|ROUNDUP`），`checker_source_verdicts` 依 `EVENT_RELATION_KEEP` 對應留／刪；`review_one(event_classes=None)` 讀設定，傳到 `_check_and_maybe_revise` 與 desk-v3 總編退稿重驗；優先於 `FACT_CHECKER_PER_SOURCE`。關閉時請求逐字不變（錄音重播、回歸集都過）。
+- ✅ 實驗二工具：`run_ablation(event_classes=True)`＝(c4)、`scripts/run_exp2.py ablation|ablation-report --event-classes`（`results_c4.json`，不覆蓋 (c+)）。
+- 📌 (c4) 結果寫進 `docs/eval/exp2_results.md`「課後補充消融：(c4) 事件四分類」：同 8 篇擋下 **7/7**（(c) 6/7、(c+) 5/7）、連帶誤刪 **3 → 1**；H-T767、H-T807 都擋下。新的誤刪是 H-T807 S2（另一位評論者評同一場辯論，被判 UNRELATED）。
+- ⚠️ **提示詞是看過 (c+) 錯誤後寫的**（UNRELATED 的例子「事後另做的民調、旁人隔空喊話」對應 H-T807／H-T767），兩篇保留集案例已不算保留，不能當泛化成績；報告要提只能說「事後修正、離線驗證」。
+- ℹ️ 沒有出現 FOLLOW_UP／ROUNDUP。E01 停在 `challenged` 是記者 v2 多寫「25」（抽樣差異），與分類無關。
+- ⚠️ 開之前至少要：把 UNRELATED 說明改成不靠「做事的人」（評論、分析算同次事件），在複本跑一期 M 組看誤刪；和 `FACT_CHECKER_ZH_FRAGMENTS`、`MAS_FULL_EVIDENCE` 的開啟條件一起決定（三者都會改 `request_hash`）。
+- 測試：`tests/test_checker_event_classes.py`（11 個）；worktree 全套 627 passed／7 skipped、ruff 通過。
+- ➡️ 下一步：第 13 項 P2-2 desk-v3 高互動 demo 期（選做；要在複本跑 M 組 prepare）。
 
 ## 本次變更（2026-11-26 下午 — 前端精修交給 grok，Claude 驗收）
 

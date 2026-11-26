@@ -123,6 +123,9 @@ class Settings(BaseSettings):
     # 例：蘇巧慧＋李四川、肯德基＋必勝客。只會少點名、不會多點名；少點名的稿不再問查核員，所以會改 request_hash。
     # 預設關閉＝點名規則與請求逐字不變（佇列第 12 項 (2)，2026-11-26）。
     fact_checker_zh_fragments: bool = False
+    # 查核員對每個程式點名的來源回事件四分類（SAME_EVENT／FOLLOW_UP 保留，UNRELATED／ROUNDUP 刪），
+    # 優先於 FACT_CHECKER_PER_SOURCE。會改查核員請求的 request_hash；預設關閉＝請求逐字不變（佇列第 12 項 (3)）。
+    fact_checker_event_classes: bool = False
     # mas 發行要不要真人核可（`daily approve`）。true＝未核可只出標題（手冊步驟 10 原設計）；
     # false＝不需核可，checked／draft／challenged 都發全文，只有 HOLD 的稿照樣只出標題。
     daily_require_approval: bool = True
