@@ -465,6 +465,26 @@ def test_score_and_evidence_drop_disabled_members_of_mixed_clusters(session):
     assert [e.source_id for e in evidence.items] == ["cna-world"]
 
 
+def test_edition_index_is_newest_first_and_self_contained():
+    from reddit_tracker.daily.render import render_html, render_index
+    from reddit_tracker.daily.view import view_from_edition
+
+    html = render_index([
+        (date(2026, 11, 19), "2026-11-19.html"),
+        (date(2026, 11, 26), "2026-11-26.html"),
+    ])
+    assert html.index("2026-11-26") < html.index("2026-11-19")
+    assert "各期日報" in html and "尚無期號" not in html
+    assert 'class="empty">尚無期號' in render_index([])
+    edition = DailyEdition(edition_date=EDITION, stats={})
+    edition.articles = []
+    page = render_html(view_from_edition(edition, {"taiwan": "台灣"}))
+    for blob in (html, page):
+        assert "PingFang TC" in blob and "思源宋體" in blob
+        assert "<link" not in blob and "<img" not in blob
+        assert "@import" not in blob and "fonts.googleapis" not in blob and "cdn.jsdelivr" not in blob
+
+
 def test_render_marks_non_mvp_sections_as_not_open():
     from reddit_tracker.daily.render import MVP_SECTIONS, render_html
     from reddit_tracker.daily.view import view_from_edition

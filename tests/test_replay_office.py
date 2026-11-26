@@ -121,6 +121,7 @@ def test_office_page_embeds_data_safely(session):
     data = json.loads(html[start:html.index("</script>", start)])
     assert data["date"] == DAY.isoformat() and data["beats"]
     assert f"/daily/{DAY.isoformat()}/newsroom?variant=mas" in html
+    assert 'id="startbtn"' in html and "function paperFor" in html and "function skippable" in html
 
 
 def test_edition_page_shows_issue_tags_times_and_footer(session):

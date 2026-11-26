@@ -21,40 +21,86 @@ TELEGRAM_LIMIT = 3_900
 MULTI_SOURCE_LABEL = "多來源"
 
 _CSS = """
-:root{--bg:#f7f4ee;--paper:#fffdf8;--ink:#1d1b18;--muted:#6b645a;--rule:#d9d2c5;--accent:#8a1c1c;--tag:#efe8da}
-@media (prefers-color-scheme:dark){:root{--bg:#141311;--paper:#1c1a17;--ink:#ece6da;--muted:#a59d8f;--rule:#3a352e;--accent:#e07a6a;--tag:#2a2621}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.75 "Noto Serif TC","PingFang TC","Songti TC",serif}
-.wrap{max-width:1080px;margin:0 auto;padding:0 16px 48px;background:var(--paper)}
-header.mast{text-align:center;padding:28px 0 12px;border-bottom:3px double var(--ink)}
-header.mast h1{margin:0;font-size:clamp(30px,6vw,52px);letter-spacing:.12em}
-header.mast .meta{color:var(--muted);font-size:14px;margin-top:6px}
-nav{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center;padding:10px 0;border-bottom:1px solid var(--rule);font:15px/1.4 system-ui,sans-serif}
-nav a{color:var(--ink);text-decoration:none}nav a:hover{color:var(--accent)}
-.market{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:center;padding:8px 0;border-bottom:1px solid var(--rule);font:14px/1.4 system-ui,sans-serif;color:var(--muted)}
-.market b{color:var(--ink)}.market .stale{color:var(--accent);font-weight:600}.down{color:#2e7d32}.up{color:#c62828}
-h2.section{font-size:22px;margin:32px 0 8px;padding-bottom:4px;border-bottom:2px solid var(--ink)}
-.front{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:0 32px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:0 32px}
-article{padding:16px 0;border-bottom:1px solid var(--rule)}
-article h3{font-size:21px;line-height:1.4;margin:0 0 6px}
-.front article:first-child{grid-column:1/-1}.front article:first-child h3{font-size:30px}
-.deck{color:var(--muted);margin:0 0 8px;font-weight:600}
-.tag{display:inline-block;font:12px/1.6 system-ui,sans-serif;background:var(--tag);color:var(--accent);padding:0 8px;border-radius:3px;margin-right:6px;vertical-align:middle}
-article p{margin:0 0 10px}.why{font-size:15px;color:var(--muted)}
-details{font:13px/1.6 system-ui,sans-serif;color:var(--muted)}details a{color:var(--muted);word-break:break-all}
-.empty{color:var(--muted);font-style:italic;padding:12px 0}
-.brief h3{font-size:17px}.brief .deck,.brief .why,.brief p{display:none}
-.link-only{font:15px/1.6 system-ui,sans-serif}
-.sources{list-style:none;padding:0;margin:8px 0 0;font:13px/1.6 system-ui,sans-serif;color:var(--muted)}
-.sources a{color:var(--muted)}
-.withheld{font:13px system-ui,sans-serif;color:var(--accent)}
-.briefs{grid-column:1/-1;padding:12px 0;border-bottom:1px solid var(--rule)}.briefs h3{font-size:18px;margin:0 0 6px}
-.briefs ul{margin:0;padding-left:18px}.briefs li{margin:2px 0}.briefs a{color:var(--ink)}.briefs .src{color:var(--muted);font-size:14px}
-footer{margin-top:40px;padding-top:16px;border-top:3px double var(--ink);font:13px/1.7 system-ui,sans-serif;color:var(--muted)}
-@media (max-width:420px){
+:root{
+  --bg:#e6e3da;--paper:#f6f5f1;--ink:#16181d;--muted:#5c6370;--rule:#ddd9cf;
+  --seal:#b0112a;--wire:#0e4d82;--tag:#e7eef5;--alert:#9f1239;--alert-bg:#fde8ec;
+  --rise:#c62828;--fall:#1b7a43;--why:#eef2f6;
+  --serif:"Source Han Serif TC","思源宋體","Noto Serif TC","Noto Serif CJK TC","Songti TC","PMingLiU","Songti SC",serif;
+  --sans:"PingFang TC","Noto Sans TC","Source Han Sans TC","Microsoft JhengHei","Heiti TC",sans-serif;
+  color-scheme:light dark;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0c0e11;--paper:#16191e;--ink:#f3f0e8;--muted:#b7bdc7;--rule:#323842;
+    --seal:#ff6b7a;--wire:#9ec4ea;--tag:#243044;--alert:#ffb3be;--alert-bg:#3a2228;
+    --rise:#ff8d86;--fall:#8ee0ae;--why:#1e2731;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.85 var(--serif)}
+a:focus-visible{outline:2px solid var(--wire);outline-offset:2px}
+.wrap{max-width:1040px;margin:0 auto;padding:0 18px 64px;background:var(--paper)}
+header.mast{text-align:center;padding:32px 0 16px;border-bottom:6px solid var(--seal)}
+header.mast h1{margin:0;font-size:clamp(36px,7vw,68px);letter-spacing:.06em;line-height:1.15;font-weight:700}
+header.mast .date{margin:10px 0 0;font-family:var(--sans);font-size:17px;line-height:1.4}
+header.mast .folio{margin:4px 0 0;font-family:var(--sans);font-size:15px;line-height:1.45;color:var(--muted)}
+nav{display:flex;flex-wrap:wrap;gap:4px 16px;justify-content:center;padding:12px 0;border-bottom:1px solid var(--rule);font:16px/1.4 var(--sans)}
+nav a{color:var(--ink);text-decoration:none;padding:4px 0}
+nav a:hover{color:var(--wire)}
+.market{display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:center;padding:12px 0;border-bottom:1px solid var(--rule);font:15px/1.45 var(--sans);color:var(--muted)}
+.market b{color:var(--ink);font-weight:700}
+.market .stale{color:var(--alert);font-weight:700}
+.down{color:var(--fall);font-weight:700}
+.up{color:var(--rise);font-weight:700}
+h2.section{display:flex;align-items:center;gap:10px;margin:40px 0 6px;padding:0;border:0;font-size:26px;line-height:1.3;font-weight:700}
+h2.section::before{content:"";width:14px;height:.72em;background:var(--seal);flex:none}
+.front{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:0 28px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:0 28px}
+article{padding:18px 0 16px;border-bottom:1px solid var(--rule)}
+article h3{font-size:22px;line-height:1.45;margin:0 0 8px;font-weight:700}
+.front article:first-child{grid-column:1/-1}
+.lead h3,.front article:first-child h3{font-size:clamp(28px,4vw,42px);line-height:1.28;margin-bottom:10px}
+.lead .deck,.lead p,.front article:first-child p{max-width:34em}
+.deck{margin:0 0 12px;font-family:var(--sans);font-size:18px;line-height:1.65;font-weight:600;color:var(--ink)}
+.tag{display:inline-block;font:13px/1.5 var(--sans);font-weight:700;background:var(--tag);color:var(--wire);padding:1px 7px;margin:0 6px 0 0;vertical-align:middle}
+.tag.alert{color:var(--alert);background:var(--alert-bg)}
+article p{margin:0 0 12px}
+article a{color:var(--wire)}
+.why{font-family:var(--sans);font-size:16px;line-height:1.7;color:var(--ink);background:var(--why);border-left:3px solid var(--wire);padding:8px 12px;margin:4px 0 12px}
+.empty{color:var(--muted);font-family:var(--sans);font-style:italic;padding:12px 0}
+.brief h3{font-size:18px}
+.brief .deck,.brief .why,.brief p{display:none}
+.brief p.withheld{display:block}
+.link-only{font:16px/1.6 var(--sans)}
+.sources{list-style:none;padding:8px 0 0;margin:8px 0 0;border-top:1px solid var(--rule);font:14px/1.65 var(--sans);color:var(--muted)}
+.sources a{color:var(--ink);word-break:break-word}
+.sources .outlet{font-weight:700;color:var(--ink)}
+.withheld{font:15px/1.6 var(--sans);font-weight:700;color:var(--alert);margin-top:6px}
+.briefs{grid-column:1/-1;padding:14px 0;border-bottom:1px solid var(--rule)}
+.briefs h3{font-family:var(--sans);font-size:18px;margin:0 0 8px}
+.briefs ul{margin:0;padding-left:1.1em}
+.briefs li{margin:6px 0;font-family:var(--sans);font-size:16px;line-height:1.55}
+.briefs a{color:var(--ink)}
+.briefs .src{color:var(--muted);font-size:14px}
+footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--ink);font:14px/1.75 var(--sans);color:var(--muted)}
+footer p{max-width:68em}
+ol.index{list-style:none;margin:8px 0 0;padding:0}
+ol.index li{border-bottom:1px solid var(--rule)}
+ol.index a{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 16px;align-items:baseline;padding:16px 2px;text-decoration:none;color:var(--ink);font-size:20px;line-height:1.4}
+ol.index a:hover{color:var(--wire)}
+ol.index .day{font-family:var(--sans);font-size:14px;color:var(--muted)}
+ol.index .empty{padding:16px 2px;font-family:var(--sans);color:var(--muted)}
+@media (max-width:640px){
+  body{font-size:18px;overflow-x:hidden}
+  .wrap{padding:0 14px 72px}
+  header.mast{padding:22px 0 12px}
+  header.mast h1{letter-spacing:.03em}
+  nav{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;gap:0 18px;padding:10px 0 12px}
+  nav a{flex:none}
   .front,.grid{display:block}
+  .lead .deck,.lead p,.front article:first-child p{max-width:none}
+  article h3{font-size:22px}
   .wrap,article,h3,p{overflow-wrap:anywhere}
-  body{overflow-x:hidden}
 }
 """
 
@@ -98,7 +144,10 @@ def _source_list(article: ViewArticle, anchor: str) -> str:
         url = source.get("url") or ""
         outlet = source.get("outlet") or ""
         link = f'<a href="{escape(url, quote=True)}" rel="noopener">{escape(title)}</a>' if url else escape(title)
-        items.append(f'<li id="{anchor}-{index}">{escape(outlet)}｜{link}' + (f"｜{escape(when)}" if when else "") + "</li>")
+        when_html = f'｜<span class="when">{escape(when)}</span>' if when else ""
+        items.append(
+            f'<li id="{anchor}-{index}"><span class="outlet">{escape(outlet)}</span>｜{link}{when_html}</li>'
+        )
     return f'<ul class="sources">{"".join(items)}</ul>' if items else ""
 
 
@@ -113,7 +162,7 @@ def _withheld_label(article: ViewArticle) -> tuple[str, str]:
     return WITHHELD_LABELS.get(article.withheld_reason, WITHHELD_LABELS["unapproved"])
 
 
-def _article_html(article: ViewArticle) -> str:
+def _article_html(article: ViewArticle, *, lead: bool = False) -> str:
     anchor = f"s{article.story_id or article.position}-{article.section}"
     tags = []
     if article.withheld:
@@ -126,8 +175,13 @@ def _article_html(article: ViewArticle) -> str:
         tags.append(MULTI_SOURCE_LABEL)  # 手冊 6.8：狀態標籤放在標題旁；來源列已把轉載併成一列，只算獨立來源
     if article.writer == "template" and not article.withheld:
         tags.append("摘要整理")
-    tag_html = "".join(f'<span class="tag">{escape(t)}</span>' for t in tags)
+    tag_html = "".join(
+        f'<span class="tag{" alert" if article.withheld else ""}">{escape(t)}</span>' for t in tags
+    )
     css = "brief" if article.display == BRIEF else ("link-only" if article.display == LINK else "")
+    classes = ["lead"] if lead else []
+    if css:
+        classes.append(css)
     if article.display == LINK:
         # 內版遇到頭版稿：只放標題連結到頭版那篇，不重印正文（手冊步驟 4）；連結本身不帶 id，避免和頭版重複
         # 連結文字一律用稿件標題；slot 的 label 是分版主編的內部角度，不給讀者看
@@ -136,21 +190,28 @@ def _article_html(article: ViewArticle) -> str:
             f'<article class="link-only">'
             f'<p>{tag_html}<a href="#{article.anchor}">{escape(label)}</a>（見頭版）</p></article>'
         )
+    if article.withheld and "brief" not in classes:
+        classes.append("brief")
     if article.withheld:
-        return (
-            f'<article class="brief" id="{article.anchor}"><h3>{tag_html}{escape(article.headline)}</h3>'
-            f'<p class="withheld">{escape(_withheld_label(article)[1])}</p></article>'
+        inner = (
+            f'<h3>{tag_html}{escape(article.headline)}</h3>'
+            f'<p class="withheld">{escape(_withheld_label(article)[1])}</p>'
         )
-    deck = f'<p class="deck">{escape(article.deck)}</p>' if article.deck and article.writer != "template" else ""
-    why = (
-        f'<p class="why">為什麼重要：{_cite(article.why_it_matters, anchor, len(article.sources), fill=False)}</p>'
-        if article.why_it_matters else ""
-    )
-    klass = f' class="{css}"' if css else ""
-    return (
-        f'<article{klass} id="{article.anchor}"><h3>{tag_html}{escape(article.headline)}</h3>{deck}'
-        f"{_paragraphs(article.body, anchor, len(article.sources))}{why}{_source_list(article, anchor)}</article>"
-    )
+    else:
+        deck = f'<p class="deck">{escape(article.deck)}</p>' if article.deck and article.writer != "template" else ""
+        why = (
+            f'<p class="why">為什麼重要：{_cite(article.why_it_matters, anchor, len(article.sources), fill=False)}</p>'
+            if article.why_it_matters else ""
+        )
+        inner = (
+            f'<h3>{tag_html}{escape(article.headline)}</h3>{deck}'
+            f"{_paragraphs(article.body, anchor, len(article.sources))}{why}{_source_list(article, anchor)}"
+        )
+    # article 只留 id：回歸測試要精確的 `<article id="story-N">`，class 放內層
+    klass = " ".join(classes)
+    if klass:
+        inner = f'<div class="{klass}">{inner}</div>'
+    return f'<article id="{article.anchor}">{inner}</article>'
 
 
 def _section_briefs_html(briefs: list[dict] | None, sections: dict[str, str]) -> str:
@@ -196,9 +257,13 @@ def _mast_meta(view: EditionView) -> str:
         if stamp.tzinfo is None:  # SQLite 讀回來沒有時區，存的是 UTC；不補的話 08:35 會印成 00:35
             stamp = stamp.replace(tzinfo=timezone.utc)
         local = stamp.astimezone(tz)
-        when = f"｜{local.strftime('%Y-%m-%d %H:%M')} 出刊"
+        when = f"{local.strftime('%Y-%m-%d %H:%M')} 出刊"
     count = sum(1 for a in view.articles if a.display == FULL or a.is_front)
-    return f"{edition_title(view.edition_date)}｜{issue}{when}｜本期 {count} 則"
+    folio = "｜".join(part for part in (issue, when, f"本期 {count} 則") if part)
+    return (
+        f'<p class="date">{escape(edition_title(view.edition_date))}</p>'
+        f'<p class="folio">{escape(folio)}</p>'
+    )
 
 
 def render_html(view: EditionView) -> str:
@@ -230,10 +295,10 @@ def render_html(view: EditionView) -> str:
 <html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex"><title>{escape(title)}</title><style>{_CSS}</style></head>
 <body><div class="wrap">
-<header class="mast"><h1>AI 綜合日報</h1><div class="meta">{_mast_meta(view)}</div></header>
+<header class="mast"><h1>AI 綜合日報</h1>{_mast_meta(view)}</header>
 <nav><a href="#front">頭版</a>{nav}</nav>
 {_market_html(view.market if view.market is not None else stats.get("market"), view.edition_date)}
-<h2 class="section" id="front">頭版</h2><div class="front">{"".join(_article_html(a) for a in front)}{_section_briefs_html(stats.get("briefs"), sections)}</div>
+<h2 class="section" id="front">頭版</h2><div class="front">{"".join(_article_html(a, lead=(i == 0)) for i, a in enumerate(front))}{_section_briefs_html(stats.get("briefs"), sections)}</div>
 {"".join(blocks)}
 <footer>
 <p>本報由 AI 協作編採，依標題與摘要撰稿：程式依獨立出處數、官方來源、時效與升溫速度選題，AI 依各家媒體的標題與摘要撰稿，未讀取全文、未做現場採訪。每則附原始來源，請以原文為準。</p>
@@ -244,14 +309,21 @@ def render_html(view: EditionView) -> str:
 
 
 def render_index(editions: list[tuple[date, str]]) -> str:
-    items = "".join(
-        f'<li><a href="{escape(name, quote=True)}">{escape(edition_title(day))}</a></li>' for day, name in editions
-    )
+    """最新一期排最上面。`editions` 來自檔名排序（舊到新），這裡只倒過來顯示。"""
+    if not editions:
+        items = '<li class="empty">尚無期號</li>'
+    else:
+        items = "".join(
+            f'<li><a href="{escape(name, quote=True)}">'
+            f'<span class="when">{escape(edition_title(day))}</span>'
+            f'<span class="day">{escape(day.isoformat())}</span></a></li>'
+            for day, name in reversed(editions)
+        )
     return f"""<!doctype html>
 <html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AI 綜合日報｜期號</title><style>{_CSS}</style></head>
-<body><div class="wrap"><header class="mast"><h1>AI 綜合日報</h1><div class="meta">歷史期號</div></header>
-<ul class="sources">{items or "<li>尚無期號</li>"}</ul></div></body></html>
+<meta name="robots" content="noindex"><title>AI 綜合日報｜各期</title><style>{_CSS}</style></head>
+<body><div class="wrap"><header class="mast"><h1>AI 綜合日報</h1><p class="folio">各期日報</p></header>
+<ol class="index">{items}</ol></div></body></html>
 """
 
 

@@ -38,6 +38,15 @@ def vendored_three() -> FileResponse:
     return FileResponse(VENDOR_THREE, media_type="text/javascript")
 
 
+@app.get("/daily/index.html", include_in_schema=False)
+def daily_index_page() -> FileResponse:
+    """期別列表。要比下面的 `{edition_date}.html` 先註冊，否則 `index` 會被當成日期、回 422。"""
+    page = Path(get_settings().daily_site_dir) / "index.html"
+    if not page.is_file():
+        raise HTTPException(status_code=404, detail="尚未產生期別列表")
+    return FileResponse(page)
+
+
 @app.get("/daily/", include_in_schema=False)
 @app.get("/daily/{edition_date}", include_in_schema=False)
 @app.get("/daily/{edition_date}.html", include_in_schema=False)  # 日報內的期別連結是相對的 YYYY-MM-DD.html；裝飾器由下往上註冊，要比上一行先
@@ -61,16 +70,21 @@ def daily_edition_page(edition_date: date | None = None) -> FileResponse:
 
 
 def _newsroom_bar(edition_date: date) -> str:
+    """貼在視窗底部的一條，不蓋住文末來源。只加在網頁版，不寫進 Telegram 附件。"""
     d = edition_date.isoformat()
+    font = "16px/1.35 system-ui,-apple-system,'PingFang TC','Noto Sans TC','Microsoft JhengHei',sans-serif"
     return (
-        '<nav id="rt-newsroom-bar" style="position:fixed;right:16px;bottom:16px;z-index:9999;'
-        'display:flex;gap:8px;font:14px/1.4 system-ui,-apple-system,\'PingFang TC\',sans-serif">'
-        f'<a href="/daily/{d}/newsroom/office?variant=mas" style="background:#1f1c18;color:#ffe9b8;padding:8px 14px;'
-        'border-radius:20px;text-decoration:none;box-shadow:0 2px 6px rgba(0,0,0,.25)">3D 編輯室</a>'
-        f'<a href="/daily/{d}/newsroom?variant=mas" style="background:#7a2a12;color:#fff;padding:8px 14px;'
-        'border-radius:20px;text-decoration:none;box-shadow:0 2px 6px rgba(0,0,0,.25)">編輯室回放（M 組）</a>'
-        f'<a href="/daily/{d}/newsroom?variant=pipeline" style="background:#fff;color:#7a2a12;padding:8px 14px;'
-        'border:1px solid #7a2a12;border-radius:20px;text-decoration:none">P 組</a></nav>'
+        "<style>body{padding-bottom:96px}</style>"
+        f'<nav id="rt-newsroom-bar" style="position:fixed;left:0;right:0;bottom:0;z-index:9999;'
+        f"display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;align-items:center;"
+        f"padding:10px 14px;background:#14181e;color:#f4f1ea;font:{font}\">"
+        '<span style="margin-right:auto;font-weight:700">看這一期怎麼寫出來</span>'
+        f'<a href="/daily/{d}/newsroom/office?variant=mas" style="background:#b0112a;color:#fff;'
+        'padding:8px 14px;text-decoration:none;font-weight:700">3D 編輯室</a>'
+        f'<a href="/daily/{d}/newsroom?variant=mas" style="background:#f4f1ea;color:#14181e;'
+        'padding:8px 14px;text-decoration:none;font-weight:700">回放與核准</a>'
+        f'<a href="/daily/{d}/newsroom?variant=pipeline" style="color:#f4f1ea;padding:8px 14px;'
+        'text-decoration:none;border:1px solid #8b939e">P 組</a></nav>'
     )
 
 
