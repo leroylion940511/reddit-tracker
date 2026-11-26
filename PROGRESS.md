@@ -65,6 +65,7 @@
 - 📌 離線比較（`scripts/eval_checker_fragments.py`，10/31–11/01 的 10 篇＋實驗二 25 案）：N-44224、N-54434、N-44245、N-48575 和 10/31–11/01 的 14、5327、5331 等不再點名，有標註案例裡少點名的同一事件來源 **10 個**；5330 高雄辯論、5455、E01–E05 的無關來源照樣點名。**真無關但不再點名 1 個：H-T807 S3**（同樣是沈伯洋、蔣萬安，不同事件），名字分不出來，要靠 (3) 事件四分類。N-48569（只有「提彈劾案」一段）、N-69866（只有「董事會」）仍點名，照舊交給查核員 LLM。
 - ⚠️ 打開的代價：不再點名的稿就不問查核員 LLM（H-T807 這種會直接過），也會改 `request_hash`。建議 (3) 做完、在複本跑一期 M 組比對後再決定開不開；實驗二與凍結的數字不受影響（`eval/exp2.py` 不傳 context）。
 - 測試：`tests/test_checker_zh_fragments.py`（9 個：關閉不變、兩段放行、一段不放行、常見片段不算、只會少點名、`review_one` 不再叫查核員、5330 照樣 CHALLENGE、`run_mas` 只在開關打開時傳 context）；worktree 全套 614 passed／7 skipped、ruff 通過。
+- ✅ 併入 main（`87efc1f`，2026-11-26 13:07 fast-forward）並 `newsroom-reload`（13:07:59）：production 全套 617 passed／4 skipped；log 有 `codex version guard ok`、五個 job 註冊（三個核心＋`db_backup`＋`daily_startup_catchup`）、scheduler Python process 1 個；重載後第一輪收集正常。`FACT_CHECKER_ZH_FRAGMENTS` 沒開，線上行為不變。
 - ➡️ 下一步：第 12 項 (3) 查核員提示詞加事件四分類（同次事件／後續進展／無關／彙整稿；開關後面，會改 `request_hash`），用 H-T807、H-T767 驗證。
 
 ## 本次變更（2026-11-26 上午 — 四位 agent 檢查後的修正，互動 session，分支 `fix/ops-1126`）
