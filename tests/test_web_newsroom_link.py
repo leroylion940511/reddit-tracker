@@ -5,9 +5,31 @@ from reddit_tracker.web import _with_newsroom_link
 
 def test_edition_page_gets_newsroom_entry():
     html = _with_newsroom_link("<html><body><p>x</p></body></html>", date(2026, 11, 12))
+    assert '/daily/2026-11-12/newsroom/office?variant=mas' in html
     assert '/daily/2026-11-12/newsroom?variant=mas' in html
     assert '/daily/2026-11-12/newsroom?variant=pipeline' in html
     assert html.index("rt-newsroom-bar") < html.index("</body>")
+
+
+def test_daily_index_is_a_file_not_a_date(tmp_path, monkeypatch):
+    """`index` 不能被 `{edition_date}.html` 當成日期，否則期別列表回 422。"""
+    from fastapi.testclient import TestClient
+
+    from reddit_tracker.config import get_settings
+    from reddit_tracker.web import app
+
+    site = tmp_path / "site"
+    site.mkdir()
+    (site / "index.html").write_text("<html><body>各期日報</body></html>", encoding="utf-8")
+    monkeypatch.setenv("DAILY_SITE_DIR", str(site))
+    get_settings.cache_clear()
+    client = TestClient(app)
+    index = client.get("/daily/index.html")
+    missing = client.get("/daily/1999-01-01.html")
+    assert index.status_code == 200
+    assert "各期日報" in index.text
+    assert "rt-newsroom-bar" not in index.text
+    assert missing.status_code == 404
 
 
 def test_entry_appended_without_body_tag():

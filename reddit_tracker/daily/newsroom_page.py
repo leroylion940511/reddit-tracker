@@ -20,8 +20,9 @@ SECTION_LABELS = {
 }
 STATUS_LABELS = {
     "draft": "草稿", "checked": "已查核待核准", "approved": "已核准", "challenged": "有異議",
-    "hold": "HOLD", "held": "HOLD",
+    "hold": "暫扣", "held": "暫扣",
 }
+FRONT_ROLE = {"lead": "主稿", "second": "次稿", "briefs": "短訊"}
 TYPE_LABELS = {
     "PITCH": "提案", "CHALLENGE": "質疑", "REQUEST_REVISION": "要求修稿", "REVISION_DONE": "修稿完成",
     "REBUT": "反駁", "HOLD": "扣稿 HOLD", "RELEASE": "解除 HOLD", "PAGE_OBJECTION": "版面異議",
@@ -29,26 +30,97 @@ TYPE_LABELS = {
 }
 TAIPEI = ZoneInfo("Asia/Taipei")
 CSS = """
-body{margin:0;font:15px/1.6 system-ui,-apple-system,"PingFang TC",sans-serif;background:#f6f3ec;color:#1c1916}
-.top,.cols{padding:16px 20px;max-width:1200px;margin:0 auto}
-.cols{display:flex;gap:24px;align-items:flex-start}
-.left{width:340px;flex:none}.right{flex:1;min-width:0}
-h1{font-size:22px;margin:0 0 8px}h2{font-size:18px;margin:18px 0 8px;border-bottom:2px solid #d8d0bf;padding-bottom:4px}
-h3{font-size:15px;margin:14px 0 6px}
-a{color:#7a2a12}
-pre{white-space:pre-wrap;word-break:break-word;background:#fff;padding:12px;border:1px solid #ddd;font-size:13px}
-table{border-collapse:collapse;width:100%;background:#fff;font-size:14px}
-th,td{border:1px solid #ddd;padding:5px 8px;text-align:left;vertical-align:top}
-th{background:#ece6d6;white-space:nowrap}
+:root{
+  --bg:#e6e3da;--paper:#f6f5f1;--ink:#16181d;--muted:#5c6370;--rule:#ddd9cf;
+  --seal:#b0112a;--wire:#0e4d82;--chip:#e7eef5;
+  --sans:"PingFang TC","Noto Sans TC","Source Han Sans TC","Microsoft JhengHei","Heiti TC",sans-serif;
+  --serif:"Source Han Serif TC","思源宋體","Noto Serif TC","Songti TC","PMingLiU",serif;
+  color-scheme:light dark;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0c0e11;--paper:#16191e;--ink:#f3f0e8;--muted:#b7bdc7;--rule:#323842;
+    --seal:#ff6b7a;--wire:#9ec4ea;--chip:#243044;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--sans)}
+a{color:var(--wire)}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--wire);outline-offset:2px}
+.top,.cols{padding:18px 20px 28px;max-width:1280px;margin:0 auto}
+.cols{display:flex;gap:28px;align-items:flex-start}
+.left{width:360px;flex:none}
+.right{flex:1;min-width:0}
+h1{font-family:var(--serif);font-size:32px;line-height:1.25;margin:0 0 4px;font-weight:700}
+h1 .date{font-variant-numeric:tabular-nums}
+.sub{margin:0 0 8px;color:var(--muted);font-size:15px}
+h2{font-size:20px;margin:22px 0 8px;padding-bottom:4px;border-bottom:3px solid var(--seal)}
+h3{font-size:16px;margin:14px 0 6px}
+.navline{font-size:16px}
+pre{white-space:pre-wrap;word-break:break-word;background:var(--paper);color:var(--ink);padding:12px;border:1px solid var(--rule);font-size:14px;line-height:1.55}
+table{border-collapse:collapse;width:100%;background:var(--paper);font-size:15px}
+th,td{border:1px solid var(--rule);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--chip);white-space:nowrap;font-weight:700}
 .tablewrap{overflow-x:auto}
 ul.stories{list-style:none;margin:0;padding:0}
-ul.stories li{background:#fff;border:1px solid #ddd;border-radius:6px;padding:8px 10px;margin-bottom:8px}
-.sec{display:inline-block;background:#ece6d6;border-radius:3px;padding:0 6px;font-size:12px;margin-right:4px}
-.status{color:#8a1c1c;font-size:13px;white-space:nowrap}.status.ok{color:#1c6b2a}
-.muted{color:#7a7468;font-size:13px}
-details{margin:8px 0}summary{cursor:pointer;color:#7a2a12}
-form{margin-top:12px}input{font:inherit;padding:2px 6px}button{font:inherit;padding:3px 12px}
-@media (max-width:700px){.cols{display:block}.left{width:auto}.top,.cols{padding:12px}}
+ul.stories li{background:var(--paper);border:1px solid var(--rule);border-left:4px solid var(--rule);padding:10px 12px;margin-bottom:8px}
+ul.stories a{color:var(--ink);font-weight:700;font-size:16px;line-height:1.45;text-decoration:none}
+ul.stories a:hover{color:var(--wire)}
+.sec{display:inline-block;background:var(--chip);color:var(--wire);padding:1px 7px;font-size:13px;font-weight:700;margin:0 4px 4px 0}
+.status{display:inline-block;margin-top:4px;color:var(--seal);font-size:14px;font-weight:700;white-space:nowrap}
+.status.ok{color:#157a3a}
+.status[data-status="challenged"]{color:#c2410c}
+.status[data-status="hold"],.status[data-status="held"]{color:var(--seal)}
+.status[data-status="draft"]{color:var(--muted)}
+.muted{color:var(--muted);font-size:13px}
+.kind{font-weight:700}
+.kind b{display:block;font-size:15px}
+.kind .muted{font-weight:500}
+.k-PITCH{background:#e7eef5;color:#0e4d82}
+.k-CHALLENGE{background:#ffedd5;color:#9a3412}
+.k-REQUEST_REVISION,.k-PAGE_OBJECTION,.k-APPEAL{background:#f3e8ff;color:#6d28d9}
+.k-REVISION_DONE{background:#e0f2fe;color:#075985}
+.k-RELEASE,.k-DECISION{background:#dcfce7;color:#166534}
+.k-HOLD{background:#fee2e2;color:#9f1239}
+.k-REBUT{background:#ffedd5;color:#9a3412}
+tr.t-CHALLENGE{box-shadow:inset 4px 0 0 #c2410c}
+tr.t-HOLD{box-shadow:inset 4px 0 0 #9f1239}
+tr.t-RELEASE{box-shadow:inset 4px 0 0 #157a3a}
+tr.t-PITCH{box-shadow:inset 4px 0 0 #0e4d82}
+tr.t-REQUEST_REVISION,tr.t-PAGE_OBJECTION{box-shadow:inset 4px 0 0 #6d28d9}
+tr.t-REVISION_DONE{box-shadow:inset 4px 0 0 #0369a1}
+details{margin:8px 0}summary{cursor:pointer;color:var(--wire);font-size:15px}
+form{margin-top:16px;padding:12px;background:var(--paper);border:1px solid var(--rule);display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+form p{flex-basis:100%;margin:0;color:var(--muted);font-size:14px}
+input{font:inherit;padding:6px 8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);min-height:36px}
+button{font:inherit;font-weight:700;padding:8px 16px;min-height:40px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
+button[value="approve"]{background:#157a3a;color:#fff;border-color:#157a3a}
+button[value="hold"]{background:#9f1239;color:#fff;border-color:#9f1239}
+@media (min-width:701px){
+  .left{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
+}
+@media (max-width:700px){
+  .cols{display:block}
+  .left{width:auto;position:static;max-height:none}
+  .top,.cols{padding:14px}
+  h1{font-size:26px}
+  .tablewrap tr{display:block;margin:0 0 10px;padding:10px 12px;background:var(--paper);border:1px solid var(--rule)}
+  .tablewrap tr:first-child{display:none}
+  .tablewrap td,.tablewrap th{display:block;border:0;padding:2px 0;background:transparent}
+  .slots td:nth-child(3){font-weight:700;font-size:16px}
+  .msgs td:nth-child(3){font-size:16px}
+}
+@media (prefers-color-scheme:dark){
+  .status.ok,.k-RELEASE,.k-DECISION{color:#86efac}
+  .k-RELEASE,.k-DECISION{background:#163324}
+  .k-PITCH{background:#1c2c40;color:#b9d4f5}
+  .k-CHALLENGE,.k-REBUT{background:#3a2a1c;color:#ffc89a}
+  .k-REQUEST_REVISION,.k-PAGE_OBJECTION,.k-APPEAL{background:#2e2140;color:#e4d0ff}
+  .k-REVISION_DONE{background:#163040;color:#b9e4ff}
+  .k-HOLD{background:#3a2228;color:#ffb3be}
+  button[value="approve"]{background:#1f8a48}
+  button[value="hold"]{background:#be123c}
+}
 """
 
 
@@ -123,7 +195,8 @@ def render_newsroom(
         status_text = STATUS_LABELS.get(version.status, version.status)
         ok = " ok" if version.status == "approved" else ""
         by = f' <span class="muted">核准：{escape(version.approved_by)}</span>' if version.approved_by else ""
-        tag = f'<span class="sec">頭版 {front_role[story.id]}</span>' if story.id in front_role else ""
+        role = FRONT_ROLE.get(front_role.get(story.id, ""), "")
+        tag = f'<span class="sec">頭版 {escape(role)}</span>' if role else ""
         rows.append(
             f'<li><span class="sec">{escape(label)}</span>{tag}'
             f'<a href="?variant={escape(run_variant)}&amp;story={story.id}">{escape(version.headline)}</a><br>'
@@ -145,8 +218,9 @@ def render_newsroom(
 <html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>回放 {edition_date.isoformat()}</title>
 <style>{CSS}</style></head><body>
-<section class="top"><h1>編輯室回放 {edition_date.isoformat()} · {escape(run_variant)}</h1>
-<p><a href="/daily/{edition_date.isoformat()}">← 回到當期日報</a> · <a href="/daily/{edition_date.isoformat()}/newsroom/office?variant={escape(run_variant)}">3D 編輯室回放</a> · <a href="?variant={"pipeline" if run_variant == "mas" else "mas"}">切換到 {"P 組" if run_variant == "mas" else "M 組"}</a></p>
+<section class="top"><h1>編輯室回放 <span class="date">{edition_date.isoformat()}</span></h1>
+<p class="sub">{"M 組六角色" if run_variant == "mas" else "P 組流水線"}（{escape(run_variant)}）</p>
+<p class="navline"><a href="/daily/{edition_date.isoformat()}">回到當期日報</a> · <a href="/daily/{edition_date.isoformat()}/newsroom/office?variant={escape(run_variant)}">3D 編輯室回放</a> · <a href="?variant={"pipeline" if run_variant == "mas" else "mas"}">切換到 {"P 組" if run_variant == "mas" else "M 組"}</a></p>
 <h2>版面計畫</h2>{_plan_diffs(plans, titles)}</section>
 <div class="cols"><aside class="left"><h2>稿件</h2>{left}</aside>
 <main class="right">{_overview(timeline, titles, run_variant)}{focus or "<p>點左邊一則稿，看訊息與版本 diff。</p>"}</main></div>
@@ -166,11 +240,12 @@ def _overview(timeline: list[AgentMessage], titles: dict[int, str], run_variant:
     for m in timeline:
         if m.type == "PITCH":
             continue
+        label = TYPE_LABELS.get(m.type, m.type)
         rows.append(
-            f"<tr><td>{escape(_taipei(m.created_at))}</td>"
+            f'<tr class="t-{escape(m.type)}"><td>{escape(_taipei(m.created_at))}</td>'
             f"<td>{escape(m.sender_role)}→{escape(m.recipient_role or '')}</td>"
-            f"<td>{escape(TYPE_LABELS.get(m.type, m.type))}<br><span class=\"muted\">{escape(m.type)}"
-            f" · {escape(m.status)}</span></td>"
+            f'<td class="kind k-{escape(m.type)}"><b>{escape(label)}</b>'
+            f'<span class="muted">{escape(m.type)} · {escape(m.status)}</span></td>'
             f"<td>{_story_link(m.story_id, titles, run_variant)}</td><td>{escape(_detail(m))}</td></tr>"
         )
     summary = ""
@@ -178,7 +253,7 @@ def _overview(timeline: list[AgentMessage], titles: dict[int, str], run_variant:
         rejected = sum(1 for m in pitches if m.status == "rejected")
         summary = f'<p class="muted">PITCH 提案共 {len(pitches)} 則' + (f"（{rejected} 則被拒）" if rejected else "") + "</p>"
     table = (
-        '<div class="tablewrap"><table><tr><th>時間（台北）</th><th>寄件→收件</th><th>類型</th><th>稿件</th>'
+        '<div class="tablewrap msgs"><table><tr><th>時間（台北）</th><th>寄件→收件</th><th>類型</th><th>稿件</th>'
         f'<th>說明</th></tr>{"".join(rows)}</table></div>' if rows else "<p>沒有其他訊息。</p>"
     )
     return f"<h2>本期訊息</h2>{summary}{table}"
@@ -208,7 +283,7 @@ def _slot_table(slots: dict, titles: dict[int, str]) -> str:
         for a, b, c, d, e in rows
     )
     return (
-        '<div class="tablewrap"><table><tr><th>版別</th><th>位置</th><th>稿件</th><th>顯示</th><th>說明</th></tr>'
+        '<div class="tablewrap slots"><table><tr><th>版別</th><th>位置</th><th>稿件</th><th>顯示</th><th>說明</th></tr>'
         f"{body}</table></div>"
     )
 
@@ -262,9 +337,12 @@ def _focus(session: Session, edition_date: date, run_variant: str, story_id: int
     for message in messages:
         when = _taipei(message.created_at)
         detail = _detail(message)
+        label = TYPE_LABELS.get(message.type, message.type)
         lines.append(
-            f"<tr><td>{escape(when)}</td><td>{escape(message.sender_role)}</td>"
-            f"<td>{escape(message.type)}</td><td>{escape(message.status)}</td><td>{escape(detail)}</td></tr>"
+            f'<tr class="t-{escape(message.type)}"><td>{escape(when)}</td><td>{escape(message.sender_role)}</td>'
+            f'<td class="kind k-{escape(message.type)}"><b>{escape(label)}</b>'
+            f'<span class="muted">{escape(message.type)}</span></td>'
+            f"<td>{escape(message.status)}</td><td>{escape(detail)}</td></tr>"
         )
     diff = ""
     if len(versions) >= 2:
@@ -287,6 +365,6 @@ def _focus(session: Session, edition_date: date, run_variant: str, story_id: int
         )
     return (
         f"<h2>story {story_id}</h2>"
-        f'<div class="tablewrap"><table><tr><th>時間（台北）</th><th>角色</th><th>type</th><th>狀態</th><th>內容</th></tr>'
+        f'<div class="tablewrap msgs"><table><tr><th>時間（台北）</th><th>角色</th><th>type</th><th>狀態</th><th>內容</th></tr>'
         f"{''.join(lines)}</table></div><h3>v1→v2 diff</h3><pre>{escape(diff or '（還沒有下一版）')}</pre>{form}"
     )
