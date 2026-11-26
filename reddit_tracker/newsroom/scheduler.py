@@ -5,8 +5,9 @@ from __future__ import annotations
 import logging
 import signal
 import sys
+import threading
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -14,11 +15,15 @@ from apscheduler.schedulers.base import STATE_STOPPED
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 
+from sqlalchemy import select
+
+from ..backup import run_scheduled_backup
 from ..collection.clustering import cluster_recent_items
 from ..collection.collector import collect_due_sources
 from ..config import get_settings
 from ..daily.run import prepare_daily, prepare_with_shadow, publish_daily
 from ..db import session_scope
+from ..models import DailyEdition
 from ..llm.codex_version import check_codex_version
 from ..llm.deadline import deadline_on, llm_deadline
 from ..seeds.news_sources import load_registry
@@ -52,8 +57,33 @@ class _PollingBackgroundScheduler(BackgroundScheduler):
             time.sleep(sleep_for)
 
 
+# 06:00 準備與收集的協調（同一個 process 內）。M 組從寫稿到出刊稿落地是同一個 SQLite 寫入交易，
+# 收集撞上就等鎖 30 秒後 `database is locked`（11/11、11/24–11/26）。準備期間收集讓開，結束後立刻補一輪；
+# 和 tick 從哪一分鐘起算無關，重載時間不用再挑。只管 scheduler 內的 job，手動 CLI prepare 不在此列。
+_PREPARING = threading.Event()
+_COLLECTION_LOCK = threading.Lock()
+_collection_deferred = False
+# 準備開始前最多等進行中的收集多久（平常幾秒；RSSHub 慢時一兩分鐘）
+COLLECTION_DRAIN_SECONDS = 300.0
+
+
 def _run_source_collection() -> None:
     """Collect due multi-source feeds into source_items (v2.0 daily)."""
+    global _collection_deferred
+    if _PREPARING.is_set():
+        _collection_deferred = True
+        logger.info("source collection deferred: daily prepare is running; will catch up when it finishes")
+        return
+    if not _COLLECTION_LOCK.acquire(blocking=False):
+        logger.info("source collection skipped: another round is still running")
+        return
+    try:
+        _collect_and_cluster()
+    finally:
+        _COLLECTION_LOCK.release()
+
+
+def _collect_and_cluster() -> None:
     settings = get_settings()
     registry = load_registry(settings.news_sources_path)
     with session_scope() as session:
@@ -76,6 +106,26 @@ def _run_source_collection() -> None:
 
 
 def _prepare_daily_today() -> None:
+    """準備期間擋下收集；先等進行中的那輪寫完，準備結束（成功或失敗）後補一輪被延後的收集。"""
+    global _collection_deferred
+    _PREPARING.set()
+    try:
+        if _COLLECTION_LOCK.acquire(timeout=COLLECTION_DRAIN_SECONDS):
+            _COLLECTION_LOCK.release()
+        else:
+            logger.warning("collection still running after %.0fs; daily prepare starts anyway", COLLECTION_DRAIN_SECONDS)
+        _prepare_daily_today_inner()
+    finally:
+        _PREPARING.clear()
+        if _collection_deferred:
+            _collection_deferred = False
+            try:
+                _run_source_collection()
+            except Exception:  # noqa: BLE001 - 補抓失敗不能蓋掉準備的結果；下一個 tick 照常
+                logger.exception("deferred source collection failed after daily prepare")
+
+
+def _prepare_daily_today_inner() -> None:
     settings = get_settings()
     today = datetime.now(ZoneInfo(settings.newsroom_delivery_timezone)).date()
     # 版本不一致只記 ERROR＋Telegram 警告，照常出刊
@@ -101,6 +151,41 @@ def _publish_daily_today() -> None:
     today = datetime.now(ZoneInfo(settings.newsroom_delivery_timezone)).date()
     edition_id = publish_daily(today)
     logger.info("daily edition published: date=%s id=%s", today, edition_id)
+
+
+def _run_db_backup() -> None:
+    run_scheduled_backup()
+
+
+def startup_catchup(now: datetime | None = None) -> str:
+    """冷啟動時補做錯過的準備或發行（DAILY_STARTUP_CATCHUP_MINUTES>0 才做）。回傳做了什麼，給 log 與測試。"""
+    settings = get_settings()
+    window = int(getattr(settings, "daily_startup_catchup_minutes", 0) or 0)
+    if window <= 0 or not getattr(settings, "daily_edition_enabled", False):
+        return "off"
+    tz = ZoneInfo(settings.newsroom_delivery_timezone)
+    now = (now or datetime.now(tz)).astimezone(tz)
+    today = now.date()
+    prepare_at = now.replace(hour=settings.daily_prepare_hour, minute=settings.daily_prepare_minute, second=0, microsecond=0)
+    deliver_at = now.replace(hour=settings.daily_delivery_hour, minute=settings.daily_delivery_minute, second=0, microsecond=0)
+    with session_scope() as session:
+        status = session.scalar(select(DailyEdition.status).where(DailyEdition.edition_date == today))
+    if status is None:
+        if prepare_at <= now < deliver_at:
+            logger.warning("startup catch-up: no edition for %s after %s; running prepare now", today, prepare_at.strftime("%H:%M"))
+            _prepare_daily_today()
+            return "prepared"
+        return "none"
+    if status == "drafted" and deliver_at <= now <= deliver_at + timedelta(minutes=window):
+        logger.warning("startup catch-up: edition %s still drafted after %s; publishing now", today, deliver_at.strftime("%H:%M"))
+        _publish_daily_today()
+        return "published"
+    if status in ("publishing", "delivery_failed") and now >= deliver_at:
+        logger.error(
+            "startup catch-up: edition %s is %s; delivery state unknown, check Telegram before `daily publish`", today, status,
+        )
+        return "needs_check"
+    return "none"
 
 
 def build_scheduler() -> _PollingBackgroundScheduler:
@@ -144,6 +229,20 @@ def build_scheduler() -> _PollingBackgroundScheduler:
             coalesce=True,
             misfire_grace_time=60 * 60,
         )
+    if getattr(settings, "db_backup_dir", ""):
+        scheduler.add_job(
+            _run_db_backup,
+            CronTrigger(hour=settings.db_backup_hour, minute=settings.db_backup_minute, timezone=tz),
+            id="db_backup",
+            name="db_backup",
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=60 * 60,
+        )
+    if int(getattr(settings, "daily_startup_catchup_minutes", 0) or 0) > 0 and getattr(settings, "daily_edition_enabled", False):
+        # 一次性：排程啟動後在 worker 執行，不卡住 main thread
+        scheduler.add_job(startup_catchup, id="daily_startup_catchup", name="daily_startup_catchup",
+                          next_run_time=datetime.now(tz) + timedelta(seconds=30))
     leaked = LEGACY_JOB_IDS & {job.id for job in scheduler.get_jobs()}
     if leaked:  # pragma: no cover - 防護：之後的改動不得把舊 job 加回來
         raise RuntimeError(f"legacy jobs must not be registered: {sorted(leaked)}")

@@ -134,6 +134,10 @@ uv run python -m reddit_tracker.web
 | `DAILY_PREPARE_HOUR`／`DAILY_PREPARE_MINUTE` | `6`／`0` | 準備時間 |
 | `DAILY_DELIVERY_HOUR`／`DAILY_DELIVERY_MINUTE` | `8`／`35` | 發行時間 |
 | `DAILY_PREPARE_DEADLINE` | `08:20` | 06:00 準備的 LLM 截止（出刊時區）：之後不再呼叫模型，角色照額度用完的順序降級成模板稿（`llm/deadline.py`） |
+| `DAILY_STARTUP_CATCHUP_MINUTES` | `0` | 服務冷啟動時補做錯過的準備／發行：準備時刻到發行時刻之間啟動且當天沒有版次就補準備；發行時刻後這麼多分鐘內版次仍是 `drafted` 就補發；`publishing`／`delivery_failed` 只記 ERROR 等人工核對。`0`＝關閉 |
+| `DB_BACKUP_DIR` | 空 | 每日 SQLite 備份目錄（online backup API，WAL 下安全，`quick_check` 通過才保留）；空白＝關閉。手動：`uv run python -m reddit_tracker.backup --dir …` |
+| `DB_BACKUP_KEEP` | `3` | 備份保留幾份（依檔名日期，舊的刪掉） |
+| `DB_BACKUP_HOUR` / `DB_BACKUP_MINUTE` | `9` / `30` | 每日備份時刻（出刊時區；排在 08:35 發行之後） |
 | `DAILY_SHADOW_MAX_MINUTES` | `30` | P 影子最多呼叫模型幾分鐘（平常約 2 分鐘），卡住也留時間給 M |
 | `DAILY_SITE_DIR` | `site/daily` | HTML 輸出目錄（不進版控） |
 | `DAILY_SHADOW_ENABLED` | `false` | 只在 `DAILY_MODE=mas` 生效：06:00 先跑 P 影子、M 再從同一份快照跑；影子失敗只記 log |
@@ -204,7 +208,7 @@ uv run python -m reddit_tracker.daily hold --story <STORY_ID> --date YYYY-MM-DD 
 uv run python -m reddit_tracker.daily trace --date YYYY-MM-DD [--variant mas|pipeline] [--cluster ID]
 ```
 
-**常駐（launchd）**：`com.leroy.reddit-tracker.newsroom` 以 `caffeinate -i uv run python -m reddit_tracker.newsroom.scheduler` 執行 APScheduler（收集＋準備＋發行三個 job，日誌 `newsroom.log`）；`com.leroy.reddit-tracker.rsshub` 跑本機 RSSHub。scheduler 每次 tick 重新讀登錄表，新增或停用來源不需重載。
+**常駐（launchd）**：`com.leroy.reddit-tracker.newsroom` 以 `caffeinate -i uv run python -m reddit_tracker.newsroom.scheduler` 執行 APScheduler（收集＋準備＋發行三個 job；設了 `DB_BACKUP_DIR` 多一個每日備份、`DAILY_STARTUP_CATCHUP_MINUTES>0` 多一個啟動補做，日誌 `newsroom.log`）；`com.leroy.reddit-tracker.rsshub` 跑本機 RSSHub。scheduler 每次 tick 重新讀登錄表，新增或停用來源不需重載。
 
 ```bash
 deploy/install_launchd.sh status            # 唯讀查詢
@@ -213,7 +217,7 @@ deploy/install_launchd.sh newsroom-reload   # 只重載 newsroom
 deploy/install_launchd.sh rsshub-install    # 本機 RSSHub（只綁 127.0.0.1:1200）
 ```
 
-重載時 newsroom 的 15 分鐘 tick 會改從重載那一刻起算。06:00 準備約到 06:09 才 commit，期間持有寫入鎖；tick 落在這段時間，收集會等鎖逾時而寫入失敗（下一輪重抓）。請在每刻鐘的第 10–13 分重載（例如 19:10、19:25），tick 就會落在 06:10 之後。
+重載時 newsroom 的 15 分鐘 tick 會改從重載那一刻起算。2026-11-26 起，06:00 準備期間到期的收集會先延後、準備結束立刻補一輪（`newsroom/scheduler.py` 的 `_PREPARING`），準備開始前也會等進行中的那輪寫完，所以重載時間不用再挑。這只管 scheduler 內的 job；手動跑 `daily prepare` 時收集照樣可能撞鎖。
 
 `newsroom-deploy` 先備份、再 migration，成功後才停舊服務；備份或 migration 失敗時舊服務照常運作。schema 變更一律走這條路徑。
 

@@ -97,6 +97,15 @@ class Settings(BaseSettings):
     daily_delivery_minute: int = 35
     # 06:00 準備的 LLM 截止時間（出刊時區 HH:MM）：之後不再呼叫模型，角色降級成模板稿，08:35 照常發行
     daily_prepare_deadline: str = "08:20"
+    # 服務冷啟動時補做錯過的準備／發行（APScheduler 重啟後不會補跑啟動前錯過的 cron）。
+    # 準備：啟動時在準備時刻到發行時刻之間、當天還沒有版次就補跑；發行：在發行時刻後這麼多分鐘內、
+    # 版次是 drafted 就補發；publishing／delivery_failed 只記 ERROR 等人工核對。0＝關閉（預設，不改線上行為）。
+    daily_startup_catchup_minutes: int = 0
+    # 每日資料庫備份（SQLite online backup API，WAL 下安全）。目錄空白＝關閉；只對 sqlite:/// 有效。
+    db_backup_dir: str = ""
+    db_backup_keep: int = 3
+    db_backup_hour: int = 9
+    db_backup_minute: int = 30
     # P 影子最多跑幾分鐘（平常 2 分鐘）；超過就停止呼叫模型，留時間給 M 組
     daily_shadow_max_minutes: int = 30
     daily_site_dir: str = "site/daily"
