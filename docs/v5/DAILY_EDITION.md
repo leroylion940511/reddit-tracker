@@ -11,7 +11,25 @@
 | 06:00–08:35 | 人工可在 web 或 HTML 檢視；需要時 `--refresh` 重寫。`DAILY_MODE=mas` 需逐則 `approve`，未核准只出標題（`DAILY_REQUIRE_APPROVAL=false` 時不需核准，只有 HOLD 只出標題；`DAILY_WITHHOLD_CHALLENGED=true` 時 `challenged` 也只出標題，標「暫扣」） |
 | `DAILY_DELIVERY` 08:35 | 只發行既有 draft：Telegram 頭版精選＋完整報紙 HTML 檔（當初為與已停刊的 v5 08:30 錯開而定） |
 
-兩個排程只有 `DAILY_EDITION_ENABLED=true` 時才註冊。
+| `DB_BACKUP_HOUR:MINUTE` 09:30 | 設了 `DB_BACKUP_DIR` 才註冊 job `db_backup`：用 SQLite online backup 備份到 `DB_BACKUP_DIR/reddit_tracker-YYYY-MM-DD.db`，先寫成 `.partial`，`PRAGMA quick_check` 是 `ok` 才改名；保留最新的 `DB_BACKUP_KEEP` 份 |
+| 啟動後 30 秒 | `DAILY_STARTUP_CATCHUP_MINUTES>0` 時跑一次 `daily_startup_catchup`，處理服務重啟時錯過的 cron（APScheduler 重啟後不會補跑），規則見下方 |
+
+兩個出刊排程只有 `DAILY_EDITION_ENABLED=true` 時才註冊。
+
+`scheduler.startup_catchup(now=None) -> str`，依當天版次狀態決定（N＝`DAILY_STARTUP_CATCHUP_MINUTES`）：
+
+| 當天狀態 | 啟動時刻 | 動作／回傳 |
+| --- | --- | --- |
+| 沒有版次 | 準備時刻 ≤ 現在 < 發行時刻 | 補跑準備，回傳 `prepared` |
+| `drafted` | 發行時刻 ≤ 現在 ≤ 發行時刻＋N 分 | 補發，回傳 `published` |
+| `publishing`／`delivery_failed` | 現在 ≥ 發行時刻 | 只記 ERROR，等人工核對 Telegram，回傳 `needs_check` |
+| 其他 | | 回傳 `none`；N＝0 或沒開日報時回傳 `off` |
+
+備份模組 `reddit_tracker/backup.py`：
+- `sqlite_path(database_url) -> Path`：只接受 `sqlite:///` 檔案資料庫，其他一律丟 `BackupError`。
+- `backup_database(source, backup_dir, *, keep, day) -> Path`。
+- `run_scheduled_backup() -> Path | None`：沒設 `DB_BACKUP_DIR` 時回傳 None。
+- 手動執行：`uv run python -m reddit_tracker.backup [--dir DIR] [--keep N]`。
 
 ## 1. 評分（程式計算）
 
@@ -250,7 +268,7 @@ uv run python -m reddit_tracker.daily hold --date YYYY-MM-DD --story ID --by 名
 uv run python -m reddit_tracker.daily blind-export --dates YYYY-MM-DD --out DIR
 ```
 
-`approve`／`hold`（CLI 與回放頁 decision 路由）commit 後會用 `run.refresh_edition_html` 重畫這期的
+`approve`／`hold`（CLI 與回放頁的 `POST /daily/{date}/newsroom/decision`）commit 後會用 `run.refresh_edition_html` 重畫這期的
 `site/daily/YYYY-MM-DD.html`：已發行的期數照發行規則（核准的出全文、其餘「未核准」；HOLD 的稿標「暫扣」，2026-11-15 起），草稿照 06:00 預覽；
 **不會重送 Telegram**。重畫失敗只記 log，核准不受影響。
 
@@ -268,7 +286,8 @@ uv run python -m reddit_tracker.daily blind-export --dates YYYY-MM-DD --out DIR
 | `GET /daily/{date}/newsroom/office?variant=mas\|pipeline` | 3D 編輯室回放頁（`daily/office_page.py`＋`daily/office.html`） |
 | `GET /daily/{date}/newsroom/replay.json?variant=…` | 同一份時間線資料（`daily/replay.py::build_replay`） |
 | `GET /daily/{date}/newsroom?variant=…&story=` | 表格版回放與核准（原有；3D 頁不能核准） |
-| `GET /daily/_static/three.module.js` | 本機那份 three.js；`reddit_tracker/daily/vendor/three.module.js` 存在才有，否則頁面從 jsDelivr 載入 `three@0.160.0` |
+| `POST /daily/{date}/newsroom/decision` | 核准或 HOLD。欄位 `story_id`、`action`（`approve`／`hold`）、`by`（審核者，必填）、`variant`；可以放 urlencoded 表單或 query string。2026-11-26 起不收 GET（回 405），以免瀏覽器預載或誤點就寫入。邏輯在 `web.apply_decision(edition_date, *, story_id, action, by, variant) -> RedirectResponse`，成功回 303 導回該稿 |
+| `GET /daily/_static/three.module.js` | 本機那份 three.js：`reddit_tracker/daily/vendor/three.module.js`，2026-11-26 起放進 repo（0.160.0，MIT，sha256 記在同目錄的 `README.txt`），發表時斷網也能用。檔案不存在時，頁面改從 jsDelivr 載入 `three@0.160.0` |
 
 `build_replay(session, edition_date, run_variant) -> dict`：
 

@@ -30,6 +30,7 @@ sources:
 | `time_offset_hours` | float | | 修正已知時區錯誤，加到解析出的發布時間上；預設 0 |
 | `general_feed` | bool | | 綜合 feed（各類新聞混在一起）；`section` 只是預設值，不參與事件板塊投票。預設 false |
 | `keep_items` | bool | | 只對停用來源有意義：`true`＝上游擋掉、不再抓，但以前收到的素材照常參與聚合、選題與證據包；`false`（預設）＝編輯決定排除（例如社群來源），舊素材也排除（`disabled_source_ids()`） |
+| `user_agent` | str | | 這個來源專用的 User-Agent；沒填用 `collector.USER_AGENT`。只影響 feed 抓取，不影響全文抓取（`fulltext.py`）（2026-11-26 起） |
 | `notes` | str | | 停用原因、資料品質備註；替代來源寫明替代誰、哪天加入 |
 
 ## Loader 介面
@@ -66,3 +67,5 @@ NewsSource.request_url(rsshub_base_url: str, rsshub_access_key: str | None) -> s
   - `apnews-top`：apnews.com 回 403，11/01 03:29 起 0 成功；
   - `cw-today`：cw.com.tw 回 403，10/30 起 0 成功；官方 RSS `cw_content.xml` 停在 2021 年。**沒有替代來源。**
 - 同日加入官方 RSS 替代（T2、en，本機實測有新稿；七天驗收報告標「11/01 加入」）：`cbsnews-world`（替代 reuters-world）、`abcnews-intl`（替代 apnews-top）、`bbc-business`（財經，替代 reuters-business）、`guardian-tech`（科技，替代 reuters-tech）。另外實測可用但未加入：BBC Technology、Guardian Business、France 24。
+- **2026-11-26**：Guardian 五個來源（`guardian-world`／`-tech`／`-environment`／`-culture`／`-sport`）從 11/24 01:03 起每次都回 403。原因是 Guardian 擋開頭為 `Mozilla/5.0` 的 UA；同一個 IP 改用 `reddit_tracker-newsroom/0.2 (+news collection)`，五個 feed 都回 200（environment／culture／sport 會 302 轉到 `/uk/…`，`requests` 自動跟過去）。五個來源都設了 `user_agent`，沒有停用。
+- **2026-11-26**：`hn-api-top`（`method: json`）改成停用。collector 只會抓 `rss`／`rsshub`（`COLLECTABLE_METHODS`），這個來源以前登錄為啟用，實際上每輪都被略過。`tests/test_news_sources.py::test_every_enabled_source_has_a_collector` 檢查所有啟用的來源都有人抓；數據版（`section: data`）的證交所 JSON 由 `daily/market.py` 直接讀取，不在檢查範圍。

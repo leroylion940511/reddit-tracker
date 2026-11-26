@@ -85,6 +85,14 @@ uv run python -m reddit_tracker.collection report [--days 7]
 
 newsroom scheduler 新增 `newsroom_source_collection`，每 `news_collection_tick_minutes`（預設 15）分鐘執行一次；只有 `NEWS_COLLECTION_ENABLED=true` 時才註冊，預設關閉，避免部署程式碼就改變線上行為。
 
+**和 06:00 準備的協調**（2026-11-26，`newsroom/scheduler.py`）：M 組從寫稿到出刊稿落地是同一個 SQLite 寫入交易，期間收集會等鎖 30 秒後失敗（11/11、11/24–11/26 都發生過）。現在的流程：
+
+- `_prepare_daily_today()` 先立起 `_PREPARING`，再等進行中的收集寫完（`_COLLECTION_LOCK`，最多 `COLLECTION_DRAIN_SECONDS`＝300 秒）才開始準備。
+- 準備期間到期的 `_run_source_collection()` 只記一筆「延後」就返回；準備結束後，不論成功或失敗都會立刻補跑一輪。補跑失敗只記 log。
+- 上一輪收集還沒跑完時，新的一輪直接略過，不會重疊。
+- 實際抓取與聚合在 `_collect_and_cluster()`。
+- 這套協調只管 scheduler 這個 process 裡的 job；手動執行 CLI 的 `daily prepare` 時不受保護。
+
 ## 七天收集驗收用的統計
 
 `report` 依 Asia/Taipei 日曆日輸出：
