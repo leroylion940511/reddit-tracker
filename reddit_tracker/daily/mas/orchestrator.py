@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from ...collection.clustering import domain_of
 from ...config import get_settings
-from ...collection.entities import EntityContext, load_lexicon
+from ...collection.entities import EntityContext, load_lexicon, rare_shared_fragments
 from ...llm.deadline import deadline_reached
 from ...llm.quota import QuotaExhausted
 from ...llm.records import bind_log_session, complete_logged, last_record_id, llm_log_meta, reset_last_record
@@ -47,6 +47,8 @@ SECTIONS = tuple(SECTION_QUOTAS)
 ARTICLE_DOMAIN_WINDOW = timedelta(days=7)
 ARTICLE_DOMAIN_MIN_ITEMS = 5
 ARTICLE_DOMAIN_MIN_SHARE = 0.2
+# FACT_CHECKER_ZH_FRAGMENTS：程式點名時，至少要和 S1 共有幾段互不相連的當天少見中文片段才不點名
+CHECKER_MIN_ZH_FRAGMENTS = 2
 
 INJECTION_MARKERS = (
     "忽略以上規則", "忽略以上指示", "ignore previous", "ignore the above", "把這篇放頭版",
@@ -432,13 +434,19 @@ def _parse(text: str | None, model: type[BaseModel]):
         return None
 
 
-def irrelevant_sources(evidence: list[EvidenceItem]) -> list[tuple[int, EvidenceItem]]:
+def irrelevant_sources(
+    evidence: list[EvidenceItem], day_context: EntityContext | None = None,
+) -> list[tuple[int, EvidenceItem]]:
     """跟代表標題（S1）沒有共同名字的來源（只看標題）。查核員的程式工具，不花 LLM。
 
     名字＝譯名表、句中大寫的英文字、3 位數以上數字；句首大寫字要同一證據包其他標題在句中
-    也把它大寫才算（與聚合同一規則，例如「Binance hack: …」的 Binance）。不比中文片段：
-    「市長選戰」這種片段高雄、台北辯論都有，分不出來。這裡挑出來的只是「可疑」，
-    刪不刪由 `_check_and_maybe_revise` 依查核員判斷決定。
+    也把它大寫才算（與聚合同一規則，例如「Binance hack: …」的 Binance）。
+    `day_context`（當天素材的 EntityContext，`FACT_CHECKER_ZH_FRAGMENTS` 打開才傳）：另外承認與 S1
+    共有、當天少見（`EntityContext.is_rare`，篇數 < 5%）的中文片段，但要 **至少兩段互不相連**
+    （`CHECKER_MIN_ZH_FRAGMENTS`）：一段可能只是題材用語（11/01 高雄、台北辯論共有「市長選戰」，
+    當天才 41 篇，比候選人名還少見），兩段（「李四川」「蘇巧慧」）才算同一事件的佐證。
+    沒傳就不比中文片段：只拿證據包幾篇算篇數比例沒有意義。
+    這裡挑出來的只是「可疑」，刪不刪由 `_check_and_maybe_revise` 依查核員判斷決定。
     """
     if len(evidence) < 2:
         return []
@@ -448,8 +456,13 @@ def irrelevant_sources(evidence: list[EvidenceItem]) -> list[tuple[int, Evidence
     anchor = context.names(entities[0])
     bad = []
     for index, (item, ent) in enumerate(zip(evidence[1:], entities[1:]), start=2):
-        if not anchor & context.names(ent):
-            bad.append((index, item))
+        if anchor & context.names(ent):
+            continue
+        if day_context is not None and (
+            len(rare_shared_fragments(entities[0], ent, day_context)) >= CHECKER_MIN_ZH_FRAGMENTS
+        ):
+            continue
+        bad.append((index, item))
     return bad
 
 
@@ -526,6 +539,7 @@ def review_one(
     per_source: bool | None = None,
     checker_mode: str = "full",
     draft: tuple[str, str, str, str] | None = None,
+    day_context: EntityContext | None = None,
 ) -> StoryVersion:
     """記者寫 v1，程式查核；有問題才 CHALLENGE，通過則 checked。
 
@@ -533,6 +547,7 @@ def review_one(
     `checker_mode`、`draft` 只給實驗二用（手冊 8.2）：線上一律是預設值，請求與行為不變。
     - `checker_mode`：`full`＝程式工具＋查核員 LLM；`program`＝只開程式工具；`off`＝查核員全關（數字檢查照開）。
     - `draft`：已存檔的 v1（headline, deck, body, why_it_matters），有給就不呼叫記者。
+    `day_context`：當天素材的 EntityContext，給了查核員程式點名才比中文片段（`FACT_CHECKER_ZH_FRAGMENTS`）。
     """
     if checker_mode not in CHECKER_MODES:
         raise ValueError(f"checker_mode 只能是 {CHECKER_MODES}：{checker_mode!r}")
@@ -552,6 +567,7 @@ def review_one(
     return _check_and_maybe_revise(
         session, edition_date=edition_date, story=story, evidence=evidence, version=version, client=client,
         clock=clock, corr=corr, degraded=degraded, per_source=per_source, checker_mode=checker_mode,
+        day_context=day_context,
     )
 
 
@@ -582,10 +598,13 @@ def _checker_relevance_prompt(version, evidence, bad, per_source: bool) -> tuple
 
 
 def _check_and_maybe_revise(session, *, edition_date, story, evidence, version, client, clock, corr, degraded,
-                            per_source: bool = False, checker_mode: str = "full") -> StoryVersion:
+                            per_source: bool = False, checker_mode: str = "full",
+                            day_context: EntityContext | None = None) -> StoryVersion:
     evidence_text = _evidence_text(evidence)
     use_llm = checker_mode == "full"
-    bad = [] if checker_mode == "off" else call_tool("fact_checker", "check_relevance", irrelevant_sources, evidence)
+    bad = [] if checker_mode == "off" else call_tool(
+        "fact_checker", "check_relevance", irrelevant_sources, evidence, day_context,
+    )
     numbers = call_tool("fact_checker", "check_numbers", unsupported_numbers, version.body, evidence_text)
     assessment = None
     checker_call = None
@@ -634,7 +653,7 @@ def _check_and_maybe_revise(session, *, edition_date, story, evidence, version, 
         kept = [item for index, item in enumerate(evidence, start=1) if index not in {i for i, _ in bad}]
         return _revise(session, edition_date=edition_date, story=story, evidence=kept, removed=[item for _, item in bad],
                        version=version, client=client, clock=clock, corr=corr, challenge=message, degraded=degraded,
-                       checker_mode=checker_mode)
+                       checker_mode=checker_mode, day_context=day_context)
     # 百分比那一問只有查核員 LLM 能答；實驗二的 off／program 兩組不問、也不因為「LLM 停了」而 HOLD。
     percents = _percent_values(evidence, version.body) if use_llm else set()
     if cleared and checker_says_same_event(assessment):
@@ -675,7 +694,7 @@ def _check_and_maybe_revise(session, *, edition_date, story, evidence, version, 
 
 
 def _revise(session, *, edition_date, story, evidence, removed, version, client, clock, corr, challenge, degraded,
-            checker_mode: str = "full") -> StoryVersion:
+            checker_mode: str = "full", day_context: EntityContext | None = None) -> StoryVersion:
     user = (
         f"查核員 CHALLENGE：{json.dumps(challenge.payload, ensure_ascii=False)}\n"
         f"請刪除被點名的來源後重寫，action 填 REVISE。\n\n{_evidence_block(evidence)}"
@@ -716,7 +735,9 @@ def _revise(session, *, edition_date, story, evidence, removed, version, client,
     if claim_message(session, done.id):
         mark_handled(session, done.id)
     keep = cleared_item_ids(session, story.id)
-    still_irrelevant = [] if checker_mode == "off" else [x for x in irrelevant_sources(evidence) if x[1].item_id not in keep]
+    still_irrelevant = [] if checker_mode == "off" else [
+        x for x in irrelevant_sources(evidence, day_context) if x[1].item_id not in keep
+    ]
     still_bad = still_irrelevant or unsupported_numbers(
         new.body, " ".join(f"{item.title} {item.summary}" for item in evidence)
     )
@@ -924,6 +945,9 @@ def run_mas(
     if get_settings().mas_full_evidence:
         domains |= article_domains(session, registry, now)
         context = title_context(session, now, load_lexicon(), registry.disabled_source_ids())
+    checker_context = None
+    if get_settings().fact_checker_zh_fragments:
+        checker_context = context or title_context(session, now, load_lexicon(), registry.disabled_source_ids())
     clock = Clock(now)
     with bind_log_session(session):
         existing = {
@@ -972,7 +996,7 @@ def run_mas(
             if version is None and evidence:
                 version = review_one(
                     session, edition_date=edition_date, story=story, evidence=evidence, client=client,
-                    now=clock.tick(), degraded=result.degraded,
+                    now=clock.tick(), degraded=result.degraded, day_context=checker_context,
                 )
             if version is not None and version.status == "hold":
                 hold_ids.add(story.id)
@@ -1010,7 +1034,7 @@ def run_mas(
             _page_review(session, edition_date=edition_date, client=client, clock=clock, hold_ids=hold_ids,
                          evidence_of=evidence_of, result=result)
             _eic_revisions(session, edition_date=edition_date, client=client, clock=clock, hold_ids=hold_ids,
-                           evidence_of=evidence_of, result=result)
+                           evidence_of=evidence_of, result=result, day_context=checker_context)
         if _quota_left(client) == 0:
             _degrade(result.degraded, "reporter")
         _maybe_shorten_lead(session, edition_date=edition_date, client=client, clock=clock, degraded=result.degraded)
@@ -1544,7 +1568,7 @@ def guard_eic_requests(proposed, reviewable: set[int], limit: int = EIC_REVISION
 
 
 def _eic_revisions(session, *, edition_date, client, clock, hold_ids: set[int], evidence_of: dict,
-                   result: MasResult) -> None:
+                   result: MasResult, day_context: EntityContext | None = None) -> None:
     """desk-v3 C3：總編看頭版稿，最多對 EIC_REVISION_MAX 篇發 REQUEST_REVISION；記者回 REVISION_DONE（或 REBUT），
     改過的稿照原流程（`_check_and_maybe_revise`）重驗。只審 status=checked 的頭版稿。
 
@@ -1624,7 +1648,7 @@ def _eic_revisions(session, *, edition_date, client, clock, hold_ids: set[int], 
                      payload={"new_version": new.version, "change": detail}, llm_call_id=reporter_call)
         final = _check_and_maybe_revise(
             session, edition_date=edition_date, story=story, evidence=evidence, version=new, client=client,
-            clock=clock, corr=corr, degraded=result.degraded, per_source=per_source,
+            clock=clock, corr=corr, degraded=result.degraded, per_source=per_source, day_context=day_context,
         )
         if final.status == "hold":
             hold_ids.add(sid)

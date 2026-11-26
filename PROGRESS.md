@@ -5,7 +5,7 @@
 > 2026-11-23 以前的「本次變更」段落已搬到 `docs/archive/`（見文末「更早的紀錄」）；正文引用的舊段落請到那裡找。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-26 10:20（互動 session，四位 agent 檢查後的修正：分支 `fix/ops-1126`，**還沒併入 main、沒重載**，見「本次變更（2026-11-26 上午）」）。前次：2026-11-26 早（`claude-auto`：佇列第 12 項 (1) `CLUSTER_ISOLATE_ROUNDUPS`，預設關閉）。更早的更新紀錄見 git log 與 `docs/archive/`。
+**Last updated:** 2026-11-26 13:30（`claude-auto`：佇列第 12 項 (2) `FACT_CHECKER_ZH_FRAGMENTS`，預設關閉，見「本次變更（2026-11-26 午）」）。前次：2026-11-26 10:20（互動 session，`fix/ops-1126` 已併入 main、部署並 push）。更早的更新紀錄見 git log 與 `docs/archive/`。
 
 ## 線上現況（2026-11-25 19:00 查證）
 
@@ -42,7 +42,7 @@
 9. ✅（2026-11-25，`claude-auto`，整份初稿；剩截圖與老師確認事項，見「本次變更（2026-11-25）」）**P0-3b 報告 v2.0** `docs/report.md` 整份改寫（12/20 前初稿；可分兩次）：一 緒論；二 系統架構（RSS/RSSHub 來源 → TF-IDF＋實體兩段聚合 → 評分選題 → P 流水線 vs M 六角色編輯室）；三 MAS 角色協議與程式護欄（`protocol.py` 權限、T1/T2/T3、`request_hash` 錄音重播、回歸集 E01–E16）；四 資料庫（只寫現行核心表）；五 實驗一／二／三與七日試刊（整合三份 results）；六 限制與混淆因素（grok/agy 代標、P 組一次寫整版被截斷的混淆、11/14 起關閉人工核可、11/13 只有一期是發行前真人核准）與 AI 工具使用聲明。口試七題的防禦寫進第六章。
 10. ✅（2026-11-25，`claude-auto`，初稿；👤 剩排練、錄備援影片、填封面個資）**P0-4 簡報＋Demo 腳本**（12/31 前；⚠️ 11/19 那兩次異議是誤報，腳本已改，見「本次變更（2026-11-25 午）」）：`docs/demo_slides.md`（問題 → 六角色編輯室與程式護欄 → 回放 R1–R4 → 三實驗誠實評估）、`docs/demo_script.md`（3–5 分鐘 live demo＋備援錄影逐字稿：`python -m reddit_tracker.web`，開 `/daily/2026-11-19/newsroom/office?only=1&speed=2`，R4 摘要卡 → R2 泳道 → 按 `C` 跳 CHALLENGE → R1 協商串 v1→v2 diff）。
 11. ✅（2026-11-25，`claude-auto`）**P1-3b README／PROGRESS 對齊**：README 的測試數、Alembic revision、設定鍵表（補 `MAS_NOISE_CHECK` 與 desk-v3 四個開關）；本檔「線上現況」更新到最新日期。
-12. **P2-1 三個演算法盲區**（**做到哪：(1) ✅ 2026-11-26，見「本次變更（2026-11-26）」；剩 (2)(3)**；放新開關，預設關閉，不動 `exp1-frozen` 與實驗二重播）：(1) 早報／晚報／懶人包等彙整稿 `is_roundup_title` 不併入單一事件 cluster；(2) 查核員 `irrelevant_sources` 接當天 EntityContext，承認 ≥3 字、DF<5% 的中文共同片段（N-44224 蘇巧慧、N-54434 統一不再誤點名）；(3) 查核員提示詞加事件四分類（同次事件／後續進展／無關／彙整稿）——(3) 會改 `request_hash`，只在開關打開時生效。離線測試：T457/T523 不再錯併。
+12. **P2-1 三個演算法盲區**（**做到哪：(1) ✅ 2026-11-26 早、(2) ✅ 2026-11-26 午（`FACT_CHECKER_ZH_FRAGMENTS`），見兩段「本次變更（2026-11-26 …）」；剩 (3)**；放新開關，預設關閉，不動 `exp1-frozen` 與實驗二重播）：(1) 早報／晚報／懶人包等彙整稿 `is_roundup_title` 不併入單一事件 cluster；(2) 查核員 `irrelevant_sources` 接當天 EntityContext，承認 ≥3 字、DF<5% 的中文共同片段（N-44224 蘇巧慧、N-54434 統一不再誤點名）；(3) 查核員提示詞加事件四分類（同次事件／後續進展／無關／彙整稿）——(3) 會改 `request_hash`，只在開關打開時生效。離線測試：T457/T523 不再錯併。
 13. **P2-2 desk-v3 高互動 demo 期**（選做）：在 `rt-data-1123` 另一份複本開 `MAS_RICH_CONTEXT`／`MAS_OPEN_LAYOUT`／`MAS_MORE_INTERACTION` 跑一期 M 組 prepare（詳見 `docs/pr/desk-v3.md`），`build_replay` 輸出存成 `tests/fixtures/replay/` 下的 fixture，供簡報對比。
 14. **P3-1 `run_mas` 只為候選池建 `Story` 列**（每期 ~4,800 → ≤30）：先確認分版主編（含 `MAS_OPEN_LAYOUT`）只需要 desk pool＋全站 top 10；改完全套測試＋回放 fixture 都要過；會動線上流程，併入後要 `newsroom-reload` 並看隔天 06:00 準備。
 15. **P3-3 拆 `daily/mas/orchestrator.py`**（prompts.py／checks.py／desk_v3.py／orchestrator.py ≤600 行，對外名稱相容、測試不改）；`run.py` 視剩餘時間再拆。純重構，不能改任何 `request_hash`（錄音重播測試會抓）。
@@ -55,6 +55,17 @@
 - 開發回放頁用 `tests/fixtures/replay/2026-11-19_mas.json`（11/19 M 組真實 `build_replay` 輸出，2026-11-23 從 production DB 唯讀匯出；有 recorded 時間、3 次 CHALLENGE、改稿請求、版面異議），不必碰 DB。
 - 回放頁只讀、不能改稿；不改 `request_hash`、提示詞、線上撰稿流程，所以不影響實驗數字。動到 `reddit_tracker/daily/replay.py`／`office.html` 會被 web 載入，但 newsroom 排程不載入 web，**不需要重載 newsroom**（web 是手動起的 FastAPI）。
 - 視覺檢查：自動開發 session 沒有瀏覽器可用（production checkout 不能放 `launch.json`），改用 fixture 寫測試；畫面由互動 session 截圖確認。
+
+## 本次變更（2026-11-26 午 — 查核員點名承認中文片段，佇列第 12 項 (2)，`claude-auto`，自動開發）
+
+新開關 `FACT_CHECKER_ZH_FRAGMENTS`（預設關閉，`.env` 沒動）；沒呼叫模型、沒碰 production DB，離線比較用 `rt-data-1123` 複本（`immutable=1`）。介面見 `docs/v5/DAILY_EDITION.md`「查核員刪來源」的「中文片段」。
+
+- ✅ `irrelevant_sources(evidence, day_context=None)`：給了當天的 `EntityContext`，S1 與來源共有當天少見的中文片段、合成後 **≥ 2 段互不相連**（`CHECKER_MIN_ZH_FRAGMENTS`）就不點名。`run_mas` 打開開關時建 `title_context`（`MAS_FULL_EVIDENCE` 開著就共用同一份），傳到 `review_one`、修稿重驗、desk-v3 總編退稿重驗。`collection/entities.py` 抽出 `rare_shared_fragments`，聚合的 `shared()` 改呼叫它，行為不變。
+- ⚠️ **和佇列寫法不同：只看篇數 < 5% 分不開 5330。** 11/01 高雄辯論與台北辯論共有「市長選」41 篇、「長選戰」26 篇（當天 12,805 篇），比 N-44224 的「李四川」56、「蘇巧慧」64 篇還少見（選舉期間候選人名很常見），任何篇數門檻都會一起放掉。所以加了「至少兩段」：「市長選戰」是一段，「李四川」「蘇巧慧」是兩段。
+- 📌 離線比較（`scripts/eval_checker_fragments.py`，10/31–11/01 的 10 篇＋實驗二 25 案）：N-44224、N-54434、N-44245、N-48575 和 10/31–11/01 的 14、5327、5331 等不再點名，有標註案例裡少點名的同一事件來源 **10 個**；5330 高雄辯論、5455、E01–E05 的無關來源照樣點名。**真無關但不再點名 1 個：H-T807 S3**（同樣是沈伯洋、蔣萬安，不同事件），名字分不出來，要靠 (3) 事件四分類。N-48569（只有「提彈劾案」一段）、N-69866（只有「董事會」）仍點名，照舊交給查核員 LLM。
+- ⚠️ 打開的代價：不再點名的稿就不問查核員 LLM（H-T807 這種會直接過），也會改 `request_hash`。建議 (3) 做完、在複本跑一期 M 組比對後再決定開不開；實驗二與凍結的數字不受影響（`eval/exp2.py` 不傳 context）。
+- 測試：`tests/test_checker_zh_fragments.py`（9 個：關閉不變、兩段放行、一段不放行、常見片段不算、只會少點名、`review_one` 不再叫查核員、5330 照樣 CHALLENGE、`run_mas` 只在開關打開時傳 context）；worktree 全套 614 passed／7 skipped、ruff 通過。
+- ➡️ 下一步：第 12 項 (3) 查核員提示詞加事件四分類（同次事件／後續進展／無關／彙整稿；開關後面，會改 `request_hash`），用 H-T807、H-T767 驗證。
 
 ## 本次變更（2026-11-26 上午 — 四位 agent 檢查後的修正，互動 session，分支 `fix/ops-1126`）
 

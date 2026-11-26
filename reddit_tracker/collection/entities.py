@@ -279,10 +279,8 @@ class EntityLexicon:
             common = set(a.names & b.names)
         else:
             common = context.names(a) & context.names(b)
-        if context is not None and a.trigrams and b.trigrams:
-            rare = {t for t in a.trigrams & b.trigrams if context.is_rare(t)}
-            if rare:
-                common.update(f"「{fragment}」" for fragment in _covered_runs(a.cjk, rare))
+        if context is not None:
+            common.update(f"「{fragment}」" for fragment in rare_shared_fragments(a, b, context))
         return common
 
 
@@ -308,6 +306,14 @@ class EntityContext:
     def is_rare(self, trigram: str) -> bool:
         df = self.df.get(trigram, 0)
         return df <= ZH_FRAGMENT_ALWAYS_RARE_DF or df < self.max_df
+
+
+def rare_shared_fragments(a: TitleEntities, b: TitleEntities, context: EntityContext) -> list[str]:
+    """兩個標題共有、當天少見的中文三字片段，合成 `a` 裡的最長連續段（每段算一個實體）。"""
+    if not (a.trigrams and b.trigrams):
+        return []
+    rare = {t for t in a.trigrams & b.trigrams if context.is_rare(t)}
+    return _covered_runs(a.cjk, rare) if rare else []
 
 
 def _capitalized(word: str) -> bool:

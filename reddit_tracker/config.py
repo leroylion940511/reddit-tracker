@@ -119,6 +119,10 @@ class Settings(BaseSettings):
     # M 組查核員逐來源回報（每個程式點名的可疑來源回 KEEP／REMOVE）。會改到查核員請求的 request_hash，
     # 預設關閉＝沿用舊提示詞與舊 schema，既有錄音（1027_t2a_records.json）照常重播。
     fact_checker_per_source: bool = False
+    # 查核員程式點名（irrelevant_sources）多承認與 S1 共有、當天少見的中文片段（至少兩段互不相連），
+    # 例：蘇巧慧＋李四川、肯德基＋必勝客。只會少點名、不會多點名；少點名的稿不再問查核員，所以會改 request_hash。
+    # 預設關閉＝點名規則與請求逐字不變（佇列第 12 項 (2)，2026-11-26）。
+    fact_checker_zh_fragments: bool = False
     # mas 發行要不要真人核可（`daily approve`）。true＝未核可只出標題（手冊步驟 10 原設計）；
     # false＝不需核可，checked／draft／challenged 都發全文，只有 HOLD 的稿照樣只出標題。
     daily_require_approval: bool = True

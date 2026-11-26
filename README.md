@@ -144,6 +144,7 @@ uv run python -m reddit_tracker.web
 | `DAILY_SHADOW_LLM_LIMIT` | `12` | P 影子每日最多用幾格額度（含編輯會議與重試）；M 至少保有 `LLM_DAILY_LIMIT` 減這個數 |
 | `DAILY_ANNOTATION_DIR` | `annotation` | 影子＋M 都有稿時匯出盲計稿／抽查稿到 `YYYY-MM-DD/`（可整個交給 B；對照表在 `_private/YYYY-MM-DD/mapping.json`，不給 B、不進版控） |
 | `FACT_CHECKER_PER_SOURCE` | `false` | M 組查核員對程式點名的每個可疑來源回 KEEP／REMOVE（關閉＝舊的全域 OK／CHALLENGE）；開啟會改查核員請求的 `request_hash`，見 `docs/pr/checker-per-source.md` |
+| `FACT_CHECKER_ZH_FRAGMENTS` | `false` | M 組查核員程式點名多承認與 S1 共有、當天少見（< 5%）的中文片段，至少兩段互不相連（蘇巧慧＋李四川）才不點名；只會少點名，少點名的稿不再問查核員，所以會改 `request_hash`。離線比較：`scripts/eval_checker_fragments.py` |
 | `DAILY_REQUIRE_APPROVAL` | `true` | mas 發行要不要真人核可；`false`＝未核可的稿也發全文，只有 HOLD 的稿只出標題 |
 | `DAILY_WITHHOLD_CHALLENGED` | `false` | 關核可（`DAILY_REQUIRE_APPROVAL=false`）時，`challenged` 也只出標題，標示沿用「暫扣」。不改提示詞、不改 `request_hash` |
 | `NUMBER_CHECK_V2` | `false` | 開啟時數字核對排除「10 月」「26 日」「1 時 04 分」「2026 年」，並認得 `m`／`mn`／`k`／`trillion`／`千`（40m、15mn、4,000 萬＝40 million）。關閉時規則與現在逐字相同 |
