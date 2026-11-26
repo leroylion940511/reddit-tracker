@@ -239,6 +239,30 @@ def test_fetch_source_sends_conditional_headers_and_redacts_key(monkeypatch):
     assert not failed.ok and "abc123" not in failed.error and "key=***" in failed.error
 
 
+def test_fetch_source_uses_per_source_user_agent(monkeypatch):
+    seen = []
+
+    class Resp:
+        status_code = 304
+        headers: dict = {}
+
+    monkeypatch.setattr(collector.requests, "get", lambda url, headers, timeout: seen.append(headers["User-Agent"]) or Resp())
+    monkeypatch.setattr(
+        collector, "get_settings",
+        lambda: SimpleNamespace(rsshub_base_url="http://127.0.0.1:1200", rsshub_access_key=None),
+    )
+    plain, custom = SourceRegistry.model_validate({
+        "version": 1, "sections": {"taiwan": "台灣"},
+        "sources": [_src("plain"), _src("custom", user_agent="reddit_tracker-newsroom/0.2 (+news collection)")],
+    }).sources
+    prev = SourceFetchRun(ok=True)
+
+    collector.fetch_source(plain, prev)
+    collector.fetch_source(custom, prev)
+
+    assert seen == [collector.USER_AGENT, "reddit_tracker-newsroom/0.2 (+news collection)"]
+
+
 # ── report ───────────────────────────────────────────────────────────────
 
 

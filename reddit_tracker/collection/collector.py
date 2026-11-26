@@ -116,7 +116,7 @@ def fetch_source(source: NewsSource, previous: SourceFetchRun | None) -> FetchOu
     settings = get_settings()
     started_at = datetime.now(timezone.utc)
     clock = time.monotonic()
-    headers = {"User-Agent": USER_AGENT}
+    headers = {"User-Agent": source.user_agent or USER_AGENT}
     if previous is not None and previous.ok:
         if previous.etag:
             headers["If-None-Match"] = previous.etag

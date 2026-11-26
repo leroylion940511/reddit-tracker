@@ -72,7 +72,7 @@ sources:
   - {id: apnews-top, name: AP Top News, section: world, tier: T2, method: rsshub, url: /apnews/topics/apf-topnews, lang: en, enabled: false, keep_items: true, notes: "2026-11-01 停用：apnews.com 對本機回 403（RSSHub 與直接 curl 都是），11/01 03:29 起 0 成功；RSSHub 上游沒有更新的修正。由 abcnews-intl 替代"}
   - {id: abcnews-intl, name: ABC News International, section: world, tier: T2, method: rss, url: "https://abcnews.go.com/abcnews/internationalheadlines", lang: en, notes: "2026-11-01 起替代 apnews-top（官方 RSS，本機實測有新稿）；收集驗收期間中途加入"}
   - {id: apnews-world, name: AP World, section: world, tier: T2, method: rsshub, url: /apnews/rss/world-news, lang: en, enabled: false, notes: "上游 403（2026-10-26）"}
-  - {id: guardian-world, name: The Guardian World, section: world, tier: T2, method: rss, url: "https://www.theguardian.com/world/rss", lang: en}
+  - {id: guardian-world, name: The Guardian World, section: world, tier: T2, method: rss, url: "https://www.theguardian.com/world/rss", lang: en, user_agent: "reddit_tracker-newsroom/0.2 (+news collection)"}
   - {id: aljazeera, name: Al Jazeera, section: world, tier: T2, method: rss, url: "https://www.aljazeera.com/xml/rss/all.xml", lang: en, general_feed: true}
   - {id: npr-news, name: NPR News, section: world, tier: T2, method: rss, url: "https://feeds.npr.org/1001/rss.xml", lang: en, general_feed: true}
   - {id: nytimes-home, name: NYT Home, section: world, tier: T2, method: rss, url: "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml", lang: en, general_feed: true}
@@ -121,10 +121,10 @@ sources:
   - {id: arstechnica, name: Ars Technica, section: tech, tier: T2, method: rss, url: "https://feeds.arstechnica.com/arstechnica/index", lang: en}
   - {id: techcrunch, name: TechCrunch, section: tech, tier: T2, method: rss, url: "https://techcrunch.com/feed/", lang: en}
   - {id: reuters-tech, name: Reuters Technology, section: tech, tier: T2, method: rsshub, url: /reuters/technology, lang: en, enabled: false, keep_items: true, notes: "2026-11-01 停用：reuters.com 對本機回 401（pf api）／404（outboundfeeds），RSSHub 與直接 curl 都一樣，10/29 起 0 成功；RSSHub 上游沒有更新的修正。由 guardian-tech 替代"}
-  - {id: guardian-tech, name: The Guardian Technology, section: tech, tier: T2, method: rss, url: "https://www.theguardian.com/uk/technology/rss", lang: en, notes: "2026-11-01 起替代 reuters-tech（官方 RSS，本機實測有新稿）；收集驗收期間中途加入"}
+  - {id: guardian-tech, name: The Guardian Technology, section: tech, tier: T2, method: rss, url: "https://www.theguardian.com/uk/technology/rss", lang: en, notes: "2026-11-01 起替代 reuters-tech（官方 RSS，本機實測有新稿）；收集驗收期間中途加入", user_agent: "reddit_tracker-newsroom/0.2 (+news collection)"}
   - {id: mit-tech-review, name: MIT Technology Review, section: tech, tier: T2, method: rss, url: "https://www.technologyreview.com/feed/", lang: en}
   - {id: hn-frontpage, name: Hacker News 首頁, section: tech, tier: T3, method: rss, url: "https://hnrss.org/frontpage?points=100", lang: en}
-  - {id: hn-api-top, name: Hacker News 官方 API, section: tech, tier: T3, method: json, url: "https://hacker-news.firebaseio.com/v0/topstories.json", lang: en}
+  - {id: hn-api-top, name: Hacker News 官方 API, section: tech, tier: T3, method: json, url: "https://hacker-news.firebaseio.com/v0/topstories.json", lang: en, enabled: false, notes: "collector 只實作 rss／rsshub，json 抓取器沒寫；以前登錄為啟用但每輪都被略過（2026-11-26 改成停用）"}
   - {id: github-trending, name: GitHub Trending, section: tech, tier: T3, method: rsshub, url: /github/trending/daily/any, lang: en, enabled: false, notes: "RSSHub 需設定 GITHUB_ACCESS_TOKEN"}
   - {id: hf-daily-papers, name: Hugging Face Daily Papers, section: tech, tier: T3, method: rsshub, url: /huggingface/daily-papers, lang: en}
   - {id: hf-blog, name: Hugging Face Blog, section: tech, tier: T3, method: rsshub, url: /huggingface/blog, lang: en}
@@ -149,7 +149,7 @@ sources:
   - {id: ltn-life, name: 自由時報 生活, section: life_env, tier: T2, method: rss, url: "https://news.ltn.com.tw/rss/life.xml", lang: zh-Hant}
   - {id: udn-life, name: 聯合新聞網 生活, section: life_env, tier: T2, method: rss, url: "https://udn.com/rssfeed/news/2/6649?ch=news", lang: zh-Hant}
   - {id: einfo, name: 環境資訊中心, section: life_env, tier: T2, method: rss, url: "https://e-info.org.tw/rss.xml", lang: zh-Hant, enabled: false, notes: "RSS 網址 404／500（2026-10-26）"}
-  - {id: guardian-environment, name: The Guardian Environment, section: life_env, tier: T2, method: rss, url: "https://www.theguardian.com/environment/rss", lang: en}
+  - {id: guardian-environment, name: The Guardian Environment, section: life_env, tier: T2, method: rss, url: "https://www.theguardian.com/environment/rss", lang: en, user_agent: "reddit_tracker-newsroom/0.2 (+news collection)"}
   - {id: mirrormedia-life, name: 鏡週刊 生活, section: life_env, tier: T2, method: rsshub, url: /mirrormedia/category/life, lang: zh-Hant, enabled: false, notes: "RSSHub 路由回傳空白（2026-10-26）"}
   - {id: cwa-warnings, name: 氣象署 警特報, section: life_env, tier: T1, method: json, url: "https://opendata.cwa.gov.tw/api/v1/rest/datastore/W-C0033-001", lang: zh-Hant, requires_key: CWA_API_KEY, enabled: false}
 
@@ -160,7 +160,7 @@ sources:
   - {id: udn-stars, name: 聯合新聞網 娛樂, section: culture, tier: T2, method: rss, url: "https://stars.udn.com/rssfeed/news/1022/10088?ch=stars", lang: zh-Hant, enabled: false, notes: "RSS 網址 404（2026-10-26）"}
   - {id: openbook, name: Openbook 閱讀誌, section: culture, tier: T2, method: rss, url: "https://www.openbook.org.tw/rss.xml", lang: zh-Hant}
   - {id: variety, name: Variety, section: culture, tier: T2, method: rss, url: "https://variety.com/feed/", lang: en}
-  - {id: guardian-culture, name: The Guardian Culture, section: culture, tier: T2, method: rss, url: "https://www.theguardian.com/culture/rss", lang: en}
+  - {id: guardian-culture, name: The Guardian Culture, section: culture, tier: T2, method: rss, url: "https://www.theguardian.com/culture/rss", lang: en, user_agent: "reddit_tracker-newsroom/0.2 (+news collection)"}
   - {id: gnn-gamer, name: 巴哈姆特 GNN, section: culture, tier: T2, method: rss, url: "https://gnn.gamer.com.tw/rss.xml", lang: zh-Hant, notes: "遊戲新聞"}
   - {id: 4gamers, name: 4Gamers, section: culture, tier: T2, method: rss, url: "https://www.4gamers.com.tw/rss/latest-news", lang: zh-Hant, notes: "遊戲新聞；也收動漫、資安等泛 ACG 新聞"}
   - {id: thenewslens-culture, name: 關鍵評論網 藝文, section: culture, tier: T2, method: rsshub, url: /thenewslens/category/culture, lang: zh-Hant, enabled: false, notes: "上游分類頁 404（2026-10-26）"}
@@ -171,7 +171,7 @@ sources:
   - {id: udn-sports, name: 聯合新聞網 運動, section: sports, tier: T2, method: rss, url: "https://udn.com/rssfeed/news/2/7227?ch=news", lang: zh-Hant}
   - {id: bbc-sport, name: BBC Sport, section: sports, tier: T2, method: rss, url: "https://feeds.bbci.co.uk/sport/rss.xml", lang: en}
   - {id: espn-news, name: ESPN, section: sports, tier: T2, method: rss, url: "https://www.espn.com/espn/rss/news", lang: en}
-  - {id: guardian-sport, name: The Guardian Sport, section: sports, tier: T2, method: rss, url: "https://www.theguardian.com/sport/rss", lang: en}
+  - {id: guardian-sport, name: The Guardian Sport, section: sports, tier: T2, method: rss, url: "https://www.theguardian.com/sport/rss", lang: en, user_agent: "reddit_tracker-newsroom/0.2 (+news collection)"}
   - {id: sportsv, name: 運動視界, section: sports, tier: T2, method: rss, url: "https://www.sportsv.net/feed", lang: zh-Hant}
 
   # ── 社群觀察 ──────────────────────────────────────────

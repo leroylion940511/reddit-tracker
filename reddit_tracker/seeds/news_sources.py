@@ -37,6 +37,8 @@ class NewsSource(BaseModel):
     # 停用但保留已收素材：只是上游擋掉、不再抓（例如 2026-11-01 的 Reuters／AP），以前收到的稿仍是有效新聞，
     # 照常參與聚合、選題與證據包。編輯決定排除的來源（社群）不設，舊素材一起排除。
     keep_items: bool = False
+    # 個別來源的 User-Agent；沒填用 collector.USER_AGENT。Guardian 2026-11-24 起擋開頭是 Mozilla/5.0 的 UA（同 IP 換不帶 Mozilla 的 UA 回 200）。
+    user_agent: str | None = None
     notes: str | None = None
 
     @model_validator(mode="after")

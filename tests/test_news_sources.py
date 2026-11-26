@@ -104,3 +104,21 @@ def test_keep_items_only_stops_collection():
     ])
     assert registry.enabled() == []
     assert registry.disabled_source_ids() == {"excluded"}
+
+
+def test_every_enabled_source_has_a_collector():
+    """登錄為啟用但 collector 不會抓的來源（例如 2026-11-26 前的 hn-api-top）會讓「啟用來源數」虛報。"""
+    from reddit_tracker.collection.collector import COLLECTABLE_METHODS
+
+    # 數據版（section=data）的證交所 JSON 由 daily/market.py 出刊時直接讀，不走 collector。
+    orphans = [
+        s.id for s in load_registry().enabled() if s.method not in COLLECTABLE_METHODS and s.section != "data"
+    ]
+    assert orphans == []
+
+
+def test_guardian_feeds_use_a_non_browser_user_agent():
+    """Guardian 2026-11-24 起對開頭是 Mozilla/5.0 的 UA 回 403。"""
+    guardian = [s for s in load_registry().sources if s.id.startswith("guardian-")]
+    assert len(guardian) == 5
+    assert all(s.enabled and s.user_agent and not s.user_agent.startswith("Mozilla") for s in guardian)
