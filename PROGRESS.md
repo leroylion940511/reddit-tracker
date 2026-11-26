@@ -56,6 +56,17 @@
 - 回放頁只讀、不能改稿；不改 `request_hash`、提示詞、線上撰稿流程，所以不影響實驗數字。動到 `reddit_tracker/daily/replay.py`／`office.html` 會被 web 載入，但 newsroom 排程不載入 web，**不需要重載 newsroom**（web 是手動起的 FastAPI）。
 - 視覺檢查：自動開發 session 沒有瀏覽器可用（production checkout 不能放 `launch.json`），改用 fixture 寫測試；畫面由互動 session 截圖確認。
 
+## 本次變更（2026-11-26 下午 — 前端精修交給 grok，Claude 驗收）
+
+grok CLI（`dontAsk`＋白名單）在 worktree `rt-wt-front` 分支 `feat/frontend-polish`（`fd821ff`）改了四個檔，只動樣式與版面，沒碰 `replay.py` 資料、提示詞、`request_hash`、`telegram_digest`。
+
+- `office.html`：開頁就看得到六個座位與名牌，訊息種類有圖例與各自的紙張／泡泡顏色，右側面板放大；`only=1`、`speed`、`C` 鍵照舊。
+- `render.py`：報紙式襯線標題（系統字型堆疊，沒有外部資源）、「為什麼重要」框、淺色／深色、期別列表新的在前；日報文字內容和舊版逐字相同。
+- `newsroom_page.py`：CSS 變數主題、訊息列依種類上色；狀態標籤 `HOLD` 改顯示「暫扣」（按鈕 value 與「核准／HOLD」按鈕字沒變，`docs/demo_script.md` 不用改）。
+- `web.py`：`_newsroom_bar` 改樣式；**修 `/daily/index.html` 回 422**（原本被 `{edition_date}.html` 吃掉）。
+- ✅ 併入 main（merge commit，2026-11-26 14:55）並 `newsroom-reload`（14:55:16；`render.py` 由排程器 in-process 載入，所以要重載）：production 全套 619 passed／4 skipped、ruff 通過；log 有 `codex version guard ok`、五個 job、scheduler Python process 1 個。收集 tick 仍在每刻鐘第 10 分（06:10），避開 06:00 準備。
+- ⚠️ 已知：手機版右下回放入口會蓋到一點內文；3D 頁持續動畫讓 Chrome 無頭截圖卡住（只影響截圖，不影響瀏覽）。11/27 那期是第一份新版面，Telegram 附件也一樣。
+
 ## 本次變更（2026-11-26 午 — 查核員點名承認中文片段，佇列第 12 項 (2)，`claude-auto`，自動開發）
 
 新開關 `FACT_CHECKER_ZH_FRAGMENTS`（預設關閉，`.env` 沒動）；沒呼叫模型、沒碰 production DB，離線比較用 `rt-data-1123` 複本（`immutable=1`）。介面見 `docs/v5/DAILY_EDITION.md`「查核員刪來源」的「中文片段」。
