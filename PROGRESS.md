@@ -5,7 +5,7 @@
 > 2026-11-23 以前的「本次變更」段落已搬到 `docs/archive/`（見文末「更早的紀錄」）；正文引用的舊段落請到那裡找。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-28 07:20（`claude-auto`：佇列第 15 項 P3-3 第 2 段 `checks.py`，見「本次變更（2026-11-28 早）」）。前次：2026-11-27 13:20（佇列第 14 項 P3-1）。更早的更新紀錄見 git log 與 `docs/archive/`。
+**Last updated:** 2026-11-28 07:12（`claude-auto`：佇列第 15 項 P3-3 第 2 段 `checks.py`，見「本次變更（2026-11-28 早）」）。前次：2026-11-27 13:20（佇列第 14 項 P3-1）。更早的更新紀錄見 git log 與 `docs/archive/`。
 
 ## 線上現況（2026-11-25 19:00 查證）
 
@@ -65,6 +65,7 @@
 - 📌 `irrelevant_sources` 的呼叫端（`_check_and_maybe_revise`）留在 `orchestrator`，`test_checker_zh_fragments` 對 `orchestrator.irrelevant_sources` 的 monkeypatch 仍有效；`guard_pitches` 的 log 名稱從 `…mas.orchestrator` 變成 `…mas.checks`（沒有測試或腳本依賴）。
 - 📌 提示詞與 schema 沒動，錄音重播、回歸集都過，`request_hash` 沒變。
 - 測試：`tests/test_mas_module_split.py` 加 2 個（19 個名稱重新匯出是同一物件、`checks.py` 不 import orchestrator／sqlalchemy／llm／models／store）；既有測試沒改；worktree 全套 642 passed／7 skipped、ruff 通過。
+- ✅ 併入 main（`f9d45fa`，2026-11-28 07:04 fast-forward）並 `newsroom-reload`（07:10:13，選在每刻鐘第 10 分，收集 tick 落在 06:10 之後）：production 全套 645 passed／4 skipped；log 有 `codex version guard ok`、五個 job 註冊、scheduler Python process 1 個（另兩個是 uv 與 caffeinate 包裝層）。11/29 06:00 準備是拆分第 2 段後第一期。
 - ➡️ 下一段：`desk_v3.py`（`guard_open_pitches`、`program_trim`／`guard_trim`／`_trim_edition`、`appeal_*`、`guard_page_proposal`／`_page_review`、`guard_eic_requests`／`_eic_revisions`）→ `orchestrator.py` ≤600 行。注意 `layout_limits` 被 monkeypatch 在 `orchestrator` 上，查它的函式要留在 orchestrator 或改成模組屬性查找。
 
 ## 本次變更（2026-11-27 晚 — 拆 `orchestrator.py` 第 1 段 `prompts.py`，佇列第 15 項 P3-3，`claude-auto`，自動開發）
