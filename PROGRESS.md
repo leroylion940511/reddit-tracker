@@ -64,6 +64,7 @@
 - 📌 搬移前後把 32 個常數 `json.dumps` 比對，sha256 相同（`1abb29d7…`）；錄音重播與回歸集都過，`request_hash` 沒變。
 - 📌 測試 monkeypatch 的名稱（`build_evidence_from_ids`、`title_context`、`layout_limits`、`irrelevant_sources`）都是 `orchestrator` 內函式查的全域名稱，之後搬函式時要讓呼叫端留在同一模組，或改成 `module.name` 查找，否則 patch 會失效。
 - 測試：新增 `tests/test_mas_module_split.py`（3 個：重新匯出是同一物件、角色提示詞齊全、`prompts.py` 不 import）；既有測試沒改；worktree 全套 640 passed／7 skipped、ruff 通過。
+- ✅ 併入 main（`ede1754`，2026-11-27 19:03 fast-forward）並 `newsroom-reload`（19:04:11）：production 全套 643 passed／4 skipped；log 有 `codex version guard ok`、五個 job 註冊、scheduler Python process 1 個（另兩個是 uv 與 caffeinate 包裝層）。11/28 06:00 準備同時是 P3-1 與這次拆分後的第一期。
 - ➡️ 下一段：`checks.py`（`evidence_has_injection`、`guard_*`、`irrelevant_sources`、`checker_source_verdicts`、`_decision_problems` 等純函式）→ `desk_v3.py`（open pitch／trim／appeal／page review／EIC 退稿）→ `orchestrator.py` ≤600 行。
 
 ## 本次變更（2026-11-27 午 — `run_mas` 只為候選池建 Story，佇列第 14 項 P3-1，`claude-auto`，自動開發）
