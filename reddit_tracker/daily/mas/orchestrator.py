@@ -996,17 +996,30 @@ def run_mas(
         }
         stories = dict(existing)
         evidence_of: dict[int, list[EvidenceItem]] = {}
+        packs: dict[int, list[EvidenceItem]] = {}
+
+        def pack_items(raw) -> list[EvidenceItem]:
+            keeper = raw["keeper_cluster_id"]
+            if keeper not in packs:
+                pack: EvidencePack = build_evidence_from_ids(
+                    session, list(raw.get("evidence_item_ids") or []), names,
+                    anchor_item_id=raw.get("anchor_item_id"), allowed_domains=domains, context=context,
+                )
+                packs[keeper] = pack.items
+            return packs[keeper]
+
+        # P3-1：自動選稿時只為分版主編看得到的候選建 Story（每期約 4,800 → 24），見 mas_story_keepers；
+        # 呼叫端自己給 pitches（測試）時照舊全部建列，外部指定的 story_id 才找得到。
+        wanted = set(mas_story_keepers(snapshot.candidates, existing, pack_items)) if pitches is None else None
         for raw in snapshot.candidates:
             keeper = raw["keeper_cluster_id"]
             story = stories.get(keeper)
             if story is None:
+                if wanted is not None and keeper not in wanted:
+                    continue
                 story = add_story(session, edition_date=edition_date, run_variant=MAS, spec=raw)
                 stories[keeper] = story
-            pack: EvidencePack = build_evidence_from_ids(
-                session, list(raw.get("evidence_item_ids") or []), names,
-                anchor_item_id=raw.get("anchor_item_id"), allowed_domains=domains, context=context,
-            )
-            evidence_of[story.id] = _attach_fulltext(session, pack.items)
+            evidence_of[story.id] = _attach_fulltext(session, pack_items(raw))
         automatic = pitches is None
         pitch_calls: dict[str, int | None] = {}
         pitch_reasons: dict[int, str] = {}
@@ -1137,6 +1150,52 @@ def rich_fields(evidence: list[EvidenceItem] | None) -> dict:
     return {"summary": summary, "outlets": outlets, "outlet_count": len(outlets)}
 
 
+GLOBAL_TOP_N = 10  # 分版主編提示裡的 global_top10
+
+
+def mas_story_keepers(candidates: list[dict], existing: dict[int, Story], has_evidence) -> list[int]:
+    """M 組要新建 `Story` 列的 keeper_cluster_id（依快照順序；已存在的列不在內）。
+
+    分版主編（固定名額與 `MAS_OPEN_LAYOUT`）只看得到下面三種稿，其他候選不建列：
+    - 各內版 `section_pool`：有證據、kind 合規，依 (kind, -score, id) 取配額 × `DESK_POOL_PER_SECTION`；
+      `_default_pitches`（`select_articles`）選的稿是它的子集。
+    - 全站分數前 `GLOBAL_TOP_N`（三個內版，不論有沒有證據）。
+    - 重跑時已存在的列（照舊保留）。
+    `has_evidence(raw)` 回傳該候選的證據包（非空才算有證據）。新列的 id 依快照順序遞增、排在既有列之後，
+    這裡用 (0, 既有 id)／(1, 快照位置) 代替 id，所以挑出來的稿、平手順序都和「全部建列再挑」相同。
+    """
+    by_keeper = {raw["keeper_cluster_id"]: raw for raw in candidates}
+    rows: list[tuple] = []  # (keeper, section, kind, score, id 排序鍵)
+    for keeper, story in existing.items():
+        rows.append((keeper, story.section, story.kind, story.score, (0, story.id)))
+    for index, raw in enumerate(candidates):
+        keeper = raw["keeper_cluster_id"]
+        if keeper not in existing:
+            rows.append((keeper, raw["section"], raw["kind"], raw.get("score") or 0, (1, index)))
+    memo: dict[int, bool] = {}
+
+    def evidenced(keeper: int) -> bool:
+        if keeper not in memo:
+            raw = by_keeper.get(keeper)
+            memo[keeper] = raw is not None and bool(has_evidence(raw))
+        return memo[keeper]
+
+    wanted: set[int] = set()
+    for section, quota in SECTION_QUOTAS.items():
+        eligible = sorted((r for r in rows if r[1] == section and r[2] in SECTION_KINDS[section]),
+                          key=lambda r: (_KIND_RANK.get(r[2], 9), -r[3], r[4]))
+        taken = 0
+        for row in eligible:
+            if taken >= quota * DESK_POOL_PER_SECTION:
+                break
+            if evidenced(row[0]):
+                wanted.add(row[0])
+                taken += 1
+    wanted.update(r[0] for r in sorted((r for r in rows if r[1] in SECTIONS), key=lambda r: -r[3])[:GLOBAL_TOP_N])
+    return [raw["keeper_cluster_id"] for raw in candidates
+            if raw["keeper_cluster_id"] in wanted and raw["keeper_cluster_id"] not in existing]
+
+
 def _default_pitches(stories: list[Story], evidence_of: dict[int, list[EvidenceItem]]) -> list[Pitch]:
     by_id = {story.id: story for story in stories if evidence_of.get(story.id)}
     selections = select_articles([
@@ -1201,7 +1260,7 @@ def _open_section_pitches(session, edition_date, stories, evidence_of, client, c
                           reasons_out: dict, log: list[str]) -> list[Pitch]:
     defaults = _default_pitches(stories, evidence_of)
     default_ids = {p.story_id for p in defaults}
-    top = sorted((s for s in stories if s.section in SECTIONS), key=lambda s: -s.score)[:10]
+    top = sorted((s for s in stories if s.section in SECTIONS), key=lambda s: -s.score)[:GLOBAL_TOP_N]
     global_top = [{"story_id": s.id, "section": s.section, "score": s.score,
                    "title": (evidence_of.get(s.id) or [None])[0].title if evidence_of.get(s.id) else ""} for s in top]
     pitches: list[Pitch] = []
@@ -1711,7 +1770,7 @@ def _section_pitches(session, edition_date, stories, evidence_of, client, calls:
                                      reasons_out if reasons_out is not None else {},
                                      layout_log if layout_log is not None else [])
     pitches = _default_pitches(stories, evidence_of)
-    top = sorted((s for s in stories if s.section in SECTIONS), key=lambda s: -s.score)[:10]
+    top = sorted((s for s in stories if s.section in SECTIONS), key=lambda s: -s.score)[:GLOBAL_TOP_N]
     global_top = [{"story_id": s.id, "section": s.section, "score": s.score,
                    "title": (evidence_of.get(s.id) or [None])[0].title if evidence_of.get(s.id) else ""} for s in top]
     for section in SECTIONS:

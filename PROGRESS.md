@@ -5,7 +5,7 @@
 > 2026-11-23 以前的「本次變更」段落已搬到 `docs/archive/`（見文末「更早的紀錄」）；正文引用的舊段落請到那裡找。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-26 19:12（`claude-auto`：佇列第 12 項 (3) `FACT_CHECKER_EVENT_CLASSES`，預設關閉，見「本次變更（2026-11-26 晚）」）。前次：2026-11-26 14:55（前端精修併入 main 並重載）。更早的更新紀錄見 git log 與 `docs/archive/`。
+**Last updated:** 2026-11-27 13:20（`claude-auto`：佇列第 14 項 P3-1 `run_mas` 只為候選池建 `Story`，見「本次變更（2026-11-27 午）」）。前次：2026-11-26 19:12（佇列第 12 項 (3)）。更早的更新紀錄見 git log 與 `docs/archive/`。
 
 ## 線上現況（2026-11-25 19:00 查證）
 
@@ -44,7 +44,7 @@
 11. ✅（2026-11-25，`claude-auto`）**P1-3b README／PROGRESS 對齊**：README 的測試數、Alembic revision、設定鍵表（補 `MAS_NOISE_CHECK` 與 desk-v3 四個開關）；本檔「線上現況」更新到最新日期。
 12. ✅（2026-11-26，`claude-auto`；(1) 早、(2) 午、(3) 晚 `FACT_CHECKER_EVENT_CLASSES`，見三段「本次變更（2026-11-26 …）」）**P2-1 三個演算法盲區**（放新開關，預設關閉，不動 `exp1-frozen` 與實驗二重播）：(1) 早報／晚報／懶人包等彙整稿 `is_roundup_title` 不併入單一事件 cluster；(2) 查核員 `irrelevant_sources` 接當天 EntityContext，承認 ≥3 字、DF<5% 的中文共同片段（N-44224 蘇巧慧、N-54434 統一不再誤點名）；(3) 查核員提示詞加事件四分類（同次事件／後續進展／無關／彙整稿）——(3) 會改 `request_hash`，只在開關打開時生效。離線測試：T457/T523 不再錯併。
 13. ✅（2026-11-27，`claude-auto`；見「本次變更（2026-11-27 早）」）**P2-2 desk-v3 高互動 demo 期**（選做）：在 `rt-data-1123` 另一份複本開 `MAS_RICH_CONTEXT`／`MAS_OPEN_LAYOUT`／`MAS_MORE_INTERACTION` 跑一期 M 組 prepare（詳見 `docs/pr/desk-v3.md`），`build_replay` 輸出存成 `tests/fixtures/replay/` 下的 fixture，供簡報對比。
-14. **P3-1 `run_mas` 只為候選池建 `Story` 列**（每期 ~4,800 → ≤30）：先確認分版主編（含 `MAS_OPEN_LAYOUT`）只需要 desk pool＋全站 top 10；改完全套測試＋回放 fixture 都要過；會動線上流程，併入後要 `newsroom-reload` 並看隔天 06:00 準備。
+14. ✅（2026-11-27，`claude-auto`；見「本次變更（2026-11-27 午）」）**P3-1 `run_mas` 只為候選池建 `Story` 列**（每期 ~4,800 → ≤30）：先確認分版主編（含 `MAS_OPEN_LAYOUT`）只需要 desk pool＋全站 top 10；改完全套測試＋回放 fixture 都要過；會動線上流程，併入後要 `newsroom-reload` 並看隔天 06:00 準備。
 15. **P3-3 拆 `daily/mas/orchestrator.py`**（prompts.py／checks.py／desk_v3.py／orchestrator.py ≤600 行，對外名稱相容、測試不改）；`run.py` 視剩餘時間再拆。純重構，不能改任何 `request_hash`（錄音重播測試會抓）。
 16. 👤 **P3-2 DB 瘦身（需志晨同意才做，自動開發不做）**：先完整備份 → 342 列 11/12 以前的 `pending` 訊息改 `handled` → Alembic drop v4/v5 殭屍表＋刪 ORM → `VACUUM`。動正式 DB、不可逆，排在 2027-01-08 發表後。
 17. ✅ **P1-1**（2026-11-23 21:47–21:48，志晨同意）：`main`（`b1639bc`）與 `final-1120` 已 push 到 origin（其他本地 tag 沒 push）；production `.env` 加了 `MAS_NOISE_CHECK=true`（原檔備份在 `~/Documents/Developer/Lab/rt-data-1123/env.bak-1123`），`newsroom-reload` 後 log 有 `codex version guard ok`、三個 job 註冊、只有一個 scheduler Python process。11/24 06:00 起 M 組稿件出刊前會掃模型雜訊，命中轉 HOLD 標「暫扣」。
@@ -55,6 +55,17 @@
 - 開發回放頁用 `tests/fixtures/replay/2026-11-19_mas.json`（11/19 M 組真實 `build_replay` 輸出，2026-11-23 從 production DB 唯讀匯出；有 recorded 時間、3 次 CHALLENGE、改稿請求、版面異議），不必碰 DB。
 - 回放頁只讀、不能改稿；不改 `request_hash`、提示詞、線上撰稿流程，所以不影響實驗數字。動到 `reddit_tracker/daily/replay.py`／`office.html` 會被 web 載入，但 newsroom 排程不載入 web，**不需要重載 newsroom**（web 是手動起的 FastAPI）。
 - 視覺檢查：自動開發 session 沒有瀏覽器可用（production checkout 不能放 `launch.json`），改用 fixture 寫測試；畫面由互動 session 截圖確認。
+
+## 本次變更（2026-11-27 午 — `run_mas` 只為候選池建 Story，佇列第 14 項 P3-1，`claude-auto`，自動開發）
+
+沒有開關（純效能修正，選稿結果不變）；沒呼叫模型、沒碰 production DB，比對用 `rt-data-1123` 複本（`immutable=1`）。介面見 `docs/v5/DAILY_EDITION.md`「PR #1 整合介面」的「只為候選池建 `Story`」。
+
+- ✅ `daily/mas/orchestrator.py`：新增 `mas_story_keepers(candidates, existing, has_evidence)`＋`GLOBAL_TOP_N=10`。自動選稿時先懶建證據包，只為各內版 `section_pool`（有證據、kind 合規，配額 × 2＝8 篇）、全站分數前 10（三內版，不論有無證據）、重跑時既有的列建 `Story`；池外候選連證據包都不建。新列依快照順序建，id 平手與穩定排序和舊做法相同。測試自己傳 `pitches` 時照舊全部建列。
+- 📌 先確認分版主編只看這些：固定名額（`_default_pitches`＝`select_articles`，池的子集＋`global_top10`）、`MAS_OPEN_LAYOUT`（`section_pool`＋`global_top10`）、`_trim_edition` 只看已提案的稿；其他讀 M 組 `Story` 的地方（`blind._written`、`replay`、`recheck_factcheck`、`verify_t1_t3`）都只取有版本或刊出的稿。
+- 📌 複本比對 `scripts/check_mas_story_pool.py --db <複本>`：10/31–11/23 共 24 期，新舊集合**逐期相同**，每期 M 組 `stories` 從 2,693–5,846 列降到 **24 列**（全站前 10 每期都已在池內）；實際寫過稿的 12 篇都在集合裡。
+- ⚠️ 行為差異只有兩點：story_id 數字變小（提示裡的 story_id 本來就隨 DB 狀態變，錄音重播測試與回歸集都過）；`daily trace --cluster <池外 cluster>` 會回「找不到」。
+- 測試：`tests/test_mas_story_pool.py`（5 個：每版池跳過無證據稿、前 10 只含內版、200 組隨機快照和「全部建列」比對相同、既有列占位不回傳、`run_mas` 只建 24 列且池外不建證據包）；worktree 全套 637 passed／7 skipped、ruff 通過。
+- ➡️ 併入後要 `newsroom-reload`；隔天（11/28）06:00 準備要看 log：M 組正常備妥 12 篇、`degraded=[]`。
 
 ## 本次變更（2026-11-27 早 — desk-v3 高互動 demo 期，佇列第 13 項，`claude-auto`，自動開發）
 

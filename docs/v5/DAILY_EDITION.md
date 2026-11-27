@@ -247,6 +247,7 @@ build_edition_view(session, edition_date, run_variant, sections, *, for_publish=
 view_from_edition(edition, sections) -> EditionView   # 還沒有 page_plans 的舊物件
 # reddit_tracker/daily/mas/orchestrator.py
 run_mas(session, *, edition_date, snapshot, registry, client, now, pitches=None) -> MasResult
+mas_story_keepers(candidates, existing, has_evidence) -> list[int]   # 自動選稿時要新建 Story 的 keeper（池＋全站前 10），見下方 P3-1
 irrelevant_sources(evidence) -> list[(S 編號, EvidenceItem)]   # 查核員程式工具：標題與 S1 沒有共同名字（句首字要包內佐證）＝可疑
 checker_says_same_event(assessment: str | None) -> bool          # 查核員 LLM 回 action=OK＝每個來源都和 S1 同一事件
 cleared_item_ids(session, story_id) -> set[int]                  # 查核員判定同一事件而保留的素材 id（修稿後重驗跳過）
@@ -409,6 +410,7 @@ M 組頁尾的撰稿數照版面上有全文的稿計算。
 
 - `prepare_daily(..., snapshot=None)`：提供 `DailySnapshot` 或 `{"candidates": [...]}` 時跳過評分與編輯會議，使用凍結的證據 id。兩組共用一份快照；`shadow=True` 即使當天已有 M 組版次也會產生 P 影子版（手動執行時會改寫快照；自動排程的 `prepare_with_shadow` 在已有版次時不跑影子）。
 - `run_mas`：三內版共用 `select_articles` 正式稿名額；三次分版主編呼叫只改角度／推薦。版面編輯提出異議，總編裁決頭版。決定只能引用本期正式稿，不能讓 HOLD 上頭版；保留內版其他稿，頭版／內版連結只落一筆 `daily_articles`，保留 `merged_cluster_ids`。
+  - **只為候選池建 `Story`（P3-1，2026-11-27，無開關）**：自動選稿（`pitches is None`）時，`run_mas` 先懶建證據包，用 `mas_story_keepers` 挑出分版主編看得到的候選——各內版 `section_pool`（有證據、kind 合規、依 (kind, -score, id) 取配額 × `DESK_POOL_PER_SECTION`＝8）、全站分數前 `GLOBAL_TOP_N`＝10（三內版，不論有沒有證據）、重跑時既有的列——只為這些建列與證據包，其他候選不建。新列依快照順序建，id 平手與穩定排序和「全部建列再挑」相同，所以選稿、提示內容（除了 story_id 數字本身）不變。呼叫端自己給 `pitches`（測試）時照舊全部建列。每期 M 組 `stories` 從 2,693–5,846 列降到 24 列；P 組本來就只建刊出稿。`format_trace --cluster` 查池外的 cluster 會回「找不到」。複本比對：`scripts/check_mas_story_pool.py --db <複本>`。
 - `EditionView` 把同一正式稿展開成頭版全文與內版連結；渲染不重寫正文。P／M 都保留步驟 4 的六則頭版全文，其餘版面標題短訊來自 `stats.briefs`，不送 LLM。舊期 anchor 用 cluster id，新版 page plan 用 story id。
 - **查核員刪來源**（2026-11-01 起）：`irrelevant_sources` 只挑「可疑」來源——標題與 S1 沒有共同名字（譯名表、句中大寫英文字、3 位數以上數字；句首大寫字要同一證據包其他標題在句中也大寫才算，例如 Binance、Oleshky）；不比中文片段（高雄、台北兩場辯論都有「市長選戰」；`FACT_CHECKER_ZH_FRAGMENTS` 打開時改比當天少見的片段，見下）。有可疑來源或沒出處的數字才叫查核員 LLM 一次；LLM 回 `OK`（提示要求無關來源必須異議）就保留可疑來源，RELEASE／CHALLENGE 的 payload 記 `cleared_sids`、`cleared_item_ids`，修稿後重驗不再點名它們；LLM 回 CHALLENGE、失敗或額度用完才照程式刪。沒出處的數字仍不能被 LLM 的 OK 放行。10/31、11/01 兩期原本刪掉 21 個來源（11/01 有 8 篇剩 1 家），重算後只刪 3 個（`scripts/recheck_factcheck.py`）。
   - **逐來源判斷（`FACT_CHECKER_PER_SOURCE`，預設 false）**：開啟時那一次查核員請求改用 `CHECKER_PER_SOURCE_SCHEMA`＝舊四欄＋`sources: [{"sid": int, "verdict": "KEEP"|"REMOVE", "reason": str}]`，user 開頭多一行「程式點名的可疑來源：S2、S3」。解讀 `checker_source_verdicts(assessment, flagged) -> {sid: 保留?}`：有逐來源判斷照它；沒提到的點名來源與舊格式回應照全域 action（OK 留、其他刪）；沒點名的來源 REMOVE 不算；沒回應／格式錯全刪。只有全域 OK 才跳過百分比的第二次查核。關閉時請求與 11/01 前逐字相同（`request_hash` 不變）。設計與錄音影響見 `docs/pr/checker-per-source.md`。
