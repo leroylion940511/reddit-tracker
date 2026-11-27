@@ -251,6 +251,9 @@ mas_story_keepers(candidates, existing, has_evidence) -> list[int]   # 自動選
 irrelevant_sources(evidence) -> list[(S 編號, EvidenceItem)]   # 查核員程式工具：標題與 S1 沒有共同名字（句首字要包內佐證）＝可疑
 checker_says_same_event(assessment: str | None) -> bool          # 查核員 LLM 回 action=OK＝每個來源都和 S1 同一事件
 cleared_item_ids(session, story_id) -> set[int]                  # 查核員判定同一事件而保留的素材 id（修稿後重驗跳過）
+# reddit_tracker/daily/mas/prompts.py（P3-3 拆分）
+#   各角色 *_SYSTEM／*_SUFFIX 提示詞、*_SCHEMA 輸出 schema、EVENT_RELATIONS／EVENT_RELATION_KEEP、EIC_REVISION_MAX 等 32 個常數；
+#   orchestrator 以同名重新匯出（同一物件），舊的 orchestrator.X 用法不變；只放常數、不 import 任何模組。
 # reddit_tracker/daily/blind.py
 export_blind_count(session, dates, *, seed=BLIND_SEED) -> (text, mapping, sha256)
 #   BLIND_SEED = 20261201；EXP2_SEED = 20261211

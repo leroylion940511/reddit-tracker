@@ -16,7 +16,7 @@
 
 ## Agent 實作規則
 
-- 程式位置：MAS 角色、訊息與工具白名單在 `reddit_tracker/daily/mas/`（`protocol.py`：`ROLES`、`ALLOWED`、`post_message`；`orchestrator.py`：各角色流程與 Pydantic 輸出模型）；角色訊息存 `agent_messages`（`reddit_tracker/models.py` 的 `AgentMessage`），稿件版本存 `StoryVersion`；LLM 層在 `reddit_tracker/llm/`（`codex.py`、`gemini.py`、`fake.py`、`quota.py`、`records.py`→`llm_records`）。
+- 程式位置：MAS 角色、訊息與工具白名單在 `reddit_tracker/daily/mas/`（`protocol.py`：`ROLES`、`ALLOWED`、`post_message`；`orchestrator.py`：各角色流程與 Pydantic 輸出模型；`prompts.py`：各角色提示詞與輸出 schema）；角色訊息存 `agent_messages`（`reddit_tracker/models.py` 的 `AgentMessage`），稿件版本存 `StoryVersion`；LLM 層在 `reddit_tracker/llm/`（`codex.py`、`gemini.py`、`fake.py`、`quota.py`、`records.py`→`llm_records`）。
 - 角色產出必須能追到證據來源（`reddit_tracker/daily/evidence.py`），並有可讀 summary。
 - 介面只呈現 artifact、證據與決策碼；不存或顯示 chain-of-thought、cookie、token、prompt 中的敏感資料。
 - 來源（RSS／RSSHub）是素材而不是事實保證：所有文字須歸因；不確定內容要標記，不能用自信語氣補洞。
