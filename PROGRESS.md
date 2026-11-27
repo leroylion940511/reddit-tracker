@@ -65,7 +65,9 @@
 - 📌 複本比對 `scripts/check_mas_story_pool.py --db <複本>`：10/31–11/23 共 24 期，新舊集合**逐期相同**，每期 M 組 `stories` 從 2,693–5,846 列降到 **24 列**（全站前 10 每期都已在池內）；實際寫過稿的 12 篇都在集合裡。
 - ⚠️ 行為差異只有兩點：story_id 數字變小（提示裡的 story_id 本來就隨 DB 狀態變，錄音重播測試與回歸集都過）；`daily trace --cluster <池外 cluster>` 會回「找不到」。
 - 測試：`tests/test_mas_story_pool.py`（5 個：每版池跳過無證據稿、前 10 只含內版、200 組隨機快照和「全部建列」比對相同、既有列占位不回傳、`run_mas` 只建 24 列且池外不建證據包）；worktree 全套 637 passed／7 skipped、ruff 通過。
-- ➡️ 併入後要 `newsroom-reload`；隔天（11/28）06:00 準備要看 log：M 組正常備妥 12 篇、`degraded=[]`。
+- ✅ 併入 main（`c9d228c`，2026-11-27 13:07 fast-forward）並 `newsroom-reload`（13:07:54）：production 全套 640 passed／4 skipped；log 有 `codex version guard ok`、五個 job 註冊、scheduler Python process 1 個（另兩個是 uv 與 caffeinate 包裝層）。
+- ℹ️ 11/27 06:00 準備（重載前的舊程式）：06:05 備妥 12 篇、`degraded=[]`（id 32），08:35 發行（Telegram 561、562）；06:00–09:59 log 沒有 `database is locked`，11/26 的收集延後修正生效。
+- ➡️ 11/28 06:00 是新程式第一期，要看 log：M 組正常備妥 12 篇、`degraded=[]`。下一項：第 15 項 P3-3 拆 `orchestrator.py`。
 
 ## 本次變更（2026-11-27 早 — desk-v3 高互動 demo 期，佇列第 13 項，`claude-auto`，自動開發）
 
