@@ -5,7 +5,7 @@
 > 2026-11-23 以前的「本次變更」段落已搬到 `docs/archive/`（見文末「更早的紀錄」）；正文引用的舊段落請到那裡找。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-27 13:20（`claude-auto`：佇列第 14 項 P3-1 `run_mas` 只為候選池建 `Story`，見「本次變更（2026-11-27 午）」）。前次：2026-11-26 19:12（佇列第 12 項 (3)）。更早的更新紀錄見 git log 與 `docs/archive/`。
+**Last updated:** 2026-11-28 07:20（`claude-auto`：佇列第 15 項 P3-3 第 2 段 `checks.py`，見「本次變更（2026-11-28 早）」）。前次：2026-11-27 13:20（佇列第 14 項 P3-1）。更早的更新紀錄見 git log 與 `docs/archive/`。
 
 ## 線上現況（2026-11-25 19:00 查證）
 
@@ -45,7 +45,7 @@
 12. ✅（2026-11-26，`claude-auto`；(1) 早、(2) 午、(3) 晚 `FACT_CHECKER_EVENT_CLASSES`，見三段「本次變更（2026-11-26 …）」）**P2-1 三個演算法盲區**（放新開關，預設關閉，不動 `exp1-frozen` 與實驗二重播）：(1) 早報／晚報／懶人包等彙整稿 `is_roundup_title` 不併入單一事件 cluster；(2) 查核員 `irrelevant_sources` 接當天 EntityContext，承認 ≥3 字、DF<5% 的中文共同片段（N-44224 蘇巧慧、N-54434 統一不再誤點名）；(3) 查核員提示詞加事件四分類（同次事件／後續進展／無關／彙整稿）——(3) 會改 `request_hash`，只在開關打開時生效。離線測試：T457/T523 不再錯併。
 13. ✅（2026-11-27，`claude-auto`；見「本次變更（2026-11-27 早）」）**P2-2 desk-v3 高互動 demo 期**（選做）：在 `rt-data-1123` 另一份複本開 `MAS_RICH_CONTEXT`／`MAS_OPEN_LAYOUT`／`MAS_MORE_INTERACTION` 跑一期 M 組 prepare（詳見 `docs/pr/desk-v3.md`），`build_replay` 輸出存成 `tests/fixtures/replay/` 下的 fixture，供簡報對比。
 14. ✅（2026-11-27，`claude-auto`；見「本次變更（2026-11-27 午）」）**P3-1 `run_mas` 只為候選池建 `Story` 列**（每期 ~4,800 → ≤30）：先確認分版主編（含 `MAS_OPEN_LAYOUT`）只需要 desk pool＋全站 top 10；改完全套測試＋回放 fixture 都要過；會動線上流程，併入後要 `newsroom-reload` 並看隔天 06:00 準備。
-15. ⏳（2026-11-27 晚做完第 1 段 `prompts.py`，見「本次變更（2026-11-27 晚）」；下次接 `checks.py`）**P3-3 拆 `daily/mas/orchestrator.py`**（prompts.py／checks.py／desk_v3.py／orchestrator.py ≤600 行，對外名稱相容、測試不改）；`run.py` 視剩餘時間再拆。純重構，不能改任何 `request_hash`（錄音重播測試會抓）。
+15. ⏳（2026-11-27 晚第 1 段 `prompts.py`、2026-11-28 早第 2 段 `checks.py`，見兩段「本次變更」；下次接 `desk_v3.py`）**P3-3 拆 `daily/mas/orchestrator.py`**（prompts.py／checks.py／desk_v3.py／orchestrator.py ≤600 行，對外名稱相容、測試不改）；`run.py` 視剩餘時間再拆。純重構，不能改任何 `request_hash`（錄音重播測試會抓）。
 16. 👤 **P3-2 DB 瘦身（需志晨同意才做，自動開發不做）**：先完整備份 → 342 列 11/12 以前的 `pending` 訊息改 `handled` → Alembic drop v4/v5 殭屍表＋刪 ORM → `VACUUM`。動正式 DB、不可逆，排在 2027-01-08 發表後。
 17. ✅ **P1-1**（2026-11-23 21:47–21:48，志晨同意）：`main`（`b1639bc`）與 `final-1120` 已 push 到 origin（其他本地 tag 沒 push）；production `.env` 加了 `MAS_NOISE_CHECK=true`（原檔備份在 `~/Documents/Developer/Lab/rt-data-1123/env.bak-1123`），`newsroom-reload` 後 log 有 `codex version guard ok`、三個 job 註冊、只有一個 scheduler Python process。11/24 06:00 起 M 組稿件出刊前會掃模型雜訊，命中轉 HOLD 標「暫扣」。
 
@@ -55,6 +55,17 @@
 - 開發回放頁用 `tests/fixtures/replay/2026-11-19_mas.json`（11/19 M 組真實 `build_replay` 輸出，2026-11-23 從 production DB 唯讀匯出；有 recorded 時間、3 次 CHALLENGE、改稿請求、版面異議），不必碰 DB。
 - 回放頁只讀、不能改稿；不改 `request_hash`、提示詞、線上撰稿流程，所以不影響實驗數字。動到 `reddit_tracker/daily/replay.py`／`office.html` 會被 web 載入，但 newsroom 排程不載入 web，**不需要重載 newsroom**（web 是手動起的 FastAPI）。
 - 視覺檢查：自動開發 session 沒有瀏覽器可用（production checkout 不能放 `launch.json`），改用 fixture 寫測試；畫面由互動 session 截圖確認。
+
+## 本次變更（2026-11-28 早 — 拆 `orchestrator.py` 第 2 段 `checks.py`，佇列第 15 項 P3-3，`claude-auto`，自動開發）
+
+純重構，沒有開關、沒呼叫模型、沒碰 DB。介面見 `docs/v5/DAILY_EDITION.md`「PR #1 整合介面」的 `checks.py`。
+
+- ℹ️ 11/28 06:00 準備（P3-1 與第 1 段拆分後第一期）：06:06 備妥 12 篇、`degraded=[]`（id 33）；06:04 收集照 11/26 的修正延後，沒有撞鎖。
+- ✅ 新檔 `daily/mas/checks.py`（約 210 行）：用 `ast` 依定義範圍逐字搬出 16 個純函式／型別（`Pitch`、`_Draft`／`_Checker`／`_Decision`、`_parse`、注入標記四個函式、`guard_pitches`、`irrelevant_sources`、`checker_says_same_event`、`_sid`、`checker_source_verdicts`、`_percent_values`、`_decision_problems`）與 3 個常數（`FRONT_CAPACITY`、`INJECTION_MARKERS`、`CHECKER_MIN_ZH_FRAGMENTS`）。`orchestrator.py` 以同名重新匯出，1,943 → 1,771 行。
+- 📌 `irrelevant_sources` 的呼叫端（`_check_and_maybe_revise`）留在 `orchestrator`，`test_checker_zh_fragments` 對 `orchestrator.irrelevant_sources` 的 monkeypatch 仍有效；`guard_pitches` 的 log 名稱從 `…mas.orchestrator` 變成 `…mas.checks`（沒有測試或腳本依賴）。
+- 📌 提示詞與 schema 沒動，錄音重播、回歸集都過，`request_hash` 沒變。
+- 測試：`tests/test_mas_module_split.py` 加 2 個（19 個名稱重新匯出是同一物件、`checks.py` 不 import orchestrator／sqlalchemy／llm／models／store）；既有測試沒改；worktree 全套 642 passed／7 skipped、ruff 通過。
+- ➡️ 下一段：`desk_v3.py`（`guard_open_pitches`、`program_trim`／`guard_trim`／`_trim_edition`、`appeal_*`、`guard_page_proposal`／`_page_review`、`guard_eic_requests`／`_eic_revisions`）→ `orchestrator.py` ≤600 行。注意 `layout_limits` 被 monkeypatch 在 `orchestrator` 上，查它的函式要留在 orchestrator 或改成模組屬性查找。
 
 ## 本次變更（2026-11-27 晚 — 拆 `orchestrator.py` 第 1 段 `prompts.py`，佇列第 15 項 P3-3，`claude-auto`，自動開發）
 

@@ -254,6 +254,12 @@ cleared_item_ids(session, story_id) -> set[int]                  # 查核員判�
 # reddit_tracker/daily/mas/prompts.py（P3-3 拆分）
 #   各角色 *_SYSTEM／*_SUFFIX 提示詞、*_SCHEMA 輸出 schema、EVENT_RELATIONS／EVENT_RELATION_KEEP、EIC_REVISION_MAX 等 32 個常數；
 #   orchestrator 以同名重新匯出（同一物件），舊的 orchestrator.X 用法不變；只放常數、不 import 任何模組。
+# reddit_tracker/daily/mas/checks.py（P3-3 拆分第 2 段）
+#   純判斷，不碰 DB、不呼叫模型，只 import prompts／evidence／entities：
+#   Pitch、_Draft／_Checker／_Decision（pydantic）、_parse、FRONT_CAPACITY、INJECTION_MARKERS、CHECKER_MIN_ZH_FRAGMENTS、
+#   evidence_has_injection／_has_marker／_usable_fulltext／_evidence_text、guard_pitches、
+#   irrelevant_sources、checker_says_same_event、_sid、checker_source_verdicts、_percent_values、_decision_problems；
+#   orchestrator 以同名重新匯出。測試 monkeypatch orchestrator.irrelevant_sources 仍有效（呼叫端留在 orchestrator）。
 # reddit_tracker/daily/blind.py
 export_blind_count(session, dates, *, seed=BLIND_SEED) -> (text, mapping, sha256)
 #   BLIND_SEED = 20261201；EXP2_SEED = 20261211
