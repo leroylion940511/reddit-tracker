@@ -65,7 +65,7 @@
 - 📌 同一期（11/24 M 組）比較：Flash-Lite 有英文稿、把修稿說明寫進導言，不可用；3.1 Pro 思考太多、記者稿截斷且有英文稿；**`gemini-3.8-flash` 33 次全成功、無英文、無外洩，平均 4.7 秒（Codex 8.8）**，P 影子 5 次全成功。`GEMINI_DAILY_MODEL` 預設改成 `gemini-3.8-flash`。⚠️ `gemini-3.7-flash` 會被服務端轉到 3.8。
 - 📌 成本估約 2 美元／月（推出價到 12/31），1/1 起據報加倍約 4 美元／月。
 - 測試：`tests/test_gemini_client.py`（10 個）；ruff 通過。
-- ✅ 併入 main 並切換（志晨同意）：production `.env` 改 `GEMINI_API_KEY`（付費 key）、`GEMINI_REQUESTS_PER_MINUTE=30`，加 `DAILY_WRITER=gemini`、`GEMINI_DAILY_MODEL=gemini-3.8-flash`、`DAILY_MODEL_VERSION=gemini-3.8-flash | thinking=low`；原檔備份 `~/Documents/Developer/Lab/rt-data-1123/env.bak-1128`。重載時間見下一行。
+- ✅ 併入 main 並切換（志晨同意）：production `.env` 改 `GEMINI_API_KEY`（付費 key）、`GEMINI_REQUESTS_PER_MINUTE=30`，加 `DAILY_WRITER=gemini`、`GEMINI_DAILY_MODEL=gemini-3.8-flash`、`DAILY_MODEL_VERSION=gemini-3.8-flash | thinking=low`；原檔備份 `~/Documents/Developer/Lab/rt-data-1123/env.bak-1128`。main `50d08f0`，production 全套 660 passed／4 skipped；2026-11-28 21:10:05 `newsroom-reload`：五個 job 註冊、scheduler Python process 1 個，沒有 `codex version guard` 行（`DAILY_WRITER=gemini` 跳過）；收集 tick 落在每刻鐘 10:09，不會撞 06:00 準備。
 - ➡️ 看 11/29 06:00 準備：log 不能有 `gemini unavailable`，`llm_records` 應全是 `provider=gemini`、`model_version=gemini-3.8-flash`。報告（`docs/report.md`）要註明試刊與實驗一～三用 Codex、11/29 起線上改 Gemini。Codex CLI 不再是線上依賴，可以升級（只影響重跑實驗腳本時的版本比對）。
 
 ## 本次變更（2026-11-28 晚 — 拆 `orchestrator.py` 第 4 段 `front.py`，佇列第 15 項 P3-3，`claude-auto`，自動開發）
