@@ -28,7 +28,7 @@
 - Python: `uv` with the project-local `.venv`; tests: `REDDIT_TRACKER_NO_DOTENV=1 uv run python -m pytest -q`.
 - Resident service: launchd `com.leroy.reddit-tracker.newsroom` runs `caffeinate -i uv run python -m reddit_tracker.newsroom.scheduler` (APScheduler; log `newsroom.log`).
 - RSSHub: separate launchd `com.leroy.reddit-tracker.rsshub` runs Homebrew `node dist/index.mjs` in `~/rsshub`, listening only on `127.0.0.1:1200` (`RSSHUB_BASE_URL` default `http://127.0.0.1:1200`; install via `deploy/install_launchd.sh rsshub-install`). No Docker / docker-compose.
-- LLM: production writes with the Gemini API since 2026-11-28 (`DAILY_WRITER=gemini`, `GEMINI_DAILY_MODEL=gemini-3.8-flash`, paid AI Studio key; trial in `docs/eval/gemini_trial.md`). If the pre-prepare Gemini probe fails the whole edition uses templates; there is no Codex fallback. Codex CLI (`CODEX_BIN`, `CODEX_MODEL`, `reddit_tracker/llm/codex_version.py`) is kept only for `DAILY_WRITER=codex` and for re-running the experiments, which were recorded against codex-cli 0.166.0; upgrading it no longer affects production.
+- LLM: production writes with the Gemini API since 2026-11-28 (`DAILY_WRITER=gemini`, `GEMINI_DAILY_MODEL=gemini-3.8-flash`, paid AI Studio key; trial in `docs/eval/gemini_trial.md`). If the pre-prepare Gemini probe fails the whole edition uses templates; there is no Codex fallback. Codex CLI (`CODEX_BIN`, `CODEX_MODEL`, `reddit_tracker/llm/codex_version.py`) is kept only for `DAILY_WRITER=codex` and for re-running the experiments, which were recorded against codex-cli 0.166.0; it was upgraded to 0.172.0 on 2026-11-28 (the recorder logs the measured version, so re-runs are labelled correctly).
 - Preferred editor: VS Code
 
 ## Language And Tooling Defaults

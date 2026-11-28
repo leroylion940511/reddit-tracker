@@ -96,11 +96,11 @@ flowchart TD
 | `llm/records.py` | 每一次 subprocess 嘗試寫一筆 `llm_records`：`request_hash`、`prompt_text`、`response_text`、`latency_ms`、`ok`、`error`、`role`、`run_variant`、`edition_date`、`story_id`、`model_version` |
 | `llm/replay.py` | 以 `request_hash`（sha256(system＋prompt＋model＋schema)）找回錄好的回應重播；**找不到就丟 `ReplayMissing`，不會默默呼叫真模型** |
 
-`DAILY_WRITER` 只允許 `codex`／`gemini`／`template`／`fake`（`config.LLM_PROVIDERS`；網頁備援已移除且禁止）。找不到 `CODEX_BIN` 時整期改用模板稿。目前定案的模型字串：`gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low`（2026-10-31 起 Homebrew codex，`final-1120` 凍結的就是這一版；不要 `brew upgrade codex`，升級後版本守門會每天警告，cask 也不能 `brew pin`）。replay 的 `request_hash` 不含 CLI 版本。
+`DAILY_WRITER` 只允許 `codex`／`gemini`／`template`／`fake`（`config.LLM_PROVIDERS`；網頁備援已移除且禁止）。找不到 `CODEX_BIN` 時整期改用模板稿；`gemini` 在準備前探測失敗時也整期改用模板稿（不退回 Codex）。**2026-11-29 起 production 用 `DAILY_WRITER=gemini`、`gemini-3.8-flash`**（`docs/eval/gemini_trial.md`）。實驗與試刊的模型字串：`gpt-6.1-sol | codex-cli 0.166.0 | reasoning_effort=low`（`final-1120` 凍結的就是這一版）；Codex CLI 已在 2026-11-28 升到 0.172.0，重跑實驗時 `llm_records.model_version` 會記實測版本，版本守門只在 `DAILY_WRITER=codex` 時檢查。replay 的 `request_hash` 不含 CLI 版本。
 
 ## 快速開始
 
-需求：macOS、Python ≥ 3.11、[`uv`](https://docs.astral.sh/uv/)；撰稿需本機 Homebrew 的 Codex CLI（`brew install --cask codex`，0.166.0）；收集 RSSHub 路由需本機 RSSHub（`~/rsshub`，只綁 127.0.0.1:1200）。
+需求：macOS、Python ≥ 3.11、[`uv`](https://docs.astral.sh/uv/)；撰稿需 Gemini API 付費 key（`GEMINI_API_KEY`）；用 `DAILY_WRITER=codex` 或重跑實驗才需要本機 Homebrew 的 Codex CLI（`brew install --cask codex`）；收集 RSSHub 路由需本機 RSSHub（`~/rsshub`，只綁 127.0.0.1:1200）。
 
 ```bash
 uv sync --all-groups
