@@ -601,7 +601,7 @@ def refresh_after_review(edition_date: date, *, scope=None) -> Path | None:
 # 呼叫端沒給 now＝正式出刊（排程、手動 prepare）：M 組訊息與版本的時間用真實時間。
 # 有給 now 的是重編、回歸集、測試，維持每則 +1 秒，結果才可重現。
 def _resolve_writer_mode(settings, writer_mode: str, edition_date: date) -> str:
-    """決定這期實際用哪個 provider：gemini 不可用就整期換 codex，codex 找不到執行檔就用模板。"""
+    """決定這期實際用哪個 provider：gemini 不可用就整期用模板（不退回 codex），codex 找不到執行檔也用模板。"""
     if writer_mode not in LLM_PROVIDERS:
         raise ValueError(f"撰稿 provider 只允許 {'/'.join(LLM_PROVIDERS)}：{writer_mode!r}")
     if writer_mode == "gemini" and not settings.gemini_api_key:
@@ -609,9 +609,10 @@ def _resolve_writer_mode(settings, writer_mode: str, edition_date: date) -> str:
     if writer_mode == "gemini":
         reason = _gemini_unavailable(settings)
         if reason is not None:
-            # 帳單／額度出問題時整期換 Codex，不要逐次降級成一整期模板稿（2026-11-28 試跑整期 30 次 402）
-            logger.warning("gemini unavailable (%s); falling back to codex for edition %s", reason, edition_date)
-            writer_mode = "codex"
+            # 帳單／額度出問題時整期直接用模板，不浪費 30 次失敗呼叫（2026-11-28 試跑整期 30 次 402）。
+            # 不退回 codex：志晨 11-28 決定拿掉 codex 備援（要升級 codex CLI）。
+            logger.error("gemini unavailable (%s); edition %s falls back to template", reason, edition_date)
+            writer_mode = "template"
     if writer_mode == "codex" and shutil.which(settings.codex_bin) is None:
         logger.warning("codex binary not found at %s; falling back to template", settings.codex_bin)
         writer_mode = "template"

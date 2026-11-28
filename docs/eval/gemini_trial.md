@@ -34,7 +34,7 @@
 
 ## 切換前待辦
 
-1. ✅ 每期準備前 `GeminiClient.probe()`（1 個輸出詞元、不扣本機額度、不寫 llm_records），402／429／403／連不上就整期改用 Codex（`run._resolve_writer_mode`）。準備途中才出錯的仍逐次降級。
+1. ✅ 每期準備前 `GeminiClient.probe()`（1 個輸出詞元、不扣本機額度、不寫 llm_records），402／429／403／連不上就整期改用 Codex（`run._resolve_writer_mode`）。準備途中才出錯的仍逐次降級。11-28 晚志晨決定拿掉 Codex 備援：探測失敗改成整期模板稿＋ERROR log。
 2. ✅ P 影子用 3.8 Flash 跑一期（見上）。
 3. production `.env`：`DAILY_WRITER=gemini`、`GEMINI_DAILY_MODEL=gemini-3.8-flash`（現為預設）、付費 key、放寬 `GEMINI_REQUESTS_PER_MINUTE`；`DAILY_MODEL_VERSION` 改成 Gemini 模型。
 4. 報告註明：試刊與實驗一～三用 Codex，切換日起線上改用 Gemini。

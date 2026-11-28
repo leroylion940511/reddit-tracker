@@ -79,7 +79,7 @@ def test_truncated_output_raises(tmp_path, monkeypatch):
         _call(client, json_mode=True)
 
 
-# --- 準備前探測與整期退回 Codex ---
+# --- 準備前探測：不可用就整期用模板 ---
 
 class _ErrResp(_Resp):
     def __init__(self, status, message):
@@ -115,16 +115,16 @@ def _settings(**kw):
     return SimpleNamespace(**{"gemini_api_key": "k", "codex_bin": "/bin/sh", "gemini_daily_model": "m", **kw})
 
 
-def test_unavailable_gemini_falls_back_to_codex_for_whole_edition(monkeypatch, caplog):
+def test_unavailable_gemini_uses_template_not_codex(monkeypatch, caplog):
     from datetime import date
 
     from reddit_tracker.daily import run
 
     monkeypatch.setattr(run, "_gemini_unavailable", lambda s: "HTTP 402")
-    assert run._resolve_writer_mode(_settings(), "gemini", date(2026, 11, 24)) == "codex"
-    assert "falling back to codex" in caplog.text
-    monkeypatch.setattr(run.shutil, "which", lambda b: None)
+    monkeypatch.setattr(run.shutil, "which", lambda b: "/bin/sh")  # codex 在也不用
     assert run._resolve_writer_mode(_settings(), "gemini", date(2026, 11, 24)) == "template"
+    assert "falls back to template" in caplog.text
+    assert any(r.levelname == "ERROR" for r in caplog.records)
 
 
 def test_available_gemini_is_kept_and_missing_key_skips_probe(monkeypatch):

@@ -5,7 +5,7 @@
 > 2026-11-23 以前的「本次變更」段落已搬到 `docs/archive/`（見文末「更早的紀錄」）；正文引用的舊段落請到那裡找。
 > 下面各段裡的「➡️ 下一步」是當時寫的，現況一律以本節「下一步」為準。
 
-**Last updated:** 2026-11-28 07:12（`claude-auto`：佇列第 15 項 P3-3 第 2 段 `checks.py`，見「本次變更（2026-11-28 早）」）。前次：2026-11-27 13:20（佇列第 14 項 P3-1）。更早的更新紀錄見 git log 與 `docs/archive/`。
+**Last updated:** 2026-11-28 21:10（撰稿改 Gemini 3.8 Flash，見「本次變更（2026-11-28 夜）」）。前次：2026-11-28 07:12（`claude-auto`：佇列第 15 項 P3-3 第 2 段 `checks.py`，見「本次變更（2026-11-28 早）」）。前次：2026-11-27 13:20（佇列第 14 項 P3-1）。更早的更新紀錄見 git log 與 `docs/archive/`。
 
 ## 線上現況（2026-11-25 19:00 查證）
 
@@ -14,7 +14,7 @@
 - **服務**：newsroom（11/24 17:01 重載後一直在跑，scheduler Python process 1 個）、rsshub 兩個 LaunchAgent。
 - **出刊**：11/25 06:00–06:08 準備（P 影子＋M 組），12 篇、`degraded=[]`；08:35 發行（Telegram 557、558，`daily_editions` id 30）。11/24 同樣正常（555、556）。11/25 有一次 Codex 呼叫 150 秒逾時，重試成功。
 - **開關**：`DAILY_MODE=mas`、P 影子開、人工核可關（`DAILY_REQUIRE_APPROVAL=false`，第一期是 11/15）、`MAS_NOISE_CHECK=true`（第一期 11/24；11/24、11/25 有沒有 HOLD 要看 DB，沒有查）。desk-v3 各開關、`MAS_FULL_EVIDENCE`、`FACT_CHECKER_PER_SOURCE` 都關。
-- **版本**：Codex CLI 0.166.0，11/25 06:00 `codex version guard ok`；tag `final-1120` 已 push。
+- **版本**：⚠️ 2026-11-28 夜起撰稿改 Gemini（`gemini-3.8-flash`），Codex 版本守門因 `DAILY_WRITER=gemini` 跳過。之前：Codex CLI 0.166.0，11/25 06:00 `codex version guard ok`；tag `final-1120` 已 push。
 - **資料庫**：production 約 718 MB；Alembic 最新 `c5e1a9d3f207`（desk-v3 `item_fulltext`，11/14 部署；11/23 複本確認）。
 - **git**：查證當下 main `a934e8b`，領先 origin/main（`73fddf5`）8 個 commit，**還沒 push**（👤）。
 - ⚠️ **11/24 起，06:00 準備期間的收集會撞鎖**：重載讓 15 分鐘的 tick 改從重載時刻起算，從 06:09:47 變成 06:03:10（11/23 21:48 重載）、06:01:44（11/24 17:01 重載）。M 組從開始寫稿到出刊稿落地是同一個 write transaction（`daily/run.py` 的 `session_scope` 包住 `_finish_mas`，11/25 約 06:01:47–06:08:41），收集逐一來源等 30 秒後 `database is locked`：11/24 5 個來源、11/25 6 個來源寫入失敗（連同補寫健康紀錄共 13／16 次 `OperationalError`）。**不影響出刊**；失敗的來源沒有留下健康紀錄，依程式下一輪就到期重抓（06:16 那輪 29 個來源），但該時段的收集晚約 15 分鐘，健康報表看起來像沒抓。11/11 發生過同樣的事，當時只把等鎖 5→30 秒。
@@ -56,16 +56,17 @@
 - 回放頁只讀、不能改稿；不改 `request_hash`、提示詞、線上撰稿流程，所以不影響實驗數字。動到 `reddit_tracker/daily/replay.py`／`office.html` 會被 web 載入，但 newsroom 排程不載入 web，**不需要重載 newsroom**（web 是手動起的 FastAPI）。
 - 視覺檢查：自動開發 session 沒有瀏覽器可用（production checkout 不能放 `launch.json`），改用 fixture 寫測試；畫面由互動 session 截圖確認。
 
-## 本次變更（2026-11-28 夜 — 撰稿模型改 Gemini 的試跑，分支 `feat/gemini-writer`，志晨要求）
+## 本次變更（2026-11-28 夜 — 撰稿模型改 Gemini，已切換 production，志晨要求）
 
-志晨想用 Google AI Pro 每月 10 美元 Cloud 額度改打 Gemini API。只在 Lab 複本 `~/Documents/Developer/Lab/rt-data-1123/gemini-trial/` 跑，**production `.env` 與線上流程沒動**；試跑 key 放在該目錄的 `.env.trial`（600）。結果與做法見 `docs/eval/gemini_trial.md`。
+志晨想用 Google AI Pro 每月 10 美元 Cloud 額度改打 Gemini API。試跑只在 Lab 複本 `~/Documents/Developer/Lab/rt-data-1123/gemini-trial/`；試跑 key 放在該目錄的 `.env.trial`（600）。結果與做法見 `docs/eval/gemini_trial.md`。
 
 - ✅ `GeminiClient`：送 `responseJsonSchema`（原本丟掉 schema）與 `thinkingConfig.thinkingLevel`（新設定 `GEMINI_THINKING_LEVEL=low`）；`MAX_TOKENS` 視為失敗；輸出詞元含思考詞元；回應的 `modelVersion` 寫進 `llm_records.model_version`。M 組統計 `llm_requests`／`role_calls` 改成 codex＋gemini 都算。
-- ✅ 每期準備前 `GeminiClient.probe()`，402／429／403／連不上就整期改用 Codex（`run._resolve_writer_mode`）；試跑時付費設定沒好，整期 30 次 402，舊行為是全部降級成模板稿。
+- ✅ 每期準備前 `GeminiClient.probe()`，402／429／403／連不上就**整期用模板稿並記 ERROR**（`run._resolve_writer_mode`），不再一篇篇失敗 30 次；試跑時付費設定沒好，整期 30 次 402。**志晨決定不留 Codex 備援**（要升級 codex CLI）。
 - 📌 同一期（11/24 M 組）比較：Flash-Lite 有英文稿、把修稿說明寫進導言，不可用；3.1 Pro 思考太多、記者稿截斷且有英文稿；**`gemini-3.8-flash` 33 次全成功、無英文、無外洩，平均 4.7 秒（Codex 8.8）**，P 影子 5 次全成功。`GEMINI_DAILY_MODEL` 預設改成 `gemini-3.8-flash`。⚠️ `gemini-3.7-flash` 會被服務端轉到 3.8。
 - 📌 成本估約 2 美元／月（推出價到 12/31），1/1 起據報加倍約 4 美元／月。
-- 測試：`tests/test_gemini_client.py`（10 個）；worktree 全套 657 passed／7 skipped、ruff 通過。**還沒併入 main。**
-- ➡️ 切換步驟（👤 要志晨同意）：併入 main → production `.env` 設 `DAILY_WRITER=gemini`、`GEMINI_API_KEY`（付費 key）、`GEMINI_REQUESTS_PER_MINUTE=30`、`DAILY_MODEL_VERSION=gemini-3.8-flash | thinking=low` → `newsroom-reload` → 看隔天 06:00。報告要註明試刊與實驗一～三用 Codex。
+- 測試：`tests/test_gemini_client.py`（10 個）；ruff 通過。
+- ✅ 併入 main 並切換（志晨同意）：production `.env` 改 `GEMINI_API_KEY`（付費 key）、`GEMINI_REQUESTS_PER_MINUTE=30`，加 `DAILY_WRITER=gemini`、`GEMINI_DAILY_MODEL=gemini-3.8-flash`、`DAILY_MODEL_VERSION=gemini-3.8-flash | thinking=low`；原檔備份 `~/Documents/Developer/Lab/rt-data-1123/env.bak-1128`。重載時間見下一行。
+- ➡️ 看 11/29 06:00 準備：log 不能有 `gemini unavailable`，`llm_records` 應全是 `provider=gemini`、`model_version=gemini-3.8-flash`。報告（`docs/report.md`）要註明試刊與實驗一～三用 Codex、11/29 起線上改 Gemini。Codex CLI 不再是線上依賴，可以升級（只影響重跑實驗腳本時的版本比對）。
 
 ## 本次變更（2026-11-28 晚 — 拆 `orchestrator.py` 第 4 段 `front.py`，佇列第 15 項 P3-3，`claude-auto`，自動開發）
 
