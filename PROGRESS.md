@@ -58,7 +58,7 @@
 
 ## 本次變更（2026-11-28 夜 — 撰稿模型改 Gemini，已切換 production，志晨要求）
 
-志晨想用 Google AI Pro 每月 10 美元 Cloud 額度改打 Gemini API。試跑只在 Lab 複本 `~/Documents/Developer/Lab/rt-data-1123/gemini-trial/`；試跑 key 放在該目錄的 `.env.trial`（600）。結果與做法見 `docs/eval/gemini_trial.md`。
+志晨想用 Google AI Pro 每月 10 美元 Cloud 額度改打 Gemini API。試跑只在 Lab 複本 `~/Documents/Developer/Lab/rt-data-1123/gemini-trial/`；結果與做法見 `docs/eval/gemini_trial.md`。
 
 - ✅ `GeminiClient`：送 `responseJsonSchema`（原本丟掉 schema）與 `thinkingConfig.thinkingLevel`（新設定 `GEMINI_THINKING_LEVEL=low`）；`MAX_TOKENS` 視為失敗；輸出詞元含思考詞元；回應的 `modelVersion` 寫進 `llm_records.model_version`。M 組統計 `llm_requests`／`role_calls` 改成 codex＋gemini 都算。
 - ✅ 每期準備前 `GeminiClient.probe()`，402／429／403／連不上就**整期用模板稿並記 ERROR**（`run._resolve_writer_mode`），不再一篇篇失敗 30 次；試跑時付費設定沒好，整期 30 次 402。**志晨決定不留 Codex 備援**（要升級 codex CLI）。
@@ -66,6 +66,8 @@
 - 📌 成本估約 2 美元／月（推出價到 12/31），1/1 起據報加倍約 4 美元／月。
 - 測試：`tests/test_gemini_client.py`（10 個）；ruff 通過。
 - ✅ 併入 main 並切換（志晨同意）：production `.env` 改 `GEMINI_API_KEY`（付費 key）、`GEMINI_REQUESTS_PER_MINUTE=30`，加 `DAILY_WRITER=gemini`、`GEMINI_DAILY_MODEL=gemini-3.8-flash`、`DAILY_MODEL_VERSION=gemini-3.8-flash | thinking=low`；原檔備份 `~/Documents/Developer/Lab/rt-data-1123/env.bak-1128`。main `50d08f0`，production 全套 660 passed／4 skipped；2026-11-28 21:10:05 `newsroom-reload`：五個 job 註冊、scheduler Python process 1 個，沒有 `codex version guard` 行（`DAILY_WRITER=gemini` 跳過）；收集 tick 落在每刻鐘 10:09，不會撞 06:00 準備。
+- ✅ Lab 清理（志晨同意，2026-11-28 21:30，移到 `~/.Trash/lab-cleanup-20261128/`，約 3.9 GB；清空垃圾桶前可救回）：`gemini-trial/` 五份試跑複本與 `.env.trial`、`desk-v3-demo/demo-fixedclock.db*`（作廢的第一次試跑）；另移除已併入的 worktree `rt-wt-gemini`＋分支 `feat/gemini-writer`、空資料夾 `rt-data-1106`／`rt-data-3d`。**留著**：`rt-backup/`（`DB_BACKUP_DIR`）、`rt-data-1123/reddit_tracker.db`、`exp2-*`、`env.bak-*`、`desk-v3-demo/demo.db`（`scripts/export_replay_fixture.py` 用）、`reddit_tracker_backups/`、`rt-wt-auto/`、實驗一時期的小檔（發表後再清）。
+- ℹ️ 11/29 06:30 有一次性定時任務 `reddit-tracker-gemini-first-edition-check` 唯讀檢查第一期，結果補在下一行之後。
 - ➡️ 看 11/29 06:00 準備：log 不能有 `gemini unavailable`，`llm_records` 應全是 `provider=gemini`、`model_version=gemini-3.8-flash`。報告（`docs/report.md`）要註明試刊與實驗一～三用 Codex、11/29 起線上改 Gemini。Codex CLI 不再是線上依賴，可以升級（只影響重跑實驗腳本時的版本比對）。
 
 ## 本次變更（2026-11-28 晚 — 拆 `orchestrator.py` 第 4 段 `front.py`，佇列第 15 項 P3-3，`claude-auto`，自動開發）

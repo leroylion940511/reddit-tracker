@@ -4,10 +4,10 @@
 
 ## 做法
 
-- 複本：`~/Documents/Developer/Lab/rt-data-1123/reddit_tracker.db`（11/23 21:45 `.backup`），每組各複製一份，在 `gemini-trial/` 底下。
+- 複本：`~/Documents/Developer/Lab/rt-data-1123/reddit_tracker.db`（11/23 21:45 `.backup`），每組各複製一份，在 `gemini-trial/` 底下（各組複本 2026-11-28 已移到垃圾桶；log、`site-*`、quota 檔留著，`run_trial.sh` 重跑會自動再複製一份）。
 - 期別：2026-11-24 M 組，`--now 2026-11-24T06:00`（訊息走真實時鐘，同 `desk-v3-demo/run_live.py`）；開關比照 production（只開 `MAS_NOISE_CHECK`，P 影子關）。
 - 程式：分支 `feat/gemini-writer`（`GeminiClient` 送 `responseJsonSchema` 與 `thinkingLevel=low`、`MAX_TOKENS` 視為失敗）。
-- 腳本：`gemini-trial/run_trial.sh gemini|codex [模型]`。
+- 腳本：`gemini-trial/run_trial.sh gemini|codex [模型]`（`TRIAL_SHADOW=1` 跑 P 影子）。Gemini 組讀同目錄的 `.env.trial`（`GEMINI_API_KEY=…`，600）；試跑用的那份已刪，重跑前要重建。
 
 選稿是程式做的，各組刊出的 12 個 cluster 完全相同；差異只在撰稿、查核、編輯。
 
