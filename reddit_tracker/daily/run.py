@@ -526,10 +526,10 @@ def _finish_mas(
         **({"noise_hold": {str(k): v for k, v in result.noise_log.items()}} if result.noise_log else {}),
         "llm_requests": session.scalar(select(func.count()).select_from(LLMRecord).where(
             LLMRecord.edition_date == edition_date, LLMRecord.run_variant == MAS,
-            LLMRecord.provider == "codex")),
+            LLMRecord.provider.in_(("codex", "gemini")))),
         "role_calls": dict(session.execute(select(LLMRecord.role, func.count()).where(
             LLMRecord.edition_date == edition_date, LLMRecord.run_variant == MAS,
-            LLMRecord.provider == "codex").group_by(LLMRecord.role)).all()),
+            LLMRecord.provider.in_(("codex", "gemini"))).group_by(LLMRecord.role)).all()),
         "run_variant": MAS,
     }
     session.flush()

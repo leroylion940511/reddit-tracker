@@ -174,6 +174,7 @@ uv run python -m reddit_tracker.web
 | `GEMINI_REQUESTS_PER_MINUTE` | `5` | |
 | `GEMINI_TIMEOUT_SECONDS` | `60` | |
 | `GEMINI_MAX_429_RETRIES` | `1` | |
+| `GEMINI_THINKING_LEVEL` | `low` | Gemini 3.x 思考等級（`minimal`／`low`／`medium`／`high`），空字串＝模型預設；思考詞元算在輸出上限與計費裡 |
 | `TELEGRAM_BOT_TOKEN`／`TELEGRAM_CHAT_ID` | （空） | 發行目標 |
 | `NEWS_COLLECTION_ENABLED` | `false` | true 才註冊收集＋聚合 job |
 | `NEWS_COLLECTION_TICK_MINUTES` | `15` | tick 間隔 |

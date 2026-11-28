@@ -41,6 +41,14 @@ class GeminiResult:
     cached_tokens: int | None
 
 
+def _output_tokens(usage: dict) -> int | None:
+    """計費的輸出詞元＝正文＋思考（`thoughtsTokenCount` 按輸出價計）。"""
+    parts = [usage.get("candidatesTokenCount"), usage.get("thoughtsTokenCount")]
+    if all(p is None for p in parts):
+        return None
+    return sum(int(p or 0) for p in parts)
+
+
 class GeminiQuotaGuard(ModelQuotaGuard):
     """Model-keyed daily quota (shared by every purpose) plus a per-minute request cap."""
 
@@ -86,6 +94,7 @@ class GeminiClient:
         self.model = model or settings.gemini_daily_model
         self.timeout = timeout if timeout is not None else settings.gemini_timeout_seconds
         self.max_retries = max_retries if max_retries is not None else settings.gemini_max_429_retries
+        self.thinking_level = (getattr(settings, "gemini_thinking_level", "") or "").strip() or None
         limit = daily_limit if daily_limit is not None else settings.llm_daily_limit
         self.guard = GeminiQuotaGuard(
             state_path=state_path or settings.llm_quota_state_path,
@@ -132,14 +141,20 @@ class GeminiClient:
         max_output_tokens: int,
         temperature: float,
         json_mode: bool = False,
-        json_schema: dict | None = None,  # 介面與 CodexClient 一致；Gemini 只用 json_mode
+        json_schema: dict | None = None,
     ) -> GeminiResult:
         generation_config: dict[str, Any] = {
             "maxOutputTokens": max_output_tokens,
             "temperature": temperature,
         }
-        if json_mode:
+        if json_mode or json_schema is not None:
             generation_config["responseMimeType"] = "application/json"
+        if json_schema is not None:
+            # 和 Codex 的 --output-schema 一樣強制照 schema 輸出（JSON Schema 子集）。
+            generation_config["responseJsonSchema"] = json_schema
+        if self.thinking_level:
+            # 思考詞元算在 maxOutputTokens 裡；不壓低的話 2000 上限可能被思考吃光、正文被截斷。
+            generation_config["thinkingConfig"] = {"thinkingLevel": self.thinking_level}
         payload = {
             "systemInstruction": {"parts": [{"text": system}]},
             "contents": self._contents(messages),
@@ -185,16 +200,21 @@ class GeminiClient:
                 message = f"Gemini API returned no usable text ({reason})"
                 self._note(system, messages, json_schema, ok=False, error=message, content=None, started=started)
                 raise GeminiAPIError(message)
+            if candidates[0].get("finishReason") == "MAX_TOKENS":
+                message = "Gemini API output truncated (MAX_TOKENS)"
+                self._note(system, messages, json_schema, ok=False, error=message, content=text, started=started)
+                raise GeminiAPIError(message)
             usage = data.get("usageMetadata") or {}
+            output_tokens = _output_tokens(usage)
             self._note(
                 system, messages, json_schema, ok=True, error=None, content=text, started=started,
-                input_tokens=usage.get("promptTokenCount"), output_tokens=usage.get("candidatesTokenCount"),
+                input_tokens=usage.get("promptTokenCount"), output_tokens=output_tokens,
                 cached_tokens=usage.get("cachedContentTokenCount"),
             )
             return GeminiResult(
                 content=text,
                 input_tokens=usage.get("promptTokenCount"),
-                output_tokens=usage.get("candidatesTokenCount"),
+                output_tokens=output_tokens,
                 cached_tokens=usage.get("cachedContentTokenCount"),
             )
         raise AssertionError("unreachable")  # pragma: no cover

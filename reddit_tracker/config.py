@@ -38,6 +38,8 @@ class Settings(BaseSettings):
     gemini_timeout_seconds: float = 60.0
     # 429 只重試 1 次：每次 HTTP 嘗試都扣一格（手冊 6.7）。
     gemini_max_429_retries: int = 1
+    # Gemini 3.x 的 thinkingLevel（minimal／low／medium／high）；空字串＝不送、用模型預設。對應 Codex 的 reasoning_effort=low。
+    gemini_thinking_level: str = "low"
 
     # --- LLM 每日額度（依模型計數，所有用途共用；手冊步驟 1、6.7）---
     llm_daily_limit: int = 60
