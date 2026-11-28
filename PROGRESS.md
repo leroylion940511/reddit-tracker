@@ -56,6 +56,17 @@
 - 回放頁只讀、不能改稿；不改 `request_hash`、提示詞、線上撰稿流程，所以不影響實驗數字。動到 `reddit_tracker/daily/replay.py`／`office.html` 會被 web 載入，但 newsroom 排程不載入 web，**不需要重載 newsroom**（web 是手動起的 FastAPI）。
 - 視覺檢查：自動開發 session 沒有瀏覽器可用（production checkout 不能放 `launch.json`），改用 fixture 寫測試；畫面由互動 session 截圖確認。
 
+## 本次變更（2026-11-28 夜 — 撰稿模型改 Gemini 的試跑，分支 `feat/gemini-writer`，志晨要求）
+
+志晨想用 Google AI Pro 每月 10 美元 Cloud 額度改打 Gemini API。只在 Lab 複本 `~/Documents/Developer/Lab/rt-data-1123/gemini-trial/` 跑，**production `.env` 與線上流程沒動**；試跑 key 放在該目錄的 `.env.trial`（600）。結果與做法見 `docs/eval/gemini_trial.md`。
+
+- ✅ `GeminiClient`：送 `responseJsonSchema`（原本丟掉 schema）與 `thinkingConfig.thinkingLevel`（新設定 `GEMINI_THINKING_LEVEL=low`）；`MAX_TOKENS` 視為失敗；輸出詞元含思考詞元；回應的 `modelVersion` 寫進 `llm_records.model_version`。M 組統計 `llm_requests`／`role_calls` 改成 codex＋gemini 都算。
+- ✅ 每期準備前 `GeminiClient.probe()`，402／429／403／連不上就整期改用 Codex（`run._resolve_writer_mode`）；試跑時付費設定沒好，整期 30 次 402，舊行為是全部降級成模板稿。
+- 📌 同一期（11/24 M 組）比較：Flash-Lite 有英文稿、把修稿說明寫進導言，不可用；3.1 Pro 思考太多、記者稿截斷且有英文稿；**`gemini-3.8-flash` 33 次全成功、無英文、無外洩，平均 4.7 秒（Codex 8.8）**，P 影子 5 次全成功。`GEMINI_DAILY_MODEL` 預設改成 `gemini-3.8-flash`。⚠️ `gemini-3.7-flash` 會被服務端轉到 3.8。
+- 📌 成本估約 2 美元／月（推出價到 12/31），1/1 起據報加倍約 4 美元／月。
+- 測試：`tests/test_gemini_client.py`（10 個）；worktree 全套 657 passed／7 skipped、ruff 通過。**還沒併入 main。**
+- ➡️ 切換步驟（👤 要志晨同意）：併入 main → production `.env` 設 `DAILY_WRITER=gemini`、`GEMINI_API_KEY`（付費 key）、`GEMINI_REQUESTS_PER_MINUTE=30`、`DAILY_MODEL_VERSION=gemini-3.8-flash | thinking=low` → `newsroom-reload` → 看隔天 06:00。報告要註明試刊與實驗一～三用 Codex。
+
 ## 本次變更（2026-11-28 晚 — 拆 `orchestrator.py` 第 4 段 `front.py`，佇列第 15 項 P3-3，`claude-auto`，自動開發）
 
 純重構，沒有開關、沒呼叫模型、沒碰 DB。介面見 `docs/v5/DAILY_EDITION.md`「PR #1 整合介面」的 `front.py`。

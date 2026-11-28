@@ -166,7 +166,7 @@ class Settings(BaseSettings):
     # M 組證據包對齊 P 組：帶當天 EntityContext，網域白名單加上各來源實際文章網域（不只 feed 網址的網域）。
     # 會改 M 記者看到的來源與 request_hash；預設關閉＝請求逐字不變（11/24 查出，試刊與實驗三是關閉狀態跑的）。
     mas_full_evidence: bool = False
-    gemini_daily_model: str = "gemini-3.5-flash-lite"
+    gemini_daily_model: str = "gemini-3.8-flash"  # 2026-11-28 試跑：flash-lite 會寫英文稿、把修稿說明寫進導言，見 docs/eval/gemini_trial.md
 
     # --- 舊排程（候選探索、舊版日報編採與發送）已在 commit 2d95c07 移除；設 true 也不會復活 ---
     legacy_jobs_enabled: bool = False

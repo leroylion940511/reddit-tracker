@@ -9,7 +9,7 @@
 - 程式：分支 `feat/gemini-writer`（`GeminiClient` 送 `responseJsonSchema` 與 `thinkingLevel=low`、`MAX_TOKENS` 視為失敗）。
 - 腳本：`gemini-trial/run_trial.sh gemini|codex [模型]`。
 
-選稿是程式做的，四組刊出的 12 個 cluster 完全相同；差異只在撰稿、查核、編輯。
+選稿是程式做的，各組刊出的 12 個 cluster 完全相同；差異只在撰稿、查核、編輯。
 
 ## 結果
 
@@ -17,21 +17,24 @@
 |---|---|---|---|---|---|---|---|---|
 | Codex `gpt-6.1-sol` | 30（30） | 333,408 | 6,826 | 8.8／13.2 | 0 | 0 | 0 | 2／2 |
 | `gemini-3.5-flash-lite` | 29（29） | 16,686 | 5,482 | 1.2／1.9 | 1（94140） | 1（91713） | 0 | 2／2 |
-| `gemini-3.7-flash` | 32（32） | 18,636 | 6,689 | 4.1／7.6 | 0 | 0 | 0 | 4／4 |
+| `gemini-3.7-flash`（實際 3.8） | 32（32） | 18,636 | 6,689 | 4.1／7.6 | 0 | 0 | 0 | 4／4 |
+| `gemini-3.8-flash` | 33（33） | 19,682 | 7,634 | 4.7／10.5 | 0 | 0 | 0 | 4／4 |
 | `gemini-3.1-pro-preview` | 31（29） | 16,563 | 27,917 | 8.8／14.4 | 2（93922、94140） | 0 | 1（91992，記者稿 2 次 `MAX_TOKENS`） | 3／3 |
 
 - Codex 的輸入詞元大多是 CLI 自帶的系統提示（每次約 1 萬），直接打 API 只有約 600／次。
 - 輸出詞元含思考詞元。Pro 在 `thinkingLevel=low` 仍大量思考，2000 上限下會截斷。
 - Flash-Lite：91713 的 deck 與「為什麼重要」寫成修稿說明（「移除S1中矛盾的30多年說法…」），雜訊檢查沒抓到；94140 整篇英文。不可用。
-- 3.7 Flash：全中文、無外洩；正文平均 216 字（Codex 191）。91992 跟 Flash-Lite 一樣，漏了 Codex 有寫的「美國官員對間諜說法存疑」。
+- ⚠️ 請求 `gemini-3.7-flash`，回應的 `modelVersion` 是 `gemini-3.8-flash`（服務端轉址，AI Studio dashboard 也記成 3.8）。之後改直接用 `gemini-3.8-flash` 重跑一次；`GeminiClient` 也改成把回應的 `modelVersion` 寫進 `llm_records.model_version`。
+- 3.8 Flash：全中文、無外洩；正文平均 210 字（Codex 191）。91992 跟 Flash-Lite 一樣，漏了 Codex 有寫的「美國官員對間諜說法存疑」。
+- P 影子（`gemini-3.8-flash`，一次寫整版、上限 8000）：5 次全成功，輸入 16,212／輸出 3,906，最長 23.4 秒；各版標題正常、全中文、無後設文字。
 
 ## 結論
 
-改用 `gemini-3.7-flash`。每期 M 組成本約 0.04 美元（以推出價每百萬詞元輸入 0.75／輸出 3.75 美元計，此價到 2026-12-31，之後未知）；加上 P 影子仍遠低於每月 10 美元。
+改用 `gemini-3.8-flash`。M 組＋P 影子一天約輸入 3.6 萬、輸出 1.15 萬詞元：以推出價（每百萬詞元輸入 0.75／輸出 3.75 美元，第三方整理、官方頁沒查到這一列；到 2026-12-31）約 0.07 美元／天、2 美元／月；2027-01-01 起據報價格加倍，約 4 美元／月，仍在 10 美元額度內。
 
 ## 切換前待辦
 
-1. HTTP 402／429 額度耗盡時整期退回 Codex（現在是逐次降級成模板稿，不停也不換模型；試跑時曾整期 30 次 402）。
-2. P 影子（一次寫整版，`max_output_tokens=8000`）用 Gemini 跑一期確認。
-3. production `.env`：`DAILY_WRITER=gemini`、`GEMINI_DAILY_MODEL=gemini-3.7-flash`、付費 key、放寬 `GEMINI_REQUESTS_PER_MINUTE`；`DAILY_MODEL_VERSION` 改成 Gemini 模型。
+1. ✅ 每期準備前 `GeminiClient.probe()`（1 個輸出詞元、不扣本機額度、不寫 llm_records），402／429／403／連不上就整期改用 Codex（`run._resolve_writer_mode`）。準備途中才出錯的仍逐次降級。
+2. ✅ P 影子用 3.8 Flash 跑一期（見上）。
+3. production `.env`：`DAILY_WRITER=gemini`、`GEMINI_DAILY_MODEL=gemini-3.8-flash`（現為預設）、付費 key、放寬 `GEMINI_REQUESTS_PER_MINUTE`；`DAILY_MODEL_VERSION` 改成 Gemini 模型。
 4. 報告註明：試刊與實驗一～三用 Codex，切換日起線上改用 Gemini。

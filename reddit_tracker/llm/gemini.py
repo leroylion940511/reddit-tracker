@@ -206,8 +206,12 @@ class GeminiClient:
                 raise GeminiAPIError(message)
             usage = data.get("usageMetadata") or {}
             output_tokens = _output_tokens(usage)
+            # 服務端可能把請求的模型轉到別的版本（11/28：要 gemini-3.7-flash 回 gemini-3.8-flash），記實際的。
+            served = data.get("modelVersion")
+            if served and served != self.model:
+                logger.info("gemini served %s for requested %s", served, self.model)
             self._note(
-                system, messages, json_schema, ok=True, error=None, content=text, started=started,
+                system, messages, json_schema, ok=True, error=None, content=text, started=started, served=served,
                 input_tokens=usage.get("promptTokenCount"), output_tokens=output_tokens,
                 cached_tokens=usage.get("cachedContentTokenCount"),
             )
@@ -219,13 +223,35 @@ class GeminiClient:
             )
         raise AssertionError("unreachable")  # pragma: no cover
 
-    def _note(self, system, messages, json_schema, *, ok, error, content, started, input_tokens=None, output_tokens=None, cached_tokens=None) -> None:
+    def _note(self, system, messages, json_schema, *, ok, error, content, started, input_tokens=None, output_tokens=None, cached_tokens=None, served=None) -> None:
         note_attempt(
-            provider="gemini", model=self.model, model_version=self.model_version, purpose=self.purpose,
+            provider="gemini", model=self.model, model_version=served or self.model_version, purpose=self.purpose,
             system=system, messages=messages, schema=json_schema, ok=ok, response_text=content, error=error,
             latency_ms=int((time.perf_counter() - started) * 1000),
             input_tokens=input_tokens, output_tokens=output_tokens, cached_tokens=cached_tokens,
         )
+
+    def probe(self) -> str | None:
+        """準備開始前確認帳單與額度能用：回 None＝可用，否則回原因。
+
+        送一個只要 1 個輸出詞元的請求；不扣本機額度、不寫 llm_records（不是撰稿呼叫）。
+        402（預付額度用完）、429、403、連不上都算不可用；200 但被截斷（MAX_TOKENS）仍算可用。
+        """
+        payload = {
+            "contents": [{"role": "user", "parts": [{"text": "OK"}]}],
+            "generationConfig": {"maxOutputTokens": 1},
+        }
+        try:
+            response = self._session.post(f"{_API_URL}/{self.model}:generateContent", json=payload, timeout=min(self.timeout, 20.0))
+        except requests.RequestException as exc:
+            return f"network error: {type(exc).__name__}"
+        if response.ok:
+            return None
+        try:
+            error = str((response.json().get("error") or {}).get("message", ""))[:160]
+        except ValueError:
+            error = ""
+        return f"HTTP {response.status_code}" + (f": {error}" if error else "")
 
     def close(self) -> None:
         self._session.close()

@@ -77,3 +77,72 @@ def test_truncated_output_raises(tmp_path, monkeypatch):
     client, _ = _client(tmp_path, monkeypatch, _ok('{"a": ', finish="MAX_TOKENS"))
     with pytest.raises(GeminiAPIError, match="MAX_TOKENS"):
         _call(client, json_mode=True)
+
+
+# --- 準備前探測與整期退回 Codex ---
+
+class _ErrResp(_Resp):
+    def __init__(self, status, message):
+        super().__init__({"error": {"code": status, "message": message}})
+        self.status_code = status
+        self.ok = False
+
+
+def test_probe_reports_billing_error_without_touching_quota(tmp_path, monkeypatch):
+    client, sent = _client(tmp_path, monkeypatch, None)
+    client._session.post = lambda url, json, timeout: _ErrResp(402, "Your prepayment credits are depleted.")
+    assert client.probe() == "HTTP 402: Your prepayment credits are depleted."
+    assert client.guard.used("gemini-test") == 0
+
+
+def test_probe_ok_and_network_error(tmp_path, monkeypatch):
+    import requests
+
+    client, sent = _client(tmp_path, monkeypatch, _ok("O", finish="MAX_TOKENS"))
+    assert client.probe() is None
+    assert sent[0]["generationConfig"] == {"maxOutputTokens": 1}
+
+    def down(url, json, timeout):
+        raise requests.ConnectionError("x")
+
+    client._session.post = down
+    assert client.probe() == "network error: ConnectionError"
+
+
+def _settings(**kw):
+    from types import SimpleNamespace
+
+    return SimpleNamespace(**{"gemini_api_key": "k", "codex_bin": "/bin/sh", "gemini_daily_model": "m", **kw})
+
+
+def test_unavailable_gemini_falls_back_to_codex_for_whole_edition(monkeypatch, caplog):
+    from datetime import date
+
+    from reddit_tracker.daily import run
+
+    monkeypatch.setattr(run, "_gemini_unavailable", lambda s: "HTTP 402")
+    assert run._resolve_writer_mode(_settings(), "gemini", date(2026, 11, 24)) == "codex"
+    assert "falling back to codex" in caplog.text
+    monkeypatch.setattr(run.shutil, "which", lambda b: None)
+    assert run._resolve_writer_mode(_settings(), "gemini", date(2026, 11, 24)) == "template"
+
+
+def test_available_gemini_is_kept_and_missing_key_skips_probe(monkeypatch):
+    from datetime import date
+
+    from reddit_tracker.daily import run
+
+    calls = []
+    monkeypatch.setattr(run, "_gemini_unavailable", lambda s: calls.append(s) or None)
+    assert run._resolve_writer_mode(_settings(), "gemini", date(2026, 11, 24)) == "gemini"
+    assert run._resolve_writer_mode(_settings(gemini_api_key=None), "gemini", date(2026, 11, 24)) == "template"
+    assert run._resolve_writer_mode(_settings(), "codex", date(2026, 11, 24)) == "codex"
+    assert len(calls) == 1
+
+
+def test_served_model_version_is_recorded(tmp_path, monkeypatch):
+    noted = []
+    client, _ = _client(tmp_path, monkeypatch, {**_ok(), "modelVersion": "gemini-3.8-flash"})
+    monkeypatch.setattr(gemini, "note_attempt", lambda **kw: noted.append(kw))
+    _call(client, json_mode=True)
+    assert noted[0]["model"] == "gemini-test" and noted[0]["model_version"] == "gemini-3.8-flash"

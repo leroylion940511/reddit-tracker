@@ -169,8 +169,8 @@ uv run python -m reddit_tracker.web
 | `CODEX_REASONING_EFFORT` | `low` | |
 | `CODEX_TIMEOUT_SECONDS` | `150` | 單次嘗試逾時（2026-11-06 前是 300；成功的呼叫最長約 45 秒） |
 | `CODEX_MAX_RETRIES` | `1` | 失敗重試次數（每次嘗試都扣額度） |
-| `GEMINI_API_KEY` | （空） | 只在 `DAILY_WRITER=gemini` 時需要 |
-| `GEMINI_DAILY_MODEL` | `gemini-3.5-flash-lite` | |
+| `GEMINI_API_KEY` | （空） | 只在 `DAILY_WRITER=gemini` 時需要；要用有預付餘額的付費專案。每期準備前先探測，402／429／403／連不上就整期改用 Codex |
+| `GEMINI_DAILY_MODEL` | `gemini-3.8-flash` | 試跑比較見 `docs/eval/gemini_trial.md`；`gemini-3.7-flash` 會被服務端轉到 3.8，實際版本記在 `llm_records.model_version` |
 | `GEMINI_REQUESTS_PER_MINUTE` | `5` | |
 | `GEMINI_TIMEOUT_SECONDS` | `60` | |
 | `GEMINI_MAX_429_RETRIES` | `1` | |
