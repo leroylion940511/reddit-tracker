@@ -260,6 +260,14 @@ cleared_item_ids(session, story_id) -> set[int]                  # 查核員判�
 #   evidence_has_injection／_has_marker／_usable_fulltext／_evidence_text、guard_pitches、
 #   irrelevant_sources、checker_says_same_event、_sid、checker_source_verdicts、_percent_values、_decision_problems；
 #   orchestrator 以同名重新匯出。測試 monkeypatch orchestrator.irrelevant_sources 仍有效（呼叫端留在 orchestrator）。
+# reddit_tracker/daily/mas/desk_v3.py（P3-3 拆分第 3 段）
+#   desk-v3 開放版面／刪稿／申訴／版面審稿／總編退稿：guard_open_pitches、_open_section_pitches、
+#   program_trim／_section_counts／guard_trim／_trim_edition、appeal_section／guard_appeal_ruling／_appeal_trim、
+#   _front_ids／guard_page_proposal／_page_review、guard_eic_requests／_eic_revisions；orchestrator 以同名重新匯出。
+#   共用的 _ask、_check_and_maybe_revise、apply_decision、rich_fields、_story_card 等仍在 orchestrator，
+#   desk_v3 用 orch.X 在呼叫時查找（檔尾才 import orchestrator，兩邊誰先 import 都可）；
+#   layout_limits 用 layout.layout_limits 查找，要 patch 就 patch layout 模組（_section_pitches 仍在 orchestrator，
+#   patch orchestrator.layout_limits 對它照舊有效）。
 # reddit_tracker/daily/blind.py
 export_blind_count(session, dates, *, seed=BLIND_SEED) -> (text, mapping, sha256)
 #   BLIND_SEED = 20261201；EXP2_SEED = 20261211

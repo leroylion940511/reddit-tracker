@@ -1,4 +1,4 @@
-"""P3-3：拆 orchestrator.py 之後（prompts.py、checks.py），舊的 `orchestrator.X` 名稱仍指向同一個物件。"""
+"""P3-3：拆 orchestrator.py 之後（prompts.py、checks.py、desk_v3.py），舊的 `orchestrator.X` 名稱仍指向同一個物件。"""
 
 from reddit_tracker.daily.mas import orchestrator, prompts
 
@@ -45,3 +45,45 @@ def test_checks_module_does_not_import_orchestrator_or_db():
     imports = [line for line in open(checks.__file__, encoding="utf-8") if line.startswith(("import ", "from "))]
     for banned in ("orchestrator", "sqlalchemy", "llm", "models", "store"):
         assert not any(banned in line for line in imports), banned
+
+
+DESK_V3_NAMES = [
+    "_appeal_trim", "_eic_revisions", "_front_ids", "_open_section_pitches", "_page_review", "_section_counts",
+    "_trim_edition", "appeal_section", "guard_appeal_ruling", "guard_eic_requests", "guard_open_pitches",
+    "guard_page_proposal", "guard_trim", "program_trim",
+]
+
+
+def test_orchestrator_reexports_desk_v3_by_identity():
+    from reddit_tracker.daily.mas import desk_v3
+
+    for name in DESK_V3_NAMES:
+        assert getattr(orchestrator, name) is getattr(desk_v3, name), name
+        assert getattr(desk_v3, name).__module__ == desk_v3.__name__, name
+
+
+def test_desk_v3_and_orchestrator_import_in_either_order():
+    # 兩個模組互相引用（desk_v3 在檔尾 import orchestrator），新的直譯器裡先 import 哪一個都要能載入
+    import subprocess
+    import sys
+
+    for first in ("desk_v3", "orchestrator"):
+        code = (f"import reddit_tracker.daily.mas.{first}\n"
+                "from reddit_tracker.daily.mas import desk_v3, orchestrator\n"
+                "assert desk_v3.orch is orchestrator and orchestrator.guard_trim is desk_v3.guard_trim\n")
+        done = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+        assert done.returncode == 0, (first, done.stderr)
+
+
+def test_desk_v3_trim_reads_patched_layout_module(monkeypatch):
+    # _trim_edition 透過 layout.layout_limits 查設定：patch layout 模組就生效
+    from reddit_tracker.daily.mas import desk_v3, layout
+
+    def bad():
+        raise ValueError("bad")
+
+    monkeypatch.setattr(layout, "layout_limits", bad)
+    pitches = [orchestrator.Pitch(section="world", story_id=1, angle="world", priority="section")]
+    out = desk_v3._trim_edition(None, edition_date=None, pitches=pitches, stories={}, evidence_of={}, reasons={},
+                                client=None, clock=None, result=None)
+    assert out is pitches
