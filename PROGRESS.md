@@ -45,7 +45,7 @@
 12. ✅（2026-11-26，`claude-auto`；(1) 早、(2) 午、(3) 晚 `FACT_CHECKER_EVENT_CLASSES`，見三段「本次變更（2026-11-26 …）」）**P2-1 三個演算法盲區**（放新開關，預設關閉，不動 `exp1-frozen` 與實驗二重播）：(1) 早報／晚報／懶人包等彙整稿 `is_roundup_title` 不併入單一事件 cluster；(2) 查核員 `irrelevant_sources` 接當天 EntityContext，承認 ≥3 字、DF<5% 的中文共同片段（N-44224 蘇巧慧、N-54434 統一不再誤點名）；(3) 查核員提示詞加事件四分類（同次事件／後續進展／無關／彙整稿）——(3) 會改 `request_hash`，只在開關打開時生效。離線測試：T457/T523 不再錯併。
 13. ✅（2026-11-27，`claude-auto`；見「本次變更（2026-11-27 早）」）**P2-2 desk-v3 高互動 demo 期**（選做）：在 `rt-data-1123` 另一份複本開 `MAS_RICH_CONTEXT`／`MAS_OPEN_LAYOUT`／`MAS_MORE_INTERACTION` 跑一期 M 組 prepare（詳見 `docs/pr/desk-v3.md`），`build_replay` 輸出存成 `tests/fixtures/replay/` 下的 fixture，供簡報對比。
 14. ✅（2026-11-27，`claude-auto`；見「本次變更（2026-11-27 午）」）**P3-1 `run_mas` 只為候選池建 `Story` 列**（每期 ~4,800 → ≤30）：先確認分版主編（含 `MAS_OPEN_LAYOUT`）只需要 desk pool＋全站 top 10；改完全套測試＋回放 fixture 都要過；會動線上流程，併入後要 `newsroom-reload` 並看隔天 06:00 準備。
-15. ⏳（2026-11-27 晚第 1 段 `prompts.py`、2026-11-28 早第 2 段 `checks.py`、2026-11-28 午第 3 段 `desk_v3.py`，見三段「本次變更」；orchestrator 剩 1,246 行，下次接 `front.py`）**P3-3 拆 `daily/mas/orchestrator.py`**（prompts.py／checks.py／desk_v3.py／orchestrator.py ≤600 行，對外名稱相容、測試不改）；`run.py` 視剩餘時間再拆。純重構，不能改任何 `request_hash`（錄音重播測試會抓）。
+15. ⏳（2026-11-27 晚第 1 段 `prompts.py`、2026-11-28 早第 2 段 `checks.py`、2026-11-28 午第 3 段 `desk_v3.py`、2026-11-28 晚第 4 段 `front.py`，見四段「本次變更」；orchestrator 剩 941 行，下次接記者／查核流程 `review.py`）**P3-3 拆 `daily/mas/orchestrator.py`**（prompts.py／checks.py／desk_v3.py／orchestrator.py ≤600 行，對外名稱相容、測試不改）；`run.py` 視剩餘時間再拆。純重構，不能改任何 `request_hash`（錄音重播測試會抓）。
 16. 👤 **P3-2 DB 瘦身（需志晨同意才做，自動開發不做）**：先完整備份 → 342 列 11/12 以前的 `pending` 訊息改 `handled` → Alembic drop v4/v5 殭屍表＋刪 ORM → `VACUUM`。動正式 DB、不可逆，排在 2027-01-08 發表後。
 17. ✅ **P1-1**（2026-11-23 21:47–21:48，志晨同意）：`main`（`b1639bc`）與 `final-1120` 已 push 到 origin（其他本地 tag 沒 push）；production `.env` 加了 `MAS_NOISE_CHECK=true`（原檔備份在 `~/Documents/Developer/Lab/rt-data-1123/env.bak-1123`），`newsroom-reload` 後 log 有 `codex version guard ok`、三個 job 註冊、只有一個 scheduler Python process。11/24 06:00 起 M 組稿件出刊前會掃模型雜訊，命中轉 HOLD 標「暫扣」。
 
@@ -55,6 +55,16 @@
 - 開發回放頁用 `tests/fixtures/replay/2026-11-19_mas.json`（11/19 M 組真實 `build_replay` 輸出，2026-11-23 從 production DB 唯讀匯出；有 recorded 時間、3 次 CHALLENGE、改稿請求、版面異議），不必碰 DB。
 - 回放頁只讀、不能改稿；不改 `request_hash`、提示詞、線上撰稿流程，所以不影響實驗數字。動到 `reddit_tracker/daily/replay.py`／`office.html` 會被 web 載入，但 newsroom 排程不載入 web，**不需要重載 newsroom**（web 是手動起的 FastAPI）。
 - 視覺檢查：自動開發 session 沒有瀏覽器可用（production checkout 不能放 `launch.json`），改用 fixture 寫測試；畫面由互動 session 截圖確認。
+
+## 本次變更（2026-11-28 晚 — 拆 `orchestrator.py` 第 4 段 `front.py`，佇列第 15 項 P3-3，`claude-auto`，自動開發）
+
+純重構，沒有開關、沒呼叫模型、沒碰 DB。介面見 `docs/v5/DAILY_EDITION.md`「PR #1 整合介面」的 `front.py`。
+
+- ✅ 新檔 `daily/mas/front.py`（366 行）：原 `orchestrator.py` 第 894–1210 行連續一段的 10 個函式（`_section_pitches`、`_conflicts`、`_story_card`、`_current_front`、`merge_t1_decision`、`_resolve_t1`／`_resolve_t3`、`_maybe_shorten_lead`、`_copy_confirm`、`_copy_edit_front`）加常數 `LEAD_MAX_CHARS`。`orchestrator.py` 以同名重新匯出，1,246 → 941 行。
+- 📌 函式本體逐字搬移：用 `ast` 依定義範圍切出，以 `tokenize` 只對名稱 token 加 `orch.` 前綴；把 `orch.` 去掉、`layout.layout_limits` 換回 `layout_limits` 後和原本 317 行 `diff -b` 相同。留在 orchestrator 的 `_ask`、`_revise`、`apply_decision`、`slots_from_pitches`、`_quota_left`、`_attach_fulltext`、`rich_fields`、`_default_pitches`、`SECTIONS`、`GLOBAL_TOP_N`、`build_evidence_from_ids` 都用 `orch.X` 在呼叫時查找，`test_full_evidence`／`test_mas_story_pool` 對 `orchestrator.build_evidence_from_ids` 的 patch 照舊有效。
+- 📌 `_section_pitches` 的 `layout_limits` 改查 `layout.layout_limits`（同 desk_v3）；`orchestrator.layout_limits` 保留為重新匯出（`test_pipeline_ignores_open_layout_switches` 兩邊都 patch，照舊有效）。log 名稱沿用 `reddit_tracker.daily.mas.orchestrator`，`newsroom.log` 的訊息不變。提示詞與 schema 沒動，錄音重播、回歸集（含 `tests/regression/e11_replay.py` 的 `_copy_edit_front`）都過，`request_hash` 沒變。
+- 測試：`tests/test_mas_module_split.py` 加 3 個（11 個名稱重新匯出是同一物件且定義在 `front`、`front`／`desk_v3`／`orchestrator` 三種 import 順序都能在新直譯器載入、`_section_pitches` 讀 patch 過的 `layout` 與 `orchestrator._ask`）；既有測試沒改；worktree 全套 648 passed／7 skipped、ruff 通過。
+- ➡️ 下一段（應是最後一段）：記者／查核流程搬到 `review.py`（`cleared_item_ids`、`_cleared_payload`、`_draft_from_template`、`review_one`、`reporter_draft`、`_checker_relevance_prompt`、`_check_and_maybe_revise`、`_revise`、`_checker_llm`，原 256–570 行約 315 行）→ orchestrator 約 630 行；再把 `format_trace`（約 35 行）或 `noise_hold` 一併移出即 ≤600。注意：`title_context`／`irrelevant_sources` 被測試 patch 在 `orchestrator` 上，`_check_and_maybe_revise` 搬走時要改成 `orch.irrelevant_sources` 查找；`front.py`／`desk_v3.py` 裡的 `orch._revise`、`orch._check_and_maybe_revise` 透過重新匯出仍可用。
 
 ## 本次變更（2026-11-28 午 — 拆 `orchestrator.py` 第 3 段 `desk_v3.py`，佇列第 15 項 P3-3，`claude-auto`，自動開發）
 

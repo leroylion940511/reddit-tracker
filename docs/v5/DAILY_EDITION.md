@@ -266,8 +266,15 @@ cleared_item_ids(session, story_id) -> set[int]                  # 查核員判�
 #   _front_ids／guard_page_proposal／_page_review、guard_eic_requests／_eic_revisions；orchestrator 以同名重新匯出。
 #   共用的 _ask、_check_and_maybe_revise、apply_decision、rich_fields、_story_card 等仍在 orchestrator，
 #   desk_v3 用 orch.X 在呼叫時查找（檔尾才 import orchestrator，兩邊誰先 import 都可）；
-#   layout_limits 用 layout.layout_limits 查找，要 patch 就 patch layout 模組（_section_pitches 仍在 orchestrator，
-#   patch orchestrator.layout_limits 對它照舊有效）。
+#   layout_limits 用 layout.layout_limits 查找，要 patch 就 patch layout 模組。
+# reddit_tracker/daily/mas/front.py（P3-3 拆分第 4 段）
+#   頭版：_section_pitches（固定名額分版提案；MAS_OPEN_LAYOUT 時轉 desk_v3._open_section_pitches）、_conflicts、
+#   _story_card、_current_front、merge_t1_decision、_resolve_t1／_resolve_t3（總編裁決）、LEAD_MAX_CHARS＝300、
+#   _maybe_shorten_lead／_copy_confirm（主稿縮稿與文稿確認）、_copy_edit_front（頭版文稿編輯）；orchestrator 以同名重新匯出。
+#   _ask、_revise、apply_decision、slots_from_pitches、_quota_left、_attach_fulltext、rich_fields、_default_pitches、
+#   SECTIONS、GLOBAL_TOP_N、build_evidence_from_ids 用 orch.X 在呼叫時查找（patch orchestrator 上的名稱照舊有效）；
+#   _section_pitches 的 layout_limits 改用 layout.layout_limits 查找（同 desk_v3），要 patch 就 patch layout 模組
+#   （orchestrator.layout_limits 仍保留這個名稱，但只剩重新匯出）。log 名稱沿用 reddit_tracker.daily.mas.orchestrator。
 # reddit_tracker/daily/blind.py
 export_blind_count(session, dates, *, seed=BLIND_SEED) -> (text, mapping, sha256)
 #   BLIND_SEED = 20261201；EXP2_SEED = 20261211

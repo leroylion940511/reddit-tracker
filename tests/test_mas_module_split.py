@@ -1,4 +1,4 @@
-"""P3-3：拆 orchestrator.py 之後（prompts.py、checks.py、desk_v3.py），舊的 `orchestrator.X` 名稱仍指向同一個物件。"""
+"""P3-3：拆 orchestrator.py 之後（prompts.py、checks.py、desk_v3.py、front.py），舊的 `orchestrator.X` 名稱仍指向同一個物件。"""
 
 from reddit_tracker.daily.mas import orchestrator, prompts
 
@@ -87,3 +87,49 @@ def test_desk_v3_trim_reads_patched_layout_module(monkeypatch):
     out = desk_v3._trim_edition(None, edition_date=None, pitches=pitches, stories={}, evidence_of={}, reasons={},
                                 client=None, clock=None, result=None)
     assert out is pitches
+
+
+FRONT_NAMES = [
+    "LEAD_MAX_CHARS", "_conflicts", "_copy_confirm", "_copy_edit_front", "_current_front", "_maybe_shorten_lead",
+    "_resolve_t1", "_resolve_t3", "_section_pitches", "_story_card", "merge_t1_decision",
+]
+
+
+def test_orchestrator_reexports_front_by_identity():
+    from reddit_tracker.daily.mas import front
+
+    for name in FRONT_NAMES:
+        assert getattr(orchestrator, name) is getattr(front, name), name
+        if callable(getattr(front, name)):
+            assert getattr(front, name).__module__ == front.__name__, name
+    assert front.LEAD_MAX_CHARS == 300
+
+
+def test_front_desk_v3_and_orchestrator_import_in_any_order():
+    import subprocess
+    import sys
+
+    for first in ("front", "desk_v3", "orchestrator"):
+        code = (f"import reddit_tracker.daily.mas.{first}\n"
+                "from reddit_tracker.daily.mas import desk_v3, front, orchestrator\n"
+                "assert front.orch is orchestrator and desk_v3.orch is orchestrator\n"
+                "assert orchestrator._resolve_t1 is front._resolve_t1\n")
+        done = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+        assert done.returncode == 0, (first, done.stderr)
+
+
+def test_front_section_pitches_reads_patched_layout_and_orchestrator(monkeypatch):
+    # _section_pitches 透過 layout.layout_limits 查設定、透過 orch._ask 呼叫模型：patch 這兩處都要生效
+    from reddit_tracker.daily.mas import front, layout
+
+    def bad():
+        raise ValueError("bad")
+
+    asked = []
+    monkeypatch.setattr(layout, "layout_limits", bad)
+    monkeypatch.setattr(orchestrator, "_ask", lambda *a, **k: asked.append(k["role"]) or "{}")
+    log: list[str] = []
+    out = front._section_pitches(None, None, [], {}, None, layout_log=log)
+    assert out == []
+    assert log and "設定不合法" in log[0]
+    assert asked == ["section_editor"] * len(orchestrator.SECTIONS)
